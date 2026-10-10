@@ -35,6 +35,8 @@ namespace DiplomacyOverhaul
         static void Register(QuantumSpriteAsset pAsset)
         {
             QuantumSpriteAsset asset = Core.Upsert(AssetManager.quantum_sprites, pAsset);
+            // 原版每帧遍历的是缓存数组，游戏开始后新加的精灵要清掉缓存才会被画
+            AssetManager.quantum_sprites._array = null;
             if (asset.group_system != null) return;
             QuantumSpriteGroupSystem system = new GameObject(asset.id).AddComponent<QuantumSpriteGroupSystem>();
             system.create(asset);
