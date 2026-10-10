@@ -9,6 +9,8 @@ namespace DiplomacyOverhaul
         public const string ReleaseCity = "vd_release_city";
         public const string OrderAttack = "vd_order_attack";
         public const string OrderKingdomAttack = "vd_order_kingdom_attack";
+        public const string TransferCity = "vd_transfer_city";
+        public const string Annex = "vd_annex";
 
         internal static Kingdom _lord;
 
@@ -45,6 +47,100 @@ namespace DiplomacyOverhaul
 
             InitReleaseCity();
             InitOrders();
+            InitCityActions();
+        }
+
+        internal static City _transferCity;
+        internal static Kingdom _annexer;
+
+        static void InitCityActions()
+        {
+            Core.Upsert(AssetManager.powers, new GodPower
+            {
+                id = TransferCity,
+                name = TransferCity,
+                force_map_mode = MetaType.City,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    _transferCity = null;
+                    WorldTip.showNow("vd_tip_pick_transfer_city", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickTransfer(pTile)
+            });
+            Core.Upsert(AssetManager.powers, new GodPower
+            {
+                id = Annex,
+                name = Annex,
+                force_map_mode = MetaType.Kingdom,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    _annexer = null;
+                    WorldTip.showNow("vd_tip_pick_annexer", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickAnnex(pTile)
+            });
+        }
+
+        static bool ClickTransfer(WorldTile pTile)
+        {
+            City city = pTile?.zone?.city;
+            if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
+            if (_transferCity == null || _transferCity.isRekt())
+            {
+                if (city.isCapitalCity())
+                {
+                    WorldTip.showNow("vd_tip_transfer_capital", true, "top");
+                    return false;
+                }
+                _transferCity = city;
+                Tip(LM.Get("vd_tip_pick_transfer_target").Replace("$city$", city.data.name));
+                return false;
+            }
+            City source = _transferCity;
+            Kingdom from = source.kingdom;
+            string error = CityActions.TransferCity(source, city.kingdom);
+            if (error != null)
+            {
+                WorldTip.showNow(error, true, "top");
+                return false;
+            }
+            _transferCity = null;
+            Tip(LM.Get("vd_tip_transferred").Replace("$city$", source.data.name)
+                .Replace("$from$", from.data.name).Replace("$to$", city.kingdom.data.name));
+            return true;
+        }
+
+        static bool ClickAnnex(WorldTile pTile)
+        {
+            Kingdom k = KingdomAt(pTile);
+            if (k == null) return false;
+            if (_annexer == null || !_annexer.isAlive())
+            {
+                _annexer = k;
+                Tip(LM.Get("vd_tip_pick_annexed").Replace("$kingdom$", k.data.name));
+                return false;
+            }
+            if (_annexer == k)
+            {
+                _annexer = null;
+                WorldTip.showNow("vd_tip_cancelled", true, "top");
+                return false;
+            }
+            Kingdom survivor = _annexer;
+            string absorbedName = k.data.name;
+            string error = CityActions.Annex(survivor, k);
+            if (error != null)
+            {
+                WorldTip.showNow(error, true, "top");
+                return false;
+            }
+            _annexer = null;
+            Tip(LM.Get("vd_tip_annexed").Replace("$survivor$", survivor.data.name).Replace("$absorbed$", absorbedName));
+            return true;
         }
 
         internal static City _source;

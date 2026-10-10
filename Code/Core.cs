@@ -56,7 +56,7 @@ namespace DiplomacyOverhaul
         static readonly HashSet<string> OwnButtons = new HashSet<string>
         {
             Powers.MakeVassal, Powers.ReleaseVassal, Powers.ReleaseCity,
-            Powers.OrderAttack, Powers.OrderKingdomAttack, "vd_settings"
+            Powers.OrderAttack, Powers.OrderKingdomAttack, Powers.TransferCity, Powers.Annex, "vd_settings"
         };
 
         static PowersTab FindTab()
@@ -105,11 +105,13 @@ namespace DiplomacyOverhaul
             AddSeparator(tab);
             AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
             AddPower(tab, Powers.ReleaseVassal, "ui/Icons/iconRebellion");
+            AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
             AddSeparator(tab);
             AddPower(tab, Powers.OrderAttack, "ui/Icons/iconWar");
             AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconWarriors");
             AddSeparator(tab);
-            AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
+            AddPower(tab, Powers.TransferCity, "ui/Icons/iconCityConquered");
+            AddPower(tab, Powers.Annex, "ui/Icons/iconKingdomList");
 
             // PowersTab 只在激活的子节点个数变化时才重新排版；热重载换按钮后个数可能不变，强制它重排
             tab._children = -1;

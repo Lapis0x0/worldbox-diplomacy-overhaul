@@ -53,7 +53,8 @@ namespace DiplomacyOverhaul
 
         static bool AnyOwnPowerSelected() =>
             Selected(Powers.MakeVassal) || Selected(Powers.ReleaseVassal) || Selected(Powers.ReleaseCity)
-            || Selected(Powers.OrderAttack) || Selected(Powers.OrderKingdomAttack);
+            || Selected(Powers.OrderAttack) || Selected(Powers.OrderKingdomAttack)
+            || Selected(Powers.TransferCity) || Selected(Powers.Annex);
 
         static Kingdom Alive(Kingdom k) => k != null && !k.isRekt() && !k.isNeutral() ? k : null;
         static City Alive(City c) => c != null && !c.isRekt() ? c : null;
@@ -84,6 +85,14 @@ namespace DiplomacyOverhaul
             else if (Selected(Powers.MakeVassal) && Alive(Powers._lord) != null)
             {
                 foreach (City city in Powers._lord.getCities()) Arrow(pAsset, city, mouse);
+            }
+            else if (Selected(Powers.TransferCity) && Alive(Powers._transferCity) != null)
+            {
+                Arrow(pAsset, Powers._transferCity, mouse);
+            }
+            else if (Selected(Powers.Annex) && Alive(Powers._annexer) != null)
+            {
+                foreach (City city in Powers._annexer.getCities()) Arrow(pAsset, city, mouse);
             }
         }
 
@@ -126,6 +135,20 @@ namespace DiplomacyOverhaul
             else if (Selected(Powers.ReleaseVassal))
             {
                 if (hovered != null) Kingdom(pAsset, hovered.kingdom, ColorSource);
+            }
+            else if (Selected(Powers.TransferCity))
+            {
+                City moving = Alive(Powers._transferCity);
+                if (moving != null) Zones(pAsset, moving.zones, ColorSource);
+                if (hovered == null) return;
+                if (moving == null) Zones(pAsset, hovered.zones, ColorSource);
+                else if (hovered.kingdom != moving.kingdom) Kingdom(pAsset, hovered.kingdom, ColorRally);
+            }
+            else if (Selected(Powers.Annex))
+            {
+                Kingdom annexer = Alive(Powers._annexer);
+                if (annexer != null) Kingdom(pAsset, annexer, ColorSource);
+                if (hovered != null && hovered.kingdom != annexer) Kingdom(pAsset, hovered.kingdom, annexer != null ? ColorTarget : ColorSource);
             }
             else if (Selected(Powers.ReleaseCity))
             {

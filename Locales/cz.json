@@ -66,5 +66,17 @@
   "vd_tip_war_failed": "无法宣战",
   "vd_tip_no_boat": "没有可用的运输船，也没有港口可以造船",
   "vd_tip_recall_ordered": "$source$ 的军队前往 $target$",
-  "vd_tip_kingdom_recall_ordered": "$source$ 的 $count$ 支军队前往 $target$"
+  "vd_tip_kingdom_recall_ordered": "$source$ 的 $count$ 支军队前往 $target$",
+  "vd_transfer_city": "移交城市",
+  "vd_transfer_city_description": "先点一座城市，再点要接收它的王国。首都不能移交",
+  "vd_annex": "吞并王国",
+  "vd_annex_description": "先点吞并方，再点被吞并的王国：它的所有城市并入吞并方，它的附庸转给吞并方",
+  "vd_tip_pick_transfer_city": "选择要移交的城市",
+  "vd_tip_pick_transfer_target": "移交 $city$，现在选择接收它的王国",
+  "vd_tip_transferred": "$city$ 从 $from$ 移交给了 $to$",
+  "vd_tip_transfer_capital": "首都不能移交，整国合并请用吞并王国",
+  "vd_tip_same_kingdom": "这座城市已经属于该王国",
+  "vd_tip_pick_annexer": "选择吞并方",
+  "vd_tip_pick_annexed": "吞并方：$kingdom$，现在选择要被吞并的王国",
+  "vd_tip_annexed": "$survivor$ 吞并了 $absorbed$"
 }

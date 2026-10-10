@@ -66,5 +66,17 @@
   "vd_tip_war_failed": "Cannot declare war",
   "vd_tip_no_boat": "No transport ship available and no docks to build one",
   "vd_tip_recall_ordered": "The army of $source$ heads to $target$",
-  "vd_tip_kingdom_recall_ordered": "$count$ armies of $source$ head to $target$"
+  "vd_tip_kingdom_recall_ordered": "$count$ armies of $source$ head to $target$",
+  "vd_transfer_city": "Transfer City",
+  "vd_transfer_city_description": "Click a city, then the kingdom that receives it. Capitals cannot be transferred",
+  "vd_annex": "Annex Kingdom",
+  "vd_annex_description": "Click the annexing kingdom, then the kingdom to absorb: all its cities join the annexer and its vassals pass to the annexer",
+  "vd_tip_pick_transfer_city": "Select a city to transfer",
+  "vd_tip_pick_transfer_target": "Transferring $city$. Now select the receiving kingdom",
+  "vd_tip_transferred": "$city$ was transferred from $from$ to $to$",
+  "vd_tip_transfer_capital": "Capitals cannot be transferred; use Annex Kingdom to merge a whole kingdom",
+  "vd_tip_same_kingdom": "This city already belongs to that kingdom",
+  "vd_tip_pick_annexer": "Select the annexing kingdom",
+  "vd_tip_pick_annexed": "Annexer: $kingdom$. Now select the kingdom to absorb",
+  "vd_tip_annexed": "$survivor$ annexed $absorbed$"
 }
