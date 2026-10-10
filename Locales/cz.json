@@ -44,5 +44,11 @@
   "kingdom_trait_vd_gov_duchy": "公国",
   "kingdom_trait_vd_gov_duchy_info": "效忠于宗主国的附庸",
   "vd_group_government": "政体",
-  "vd_gov_auto_enabled": "按城市数和附庸状态自动判定政体（手动选择的政体会被保留）"
+  "vd_gov_auto_enabled": "按城市数和附庸状态自动判定政体（手动选择的政体会被保留）",
+  "vd_release_city": "分封附庸",
+  "vd_release_city_description": "点击一座非首都城市，让它独立成新国家，并成为原国家的附庸",
+  "vd_tip_pick_city": "选择要分封出去的城市",
+  "vd_tip_city_released": "$vassal$ 从 $lord$ 分封出来，成为它的附庸",
+  "vd_tip_city_is_capital": "首都或唯一的城市不能分封",
+  "vd_tip_city_empty": "这座城市没有居民，无法建国"
 }

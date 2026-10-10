@@ -44,5 +44,11 @@
   "kingdom_trait_vd_gov_duchy": "Duchy",
   "kingdom_trait_vd_gov_duchy_info": "A vassal sworn to an overlord",
   "vd_group_government": "Government",
-  "vd_gov_auto_enabled": "Auto-assign government by city count and vassal status (manual picks are kept)"
+  "vd_gov_auto_enabled": "Auto-assign government by city count and vassal status (manual picks are kept)",
+  "vd_release_city": "Release as Vassal",
+  "vd_release_city_description": "Click a non-capital city to turn it into a new kingdom that is a vassal of its former owner",
+  "vd_tip_pick_city": "Select a city to release",
+  "vd_tip_city_released": "$vassal$ was released from $lord$ as its vassal",
+  "vd_tip_city_is_capital": "A capital or a kingdom's only city cannot be released",
+  "vd_tip_city_empty": "This city has no inhabitants to found a kingdom"
 }

@@ -82,6 +82,7 @@ namespace DiplomacyOverhaul
             if (pVassal.hasAlliance()) pVassal.getAlliance().leave(pVassal);
 
             pVassal.data.set(KeyOverlord, pLord.id);
+            if (Main.GovernmentAutoEnabled) Government.Update(pVassal);
 
             // 跟随宗主现有的战争
             foreach (War war in new List<War>(pLord.getWars()))
@@ -95,10 +96,28 @@ namespace DiplomacyOverhaul
             return null;
         }
 
+        // 把一座非首都城市分出去，成为原王国的附庸；返回 null 表示成功，否则返回失败原因的本地化 key
+        public static string ReleaseCity(City pCity, out Kingdom pNew)
+        {
+            pNew = null;
+            Kingdom owner = pCity?.kingdom;
+            if (owner == null || !owner.isCiv()) return "vd_tip_invalid";
+            if (pCity.isCapitalCity() || owner.countCities() < 2) return "vd_tip_city_is_capital";
+            if (IsVassal(owner)) return "vd_tip_lord_is_vassal";
+
+            Actor ruler = pCity.hasLeader() ? pCity.leader : pCity.getRandomUnit();
+            if (ruler == null) return "vd_tip_city_empty";
+
+            pNew = pCity.makeOwnKingdom(ruler);
+            ruler.joinCity(pCity);
+            return MakeVassal(owner, pNew);
+        }
+
         public static void Release(Kingdom pVassal)
         {
             if (pVassal?.data == null) return;
             pVassal.data.removeLong(KeyOverlord);
+            if (Main.GovernmentAutoEnabled) Government.Update(pVassal);
             Refresh();
         }
 
