@@ -90,6 +90,9 @@ namespace DiplomacyOverhaul
             PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateSimpleButton(
                 "vd_settings", () => NeoModLoader.ui.ModConfigureWindow.ShowWindow(Settings.Config),
                 SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);
+
+            // PowersTab 只在激活的子节点个数变化时才重新排版；热重载换按钮后个数可能不变，强制它重排
+            tab._children = -1;
         }
 
         static void AddPower(PowersTab pTab, string pPowerId, string pIcon)
