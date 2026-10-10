@@ -6,17 +6,31 @@ using UnityPools;
 
 namespace DiplomacyOverhaul
 {
-    // 同一集团（宗主 + 附庸）互不视为可开战/可结盟的中立国
+    // 同一集团（宗主 + 附庸）互不作为 AI 的战争目标和结盟对象。
+    // getNeutralKingdoms 也被王国窗口的「关系」栏使用，所以只在 AI 挑目标期间过滤。
+    static class BlocFilter
+    {
+        public static int Depth;
+    }
+
     [HarmonyPatch(typeof(WarManager), nameof(WarManager.getNeutralKingdoms))]
     static class Patch_NeutralKingdoms
     {
         static void Postfix(Kingdom pKingdom, ListPool<Kingdom> __result)
         {
+            if (BlocFilter.Depth <= 0) return;
             for (int i = __result.Count - 1; i >= 0; i--)
             {
                 if (Vassals.SameBloc(pKingdom, __result[i])) __result.RemoveAt(i);
             }
         }
+    }
+
+    [HarmonyPatch(typeof(DiplomacyHelpers), nameof(DiplomacyHelpers.getWarTarget))]
+    static class Patch_WarTarget
+    {
+        static void Prefix() => BlocFilter.Depth++;
+        static void Finalizer() => BlocFilter.Depth--;
     }
 
     // 附庸国不能自己发动战争
@@ -35,9 +49,14 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(DiplomacyHelpers), nameof(DiplomacyHelpers.getAllianceTarget))]
     static class Patch_AllianceTarget
     {
-        static bool Prefix(Kingdom pKingdomStarter, ref Kingdom __result)
+        static bool Prefix(Kingdom pKingdomStarter, ref Kingdom __result, out bool __state)
         {
-            if (!Vassals.IsVassal(pKingdomStarter)) return true;
+            __state = !Vassals.IsVassal(pKingdomStarter);
+            if (__state)
+            {
+                BlocFilter.Depth++;
+                return true;
+            }
             __result = null;
             return false;
         }
@@ -45,6 +64,11 @@ namespace DiplomacyOverhaul
         static void Postfix(ref Kingdom __result)
         {
             if (Vassals.IsVassal(__result)) __result = null;
+        }
+
+        static void Finalizer(bool __state)
+        {
+            if (__state) BlocFilter.Depth--;
         }
     }
 
