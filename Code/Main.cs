@@ -64,6 +64,10 @@ namespace DiplomacyOverhaul
                 Powers.ReleaseVassal, SpriteTextureLoader.getSprite("ui/Icons/iconRebellion")), tab);
             PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateGodPowerButton(
                 Powers.ReleaseCity, SpriteTextureLoader.getSprite("ui/Icons/iconVillages")), tab);
+            PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateGodPowerButton(
+                Powers.OrderAttack, SpriteTextureLoader.getSprite("ui/Icons/iconWar")), tab);
+            PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateGodPowerButton(
+                Powers.OrderKingdomAttack, SpriteTextureLoader.getSprite("ui/Icons/iconWarriors")), tab);
             PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateSimpleButton(
                 "vd_settings", () => NeoModLoader.ui.ModConfigureWindow.ShowWindow(Instance.GetConfig()),
                 SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);

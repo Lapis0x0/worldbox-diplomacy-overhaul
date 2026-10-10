@@ -7,6 +7,8 @@ namespace DiplomacyOverhaul
         public const string MakeVassal = "vd_make_vassal";
         public const string ReleaseVassal = "vd_release_vassal";
         public const string ReleaseCity = "vd_release_city";
+        public const string OrderAttack = "vd_order_attack";
+        public const string OrderKingdomAttack = "vd_order_kingdom_attack";
 
         static Kingdom _lord;
 
@@ -42,6 +44,85 @@ namespace DiplomacyOverhaul
             });
 
             InitReleaseCity();
+            InitOrders();
+        }
+
+        static City _source;
+
+        static void InitOrders()
+        {
+            AssetManager.powers.add(new GodPower
+            {
+                id = OrderAttack,
+                name = OrderAttack,
+                force_map_mode = MetaType.City,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    _source = null;
+                    WorldTip.showNow("vd_tip_pick_attacker_city", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickOrder(pTile, false)
+            });
+            AssetManager.powers.add(new GodPower
+            {
+                id = OrderKingdomAttack,
+                name = OrderKingdomAttack,
+                force_map_mode = MetaType.Kingdom,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    _source = null;
+                    WorldTip.showNow("vd_tip_pick_attacker_kingdom", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickOrder(pTile, true)
+            });
+        }
+
+        // 第一下点出兵方（城市或王国），第二下点目标城市
+        static bool ClickOrder(WorldTile pTile, bool pWholeKingdom)
+        {
+            City city = pTile?.zone?.city;
+            if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
+
+            if (_source == null || _source.isRekt())
+            {
+                _source = city;
+                string name = pWholeKingdom ? city.kingdom.data.name : city.data.name;
+                Tip(LM.Get("vd_tip_pick_target_city").Replace("$source$", name));
+                return false;
+            }
+            if (pWholeKingdom ? city.kingdom == _source.kingdom : city == _source)
+            {
+                _source = null;
+                WorldTip.showNow("vd_tip_cancelled", true, "top");
+                return false;
+            }
+
+            City source = _source;
+            string error;
+            if (pWholeKingdom)
+            {
+                int count = Orders.AttackWithKingdom(source.kingdom, city, out error);
+                if (error == null)
+                    Tip(LM.Get("vd_tip_kingdom_attack_ordered").Replace("$source$", source.kingdom.data.name)
+                        .Replace("$target$", city.data.name).Replace("$count$", count.ToString()));
+            }
+            else
+            {
+                error = Orders.Attack(source, city);
+                if (error == null)
+                    Tip(LM.Get("vd_tip_attack_ordered").Replace("$source$", source.data.name).Replace("$target$", city.data.name));
+            }
+            if (error != null)
+            {
+                WorldTip.showNow(error, true, "top");
+                return false;
+            }
+            _source = null;
+            return true;
         }
 
         static void InitReleaseCity()
