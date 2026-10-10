@@ -21,7 +21,7 @@ namespace DiplomacyOverhaul
 
         public static void Init()
         {
-            AssetManager.kingdoms_traits_groups.add(new KingdomTraitGroupAsset
+            Core.Upsert(AssetManager.kingdoms_traits_groups, new KingdomTraitGroupAsset
             {
                 id = GroupId,
                 name = "trait_group_vd_government",
@@ -42,7 +42,7 @@ namespace DiplomacyOverhaul
                 foreach (KingdomTrait other in traits)
                 {
                     if (other == t) continue;
-                    t.addOpposite(other.id);
+                    if (t.opposite_list == null || !t.opposite_list.Contains(other.id)) t.addOpposite(other.id);
                     t.opposite_traits.Add(other);
                 }
             }
@@ -50,7 +50,7 @@ namespace DiplomacyOverhaul
 
         static void AddTrait(string pId, string pIcon)
         {
-            AssetManager.kingdoms_traits.add(new KingdomTrait
+            Core.Upsert(AssetManager.kingdoms_traits, new KingdomTrait
             {
                 id = pId,
                 group_id = GroupId,
@@ -110,7 +110,7 @@ namespace DiplomacyOverhaul
 
         public static void UpdateAll()
         {
-            if (!Main.GovernmentAutoEnabled) return;
+            if (!Settings.GovernmentAutoEnabled) return;
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms)) Update(k);
         }
     }

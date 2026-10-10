@@ -19,14 +19,14 @@ namespace DiplomacyOverhaul
 
         public static void Check(War pWar)
         {
-            if (!Main.CapitulationEnabled || pWar.hasEnded() || pWar.isTotalWar()) return;
+            if (!Settings.CapitulationEnabled || pWar.hasEnded() || pWar.isTotalWar()) return;
 
             double now = World.world.getCurWorldTime();
             pWar.data.get(KeyLastCheck, out float last, -1f);
             if (last >= 0 && now - last < YearLength) return;
             pWar.data.set(KeyLastCheck, (float)now);
 
-            if (pWar.getAge() < Main.CapitulationMinYears) return;
+            if (pWar.getAge() < Settings.CapitulationMinYears) return;
 
             Kingdom attacker = pWar.main_attacker;
             Kingdom defender = pWar.main_defender;
@@ -52,9 +52,9 @@ namespace DiplomacyOverhaul
             int cities = pLoser.countCities();
             if (cities == 0 || pStartCities <= 0) return false;
             // 城市损失比例
-            if ((pStartCities - cities) * 100 < pStartCities * Main.CapitulationCityLoss) return false;
+            if ((pStartCities - cities) * 100 < pStartCities * Settings.CapitulationCityLoss) return false;
             // 实力差距
-            if (Vassals.Power(pWinner) * 100 < Vassals.Power(pLoser) * Main.CapitulationPowerRatio) return false;
+            if (Vassals.Power(pWinner) * 100 < Vassals.Power(pLoser) * Settings.CapitulationPowerRatio) return false;
             // 不能向自己的附庸投降
             return Vassals.Root(pWinner) != pLoser;
         }

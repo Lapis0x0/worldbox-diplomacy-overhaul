@@ -82,7 +82,7 @@ namespace DiplomacyOverhaul
             if (pVassal.hasAlliance()) pVassal.getAlliance().leave(pVassal);
 
             pVassal.data.set(KeyOverlord, pLord.id);
-            if (Main.GovernmentAutoEnabled) Government.Update(pVassal);
+            if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
 
             // 跟随宗主现有的战争
             foreach (War war in new List<War>(pLord.getWars()))
@@ -117,7 +117,7 @@ namespace DiplomacyOverhaul
         {
             if (pVassal?.data == null) return;
             pVassal.data.removeLong(KeyOverlord);
-            if (Main.GovernmentAutoEnabled) Government.Update(pVassal);
+            if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
             Refresh();
         }
 

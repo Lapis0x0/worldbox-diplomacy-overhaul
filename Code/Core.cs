@@ -1,0 +1,170 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using HarmonyLib;
+using NeoModLoader.api;
+using NeoModLoader.General;
+using NeoModLoader.General.UI.Tab;
+using UnityEngine;
+
+namespace DiplomacyOverhaul
+{
+    // 模组的全部功能都从这里启动和停止。热重载时旧版本 Stop，新编译的版本 Start，
+    // 所以 Start 必须能在已经注册过资源、已经建过 Tab 的游戏里重复执行。
+    public static class Core
+    {
+        const string HarmonyId = "shizhiyun.diplomacy_overhaul";
+        const string TabId = "vd_tab";
+
+        static Harmony _harmony;
+        public static PlotAsset plot_independence;
+
+        public static void Start(ModConfig pConfig)
+        {
+            Settings.Config = pConfig;
+            _harmony = new Harmony(HarmonyId);
+            _harmony.PatchAll(typeof(Core).Assembly);
+            AddOpinion();
+            AddPlot();
+            Government.Init();
+            AllianceView.Init();
+            Powers.Init();
+            BuildTab();
+        }
+
+        public static void Stop()
+        {
+            _harmony?.UnpatchSelf();
+            _harmony = null;
+        }
+
+        // 资源已存在时不替换对象（王国、进行中的密谋都引用着它），只把委托和简单字段更新成新代码的版本
+        public static T Upsert<T>(AssetLibrary<T> pLibrary, T pAsset) where T : Asset
+        {
+            if (!pLibrary.dict.TryGetValue(pAsset.id, out T existing)) return pLibrary.add(pAsset);
+            foreach (FieldInfo field in typeof(T).GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                Type type = field.FieldType;
+                if (typeof(Delegate).IsAssignableFrom(type) || type.IsPrimitive || type.IsEnum || type == typeof(string))
+                    field.SetValue(existing, field.GetValue(pAsset));
+            }
+            return existing;
+        }
+
+        static PowersTab FindTab()
+        {
+            PowersTab tab = PowerButtonCreator.GetTab(TabId);
+            if (tab != null) return tab;
+            foreach (PowersTab t in Resources.FindObjectsOfTypeAll<PowersTab>())
+            {
+                if (t.name == TabId) return t;
+            }
+            return null;
+        }
+
+        static void BuildTab()
+        {
+            PowersTab tab = FindTab();
+            if (tab == null)
+            {
+                tab = TabManager.CreateTab(TabId, "vd_tab", "vd_tab_description",
+                    SpriteTextureLoader.getSprite("ui/Icons/iconKingdom"));
+                tab.parentObj = tab.transform.parent.parent.gameObject;
+            }
+            else
+            {
+                // 热重载：清掉旧按钮再重建
+                foreach (PowerButton button in new List<PowerButton>(tab._power_buttons))
+                {
+                    tab._power_buttons.Remove(button);
+                    button.gameObject.SetActive(false);
+                    UnityEngine.Object.Destroy(button.gameObject);
+                }
+            }
+
+            AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
+            AddPower(tab, Powers.ReleaseVassal, "ui/Icons/iconRebellion");
+            AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
+            AddPower(tab, Powers.OrderAttack, "ui/Icons/iconWar");
+            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconWarriors");
+            PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateSimpleButton(
+                "vd_settings", () => NeoModLoader.ui.ModConfigureWindow.ShowWindow(Settings.Config),
+                SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);
+        }
+
+        static void AddPower(PowersTab pTab, string pPowerId, string pIcon)
+        {
+            PowerButtonCreator.AddButtonToTab(
+                PowerButtonCreator.CreateGodPowerButton(pPowerId, SpriteTextureLoader.getSprite(pIcon)), pTab);
+        }
+
+        static void AddOpinion()
+        {
+            Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_overlord",
+                translation_key = "opinion_vd_overlord",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Settings.OpinionBonus : 0
+            });
+        }
+
+        static void AddPlot()
+        {
+            plot_independence = Upsert(AssetManager.plots_library, new PlotAsset
+            {
+                id = "vd_independence",
+                is_basic_plot = true,
+                path_icon = "plots/icons/plot_rebellion",
+                group_id = "diplomacy",
+                min_level = 3,
+                money_cost = 20,
+                can_be_done_by_king = true,
+                check_target_kingdom = true,
+                requires_diplomacy = true,
+                check_is_possible = pActor =>
+                {
+                    Kingdom k = pActor.kingdom;
+                    Kingdom lord = Vassals.GetOverlord(k);
+                    if (lord == null) return false;
+                    if (World.world.plots.isPlotTypeAlreadyRunning(pActor, plot_independence)) return false;
+                    if (World.world.diplomacy.getOpinion(k, lord).total >= Settings.RebelOpinion) return false;
+                    // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落
+                    return Vassals.Power(lord) * 100 < Vassals.Power(k) * Settings.RebelPowerRatio;
+                },
+                try_to_start_advanced = (pActor, pAsset, pForced) =>
+                {
+                    Kingdom lord = Vassals.GetOverlord(pActor.kingdom);
+                    if (lord == null) return false;
+                    Plot plot = World.world.plots.newPlot(pActor, pAsset, pForced);
+                    plot.target_kingdom = lord;
+                    return true;
+                },
+                check_should_continue = pActor =>
+                {
+                    Plot plot = pActor.plot;
+                    return plot.target_kingdom != null && plot.target_kingdom.isAlive()
+                           && Vassals.GetOverlord(pActor.kingdom) == plot.target_kingdom;
+                },
+                action = pActor =>
+                {
+                    Kingdom rebel = pActor.kingdom;
+                    Kingdom lord = Vassals.GetOverlord(rebel);
+                    if (lord == null) return false;
+                    StartIndependenceWar(rebel, lord);
+                    return true;
+                }
+            });
+            if (!AssetManager.plots_library.basic_plots.Contains(plot_independence))
+                AssetManager.plots_library.basic_plots.Add(plot_independence);
+        }
+
+        public static void StartIndependenceWar(Kingdom pRebel, Kingdom pLord)
+        {
+            Vassals.Release(pRebel);
+            War war = World.world.diplomacy.startWar(pRebel, pLord, WarTypeLibrary.normal);
+            if (war == null) return;
+            war.data.set(Vassals.KeyWarLord, pLord.id);
+            war.data.set(Vassals.KeyWarRebel, pRebel.id);
+        }
+    }
+}

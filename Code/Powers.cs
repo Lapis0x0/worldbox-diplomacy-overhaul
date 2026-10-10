@@ -14,7 +14,7 @@ namespace DiplomacyOverhaul
 
         public static void Init()
         {
-            AssetManager.powers.add(new GodPower
+            Core.Upsert(AssetManager.powers, new GodPower
             {
                 id = MakeVassal,
                 name = MakeVassal,
@@ -29,7 +29,7 @@ namespace DiplomacyOverhaul
                 click_special_action = (pTile, _) => ClickMakeVassal(pTile)
             });
 
-            AssetManager.powers.add(new GodPower
+            Core.Upsert(AssetManager.powers, new GodPower
             {
                 id = ReleaseVassal,
                 name = ReleaseVassal,
@@ -51,7 +51,7 @@ namespace DiplomacyOverhaul
 
         static void InitOrders()
         {
-            AssetManager.powers.add(new GodPower
+            Core.Upsert(AssetManager.powers, new GodPower
             {
                 id = OrderAttack,
                 name = OrderAttack,
@@ -65,7 +65,7 @@ namespace DiplomacyOverhaul
                 },
                 click_special_action = (pTile, _) => ClickOrder(pTile, false)
             });
-            AssetManager.powers.add(new GodPower
+            Core.Upsert(AssetManager.powers, new GodPower
             {
                 id = OrderKingdomAttack,
                 name = OrderKingdomAttack,
@@ -127,7 +127,7 @@ namespace DiplomacyOverhaul
 
         static void InitReleaseCity()
         {
-            AssetManager.powers.add(new GodPower
+            Core.Upsert(AssetManager.powers, new GodPower
             {
                 id = ReleaseCity,
                 name = ReleaseCity,

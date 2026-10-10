@@ -10,6 +10,9 @@ WorldBox 的 NeoModLoader 模组：附庸国、独立战争、战败投降与政
 - 游戏读取的是 `worldbox/Mods/DiplomacyOverhaul`，它是指向本仓库的符号链接
 - 本地编译检查：`dotnet build`（需要 .NET SDK，引用游戏目录里的程序集）
 - 游戏内由 NML 编译 `Code/` 下的源码；`bin/`、`obj/` 和以 `.` 开头的文件不会被编译或上传
+- 热重载：游戏开着时运行 `tools/hot-reload.sh`，它把 `Code/` 编译到 `bin/hot/` 并写入 `bin/reload.signal`；模组每秒检查一次信号，停掉旧版本 `Core`、载入新 dll 并启动，同时重载 `Locales/`
+  - 需要重启游戏的改动：`Main.cs`、`DevReload.cs`、`mod.json`、`default_config.json`（新增设置项）
+  - `Core.Start` 必须可重复执行：资源用 `Core.Upsert` 注册，Tab 按钮会被清掉重建
 
 ## 进度
 - [x] 附庸关系、外交规则、独立密谋、战败投降
