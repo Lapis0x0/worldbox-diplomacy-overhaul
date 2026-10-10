@@ -23,9 +23,9 @@ namespace DiplomacyOverhaul
         public static string EnsureWar(Kingdom pAttacker, Kingdom pTarget)
         {
             if (pAttacker == null || pTarget == null || pAttacker == pTarget) return "vd_tip_invalid";
-            if (Vassals.SameBloc(pAttacker, pTarget)) return "vd_tip_same_bloc";
             if (pAttacker.isEnemy(pTarget)) return null;
-            if (Vassals.IsVassal(pAttacker)) return "vd_tip_vassal_no_war";
+            // 附庸不能对第三国宣战；对自己集团开战则允许，开战后附庸关系自动解除
+            if (Vassals.IsVassal(pAttacker) && !Vassals.SameBloc(pAttacker, pTarget)) return "vd_tip_vassal_no_war";
             if (World.world.diplomacy.startWar(pAttacker, pTarget, WarTypeLibrary.normal) == null) return "vd_tip_war_failed";
             return null;
         }
