@@ -6,6 +6,7 @@ using NeoModLoader.api;
 using NeoModLoader.General;
 using NeoModLoader.General.UI.Tab;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DiplomacyOverhaul
 {
@@ -80,7 +81,7 @@ namespace DiplomacyOverhaul
             }
             else
             {
-                // 热重载：只清掉我们自己的按钮再重建，NML 从原版复制来的返回按钮等要保留
+                // 热重载：只清掉我们自己的按钮和分隔线再重建，NML 从原版复制来的返回按钮等要保留
                 foreach (PowerButton button in new List<PowerButton>(tab._power_buttons))
                 {
                     if (button == null || !OwnButtons.Contains(button.name)) continue;
@@ -88,19 +89,43 @@ namespace DiplomacyOverhaul
                     button.gameObject.SetActive(false);
                     UnityEngine.Object.Destroy(button.gameObject);
                 }
+                for (int i = tab.transform.childCount - 1; i >= 0; i--)
+                {
+                    GameObject child = tab.transform.GetChild(i).gameObject;
+                    if (child.name != SeparatorName) continue;
+                    child.SetActive(false);
+                    UnityEngine.Object.Destroy(child);
+                }
             }
 
-            AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
-            AddPower(tab, Powers.ReleaseVassal, "ui/Icons/iconRebellion");
-            AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
-            AddPower(tab, Powers.OrderAttack, "ui/Icons/iconWar");
-            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconWarriors");
+            // 设置 | 附庸 | 战争与和平 | 城镇管理
             PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateSimpleButton(
                 "vd_settings", () => NeoModLoader.ui.ModConfigureWindow.ShowWindow(Settings.Config),
                 SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);
+            AddSeparator(tab);
+            AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
+            AddPower(tab, Powers.ReleaseVassal, "ui/Icons/iconRebellion");
+            AddSeparator(tab);
+            AddPower(tab, Powers.OrderAttack, "ui/Icons/iconWar");
+            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconWarriors");
+            AddSeparator(tab);
+            AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
 
             // PowersTab 只在激活的子节点个数变化时才重新排版；热重载换按钮后个数可能不变，强制它重排
             tab._children = -1;
+        }
+
+        const string SeparatorName = "_line_vd";
+
+        // 原版分组用的竖线；PowersTab.sortButtons 会把名字以 _line 开头的子节点当作分隔线排版
+        static void AddSeparator(PowersTab pTab)
+        {
+            Image prefab = ResourcesFinder.FindResource<GameObject>("_line").GetComponent<Image>();
+            Image line = UnityEngine.Object.Instantiate(prefab, pTab.transform);
+            line.name = SeparatorName;
+            line.enabled = true;
+            line.gameObject.SetActive(true);
+            line.transform.localScale = new Vector3(1f, 48.3f, 1f);
         }
 
         static void AddPower(PowersTab pTab, string pPowerId, string pIcon)
