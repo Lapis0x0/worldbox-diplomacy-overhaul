@@ -131,3 +131,20 @@ namespace DiplomacyOverhaul
         }
     }
 }
+
+namespace DiplomacyOverhaul
+{
+    // 鼠标悬停在疆域上的王国提示：副标题"王国"换成政体名
+    [HarmonyPatch(typeof(TooltipLibrary), "showKingdom")]
+    static class Patch_KingdomTooltip
+    {
+        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        {
+            Kingdom k = pData?.kingdom;
+            if (k == null) return;
+            KingdomTrait gov = Government.Current(k);
+            if (gov == null) return;
+            pTooltip.setTitle(k.name, gov.getLocaleID(), k.getColor().color_text);
+        }
+    }
+}
