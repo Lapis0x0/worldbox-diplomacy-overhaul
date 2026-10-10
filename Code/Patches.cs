@@ -123,14 +123,40 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 王国窗口：显示宗主 / 附庸
+    // 王国窗口：标题下方的"王国"换成政体名，并显示宗主 / 附庸
     [HarmonyPatch(typeof(KingdomWindow), "showStatsRows")]
     static class Patch_KingdomWindow
     {
+        const string VanillaTitleKey = "kingdom";
+        static readonly Dictionary<KingdomWindow, LocalizedText> _titles = new Dictionary<KingdomWindow, LocalizedText>();
+
+        static LocalizedText FindTitle(KingdomWindow pWindow)
+        {
+            if (_titles.TryGetValue(pWindow, out LocalizedText cached) && cached != null) return cached;
+            foreach (LocalizedText t in pWindow.GetComponentsInChildren<LocalizedText>(true))
+            {
+                if (t.key == VanillaTitleKey || t.key.StartsWith("kingdom_trait_vd_gov_"))
+                {
+                    _titles[pWindow] = t;
+                    return t;
+                }
+            }
+            return null;
+        }
+
+        static void UpdateTitle(KingdomWindow pWindow, Kingdom pKingdom)
+        {
+            LocalizedText title = FindTitle(pWindow);
+            if (title == null) return;
+            string key = Government.Current(pKingdom)?.getLocaleID() ?? VanillaTitleKey;
+            if (title.key != key) title.setKeyAndUpdate(key);
+        }
+
         static void Postfix(KingdomWindow __instance)
         {
             Kingdom k = SelectedMetas.selected_kingdom;
             if (k == null) return;
+            UpdateTitle(__instance, k);
 
             Kingdom lord = Vassals.GetOverlord(k);
             if (lord != null)

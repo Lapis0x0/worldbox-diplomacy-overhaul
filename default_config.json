@@ -56,5 +56,13 @@
       "MinIntVal": 100,
       "MaxIntVal": 500
     }
+  ],
+  "vd_group_government": [
+    {
+      "Id": "vd_gov_auto_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconCrown",
+      "BoolVal": true
+    }
   ]
 }

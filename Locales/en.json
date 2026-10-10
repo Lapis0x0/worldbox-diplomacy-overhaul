@@ -33,5 +33,16 @@
   "vd_capitulation_min_years": "Minimum war years before capitulation",
   "vd_capitulation_city_loss": "Cities lost (% of pre-war count)",
   "vd_capitulation_power_ratio": "Winner power as % of loser power",
-  "vd_tip_capitulated": "$vassal$ capitulated and became a vassal of $lord$"
+  "vd_tip_capitulated": "$vassal$ capitulated and became a vassal of $lord$",
+  "trait_group_vd_government": "Government",
+  "kingdom_trait_vd_gov_city_state": "City-State",
+  "kingdom_trait_vd_gov_city_state_info": "A realm of a single city",
+  "kingdom_trait_vd_gov_kingdom": "Kingdom",
+  "kingdom_trait_vd_gov_kingdom_info": "A realm of two to five cities",
+  "kingdom_trait_vd_gov_empire": "Empire",
+  "kingdom_trait_vd_gov_empire_info": "A vast realm of six or more cities",
+  "kingdom_trait_vd_gov_duchy": "Duchy",
+  "kingdom_trait_vd_gov_duchy_info": "A vassal sworn to an overlord",
+  "vd_group_government": "Government",
+  "vd_gov_auto_enabled": "Auto-assign government by city count and vassal status (manual picks are kept)"
 }

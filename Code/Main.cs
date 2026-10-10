@@ -22,6 +22,14 @@ namespace DiplomacyOverhaul
                 catch { return true; }
             }
         }
+        public static bool GovernmentAutoEnabled
+        {
+            get
+            {
+                try { return Instance.GetConfig()["vd_group_government"]["vd_gov_auto_enabled"].BoolVal; }
+                catch { return true; }
+            }
+        }
         public static int CapitulationMinYears => Cfg("vd_capitulation_min_years", 5, "vd_group_capitulation");
         public static int CapitulationCityLoss => Cfg("vd_capitulation_city_loss", 50, "vd_group_capitulation");
         public static int CapitulationPowerRatio => Cfg("vd_capitulation_power_ratio", 200, "vd_group_capitulation");
@@ -37,6 +45,8 @@ namespace DiplomacyOverhaul
             Harmony.CreateAndPatchAll(typeof(Main).Assembly, "shizhiyun.diplomacy_overhaul");
             AddOpinion();
             AddPlot();
+            Government.Init();
+            AllianceView.Init();
             Powers.Init();
             CreateTab();
             LogInfo("外交大修 loaded");

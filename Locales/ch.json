@@ -33,5 +33,16 @@
   "vd_capitulation_min_years": "开战至少多少年后才可能投降",
   "vd_capitulation_city_loss": "丢失城市达到开战时的百分之多少",
   "vd_capitulation_power_ratio": "胜方实力达到败方的百分之多少",
-  "vd_tip_capitulated": "$vassal$ 投降，成为 $lord$ 的附庸"
+  "vd_tip_capitulated": "$vassal$ 投降，成为 $lord$ 的附庸",
+  "trait_group_vd_government": "政体",
+  "kingdom_trait_vd_gov_city_state": "城邦",
+  "kingdom_trait_vd_gov_city_state_info": "只有一座城市的国家",
+  "kingdom_trait_vd_gov_kingdom": "王国",
+  "kingdom_trait_vd_gov_kingdom_info": "拥有二至五座城市的国家",
+  "kingdom_trait_vd_gov_empire": "帝国",
+  "kingdom_trait_vd_gov_empire_info": "拥有六座及以上城市的庞大国家",
+  "kingdom_trait_vd_gov_duchy": "公国",
+  "kingdom_trait_vd_gov_duchy_info": "效忠于宗主国的附庸",
+  "vd_group_government": "政体",
+  "vd_gov_auto_enabled": "按城市数和附庸状态自动判定政体（手动选择的政体会被保留）"
 }
