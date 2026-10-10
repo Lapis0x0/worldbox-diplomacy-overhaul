@@ -1,6 +1,11 @@
 # 外交大修 Diplomacy Overhaul
 
-WorldBox 的 NeoModLoader 模组：附庸国、独立密谋、战败投降。
+WorldBox 的 NeoModLoader 模组：附庸国、独立战争、战败投降与政体系统。
+
+- Steam 创意工坊：https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
+- 依赖：[NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+
+## 本地开发
 
 - 游戏读取的是 `worldbox/Mods/DiplomacyOverhaul`，它是指向本仓库的符号链接
 - 本地编译检查：`dotnet build`（需要 .NET SDK，引用游戏目录里的程序集）
@@ -15,5 +20,5 @@ WorldBox 的 NeoModLoader 模组：附庸国、独立密谋、战败投降。
 - [x] 预览图、创意工坊介绍
 - [x] 分封附庸：点击非首都城市，独立成原王国的附庸
 - [ ] 游戏内实测 v0.2（联盟视图、政体、窗口标题）
-- [ ] 上传创意工坊（在游戏里由 NML 上传）
+- [x] 上传创意工坊（在游戏里由 NML 上传：模组列表里连点封面 8 次后等 3 秒）
 - [ ] 政体的数值加成与行为差异
