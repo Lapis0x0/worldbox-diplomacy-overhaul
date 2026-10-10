@@ -10,7 +10,7 @@ namespace DiplomacyOverhaul
         public const string OrderAttack = "vd_order_attack";
         public const string OrderKingdomAttack = "vd_order_kingdom_attack";
 
-        static Kingdom _lord;
+        internal static Kingdom _lord;
 
         public static void Init()
         {
@@ -47,7 +47,7 @@ namespace DiplomacyOverhaul
             InitOrders();
         }
 
-        static City _source;
+        internal static City _source;
 
         static void InitOrders()
         {

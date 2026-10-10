@@ -29,6 +29,7 @@ namespace DiplomacyOverhaul
             Government.Init();
             AllianceView.Init();
             Powers.Init();
+            Visuals.Init();
             BuildTab();
         }
 
