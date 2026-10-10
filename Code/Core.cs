@@ -51,6 +51,12 @@ namespace DiplomacyOverhaul
             return existing;
         }
 
+        static readonly HashSet<string> OwnButtons = new HashSet<string>
+        {
+            Powers.MakeVassal, Powers.ReleaseVassal, Powers.ReleaseCity,
+            Powers.OrderAttack, Powers.OrderKingdomAttack, "vd_settings"
+        };
+
         static PowersTab FindTab()
         {
             PowersTab tab = PowerButtonCreator.GetTab(TabId);
@@ -73,9 +79,10 @@ namespace DiplomacyOverhaul
             }
             else
             {
-                // 热重载：清掉旧按钮再重建
+                // 热重载：只清掉我们自己的按钮再重建，NML 从原版复制来的返回按钮等要保留
                 foreach (PowerButton button in new List<PowerButton>(tab._power_buttons))
                 {
+                    if (button == null || !OwnButtons.Contains(button.name)) continue;
                     tab._power_buttons.Remove(button);
                     button.gameObject.SetActive(false);
                     UnityEngine.Object.Destroy(button.gameObject);
