@@ -8,7 +8,7 @@ namespace DiplomacyOverhaul
         const string KeyAttackerCities = "vd_att_cities";
         const string KeyDefenderCities = "vd_def_cities";
         const string KeyLastCheck = "vd_last_check";
-        const double CheckInterval = 60.0; // 约一年（Date 里一个月 = 5）
+        public const double YearLength = 60.0; // 一个游戏年（Date 里一个月 = 5）
 
         public static void RecordStart(War pWar)
         {
@@ -23,7 +23,7 @@ namespace DiplomacyOverhaul
 
             double now = World.world.getCurWorldTime();
             pWar.data.get(KeyLastCheck, out float last, -1f);
-            if (last >= 0 && now - last < CheckInterval) return;
+            if (last >= 0 && now - last < YearLength) return;
             pWar.data.set(KeyLastCheck, (float)now);
 
             if (pWar.getAge() < Main.CapitulationMinYears) return;

@@ -115,17 +115,18 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 和投降检查一样，每个游戏年判定一次
     [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.update))]
     static class Patch_GovernmentTick
     {
-        static float _timer;
+        static double _lastCheck = -1;
 
-        static void Postfix(float pElapsed)
+        static void Postfix()
         {
-            if (World.world.isPaused()) return;
-            _timer += pElapsed;
-            if (_timer < 3f) return;
-            _timer = 0f;
+            double now = World.world.getCurWorldTime();
+            // 读档或换世界后时间可能倒退
+            if (_lastCheck >= 0 && now >= _lastCheck && now - _lastCheck < Capitulation.YearLength) return;
+            _lastCheck = now;
             Government.UpdateAll();
         }
     }
