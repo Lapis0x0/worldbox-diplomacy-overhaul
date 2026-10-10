@@ -87,6 +87,36 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 宗主退出一场战争（议和、战败、联盟调整……）时，附庸跟着以同样方式退出
+    [HarmonyPatch(typeof(War), "removeFromWar")]
+    static class Patch_RemoveFromWar
+    {
+        static void Postfix(War __instance, Kingdom pKingdom, bool pInPeace)
+        {
+            if (__instance.hasEnded()) return;
+            foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+            {
+                if (__instance.hasEnded()) return;
+                if (__instance.hasKingdom(v)) __instance.removeFromWar(v, pInPeace);
+            }
+        }
+    }
+
+    // 兜底：大约每个游戏月把所有附庸的战争状态同步一次
+    [HarmonyPatch(typeof(WarManager), nameof(WarManager.update))]
+    static class Patch_WarSyncTick
+    {
+        static double _last = -1;
+
+        static void Postfix()
+        {
+            double now = World.world.getCurWorldTime();
+            if (_last >= 0 && now >= _last && now - _last < 5.0) return;
+            _last = now;
+            Vassals.SyncAllWars();
+        }
+    }
+
     // 独立战争结束：宗主获胜则重新成为附庸，否则彻底独立
     [HarmonyPatch(typeof(WarManager), nameof(WarManager.endWar))]
     static class Patch_EndWar

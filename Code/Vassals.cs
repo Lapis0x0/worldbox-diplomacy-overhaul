@@ -84,13 +84,7 @@ namespace DiplomacyOverhaul
             pVassal.data.set(KeyOverlord, pLord.id);
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
 
-            // 跟随宗主现有的战争
-            foreach (War war in new List<War>(pLord.getWars()))
-            {
-                if (war.hasEnded() || war.hasKingdom(pVassal)) continue;
-                if (war.isAttacker(pLord)) war.joinAttackers(pVassal);
-                else if (war.isDefender(pLord)) war.joinDefenders(pVassal);
-            }
+            SyncWars(pVassal, pLord);
 
             Refresh();
             return null;
@@ -111,6 +105,33 @@ namespace DiplomacyOverhaul
             pNew = pCity.makeOwnKingdom(ruler);
             ruler.joinCity(pCity);
             return MakeVassal(owner, pNew);
+        }
+
+        // 附庸的战争状态与宗主保持一致：只参加宗主参加的战争，并且站在同一边
+        public static void SyncWars(Kingdom pVassal, Kingdom pLord)
+        {
+            foreach (War war in new List<War>(pVassal.getWars()))
+            {
+                if (war.hasEnded() || war.isTotalWar()) continue;
+                bool sameSide = (war.isAttacker(pVassal) && war.isAttacker(pLord))
+                                || (war.isDefender(pVassal) && war.isDefender(pLord));
+                if (!sameSide) war.removeFromWar(pVassal, true);
+            }
+            foreach (War war in new List<War>(pLord.getWars()))
+            {
+                if (war.hasEnded() || war.isTotalWar() || war.hasKingdom(pVassal)) continue;
+                if (war.isAttacker(pLord)) war.joinAttackers(pVassal);
+                else if (war.isDefender(pLord)) war.joinDefenders(pVassal);
+            }
+        }
+
+        public static void SyncAllWars()
+        {
+            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            {
+                Kingdom lord = GetOverlord(k);
+                if (lord != null) SyncWars(k, lord);
+            }
         }
 
         public static void Release(Kingdom pVassal)
