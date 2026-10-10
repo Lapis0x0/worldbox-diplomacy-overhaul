@@ -94,16 +94,27 @@ namespace DiplomacyOverhaul
                 Tip(LM.Get("vd_tip_pick_target_city").Replace("$source$", name));
                 return false;
             }
-            if (pWholeKingdom ? city.kingdom == _source.kingdom : city == _source)
-            {
-                _source = null;
-                WorldTip.showNow("vd_tip_cancelled", true, "top");
-                return false;
-            }
-
             City source = _source;
             string error;
-            if (pWholeKingdom)
+            if (city.kingdom == source.kingdom)
+            {
+                // 点的是自己国家的城市：召回军队
+                if (pWholeKingdom)
+                {
+                    int moved = Orders.RecallKingdom(source.kingdom, city);
+                    error = moved == 0 ? "vd_tip_no_army" : null;
+                    if (error == null)
+                        Tip(LM.Get("vd_tip_kingdom_recall_ordered").Replace("$source$", source.kingdom.data.name)
+                            .Replace("$target$", city.data.name).Replace("$count$", moved.ToString()));
+                }
+                else
+                {
+                    error = Orders.Recall(source, city);
+                    if (error == null)
+                        Tip(LM.Get("vd_tip_recall_ordered").Replace("$source$", source.data.name).Replace("$target$", city.data.name));
+                }
+            }
+            else if (pWholeKingdom)
             {
                 int count = Orders.AttackWithKingdom(source.kingdom, city, out error);
                 if (error == null)

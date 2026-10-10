@@ -52,9 +52,9 @@
   "vd_tip_city_is_capital": "A capital or a kingdom's only city cannot be released",
   "vd_tip_city_empty": "This city has no inhabitants to found a kingdom",
   "vd_order_attack": "Order Attack",
-  "vd_order_attack_description": "Click one of your cities, then a target city: that city's army attacks immediately. Declares war if needed and dispatches a transport ship across the sea",
+  "vd_order_attack_description": "Click one of your cities, then a target city: an enemy city is attacked immediately (war is declared if needed); one of your own cities makes the army march there. Transport ships are dispatched across the sea",
   "vd_order_kingdom_attack": "Kingdom Offensive",
-  "vd_order_kingdom_attack_description": "Click your kingdom, then a target city: every city's army attacks it. Declares war if needed and dispatches transport ships across the sea",
+  "vd_order_kingdom_attack_description": "Click your kingdom, then a target city: an enemy city is attacked by every army (war is declared if needed); one of your own cities makes every army gather there. Transport ships are dispatched across the sea",
   "vd_tip_pick_attacker_city": "Select the attacking city",
   "vd_tip_pick_attacker_kingdom": "Select the attacking kingdom",
   "vd_tip_pick_target_city": "Attacker: $source$. Now select the target city",
@@ -64,5 +64,7 @@
   "vd_tip_same_bloc": "An overlord and its vassal cannot go to war",
   "vd_tip_vassal_no_war": "A vassal cannot declare war on its own",
   "vd_tip_war_failed": "Cannot declare war",
-  "vd_tip_no_boat": "No transport ship available and no docks to build one"
+  "vd_tip_no_boat": "No transport ship available and no docks to build one",
+  "vd_tip_recall_ordered": "The army of $source$ heads to $target$",
+  "vd_tip_kingdom_recall_ordered": "$count$ armies of $source$ head to $target$"
 }

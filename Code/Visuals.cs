@@ -8,6 +8,11 @@ namespace DiplomacyOverhaul
     {
         static readonly Color ColorSource = new Color(1f, 1f, 1f, 0.35f);
         static readonly Color ColorTarget = new Color(1f, 0.15f, 0.15f, 0.3f);
+        static readonly Color ColorRally = new Color(0.3f, 1f, 0.4f, 0.3f);
+
+        // 选好出兵方后：自己国家的城市是召回目的地（绿），其他是进攻目标（红）
+        static Color TargetColor(City pSource, City pTarget) =>
+            pSource != null && pTarget.kingdom == pSource.kingdom ? ColorRally : ColorTarget;
 
         public static void Init()
         {
@@ -101,15 +106,16 @@ namespace DiplomacyOverhaul
             {
                 // 第一下：点亮鼠标下的城市；第二下：出兵城市点亮，目标城市标红
                 if (source != null) Zones(pAsset, source.zones, ColorSource);
-                if (hovered != null && hovered != source) Zones(pAsset, hovered.zones, source != null ? ColorTarget : ColorSource);
+                if (hovered != null && hovered != source) Zones(pAsset, hovered.zones, source != null ? TargetColor(source, hovered) : ColorSource);
+                else if (hovered != null && source != null) Zones(pAsset, hovered.zones, ColorRally);
             }
             else if (Selected(Powers.OrderKingdomAttack))
             {
                 if (source != null) Kingdom(pAsset, source.kingdom, ColorSource);
-                if (hovered != null && (source == null || hovered.kingdom != source.kingdom))
+                if (hovered != null)
                 {
                     if (source == null) Kingdom(pAsset, hovered.kingdom, ColorSource);
-                    else Zones(pAsset, hovered.zones, ColorTarget);
+                    else Zones(pAsset, hovered.zones, TargetColor(source, hovered));
                 }
             }
             else if (Selected(Powers.MakeVassal))

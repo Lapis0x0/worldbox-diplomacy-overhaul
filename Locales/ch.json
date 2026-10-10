@@ -52,9 +52,9 @@
   "vd_tip_city_is_capital": "首都或唯一的城市不能分封",
   "vd_tip_city_empty": "这座城市没有居民，无法建国",
   "vd_order_attack": "指定进攻",
-  "vd_order_attack_description": "先点我方城市，再点目标城市：这座城市的军队立即出兵进攻。未交战时会直接宣战，跨海时自动调派运输船",
+  "vd_order_attack_description": "先点我方城市，再点目标城市：点敌方城市就立即进攻（未交战会直接宣战），点自己国家的城市就让军队前往那里。跨海时自动调派运输船",
   "vd_order_kingdom_attack": "举国进攻",
-  "vd_order_kingdom_attack_description": "先点我方王国，再点目标城市：全国所有城市的军队一起进攻。未交战时会直接宣战，跨海时自动调派运输船",
+  "vd_order_kingdom_attack_description": "先点我方王国，再点目标城市：点敌方城市就举国进攻（未交战会直接宣战），点自己国家的城市就让全国军队前往那里集结。跨海时自动调派运输船",
   "vd_tip_pick_attacker_city": "选择出兵的城市",
   "vd_tip_pick_attacker_kingdom": "选择出兵的王国",
   "vd_tip_pick_target_city": "出兵方：$source$，现在选择要进攻的城市",
@@ -64,5 +64,7 @@
   "vd_tip_same_bloc": "宗主与附庸之间不能开战",
   "vd_tip_vassal_no_war": "附庸国不能自行宣战",
   "vd_tip_war_failed": "无法宣战",
-  "vd_tip_no_boat": "没有可用的运输船，也没有港口可以造船"
+  "vd_tip_no_boat": "没有可用的运输船，也没有港口可以造船",
+  "vd_tip_recall_ordered": "$source$ 的军队前往 $target$",
+  "vd_tip_kingdom_recall_ordered": "$source$ 的 $count$ 支军队前往 $target$"
 }

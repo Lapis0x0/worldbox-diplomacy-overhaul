@@ -32,6 +32,58 @@ namespace DiplomacyOverhaul
 
         static bool HasArmy(City pCity) => pCity.hasArmy() && pCity.army.countUnits() > 0;
 
+        // 召回：队长 → 召回城市里的目标地块，由 Patch_RallyTile 在原版"随机走动"任务里取用
+        static readonly Dictionary<Actor, WorldTile> _rally = new Dictionary<Actor, WorldTile>();
+
+        public static bool TakeRallyTile(Actor pActor, out WorldTile pTile)
+        {
+            if (!_rally.TryGetValue(pActor, out pTile)) return false;
+            _rally.Remove(pActor);
+            return true;
+        }
+
+        // 点的是自己国家的城市：军队前往那座城，到了之后交还给原版 AI
+        public static string Recall(City pFrom, City pDest)
+        {
+            if (pFrom == null || pDest == null || pFrom.kingdom != pDest.kingdom) return "vd_tip_invalid";
+            if (!HasArmy(pFrom)) return "vd_tip_no_army";
+            MoveArmy(pFrom, pDest);
+            return null;
+        }
+
+        public static int RecallKingdom(Kingdom pKingdom, City pDest)
+        {
+            int count = 0;
+            foreach (City city in new List<City>(pKingdom.getCities()))
+            {
+                if (!HasArmy(city)) continue;
+                MoveArmy(city, pDest);
+                count++;
+            }
+            return count;
+        }
+
+        static void MoveArmy(City pFrom, City pDest)
+        {
+            pFrom.target_attack_city = null;
+            pFrom.target_attack_zone = null;
+            _forced.Remove(pFrom.id);
+
+            WorldTile tile = pDest.zones.GetRandom().tiles.GetRandom();
+            Actor captain = pFrom.army.getCaptain();
+            WorldTile from = (captain ?? pFrom.army.units[0]).current_tile;
+            if (from.isSameIsland(tile))
+            {
+                if (captain == null) return;
+                _rally[captain] = tile;
+                captain.setTask("warrior_army_leader_move_random", true, false, true);
+            }
+            else
+            {
+                Transport.Dispatch(pFrom, tile);
+            }
+        }
+
         // 返回 null 表示成功，否则返回失败原因的本地化 key
         public static string Attack(City pFrom, City pTarget)
         {
@@ -215,6 +267,18 @@ namespace DiplomacyOverhaul
             if (actor == null) return null;
             pDocks.addBoatToDock(actor);
             return actor.getSimpleComponent<Boat>();
+        }
+    }
+
+    [HarmonyPatch(typeof(ai.behaviours.BehFindRandomTile), nameof(ai.behaviours.BehFindRandomTile.execute))]
+    static class Patch_RallyTile
+    {
+        static bool Prefix(Actor pActor, ref ai.behaviours.BehResult __result)
+        {
+            if (!Orders.TakeRallyTile(pActor, out WorldTile tile)) return true;
+            pActor.beh_tile_target = tile;
+            __result = ai.behaviours.BehResult.Continue;
+            return false;
         }
     }
 
