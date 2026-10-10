@@ -5,6 +5,8 @@
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <LangVersion>latest</LangVersion>
+    <!-- 与 NML 编译一致：unsafe 会让 Mono 跳过对私有成员的访问检查，热重载载入的 dll 需要它 -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <NoWarn>CS0436</NoWarn>
     <GameData>$(HOME)/Library/Application Support/Steam/steamapps/common/worldbox/worldbox.app/Contents/Resources/Data</GameData>

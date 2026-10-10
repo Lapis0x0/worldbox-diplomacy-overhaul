@@ -81,21 +81,35 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 跨海：士兵立即登记打车请求，把最近的空闲运输船派过去；没有就在港口造一艘
+    // 跨海：每支军队单独一张打车单、单独一艘船，接人地点就在这支军队的队长脚下。
+    // 不用原版的拼单：原版会把同岛出发的军队并成一单，只在第一个人那里接人。
     public static class Transport
     {
         public static void Dispatch(City pCity, WorldTile pTarget)
         {
-            TaxiRequest request = null;
-            foreach (Actor unit in new List<Actor>(pCity.army.units))
+            var units = new List<Actor>();
+            foreach (Actor unit in pCity.army.units)
             {
-                if (unit.isRekt() || unit.is_inside_boat) continue;
-                TaxiManager.newRequest(unit, pTarget);
-                request = request ?? TaxiManager.getRequestForActor(unit);
+                if (!unit.isRekt() && !unit.is_inside_boat) units.Add(unit);
             }
-            if (request == null || request.state != TaxiRequestState.Pending) return;
+            if (units.Count == 0) return;
 
-            Boat boat = FindIdleBoat(pCity.kingdom, request.getTileStart()) ?? SpawnBoat(pCity, request.getTileStart());
+            // 把这些士兵从原来的单子里移出来
+            foreach (Actor unit in units)
+            {
+                TaxiRequest old = TaxiManager.getRequestForActor(unit);
+                if (old == null || old.isState(TaxiRequestState.Transporting)) continue;
+                old.embarkToBoat(unit); // 原版用它把已上船的人从名单里移除，这里借来做移除
+                if (old.countActors() == 0 && old.isState(TaxiRequestState.Pending)) TaxiManager.cancelRequest(old);
+            }
+
+            Actor lead = pCity.army.getCaptain();
+            if (lead == null || lead.isRekt() || lead.is_inside_boat) lead = units[0];
+            var request = new TaxiRequest(lead, pCity.kingdom, lead.current_tile, pTarget);
+            foreach (Actor unit in units) request.addActor(unit);
+            TaxiManager.list.Add(request);
+
+            Boat boat = FindIdleBoat(pCity.kingdom, lead.current_tile) ?? SpawnBoat(pCity, lead.current_tile);
             if (boat == null)
             {
                 WorldTip.showNow("vd_tip_no_boat", true, "top");
@@ -159,6 +173,17 @@ namespace DiplomacyOverhaul
             if (actor == null) return null;
             dock.addBoatToDock(actor);
             return actor.getSimpleComponent<Boat>();
+        }
+    }
+
+    // 士兵已经在一张有效的单子里时，不让原版 AI 再把他拼进别的单子
+    [HarmonyPatch(typeof(TaxiManager), nameof(TaxiManager.newRequest))]
+    static class Patch_TaxiNewRequest
+    {
+        static bool Prefix(Actor pActor)
+        {
+            TaxiRequest current = TaxiManager.getRequestForActor(pActor);
+            return current == null || current.isState(TaxiRequestState.Finished);
         }
     }
 
