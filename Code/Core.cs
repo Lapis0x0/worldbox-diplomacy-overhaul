@@ -107,8 +107,8 @@ namespace DiplomacyOverhaul
             AddPower(tab, Powers.ReleaseVassal, "ui/Icons/iconRebellion");
             AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
             AddSeparator(tab);
-            AddPower(tab, Powers.OrderAttack, "ui/Icons/iconWar");
-            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconWarriors");
+            AddPower(tab, Powers.OrderAttack, "ui/Icons/iconArrowAttackTarget");
+            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconArmyList");
             AddSeparator(tab);
             AddPower(tab, Powers.TransferCity, "ui/Icons/iconCityConquered");
             AddPower(tab, Powers.Annex, "ui/Icons/iconKingdomList");
