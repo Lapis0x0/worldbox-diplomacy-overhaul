@@ -1,0 +1,9 @@
+{
+  "name": "外交大修 Diplomacy Overhaul",
+  "author": "shizhiyun",
+  "version": "0.1.0",
+  "description": "加入附庸国外交关系：宗主与附庸不互相开战、附庸跟随参战、独立密谋与独立战争。",
+  "GUID": "shizhiyun_diplomacy_overhaul",
+  "targetGameBuild": 719,
+  "UsePublicizedAssembly": true
+}

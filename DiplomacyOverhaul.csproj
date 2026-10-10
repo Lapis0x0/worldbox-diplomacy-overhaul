@@ -1,0 +1,19 @@
+<!-- 只用于本地编译检查和 IDE 补全；游戏里由 NML 直接编译 Code/ 下的源码 -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <NoStdLib>true</NoStdLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0436</NoWarn>
+    <GameData>$(HOME)/Library/Application Support/Steam/steamapps/common/worldbox/worldbox.app/Contents/Resources/Data</GameData>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Code/**/*.cs" />
+    <Reference Include="$(GameData)/Managed/*.dll" Exclude="$(GameData)/Managed/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="$(GameData)/StreamingAssets/mods/NML/Assembly-CSharp-Publicized.dll" Private="false" />
+    <Reference Include="$(GameData)/StreamingAssets/mods/NeoModLoader.dll" Private="false" />
+    <Reference Include="$(GameData)/StreamingAssets/mods/NML/Assemblies/0Harmony.dll" Private="false" />
+  </ItemGroup>
+</Project>

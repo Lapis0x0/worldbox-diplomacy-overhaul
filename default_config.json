@@ -1,0 +1,60 @@
+{
+  "vd_group_vassal": [
+    {
+      "Id": "vd_opinion_bonus",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconKingdom",
+      "IntVal": 30,
+      "MinIntVal": 0,
+      "MaxIntVal": 200
+    },
+    {
+      "Id": "vd_rebel_opinion",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconPlot",
+      "IntVal": 0,
+      "MinIntVal": -200,
+      "MaxIntVal": 100
+    },
+    {
+      "Id": "vd_rebel_power_ratio",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconWar",
+      "IntVal": 120,
+      "MinIntVal": 50,
+      "MaxIntVal": 300
+    }
+  ],
+  "vd_group_capitulation": [
+    {
+      "Id": "vd_capitulation_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconWar",
+      "BoolVal": true
+    },
+    {
+      "Id": "vd_capitulation_min_years",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconWar",
+      "IntVal": 5,
+      "MinIntVal": 1,
+      "MaxIntVal": 50
+    },
+    {
+      "Id": "vd_capitulation_city_loss",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconKingdomDestroyed",
+      "IntVal": 50,
+      "MinIntVal": 10,
+      "MaxIntVal": 90
+    },
+    {
+      "Id": "vd_capitulation_power_ratio",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconWarriors",
+      "IntVal": 200,
+      "MinIntVal": 100,
+      "MaxIntVal": 500
+    }
+  ]
+}
