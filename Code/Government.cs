@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using NeoModLoader.General;
 
 namespace DiplomacyOverhaul
 {
@@ -71,6 +72,22 @@ namespace DiplomacyOverhaul
             return null;
         }
 
+        public const string VanillaTitleKey = "kingdom";
+        public const string VassalTitlePrefix = "vd_kingdom_title_";
+
+        // 王国窗口和悬停提示里政体名用的 key。附庸是"政体 · 宗主"，没有现成的 key，
+        // 按国家写进当前语言表：原版会按 key 刷新文字，直接改文字会被冲掉
+        public static string TitleKey(Kingdom pKingdom)
+        {
+            string key = Current(pKingdom)?.getLocaleID() ?? VanillaTitleKey;
+            Kingdom lord = Vassals.GetOverlord(pKingdom);
+            if (lord == null) return key;
+            string color = UnityEngine.ColorUtility.ToHtmlStringRGB(lord.getColor().getColorText());
+            string vassalKey = VassalTitlePrefix + pKingdom.id;
+            LM.AddToCurrentLocale(vassalKey, $"{LM.Get(key)} · <color=#{color}>{lord.data.name}</color>");
+            return vassalKey;
+        }
+
         static string Desired(Kingdom pKingdom)
         {
             if (Vassals.IsVassal(pKingdom)) return Duchy;
@@ -134,7 +151,7 @@ namespace DiplomacyOverhaul
 
 namespace DiplomacyOverhaul
 {
-    // 鼠标悬停在疆域上的王国提示：副标题"王国"换成政体名
+    // 鼠标悬停在疆域上的王国提示：副标题"王国"换成政体名，附庸再接上宗主名
     [HarmonyPatch(typeof(TooltipLibrary), "showKingdom")]
     static class Patch_KingdomTooltip
     {
@@ -142,9 +159,8 @@ namespace DiplomacyOverhaul
         {
             Kingdom k = pData?.kingdom;
             if (k == null) return;
-            KingdomTrait gov = Government.Current(k);
-            if (gov == null) return;
-            pTooltip.setTitle(k.name, gov.getLocaleID(), k.getColor().color_text);
+            if (Government.Current(k) == null && !Vassals.IsVassal(k)) return;
+            pTooltip.setTitle(k.name, Government.TitleKey(k), k.getColor().color_text);
         }
     }
 }

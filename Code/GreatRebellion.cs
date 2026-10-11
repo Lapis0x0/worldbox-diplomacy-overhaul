@@ -10,6 +10,8 @@ namespace DiplomacyOverhaul
     {
         const string KeyLastYear = "vd_great_rebellion_year";
         const int AutoMinCities = 4;
+        // 叛军最终占走原国家非首都城市的比例
+        const int TakenPercent = 60;
 
         public static bool OnCooldown(Kingdom pKingdom)
         {
@@ -32,17 +34,21 @@ namespace DiplomacyOverhaul
             pKingdom.data.set(KeyLastYear, Date.getCurrentYear());
             int count = 0;
 
+            int nonCapital = pKingdom.countCities() - (pKingdom.capital != null ? 1 : 0);
+            var rebels = new List<Kingdom>();
             foreach (City seed in PickSeeds(pKingdom))
             {
                 if (seed.kingdom != pKingdom || seed.isRekt()) continue;
-                if (Rebel(seed, pKingdom)) count++;
+                Kingdom rebel = Rebel(seed, pKingdom);
+                if (rebel != null) rebels.Add(rebel);
             }
+            count += rebels.Count + Spread(pKingdom, rebels, nonCapital * TakenPercent / 100 - rebels.Count);
 
             foreach (Kingdom vassal in Vassals.GetVassals(pKingdom))
             {
                 int opinion = World.world.diplomacy.getOpinion(vassal, pKingdom).total;
-                // 好感 0 时一半概率，越恨越可能反，10%~90%
-                float chance = Mathf.Clamp(50 - opinion, 10, 90) / 100f;
+                // 好感 0 时 80% 会反，越恨越可能反；再忠心也有 30%
+                float chance = Mathf.Clamp(80 - opinion, 30, 95) / 100f;
                 if (Randy.randomChance(chance) && Core.StartIndependenceWar(vassal, pKingdom) != null) count++;
             }
 
@@ -51,7 +57,7 @@ namespace DiplomacyOverhaul
             return count;
         }
 
-        // 不满的、离首都远的非首都城市先反；每 5 座城一个叛乱点，最多 4 个
+        // 叛乱点：优先不满、离首都远的非首都城市，彼此不相邻，好让叛军从帝国各处同时冒出来
         static List<City> PickSeeds(Kingdom pKingdom)
         {
             var result = new List<City>();
@@ -69,9 +75,55 @@ namespace DiplomacyOverhaul
                 if (byLoyalty != 0) return byLoyalty;
                 return Dist(b, capital).CompareTo(Dist(a, capital));
             });
-            int seeds = Mathf.Clamp(total / 5, 1, 4);
-            for (int i = 0; i < candidates.Count && result.Count < seeds; i++) result.Add(candidates[i]);
+            int seeds = Mathf.Clamp(total / 4, 2, 6);
+            foreach (City city in candidates)
+            {
+                if (result.Count >= seeds) break;
+                city.recalculateNeighbourCities();
+                bool adjacent = false;
+                foreach (City picked in result)
+                {
+                    if (city.neighbours_cities.Contains(picked)) adjacent = true;
+                }
+                if (!adjacent) result.Add(city);
+            }
             return result;
+        }
+
+        // 叛军轮流从自己的边界吞并原国家的城市（首都除外），直到吞够 pBudget 座或无城可吞；返回吞并数
+        static int Spread(Kingdom pOld, List<Kingdom> pRebels, int pBudget)
+        {
+            int taken = 0;
+            bool progress = true;
+            while (taken < pBudget && progress)
+            {
+                progress = false;
+                foreach (Kingdom rebel in pRebels)
+                {
+                    if (taken >= pBudget) break;
+                    City next = Frontier(rebel, pOld);
+                    if (next == null) continue;
+                    next.joinAnotherKingdom(rebel, false, true);
+                    taken++;
+                    progress = true;
+                }
+            }
+            return taken;
+        }
+
+        static City Frontier(Kingdom pRebel, Kingdom pOld)
+        {
+            if (!pRebel.isAlive()) return null;
+            var options = new List<City>();
+            foreach (City city in pRebel.getCities())
+            {
+                city.recalculateNeighbourCities();
+                foreach (City n in city.neighbours_cities)
+                {
+                    if (n.kingdom == pOld && !n.isCapitalCity() && !options.Contains(n)) options.Add(n);
+                }
+            }
+            return options.Count > 0 ? options.GetRandom() : null;
         }
 
         static int Dist(City pCity, WorldTile pCapital)
@@ -81,9 +133,9 @@ namespace DiplomacyOverhaul
             return (tile.x - pCapital.x) * (tile.x - pCapital.x) + (tile.y - pCapital.y) * (tile.y - pCapital.y);
         }
 
-        // 同原版 DiplomacyHelpersRebellion.startRebellion，但不需要密谋：
-        // 城市自立 → 加入或发起叛乱战争 → 拉走周边不满的城市
-        static bool Rebel(City pCity, Kingdom pOld)
+        // 同原版 DiplomacyHelpersRebellion.startRebellion 的前半段，但不需要密谋：
+        // 城市自立 → 加入或发起叛乱战争；扩散交给 Spread
+        static Kingdom Rebel(City pCity, Kingdom pOld)
         {
             Actor leader = null;
             foreach (Actor unit in pCity.getUnits())
@@ -94,7 +146,7 @@ namespace DiplomacyOverhaul
                     break;
                 }
             }
-            if (leader == null) return false;
+            if (leader == null) return null;
             if (leader.isCityLeader()) pCity.removeLeader();
             Kingdom rebel = pCity.makeOwnKingdom(leader, true);
             leader.joinCity(pCity);
@@ -110,17 +162,7 @@ namespace DiplomacyOverhaul
                 }
             }
             if (war == null) World.world.diplomacy.startWar(pOld, rebel, WarTypeLibrary.rebellion);
-
-            using (var taken = new ListPool<City>())
-            {
-                taken.Add(pCity);
-                int spread = Mathf.Min(rebel.getMaxCities() - 1, pOld.countCities() / 4);
-                for (int i = 0; i < spread; i++)
-                {
-                    if (!DiplomacyHelpersRebellion.checkMoreAlignedCities(rebel, pOld, taken, true)) break;
-                }
-            }
-            return true;
+            return rebel;
         }
     }
 

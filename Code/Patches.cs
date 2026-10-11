@@ -197,11 +197,10 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 王国窗口：标题下方的"王国"换成政体名，并显示宗主 / 附庸
+    // 王国窗口：标题下方的"王国"换成政体名（附庸接上宗主名），并显示宗主 / 附庸
     [HarmonyPatch(typeof(KingdomWindow), "showStatsRows")]
     static class Patch_KingdomWindow
     {
-        const string VanillaTitleKey = "kingdom";
         static readonly Dictionary<KingdomWindow, LocalizedText> _titles = new Dictionary<KingdomWindow, LocalizedText>();
 
         static LocalizedText FindTitle(KingdomWindow pWindow)
@@ -209,7 +208,7 @@ namespace DiplomacyOverhaul
             if (_titles.TryGetValue(pWindow, out LocalizedText cached) && cached != null) return cached;
             foreach (LocalizedText t in pWindow.GetComponentsInChildren<LocalizedText>(true))
             {
-                if (t.key == VanillaTitleKey || t.key.StartsWith("kingdom_trait_vd_gov_"))
+                if (t.key == Government.VanillaTitleKey || t.key.StartsWith(Government.VassalTitlePrefix) || t.key.StartsWith("kingdom_trait_vd_gov_"))
                 {
                     _titles[pWindow] = t;
                     return t;
@@ -222,8 +221,7 @@ namespace DiplomacyOverhaul
         {
             LocalizedText title = FindTitle(pWindow);
             if (title == null) return;
-            string key = Government.Current(pKingdom)?.getLocaleID() ?? VanillaTitleKey;
-            if (title.key != key) title.setKeyAndUpdate(key);
+            title.setKeyAndUpdate(Government.TitleKey(pKingdom));
         }
 
         static void Postfix(KingdomWindow __instance)
