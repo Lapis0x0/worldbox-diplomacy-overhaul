@@ -84,6 +84,14 @@ namespace DiplomacyOverhaul
             }
         }
 
+        // 指挥一支军队：点敌国城市就进攻，点本国城市就前往那里
+        public static string CommandArmy(Army pArmy, City pTarget)
+        {
+            City from = pArmy?.getCity();
+            if (from == null) return "vd_tip_army_no_city";
+            return pTarget.kingdom == from.kingdom ? Recall(from, pTarget) : Attack(from, pTarget);
+        }
+
         // 返回 null 表示成功，否则返回失败原因的本地化 key
         public static string Attack(City pFrom, City pTarget)
         {

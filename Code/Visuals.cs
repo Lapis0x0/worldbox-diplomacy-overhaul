@@ -52,8 +52,8 @@ namespace DiplomacyOverhaul
         static bool Selected(string pPower) => World.world.isSelectedPower(pPower);
 
         static bool AnyOwnPowerSelected() =>
-            Selected(Powers.MakeVassal) || Selected(Powers.ReleaseVassal) || Selected(Powers.ReleaseCity)
-            || Selected(Powers.OrderAttack) || Selected(Powers.OrderKingdomAttack)
+            Selected(Powers.MakeVassal) || Selected(Powers.InciteIndependence) || Selected(Powers.GreatRebellion) || Selected(Powers.ReleaseCity)
+            || Selected(Powers.CommandArmy) || Selected(Powers.OrderKingdomAttack)
             || Selected(Powers.TransferCity) || Selected(Powers.Annex);
 
         static Kingdom Alive(Kingdom k) => k != null && !k.isRekt() && !k.isNeutral() ? k : null;
@@ -71,9 +71,13 @@ namespace DiplomacyOverhaul
             Vector2 mouse = World.world.getMousePos();
             City source = Alive(Powers._source);
 
-            if (Selected(Powers.OrderAttack) && source != null)
+            if (Selected(Powers.CommandArmy) && Powers.AliveArmy(Powers._army))
             {
-                Arrow(pAsset, source, mouse);
+                Army army = Powers._army;
+                Actor lead = army.getCaptain();
+                if (lead == null || lead.isRekt()) lead = army.units[0];
+                Color color = army.getColor().getColorMainSecond();
+                QuantumSpriteLibrary.drawArrowQuantumSprite(pAsset, lead.current_position, mouse, ref color);
             }
             else if (Selected(Powers.OrderKingdomAttack) && source != null)
             {
@@ -111,12 +115,12 @@ namespace DiplomacyOverhaul
             City source = Alive(Powers._source);
             Kingdom lord = Alive(Powers._lord);
 
-            if (Selected(Powers.OrderAttack))
+            if (Selected(Powers.CommandArmy))
             {
-                // 第一下：点亮鼠标下的城市；第二下：出兵城市点亮，目标城市标红
-                if (source != null) Zones(pAsset, source.zones, ColorSource);
-                if (hovered != null && hovered != source) Zones(pAsset, hovered.zones, source != null ? TargetColor(source, hovered) : ColorSource);
-                else if (hovered != null && source != null) Zones(pAsset, hovered.zones, ColorRally);
+                // 选好军队后：鼠标下的城市按进攻（红）/前往（绿）着色
+                City home = Powers.AliveArmy(Powers._army) ? Alive(Powers._army.getCity()) : null;
+                if (home != null && hovered != null && Powers.ArmyUnderCursor() != Powers._army)
+                    Zones(pAsset, hovered.zones, TargetColor(home, hovered));
             }
             else if (Selected(Powers.OrderKingdomAttack))
             {
@@ -132,7 +136,7 @@ namespace DiplomacyOverhaul
                 if (lord != null) Kingdom(pAsset, lord, ColorSource);
                 if (hovered != null && hovered.kingdom != lord) Kingdom(pAsset, hovered.kingdom, lord != null ? ColorTarget : ColorSource);
             }
-            else if (Selected(Powers.ReleaseVassal))
+            else if (Selected(Powers.InciteIndependence) || Selected(Powers.GreatRebellion))
             {
                 if (hovered != null) Kingdom(pAsset, hovered.kingdom, ColorSource);
             }

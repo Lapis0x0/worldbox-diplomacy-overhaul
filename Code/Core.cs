@@ -53,12 +53,6 @@ namespace DiplomacyOverhaul
             return existing;
         }
 
-        static readonly HashSet<string> OwnButtons = new HashSet<string>
-        {
-            Powers.MakeVassal, Powers.ReleaseVassal, Powers.ReleaseCity,
-            Powers.OrderAttack, Powers.OrderKingdomAttack, Powers.TransferCity, Powers.Annex, "vd_settings"
-        };
-
         static PowersTab FindTab()
         {
             PowersTab tab = PowerButtonCreator.GetTab(TabId);
@@ -81,10 +75,10 @@ namespace DiplomacyOverhaul
             }
             else
             {
-                // 热重载：只清掉我们自己的按钮和分隔线再重建，NML 从原版复制来的返回按钮等要保留
+                // 热重载：只清掉我们自己的按钮（id 都以 vd_ 开头，改名删掉的旧按钮也算）和分隔线再重建，NML 从原版复制来的返回按钮等要保留
                 foreach (PowerButton button in new List<PowerButton>(tab._power_buttons))
                 {
-                    if (button == null || !OwnButtons.Contains(button.name)) continue;
+                    if (button == null || !button.name.StartsWith("vd_")) continue;
                     tab._power_buttons.Remove(button);
                     button.gameObject.SetActive(false);
                     UnityEngine.Object.Destroy(button.gameObject);
@@ -104,10 +98,11 @@ namespace DiplomacyOverhaul
                 SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);
             AddSeparator(tab);
             AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
-            AddPower(tab, Powers.ReleaseVassal, "ui/Icons/iconRebellion");
+            AddPower(tab, Powers.InciteIndependence, "ui/Icons/iconRebellion");
+            AddPower(tab, Powers.GreatRebellion, "ui/Icons/iconFireSkull");
             AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
             AddSeparator(tab);
-            AddPower(tab, Powers.OrderAttack, "ui/Icons/iconArrowAttackTarget");
+            AddPower(tab, Powers.CommandArmy, "ui/Icons/iconArrowAttackTarget");
             AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconArmyList");
             AddSeparator(tab);
             AddPower(tab, Powers.TransferCity, "ui/Icons/iconCityConquered");
@@ -196,13 +191,19 @@ namespace DiplomacyOverhaul
                 AssetManager.plots_library.basic_plots.Add(plot_independence);
         }
 
-        public static void StartIndependenceWar(Kingdom pRebel, Kingdom pLord)
+        // 开战失败时恢复附庸关系并返回 null
+        public static War StartIndependenceWar(Kingdom pRebel, Kingdom pLord)
         {
             Vassals.Release(pRebel);
             War war = World.world.diplomacy.startWar(pRebel, pLord, WarTypeLibrary.normal);
-            if (war == null) return;
+            if (war == null)
+            {
+                Vassals.MakeVassal(pLord, pRebel);
+                return null;
+            }
             war.data.set(Vassals.KeyWarLord, pLord.id);
             war.data.set(Vassals.KeyWarRebel, pRebel.id);
+            return war;
         }
     }
 }

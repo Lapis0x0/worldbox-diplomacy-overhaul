@@ -5,9 +5,10 @@ namespace DiplomacyOverhaul
     public static class Powers
     {
         public const string MakeVassal = "vd_make_vassal";
-        public const string ReleaseVassal = "vd_release_vassal";
+        public const string InciteIndependence = "vd_incite_independence";
+        public const string GreatRebellion = "vd_great_rebellion";
         public const string ReleaseCity = "vd_release_city";
-        public const string OrderAttack = "vd_order_attack";
+        public const string CommandArmy = "vd_command_army";
         public const string OrderKingdomAttack = "vd_order_kingdom_attack";
         public const string TransferCity = "vd_transfer_city";
         public const string Annex = "vd_annex";
@@ -33,16 +34,30 @@ namespace DiplomacyOverhaul
 
             Core.Upsert(AssetManager.powers, new GodPower
             {
-                id = ReleaseVassal,
-                name = ReleaseVassal,
+                id = InciteIndependence,
+                name = InciteIndependence,
                 force_map_mode = MetaType.Kingdom,
                 can_drag_map = true,
                 select_button_action = _ =>
                 {
-                    WorldTip.showNow("vd_tip_pick_release", true, "top");
+                    WorldTip.showNow("vd_tip_pick_incite", true, "top");
                     return false;
                 },
-                click_special_action = (pTile, _) => ClickRelease(pTile)
+                click_special_action = (pTile, _) => ClickIncite(pTile)
+            });
+
+            Core.Upsert(AssetManager.powers, new GodPower
+            {
+                id = GreatRebellion,
+                name = GreatRebellion,
+                force_map_mode = MetaType.Kingdom,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    WorldTip.showNow("vd_tip_pick_great_rebellion", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickGreatRebellion(pTile)
             });
 
             InitReleaseCity();
@@ -144,22 +159,23 @@ namespace DiplomacyOverhaul
         }
 
         internal static City _source;
+        internal static Army _army;
 
         static void InitOrders()
         {
             Core.Upsert(AssetManager.powers, new GodPower
             {
-                id = OrderAttack,
-                name = OrderAttack,
-                force_map_mode = MetaType.City,
+                id = CommandArmy,
+                name = CommandArmy,
+                force_map_mode = MetaType.Army,
                 can_drag_map = true,
                 select_button_action = _ =>
                 {
-                    _source = null;
-                    WorldTip.showNow("vd_tip_pick_attacker_city", true, "top");
+                    SetArmy(null);
+                    WorldTip.showNow("vd_tip_pick_army", true, "top");
                     return false;
                 },
-                click_special_action = (pTile, _) => ClickOrder(pTile, false)
+                click_special_action = (pTile, _) => ClickCommandArmy(pTile)
             });
             Core.Upsert(AssetManager.powers, new GodPower
             {
@@ -173,12 +189,73 @@ namespace DiplomacyOverhaul
                     WorldTip.showNow("vd_tip_pick_attacker_kingdom", true, "top");
                     return false;
                 },
-                click_special_action = (pTile, _) => ClickOrder(pTile, true)
+                click_special_action = (pTile, _) => ClickKingdomOrder(pTile)
             });
         }
 
-        // 第一下点出兵方（城市或王国），第二下点目标城市
-        static bool ClickOrder(WorldTile pTile, bool pWholeKingdom)
+        // 先在军队视图里点军队，选中后切到城市视图点目标；原版每帧按神力的 force_map_mode 决定视图
+        static void SetArmy(Army pArmy)
+        {
+            _army = pArmy;
+            AssetManager.powers.get(CommandArmy).force_map_mode = pArmy == null ? MetaType.Army : MetaType.City;
+        }
+
+        internal static bool AliveArmy(Army pArmy) => pArmy != null && !pArmy.isRekt() && pArmy.countUnits() > 0;
+
+        // 鼠标下的军队：优先看军队视图里的旗帜，其次看光标附近的士兵
+        internal static Army ArmyUnderCursor()
+        {
+            if (World.world.nameplate_manager.cursor_over_text?.nano_object is Army army && AliveArmy(army)) return army;
+            Army near = World.world.getActorNearCursor()?.army;
+            return AliveArmy(near) ? near : null;
+        }
+
+        // 第一下点军队（旗帜或士兵），第二下点目标城市；再点同一支军队取消
+        static bool ClickCommandArmy(WorldTile pTile)
+        {
+            Army hovered = ArmyUnderCursor();
+            if (!AliveArmy(_army))
+            {
+                SetArmy(null);
+                if (hovered == null)
+                {
+                    WorldTip.showNow("vd_tip_pick_army", true, "top");
+                    return false;
+                }
+                if (hovered.getCity() == null)
+                {
+                    WorldTip.showNow("vd_tip_army_no_city", true, "top");
+                    return false;
+                }
+                SetArmy(hovered);
+                Tip(LM.Get("vd_tip_army_picked").Replace("$army$", hovered.name));
+                return false;
+            }
+            if (hovered == _army)
+            {
+                SetArmy(null);
+                WorldTip.showNow("vd_tip_cancelled", true, "top");
+                return false;
+            }
+
+            City city = pTile?.zone?.city;
+            if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
+            Army army = _army;
+            bool own = city.kingdom == army.getCity()?.kingdom;
+            string error = Orders.CommandArmy(army, city);
+            if (error != null)
+            {
+                WorldTip.showNow(error, true, "top");
+                return false;
+            }
+            Tip(LM.Get(own ? "vd_tip_army_moving" : "vd_tip_army_attacking")
+                .Replace("$army$", army.name).Replace("$target$", city.data.name));
+            SetArmy(null);
+            return true;
+        }
+
+        // 第一下点出兵王国，第二下点目标城市
+        static bool ClickKingdomOrder(WorldTile pTile)
         {
             City city = pTile?.zone?.city;
             if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
@@ -186,8 +263,7 @@ namespace DiplomacyOverhaul
             if (_source == null || _source.isRekt())
             {
                 _source = city;
-                string name = pWholeKingdom ? city.kingdom.data.name : city.data.name;
-                Tip(LM.Get("vd_tip_pick_target_city").Replace("$source$", name));
+                Tip(LM.Get("vd_tip_pick_target_city").Replace("$source$", city.kingdom.data.name));
                 return false;
             }
             City source = _source;
@@ -195,33 +271,18 @@ namespace DiplomacyOverhaul
             if (city.kingdom == source.kingdom)
             {
                 // 点的是自己国家的城市：召回军队
-                if (pWholeKingdom)
-                {
-                    int moved = Orders.RecallKingdom(source.kingdom, city);
-                    error = moved == 0 ? "vd_tip_no_army" : null;
-                    if (error == null)
-                        Tip(LM.Get("vd_tip_kingdom_recall_ordered").Replace("$source$", source.kingdom.data.name)
-                            .Replace("$target$", city.data.name).Replace("$count$", moved.ToString()));
-                }
-                else
-                {
-                    error = Orders.Recall(source, city);
-                    if (error == null)
-                        Tip(LM.Get("vd_tip_recall_ordered").Replace("$source$", source.data.name).Replace("$target$", city.data.name));
-                }
+                int moved = Orders.RecallKingdom(source.kingdom, city);
+                error = moved == 0 ? "vd_tip_no_army" : null;
+                if (error == null)
+                    Tip(LM.Get("vd_tip_kingdom_recall_ordered").Replace("$source$", source.kingdom.data.name)
+                        .Replace("$target$", city.data.name).Replace("$count$", moved.ToString()));
             }
-            else if (pWholeKingdom)
+            else
             {
                 int count = Orders.AttackWithKingdom(source.kingdom, city, out error);
                 if (error == null)
                     Tip(LM.Get("vd_tip_kingdom_attack_ordered").Replace("$source$", source.kingdom.data.name)
                         .Replace("$target$", city.data.name).Replace("$count$", count.ToString()));
-            }
-            else
-            {
-                error = Orders.Attack(source, city);
-                if (error == null)
-                    Tip(LM.Get("vd_tip_attack_ordered").Replace("$source$", source.data.name).Replace("$target$", city.data.name));
             }
             if (error != null)
             {
@@ -304,7 +365,21 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        static bool ClickRelease(WorldTile pTile)
+        // 手动触发不看冷却，成功提示由 GreatRebellion 统一发
+        static bool ClickGreatRebellion(WorldTile pTile)
+        {
+            Kingdom k = KingdomAt(pTile);
+            if (k == null) return false;
+            if (DiplomacyOverhaul.GreatRebellion.Trigger(k) == 0)
+            {
+                WorldTip.showNow("vd_tip_great_rebellion_failed", true, "top");
+                return false;
+            }
+            return true;
+        }
+
+        // 附庸立刻向宗主发动独立战争，结局交给 Patch_EndWar
+        static bool ClickIncite(WorldTile pTile)
         {
             Kingdom k = KingdomAt(pTile);
             if (k == null) return false;
@@ -314,8 +389,12 @@ namespace DiplomacyOverhaul
                 WorldTip.showNow("vd_tip_not_vassal", true, "top");
                 return false;
             }
-            Vassals.Release(k);
-            Tip(LM.Get("vd_tip_released").Replace("$vassal$", k.data.name).Replace("$lord$", lord.data.name));
+            if (Core.StartIndependenceWar(k, lord) == null)
+            {
+                WorldTip.showNow("vd_tip_war_failed", true, "top");
+                return false;
+            }
+            Tip(LM.Get("vd_tip_incited").Replace("$vassal$", k.data.name).Replace("$lord$", lord.data.name));
             return true;
         }
     }

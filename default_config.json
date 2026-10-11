@@ -64,5 +64,29 @@
       "IconPath": "ui/Icons/iconCrown",
       "BoolVal": true
     }
+  ],
+  "vd_group_rebellion": [
+    {
+      "Id": "vd_great_rebellion_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconFireSkull",
+      "BoolVal": true
+    },
+    {
+      "Id": "vd_great_rebellion_chance",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconRebellion",
+      "IntVal": 50,
+      "MinIntVal": 0,
+      "MaxIntVal": 100
+    },
+    {
+      "Id": "vd_great_rebellion_cooldown",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconPlot",
+      "IntVal": 50,
+      "MinIntVal": 10,
+      "MaxIntVal": 200
+    }
   ]
 }
