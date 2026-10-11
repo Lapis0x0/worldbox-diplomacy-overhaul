@@ -4,8 +4,8 @@ namespace DiplomacyOverhaul
 {
     // AI 分封：大国不是只会吞并和镇压，也会把城市分出去做附庸。
     // 1. 偏远城市密谋叛乱成功时，宗主有概率把它分封出去，换来附庸而不是敌人
-    // 2. 已到治理上限还在打仗，攻下的城市大概率分封出去，旁边已有附庸就并给那个附庸
-    // 自动分封的附庸数有上限（手动神力不受限）；宗主自己是附庸时不分封（不允许附庸链）
+    // 2. 已到治理上限还在打仗，攻下的城市大概率分封出去，附近已有不大的附庸就并给那个附庸
+    // 宗主自己是附庸时不分封（不允许附庸链）
     public static class Feudal
     {
         // 超出治理上限时，攻下的城市分封出去的概率
@@ -13,10 +13,6 @@ namespace DiplomacyOverhaul
 
         // 附庸城市数到了这个数，打下的城不再并给它，另封新附庸
         const int VassalMaxCities = 5;
-
-        // 自动分封的附庸上限：城市数的四分之一，至少 1 个
-        static bool UnderCap(Kingdom pLord) =>
-            Vassals.GetVassals(pLord).Count < System.Math.Max(1, pLord.countCities() / 4);
 
         static bool CanGrant(Kingdom pLord) =>
             Settings.FeudalEnabled && pLord != null && pLord.isAlive() && pLord.isCiv() && !Vassals.IsVassal(pLord);
@@ -48,7 +44,7 @@ namespace DiplomacyOverhaul
         {
             City city = pActor.city;
             Kingdom lord = city?.kingdom;
-            if (!CanGrant(lord) || !UnderCap(lord) || NearCapital(city)) return false;
+            if (!CanGrant(lord) || NearCapital(city)) return false;
             if (!Randy.randomChance(RebellionChance(lord))) return false;
 
             Kingdom vassal = Grant(city, pActor, lord);
@@ -91,7 +87,6 @@ namespace DiplomacyOverhaul
                 }
             }
 
-            if (!UnderCap(lord)) return false;
             Actor ruler = null;
             foreach (Actor unit in pCity.getUnits())
             {
