@@ -165,13 +165,19 @@ namespace DiplomacyOverhaul
             captain.setTask("warrior_army_leader_move_random", true, false, true);
         }
 
+        // 点的正是这支军队驻扎的城、或扎营的地方附近
+        public static bool IsStationedAt(City pFrom, WorldTile pTile)
+        {
+            City garrison = GetGarrison(pFrom);
+            if (garrison != null) return pTile.zone.city == garrison;
+            WorldTile hold = GetHold(pFrom);
+            return hold != null && TargetCity(pTile) == null && NearHold(pTile, hold);
+        }
+
         // 选中的军队已经驻扎在这座城、或扎营在这附近：解除，交还原版 AI
         public static bool Release(City pFrom, WorldTile pTile)
         {
-            City garrison = GetGarrison(pFrom);
-            WorldTile hold = GetHold(pFrom);
-            bool hit = garrison != null ? pTile.zone.city == garrison : hold != null && TargetCity(pTile) == null && NearHold(pTile, hold);
-            if (!hit) return false;
+            if (!IsStationedAt(pFrom, pTile)) return false;
             SetStation(pFrom, null, null);
             return true;
         }

@@ -117,5 +117,6 @@
   "vd_tip_army_holding": "$army$ 前往该处扎营",
   "vd_tip_box_hold": "$count$ 支军队前往该处扎营",
   "vd_tip_cannot_hold": "军队去不了那里",
+  "vd_tip_box_released": "$count$ 支军队解除驻扎",
   "vd_tip_box_selected": "已选中 $count$ 支军队，右键点城市或空地下令"
 }

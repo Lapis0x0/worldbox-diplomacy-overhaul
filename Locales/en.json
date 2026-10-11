@@ -117,5 +117,6 @@
   "vd_tip_army_holding": "$army$ marches out to make camp",
   "vd_tip_box_hold": "$count$ armies march out to make camp",
   "vd_tip_cannot_hold": "Armies can't go there",
+  "vd_tip_box_released": "$count$ armies are no longer garrisoned",
   "vd_tip_box_selected": "$count$ armies selected. Right-click a city or open ground to give orders"
 }

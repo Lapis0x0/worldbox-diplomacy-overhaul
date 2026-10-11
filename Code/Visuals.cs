@@ -123,9 +123,11 @@ namespace DiplomacyOverhaul
             City hovered = HoveredCity();
             if (!World.world.isAnyPowerSelected())
             {
-                // 框选了士兵：鼠标下的城市按进攻（红）/驻扎（绿）着色
+                // 框选了士兵：鼠标下的城市按进攻（红）/驻扎（绿）着色；已经驻扎在这座城：白色，右键是解除驻扎
                 List<Army> armies = BoxCommand.SelectedArmies();
-                if (armies.Count > 0 && hovered != null) Zones(pAsset, hovered.zones, TargetColor(armies[0].getCity(), hovered));
+                if (armies.Count > 0 && hovered != null)
+                    Zones(pAsset, hovered.zones, BoxCommand.AllStationedAt(armies, World.world.getMouseTilePosCachedFrame())
+                        ? ColorSource : TargetColor(armies[0].getCity(), hovered));
                 return;
             }
             if (!AnyOwnPowerSelected()) return;

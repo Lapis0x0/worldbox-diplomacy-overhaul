@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 框选下令：不拿神力时左键框选，右键下令，选中的军队整支执行：别国城市进攻，本国和友方城市驻扎，城外空地扎营。
+    // 框选下令：不拿神力时左键框选，右键下令，选中的军队整支执行：别国城市进攻，本国和友方城市驻扎，城外空地扎营；
+    // 右键它们已经驻扎的城、扎营的地方，就解除命令交还原版 AI。
     // 缩远时框选的是军队（看旗帜即队长的位置，只取框里军队最多的那个国家）；
     // 拉近时仍是原版的框选单位，右键时换算成这些士兵所属的军队。没选中军队时交还原版右键
     public static class BoxCommand
@@ -97,6 +98,17 @@ namespace DiplomacyOverhaul
             return result;
         }
 
+        // 选中的军队全都驻扎在点的城、或扎营在点的地方附近。有一支不在就不算，免得一部分解除、一部分出发
+        public static bool AllStationedAt(List<Army> pArmies, WorldTile pTile)
+        {
+            if (pTile == null || pArmies.Count == 0) return false;
+            foreach (Army army in pArmies)
+            {
+                if (!Orders.IsStationedAt(army.getCity(), pTile)) return false;
+            }
+            return true;
+        }
+
         // 返回 true 表示右键已被处理
         public static bool RightClick(WorldTile pTile)
         {
@@ -104,6 +116,14 @@ namespace DiplomacyOverhaul
             bool fromBox = HasBoxSelection();
             List<Army> armies = SelectedArmies();
             if (armies.Count == 0) return false;
+
+            if (AllStationedAt(armies, pTile))
+            {
+                foreach (Army army in armies) Orders.Release(army.getCity(), pTile);
+                WorldTip.showNow(LM.Get("vd_tip_box_released").Replace("$count$", armies.Count.ToString()), false, "top");
+                if (fromBox) _armies.Clear();
+                return true;
+            }
 
             City city = Orders.TargetCity(pTile);
             int done = 0;
