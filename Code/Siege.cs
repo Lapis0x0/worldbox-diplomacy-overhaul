@@ -16,22 +16,41 @@ namespace DiplomacyOverhaul
         {
             Kingdom defender = pCity.kingdom;
             if (defender == null) return null;
-            WorldTile from = pActor.current_tile;
             WorldTile best = null;
             float bestDist = float.MaxValue;
-            foreach (Actor unit in defender.units)
+            Nearest(defender, pCity, pActor.current_tile, ref best, ref bestDist);
+            return best;
+        }
+
+        // 反过来，打进城里、离 pFrom 最近的敌方单位所在地块，驻扎的军队据此守城。
+        // 帮友方守城时只算守军自己国家也在交战的敌人，没开战的打不起来
+        public static WorldTile NearestIntruder(WorldTile pFrom, City pCity, Kingdom pGuard)
+        {
+            Kingdom owner = pCity.kingdom;
+            if (owner == null) return null;
+            WorldTile best = null;
+            float bestDist = float.MaxValue;
+            foreach (Kingdom k in World.world.kingdoms)
+            {
+                if (k != owner && owner.isEnemy(k) && pGuard.isEnemy(k)) Nearest(k, pCity, pFrom, ref best, ref bestDist);
+            }
+            return best;
+        }
+
+        static void Nearest(Kingdom pKingdom, City pCity, WorldTile pFrom, ref WorldTile pBest, ref float pBestDist)
+        {
+            foreach (Actor unit in pKingdom.units)
             {
                 if (!unit.isAlive() || unit.isInsideSomething() || !unit.profession_asset.can_capture) continue;
                 WorldTile tile = unit.current_tile;
-                if (tile.zone_city != pCity || !tile.isSameIsland(from)) continue;
-                float d = Toolbox.SquaredDist(from.x, from.y, tile.x, tile.y);
-                if (d < bestDist)
+                if (tile.zone_city != pCity || !tile.isSameIsland(pFrom)) continue;
+                float d = Toolbox.SquaredDist(pFrom.x, pFrom.y, tile.x, tile.y);
+                if (d < pBestDist)
                 {
-                    bestDist = d;
-                    best = tile;
+                    pBestDist = d;
+                    pBest = tile;
                 }
             }
-            return best;
         }
 
         // 原版这一轮因为守方阻挡没涨进度，而攻方已经压倒守方：补上这一轮的进度

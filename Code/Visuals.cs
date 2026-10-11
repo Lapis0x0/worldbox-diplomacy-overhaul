@@ -10,9 +10,9 @@ namespace DiplomacyOverhaul
         static readonly Color ColorTarget = new Color(1f, 0.15f, 0.15f, 0.3f);
         static readonly Color ColorRally = new Color(0.3f, 1f, 0.4f, 0.3f);
 
-        // 选好出兵方后：自己国家的城市是召回目的地（绿），其他是进攻目标（红）
+        // 选好出兵方后：本国和友方的城市是驻扎目的地（绿），其他是进攻目标（红）
         static Color TargetColor(City pSource, City pTarget) =>
-            pSource != null && pTarget.kingdom == pSource.kingdom ? ColorRally : ColorTarget;
+            pSource != null && Orders.Friendly(pTarget.kingdom, pSource.kingdom) ? ColorRally : ColorTarget;
 
         public static void Init()
         {

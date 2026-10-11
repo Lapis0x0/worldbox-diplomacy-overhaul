@@ -5,9 +5,9 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 框选下令：不拿神力时左键框选，右键点城市，选中的军队整支执行：敌城进攻，本国城市驻扎。
+    // 框选下令：不拿神力时左键框选，右键下令，选中的军队整支执行：别国城市进攻，本国和友方城市驻扎，城外空地扎营。
     // 缩远时框选的是军队（看旗帜即队长的位置，只取框里军队最多的那个国家）；
-    // 拉近时仍是原版的框选单位，右键时换算成这些士兵所属的军队。其余情况交还原版右键
+    // 拉近时仍是原版的框选单位，右键时换算成这些士兵所属的军队。没选中军队时交还原版右键
     public static class BoxCommand
     {
         // 缩远时框选出的军队
@@ -100,19 +100,19 @@ namespace DiplomacyOverhaul
         // 返回 true 表示右键已被处理
         public static bool RightClick(WorldTile pTile)
         {
-            City city = pTile?.zone?.city;
-            if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
+            if (pTile == null) return false;
             bool fromBox = HasBoxSelection();
             List<Army> armies = SelectedArmies();
             if (armies.Count == 0) return false;
 
+            City city = Orders.TargetCity(pTile);
             int done = 0;
             string error = null;
-            bool own = false;
+            bool friendly = false;
             foreach (Army army in armies)
             {
-                own = city.kingdom == army.getCity().kingdom;
-                string e = Orders.CommandArmy(army, city);
+                friendly = city != null && Orders.Friendly(city.kingdom, army.getCity().kingdom);
+                string e = Orders.CommandArmy(army, pTile);
                 if (e == null) done++;
                 else error = error ?? e;
             }
@@ -121,8 +121,18 @@ namespace DiplomacyOverhaul
                 WorldTip.showNow(error, true, "top");
                 return true;
             }
-            WorldTip.showNow(LM.Get(own ? "vd_tip_box_garrison" : "vd_tip_box_attack")
-                .Replace("$count$", done.ToString()).Replace("$target$", city.data.name), false, "top");
+            if (city == null)
+            {
+                // 和原版右键移动单位一样，在点的地方冒一个落点标记
+                BaseEffect fx = EffectsLibrary.spawnAt("fx_move", pTile.posV3, 0.1f);
+                if (fx != null) fx.sprite_renderer.color = World.world.getArchitectColor();
+                WorldTip.showNow(LM.Get("vd_tip_box_hold").Replace("$count$", done.ToString()), false, "top");
+            }
+            else
+            {
+                WorldTip.showNow(LM.Get(friendly ? "vd_tip_box_garrison" : "vd_tip_box_attack")
+                    .Replace("$count$", done.ToString()).Replace("$target$", city.data.name), false, "top");
+            }
             // 缩远框选的命令下完了：清空选择，强制的城市视图随之解除，回到框选前的视图
             if (fromBox) _armies.Clear();
             return true;
@@ -208,7 +218,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 右键：选中的有士兵且点在城市上时按军队下令，否则走原版（单位走过去 / Ctrl 攻击）
+    // 右键：选中的有士兵时按军队下令，否则走原版（单位走过去 / Ctrl 攻击）
     [HarmonyPatch(typeof(PlayerControl), "tryToMoveSelectedUnits")]
     static class Patch_BoxRightClick
     {

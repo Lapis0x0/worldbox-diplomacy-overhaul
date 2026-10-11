@@ -32,6 +32,7 @@ namespace DiplomacyOverhaul
             WorldLogs.Init();
             AllianceView.Init();
             Powers.Init();
+            Orders.Init();
             Visuals.Init();
             BoxCommand.Init();
             BuildTab();

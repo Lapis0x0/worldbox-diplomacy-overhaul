@@ -225,7 +225,7 @@ namespace DiplomacyOverhaul
             return AliveArmy(near) ? near : null;
         }
 
-        // 第一下点军队（旗帜或士兵），第二下点目标城市；再点同一支军队取消
+        // 第一下点军队（旗帜或士兵），第二下点目标城市或空地；再点同一支军队取消
         static bool ClickCommandArmy(WorldTile pTile)
         {
             Army hovered = ArmyUnderCursor();
@@ -253,23 +253,24 @@ namespace DiplomacyOverhaul
                 return false;
             }
 
-            City city = pTile?.zone?.city;
-            if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
+            if (pTile == null) return false;
+            City city = Orders.TargetCity(pTile);
             Army army = _army;
-            bool own = city.kingdom == army.getCity()?.kingdom;
-            if (own && Orders.Release(army.getCity(), city))
+            bool friendly = city != null && Orders.Friendly(city.kingdom, army.getCity()?.kingdom);
+            if (Orders.Release(army.getCity(), pTile))
             {
                 Tip(LM.Get("vd_tip_army_released").Replace("$army$", army.name));
                 SetArmy(null);
                 return true;
             }
-            string error = Orders.CommandArmy(army, city);
+            string error = Orders.CommandArmy(army, pTile);
             if (error != null)
             {
                 WorldTip.showNow(error, true, "top");
                 return false;
             }
-            Tip(LM.Get(own ? "vd_tip_army_moving" : "vd_tip_army_attacking")
+            if (city == null) Tip(LM.Get("vd_tip_army_holding").Replace("$army$", army.name));
+            else Tip(LM.Get(friendly ? "vd_tip_army_moving" : "vd_tip_army_attacking")
                 .Replace("$army$", army.name).Replace("$target$", city.data.name));
             SetArmy(null);
             return true;
@@ -289,9 +290,9 @@ namespace DiplomacyOverhaul
             }
             City source = _source;
             string error;
-            if (city.kingdom == source.kingdom)
+            if (Orders.Friendly(city.kingdom, source.kingdom))
             {
-                // 点的是自己国家的城市：召回军队
+                // 点的是本国或友方的城市：全军前往驻扎
                 int moved = Orders.RecallKingdom(source.kingdom, city);
                 error = moved == 0 ? "vd_tip_no_army" : null;
                 if (error == null)
