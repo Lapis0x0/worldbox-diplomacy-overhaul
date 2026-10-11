@@ -1,8 +1,8 @@
 {
   "name": "外交大修 Diplomacy Overhaul",
   "author": "Lapis0x0",
-  "version": "0.3.0",
-  "description": "加入附庸国、独立战争、战败投降与政体系统。",
+  "version": "0.4.0",
+  "description": "加入附庸国、独立战争、战败投降、政体、王朝周期与大叛乱。",
   "GUID": "shizhiyun_diplomacy_overhaul",
   "targetGameBuild": 719,
   "UsePublicizedAssembly": true,
