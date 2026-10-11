@@ -123,22 +123,9 @@ namespace DiplomacyOverhaul
             }
             WorldTip.showNow(LM.Get(own ? "vd_tip_box_garrison" : "vd_tip_box_attack")
                 .Replace("$count$", done.ToString()).Replace("$target$", city.data.name), false, "top");
-            if (fromBox)
-            {
-                // 缩远框选的命令下完了：清空选择，地图留在城市视图，不跳回原来的视图
-                _armies.Clear();
-                UseCityLayer();
-            }
+            // 缩远框选的命令下完了：清空选择，强制的城市视图随之解除，回到框选前的视图
+            if (fromBox) _armies.Clear();
             return true;
-        }
-
-        // 等同于点了工具栏上的"城市图层"
-        static void UseCityLayer()
-        {
-            if (!PlayerConfig.dict.TryGetValue("map_city_layer", out PlayerOptionData option)) return;
-            option.boolVal = true;
-            PowerLibrary.disableAllOtherMapModes("city_layer");
-            PlayerConfig.saveData();
         }
     }
 
