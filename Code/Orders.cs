@@ -67,6 +67,17 @@ namespace DiplomacyOverhaul
             return true;
         }
 
+        // 原版队长每做完一件事就随机挑下一件（闲逛、等士兵、社交……），"往驻扎城走"只是其中之一，
+        // 路远时几乎不动。队长还没进驻扎城、也没在打仗或坐船时，强制它继续赶路
+        public static void PushToGarrison(City pCity, City pGarrison)
+        {
+            Actor captain = pCity.army?.getCaptain();
+            if (captain == null || captain.isRekt() || captain.is_inside_boat || captain.isFighting()) return;
+            if (captain.current_tile.zone.city == pGarrison) return;
+            if (captain.ai?.task?.id == "warrior_army_leader_move_random") return;
+            captain.setTask("warrior_army_leader_move_random", true, false, true);
+        }
+
         // 选中的军队已经驻扎在这座城：解除驻扎，交还原版 AI
         public static bool Release(City pFrom, City pDest)
         {
@@ -364,7 +375,9 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
         {
-            if (Orders.GetGarrison(pCity) == null) return true;
+            City garrison = Orders.GetGarrison(pCity);
+            if (garrison == null) return true;
+            Orders.PushToGarrison(pCity, garrison);
             pCity.target_attack_city = null;
             pCity.target_attack_zone = null;
             __result = ai.behaviours.BehResult.Continue;
