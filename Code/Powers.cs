@@ -342,7 +342,8 @@ namespace DiplomacyOverhaul
                 WorldTip.showNow(error, true, "top");
                 return false;
             }
-            Tip(LM.Get("vd_tip_city_released").Replace("$vassal$", created.data.name).Replace("$lord$", owner.data.name));
+            Kingdom lord = Vassals.GetOverlord(created) ?? owner;
+            Tip(LM.Get("vd_tip_city_released").Replace("$vassal$", created.data.name).Replace("$lord$", lord.data.name));
             return true;
         }
 

@@ -79,6 +79,14 @@ namespace DiplomacyOverhaul
 
         // 王国窗口和悬停提示里政体名用的 key。附庸是"政体 · 宗主"，帝国是"政体 · 周期阶段"，
         // 没有现成的 key，按国家写进当前语言表：原版会按 key 刷新文字，直接改文字会被冲掉
+        // 名牌、悬停提示里显示的国名：后面接上政体（「科英布拉公国」），国名本身不改
+        public static string DisplayName(Kingdom pKingdom)
+        {
+            KingdomTrait gov = Settings.GovernmentNameEnabled ? Current(pKingdom) : null;
+            if (gov == null) return pKingdom.name;
+            return LM.Get("vd_kingdom_display_name").Replace("$name$", pKingdom.name).Replace("$gov$", LM.Get(gov.getLocaleID()));
+        }
+
         public static string TitleKey(Kingdom pKingdom)
         {
             string key = Current(pKingdom)?.getLocaleID() ?? VanillaTitleKey;
@@ -168,7 +176,27 @@ namespace DiplomacyOverhaul
             Kingdom k = pData?.kingdom;
             if (k == null) return;
             if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
-            pTooltip.setTitle(k.name, Government.TitleKey(k), k.getColor().color_text);
+            pTooltip.setTitle(Government.DisplayName(k), Government.TitleKey(k), k.getColor().color_text);
+        }
+    }
+
+    // 地图上的国家名牌：showTextKingdom 里用 kingdom.name 拼名牌文字，这里换成带政体的显示名
+    [HarmonyPatch(typeof(NameplateText), nameof(NameplateText.showTextKingdom))]
+    static class Patch_KingdomNameplate
+    {
+        internal static Kingdom Current;
+
+        static void Prefix(Kingdom pMetaObject) => Current = pMetaObject;
+
+        static void Postfix() => Current = null;
+    }
+
+    [HarmonyPatch(typeof(NameplateText), "getStringForNameplate")]
+    static class Patch_KingdomNameplateText
+    {
+        static void Prefix(ref string pName)
+        {
+            if (Patch_KingdomNameplate.Current != null) pName = Government.DisplayName(Patch_KingdomNameplate.Current);
         }
     }
 }

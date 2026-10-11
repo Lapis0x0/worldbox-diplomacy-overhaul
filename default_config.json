@@ -23,6 +23,12 @@
       "IntVal": 120,
       "MinIntVal": 50,
       "MaxIntVal": 300
+    },
+    {
+      "Id": "vd_feudal_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconVillages",
+      "BoolVal": true
     }
   ],
   "vd_group_capitulation": [
@@ -62,6 +68,12 @@
       "Id": "vd_gov_auto_enabled",
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconCrown",
+      "BoolVal": true
+    },
+    {
+      "Id": "vd_gov_name_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconKingdom",
       "BoolVal": true
     }
   ],

@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
@@ -68,8 +69,8 @@ namespace DiplomacyOverhaul
             World.world.wars.endWar(pWar, pResult);
             if (Vassals.MakeVassal(lord, pLoser) == null)
             {
-                WorldTip.showNow(NeoModLoader.General.LM.Get("vd_tip_capitulated")
-                    .Replace("$vassal$", pLoser.data.name).Replace("$lord$", lord.data.name), false, "top");
+                WorldLogs.Add(WorldLogs.Capitulated, pLoser.hasCapital() ? pLoser.capital.last_city_center : Vector2.zero, pLoser.king,
+                    new[] { pLoser.data.name, lord.data.name }, new[] { pLoser, lord });
             }
         }
     }

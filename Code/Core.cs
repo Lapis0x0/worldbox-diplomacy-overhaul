@@ -29,6 +29,7 @@ namespace DiplomacyOverhaul
             AddPlot();
             Government.Init();
             Cycle.Init();
+            WorldLogs.Init();
             AllianceView.Init();
             Powers.Init();
             Visuals.Init();
