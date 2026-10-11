@@ -106,5 +106,8 @@
   "vd_tip_cycle_advanced": "$kingdom$ 步入$phase$",
   "vd_tip_cycle_not_empire": "只有帝国才有王朝周期",
   "vd_tip_cycle_disabled": "王朝周期已在设置中关闭",
-  "vd_tip_army_released": "$army$ 解除驻扎"
+  "vd_tip_army_released": "$army$ 解除驻扎",
+  "vd_tip_box_attack": "$count$ 支军队出发进攻 $target$",
+  "vd_tip_box_garrison": "$count$ 支军队前往 $target$ 驻扎",
+  "vd_tip_box_selected": "已选中 $count$ 支军队，右键点城市下令"
 }

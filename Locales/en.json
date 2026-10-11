@@ -106,5 +106,8 @@
   "vd_tip_cycle_advanced": "$kingdom$ enters $phase$",
   "vd_tip_cycle_not_empire": "Only empires have a dynastic cycle",
   "vd_tip_cycle_disabled": "The dynastic cycle is turned off in the settings",
-  "vd_tip_army_released": "$army$ is no longer garrisoned"
+  "vd_tip_army_released": "$army$ is no longer garrisoned",
+  "vd_tip_box_attack": "$count$ armies march on $target$",
+  "vd_tip_box_garrison": "$count$ armies march to garrison $target$",
+  "vd_tip_box_selected": "$count$ armies selected. Right-click a city to give orders"
 }

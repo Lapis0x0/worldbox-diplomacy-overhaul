@@ -73,11 +73,12 @@ namespace DiplomacyOverhaul
 
             if (Selected(Powers.CommandArmy) && Powers.AliveArmy(Powers._army))
             {
-                Army army = Powers._army;
-                Actor lead = army.getCaptain();
-                if (lead == null || lead.isRekt()) lead = army.units[0];
-                Color color = army.getColor().getColorMainSecond();
-                QuantumSpriteLibrary.drawArrowQuantumSprite(pAsset, lead.current_position, mouse, ref color);
+                ArmyArrow(pAsset, Powers._army, mouse);
+            }
+            else if (!World.world.isAnyPowerSelected())
+            {
+                // 框选了士兵：每支军队一条箭头，右键就往鼠标处下令
+                foreach (Army army in BoxCommand.SelectedArmies()) ArmyArrow(pAsset, army, mouse);
             }
             else if (Selected(Powers.OrderKingdomAttack) && source != null)
             {
@@ -100,6 +101,14 @@ namespace DiplomacyOverhaul
             }
         }
 
+        static void ArmyArrow(QuantumSpriteAsset pAsset, Army pArmy, Vector2 pTo)
+        {
+            Actor lead = pArmy.getCaptain();
+            if (lead == null || lead.isRekt()) lead = pArmy.units[0];
+            Color color = pArmy.getColor().getColorMainSecond();
+            QuantumSpriteLibrary.drawArrowQuantumSprite(pAsset, lead.current_position, pTo, ref color);
+        }
+
         static void Arrow(QuantumSpriteAsset pAsset, City pFrom, Vector2 pTo)
         {
             WorldTile tile = pFrom.getTile();
@@ -110,8 +119,16 @@ namespace DiplomacyOverhaul
 
         static void DrawZones(QuantumSpriteAsset pAsset)
         {
-            if (World.world.isBusyWithUI() || !AnyOwnPowerSelected()) return;
+            if (World.world.isBusyWithUI()) return;
             City hovered = HoveredCity();
+            if (!World.world.isAnyPowerSelected())
+            {
+                // 框选了士兵：鼠标下的城市按进攻（红）/驻扎（绿）着色
+                List<Army> armies = BoxCommand.SelectedArmies();
+                if (armies.Count > 0 && hovered != null) Zones(pAsset, hovered.zones, TargetColor(armies[0].getCity(), hovered));
+                return;
+            }
+            if (!AnyOwnPowerSelected()) return;
             City source = Alive(Powers._source);
             Kingdom lord = Alive(Powers._lord);
 
