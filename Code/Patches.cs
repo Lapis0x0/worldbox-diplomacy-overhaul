@@ -208,7 +208,7 @@ namespace DiplomacyOverhaul
             if (_titles.TryGetValue(pWindow, out LocalizedText cached) && cached != null) return cached;
             foreach (LocalizedText t in pWindow.GetComponentsInChildren<LocalizedText>(true))
             {
-                if (t.key == Government.VanillaTitleKey || t.key.StartsWith(Government.VassalTitlePrefix) || t.key.StartsWith("kingdom_trait_vd_gov_"))
+                if (t.key == Government.VanillaTitleKey || t.key.StartsWith(Government.CustomTitlePrefix) || t.key.StartsWith("kingdom_trait_vd_gov_"))
                 {
                     _titles[pWindow] = t;
                     return t;

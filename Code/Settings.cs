@@ -14,9 +14,7 @@ namespace DiplomacyOverhaul
         public static int CapitulationMinYears => Int("vd_group_capitulation", "vd_capitulation_min_years", 5);
         public static int CapitulationCityLoss => Int("vd_group_capitulation", "vd_capitulation_city_loss", 50);
         public static int CapitulationPowerRatio => Int("vd_group_capitulation", "vd_capitulation_power_ratio", 200);
-        public static bool GreatRebellionEnabled => Bool("vd_group_rebellion", "vd_great_rebellion_enabled", true);
-        public static int GreatRebellionChance => Int("vd_group_rebellion", "vd_great_rebellion_chance", 50);
-        public static int GreatRebellionCooldown => Int("vd_group_rebellion", "vd_great_rebellion_cooldown", 50);
+        public static bool CycleEnabled => Bool("vd_group_cycle", "vd_cycle_enabled", true);
         public static bool GovernmentAutoEnabled => Bool("vd_group_government", "vd_gov_auto_enabled", true);
 
         static int Int(string pGroup, string pId, int pDefault)

@@ -8,30 +8,12 @@ namespace DiplomacyOverhaul
     // 大叛乱：国内多处城市同时叛乱，附庸按对宗主的好感度决定是否发动独立战争
     public static class GreatRebellion
     {
-        const string KeyLastYear = "vd_great_rebellion_year";
-        const int AutoMinCities = 4;
         // 叛军最终占走原国家非首都城市的比例
         const int TakenPercent = 60;
-
-        public static bool OnCooldown(Kingdom pKingdom)
-        {
-            pKingdom.data.get(KeyLastYear, out int year, int.MinValue);
-            return year != int.MinValue && Date.getCurrentYear() - year < Settings.GreatRebellionCooldown;
-        }
-
-        // 首都沦陷时按概率触发
-        public static void OnCapitalLost(Kingdom pKingdom)
-        {
-            if (!Settings.GreatRebellionEnabled || pKingdom == null || !pKingdom.isAlive() || pKingdom.isNeutral()) return;
-            if (pKingdom.countCities() < AutoMinCities || OnCooldown(pKingdom)) return;
-            if (!Randy.randomChance(Settings.GreatRebellionChance / 100f)) return;
-            Trigger(pKingdom);
-        }
 
         // 返回叛乱的城市数和造反的附庸数之和；为 0 表示什么都没发生
         public static int Trigger(Kingdom pKingdom)
         {
-            pKingdom.data.set(KeyLastYear, Date.getCurrentYear());
             int count = 0;
 
             int nonCapital = pKingdom.countCities() - (pKingdom.capital != null ? 1 : 0);
@@ -53,7 +35,10 @@ namespace DiplomacyOverhaul
             }
 
             if (count > 0)
+            {
+                Cycle.OnGreatRebellion(pKingdom);
                 WorldTip.showNow(LM.Get("vd_tip_great_rebellion").Replace("$kingdom$", pKingdom.data.name), false, "top");
+            }
             return count;
         }
 
@@ -166,7 +151,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 城市被攻占时记下它是不是首都，攻占完成后检查是否触发大叛乱
+    // 城市被攻占时记下它是不是首都，攻占完成后交给王朝周期处理
     [HarmonyPatch(typeof(City), nameof(City.joinAnotherKingdom))]
     static class Patch_CapitalCaptured
     {
@@ -177,7 +162,7 @@ namespace DiplomacyOverhaul
 
         static void Postfix(Kingdom __state)
         {
-            if (__state != null) GreatRebellion.OnCapitalLost(__state);
+            if (__state != null) Cycle.OnCapitalLost(__state);
         }
     }
 }

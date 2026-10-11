@@ -52,7 +52,7 @@ namespace DiplomacyOverhaul
         static bool Selected(string pPower) => World.world.isSelectedPower(pPower);
 
         static bool AnyOwnPowerSelected() =>
-            Selected(Powers.MakeVassal) || Selected(Powers.InciteIndependence) || Selected(Powers.GreatRebellion) || Selected(Powers.ReleaseCity)
+            Selected(Powers.MakeVassal) || Selected(Powers.InciteIndependence) || Selected(Powers.GreatRebellion) || Selected(Powers.Mandate) || Selected(Powers.ReleaseCity)
             || Selected(Powers.CommandArmy) || Selected(Powers.OrderKingdomAttack)
             || Selected(Powers.TransferCity) || Selected(Powers.Annex);
 
@@ -135,6 +135,11 @@ namespace DiplomacyOverhaul
             {
                 if (lord != null) Kingdom(pAsset, lord, ColorSource);
                 if (hovered != null && hovered.kingdom != lord) Kingdom(pAsset, hovered.kingdom, lord != null ? ColorTarget : ColorSource);
+            }
+            else if (Selected(Powers.Mandate))
+            {
+                // 按当前阶段的颜色高亮，没有周期的国家用默认的白色
+                if (hovered != null) Kingdom(pAsset, hovered.kingdom, Cycle.PhaseColor(hovered.kingdom) ?? ColorSource);
             }
             else if (Selected(Powers.InciteIndependence) || Selected(Powers.GreatRebellion))
             {

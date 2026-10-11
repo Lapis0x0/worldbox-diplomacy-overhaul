@@ -22,21 +22,37 @@ namespace DiplomacyOverhaul
 
         public static void Init()
         {
+            AddTraitGroup(GroupId, "#FFD27F", Ids,
+                new[] { "ui/Icons/iconCity", "ui/Icons/iconKingdom", "ui/Icons/iconCrown", "ui/Icons/iconKings" });
+        }
+
+        // 一组互斥的王国特质（政体、王朝周期）；组名的 key 是 trait_group_<组 id>
+        public static void AddTraitGroup(string pGroupId, string pColor, string[] pIds, string[] pIcons)
+        {
             Core.Upsert(AssetManager.kingdoms_traits_groups, new KingdomTraitGroupAsset
             {
-                id = GroupId,
-                name = "trait_group_vd_government",
-                color = "#FFD27F"
+                id = pGroupId,
+                name = "trait_group_" + pGroupId,
+                color = pColor
             });
 
-            AddTrait(CityState, "ui/Icons/iconCity");
-            AddTrait(Kingdom, "ui/Icons/iconKingdom");
-            AddTrait(Empire, "ui/Icons/iconCrown");
-            AddTrait(Duchy, "ui/Icons/iconKings");
+            for (int i = 0; i < pIds.Length; i++)
+            {
+                Core.Upsert(AssetManager.kingdoms_traits, new KingdomTrait
+                {
+                    id = pIds[i],
+                    group_id = pGroupId,
+                    path_icon = pIcons[i],
+                    spawn_random_trait_allowed = false,
+                    needs_to_be_explored = false,
+                    has_description_2 = false,
+                    rarity = Rarity.R0_Normal
+                });
+            }
 
             // 特质库在模组加载前已经 link 过，互斥关系要自己补上
             var traits = new List<KingdomTrait>();
-            foreach (string id in Ids) traits.Add(AssetManager.kingdoms_traits.get(id));
+            foreach (string id in pIds) traits.Add(AssetManager.kingdoms_traits.get(id));
             foreach (KingdomTrait t in traits)
             {
                 t.opposite_traits = new HashSet<KingdomTrait>();
@@ -49,20 +65,6 @@ namespace DiplomacyOverhaul
             }
         }
 
-        static void AddTrait(string pId, string pIcon)
-        {
-            Core.Upsert(AssetManager.kingdoms_traits, new KingdomTrait
-            {
-                id = pId,
-                group_id = GroupId,
-                path_icon = pIcon,
-                spawn_random_trait_allowed = false,
-                needs_to_be_explored = false,
-                has_description_2 = false,
-                rarity = Rarity.R0_Normal
-            });
-        }
-
         public static KingdomTrait Current(Kingdom pKingdom)
         {
             foreach (KingdomTrait t in pKingdom.getTraits())
@@ -73,19 +75,24 @@ namespace DiplomacyOverhaul
         }
 
         public const string VanillaTitleKey = "kingdom";
-        public const string VassalTitlePrefix = "vd_kingdom_title_";
+        public const string CustomTitlePrefix = "vd_kingdom_title_";
 
-        // 王国窗口和悬停提示里政体名用的 key。附庸是"政体 · 宗主"，没有现成的 key，
-        // 按国家写进当前语言表：原版会按 key 刷新文字，直接改文字会被冲掉
+        // 王国窗口和悬停提示里政体名用的 key。附庸是"政体 · 宗主"，帝国是"政体 · 周期阶段"，
+        // 没有现成的 key，按国家写进当前语言表：原版会按 key 刷新文字，直接改文字会被冲掉
         public static string TitleKey(Kingdom pKingdom)
         {
             string key = Current(pKingdom)?.getLocaleID() ?? VanillaTitleKey;
+            string suffix = Cycle.Label(pKingdom);
             Kingdom lord = Vassals.GetOverlord(pKingdom);
-            if (lord == null) return key;
-            string color = UnityEngine.ColorUtility.ToHtmlStringRGB(lord.getColor().getColorText());
-            string vassalKey = VassalTitlePrefix + pKingdom.id;
-            LM.AddToCurrentLocale(vassalKey, $"{LM.Get(key)} · <color=#{color}>{lord.data.name}</color>");
-            return vassalKey;
+            if (lord != null)
+            {
+                string color = UnityEngine.ColorUtility.ToHtmlStringRGB(lord.getColor().getColorText());
+                suffix = $"<color=#{color}>{lord.data.name}</color>";
+            }
+            if (suffix == null) return key;
+            string customKey = CustomTitlePrefix + pKingdom.id;
+            LM.AddToCurrentLocale(customKey, $"{LM.Get(key)} · {suffix}");
+            return customKey;
         }
 
         static string Desired(Kingdom pKingdom)
@@ -134,7 +141,7 @@ namespace DiplomacyOverhaul
 
     // 和投降检查一样，每个游戏年判定一次
     [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.update))]
-    static class Patch_GovernmentTick
+    static class Patch_YearlyTick
     {
         static double _lastCheck = -1;
 
@@ -145,6 +152,7 @@ namespace DiplomacyOverhaul
             if (_lastCheck >= 0 && now >= _lastCheck && now - _lastCheck < Capitulation.YearLength) return;
             _lastCheck = now;
             Government.UpdateAll();
+            Cycle.UpdateAll();
         }
     }
 }
@@ -159,7 +167,7 @@ namespace DiplomacyOverhaul
         {
             Kingdom k = pData?.kingdom;
             if (k == null) return;
-            if (Government.Current(k) == null && !Vassals.IsVassal(k)) return;
+            if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
             pTooltip.setTitle(k.name, Government.TitleKey(k), k.getColor().color_text);
         }
     }

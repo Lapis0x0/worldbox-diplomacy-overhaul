@@ -7,6 +7,7 @@ namespace DiplomacyOverhaul
         public const string MakeVassal = "vd_make_vassal";
         public const string InciteIndependence = "vd_incite_independence";
         public const string GreatRebellion = "vd_great_rebellion";
+        public const string Mandate = "vd_mandate";
         public const string ReleaseCity = "vd_release_city";
         public const string CommandArmy = "vd_command_army";
         public const string OrderKingdomAttack = "vd_order_kingdom_attack";
@@ -58,6 +59,20 @@ namespace DiplomacyOverhaul
                     return false;
                 },
                 click_special_action = (pTile, _) => ClickGreatRebellion(pTile)
+            });
+
+            Core.Upsert(AssetManager.powers, new GodPower
+            {
+                id = Mandate,
+                name = Mandate,
+                force_map_mode = MetaType.Kingdom,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    WorldTip.showNow("vd_tip_pick_mandate", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickMandate(pTile)
             });
 
             InitReleaseCity();
@@ -376,6 +391,16 @@ namespace DiplomacyOverhaul
                 return false;
             }
             return true;
+        }
+
+        static bool ClickMandate(WorldTile pTile)
+        {
+            Kingdom k = KingdomAt(pTile);
+            if (k == null) return false;
+            string error = Cycle.Advance(k);
+            if (error == null) return true;
+            WorldTip.showNow(error, true, "top");
+            return false;
         }
 
         // 附庸立刻向宗主发动独立战争，结局交给 Patch_EndWar

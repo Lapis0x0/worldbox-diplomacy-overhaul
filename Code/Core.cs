@@ -28,6 +28,7 @@ namespace DiplomacyOverhaul
             AddOpinion();
             AddPlot();
             Government.Init();
+            Cycle.Init();
             AllianceView.Init();
             Powers.Init();
             Visuals.Init();
@@ -100,6 +101,7 @@ namespace DiplomacyOverhaul
             AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
             AddPower(tab, Powers.InciteIndependence, "ui/Icons/iconRebellion");
             AddPower(tab, Powers.GreatRebellion, "ui/Icons/iconFireSkull");
+            AddPower(tab, Powers.Mandate, "ui/Icons/iconDivineLight");
             AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
             AddSeparator(tab);
             AddPower(tab, Powers.CommandArmy, "ui/Icons/iconArrowAttackTarget");
@@ -139,6 +141,19 @@ namespace DiplomacyOverhaul
                 translation_key = "opinion_vd_overlord",
                 calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Settings.OpinionBonus : 0
             });
+            Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_cycle",
+                translation_key = "opinion_vd_cycle",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Cycle.VassalOpinion(pTarget) : 0
+            });
+            Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_cycle",
+                translation_key = "loyalty_vd_cycle_prime",
+                translation_key_negative = "loyalty_vd_cycle_decline",
+                calc = Cycle.CityLoyalty
+            });
         }
 
         static void AddPlot()
@@ -160,7 +175,11 @@ namespace DiplomacyOverhaul
                     Kingdom lord = Vassals.GetOverlord(k);
                     if (lord == null) return false;
                     if (World.world.plots.isPlotTypeAlreadyRunning(pActor, plot_independence)) return false;
+                    // 鼎盛的帝国，附庸不敢密谋
+                    if (Cycle.Get(lord) == CyclePhase.Prime) return false;
                     if (World.world.diplomacy.getOpinion(k, lord).total >= Settings.RebelOpinion) return false;
+                    // 宗主处在王朝衰落期，附庸看准它外强中干，不再看实力对比
+                    if (Cycle.Get(lord) == CyclePhase.Decline) return true;
                     // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落
                     return Vassals.Power(lord) * 100 < Vassals.Power(k) * Settings.RebelPowerRatio;
                 },
