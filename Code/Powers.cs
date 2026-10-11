@@ -257,6 +257,12 @@ namespace DiplomacyOverhaul
             if (city == null || city.isRekt() || city.kingdom == null || city.kingdom.isNeutral()) return false;
             Army army = _army;
             bool own = city.kingdom == army.getCity()?.kingdom;
+            if (own && Orders.Release(army.getCity(), city))
+            {
+                Tip(LM.Get("vd_tip_army_released").Replace("$army$", army.name));
+                SetArmy(null);
+                return true;
+            }
             string error = Orders.CommandArmy(army, city);
             if (error != null)
             {

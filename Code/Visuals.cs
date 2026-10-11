@@ -117,10 +117,11 @@ namespace DiplomacyOverhaul
 
             if (Selected(Powers.CommandArmy))
             {
-                // 选好军队后：鼠标下的城市按进攻（红）/前往（绿）着色
+                // 选好军队后：鼠标下的城市按进攻（红）/驻扎（绿）着色
                 City home = Powers.AliveArmy(Powers._army) ? Alive(Powers._army.getCity()) : null;
+                // 已经驻扎在这座城：白色，点了是解除驻扎
                 if (home != null && hovered != null && Powers.ArmyUnderCursor() != Powers._army)
-                    Zones(pAsset, hovered.zones, TargetColor(home, hovered));
+                    Zones(pAsset, hovered.zones, hovered == Orders.GetGarrison(home) ? ColorSource : TargetColor(home, hovered));
             }
             else if (Selected(Powers.OrderKingdomAttack))
             {

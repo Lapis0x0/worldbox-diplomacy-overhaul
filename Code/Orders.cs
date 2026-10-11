@@ -32,6 +32,49 @@ namespace DiplomacyOverhaul
 
         static bool HasArmy(City pCity) => pCity.hasArmy() && pCity.army.countUnits() > 0;
 
+        // 驻扎：军队所属城市 → 驻扎的城市 id，存在城市数据里，读档后照样守着。
+        // 驻扎期间原版 AI 不给这支军队挑进攻目标，队长只在驻扎城里走动；下进攻命令或再点一次驻扎城解除
+        const string KeyGarrison = "vd_garrison";
+
+        public static City GetGarrison(City pCity)
+        {
+            if (pCity?.data == null) return null;
+            pCity.data.get(KeyGarrison, out long id, -1L);
+            if (id < 0) return null;
+            City target = World.world.cities.get(id);
+            if (target != null && !target.isRekt() && target.kingdom == pCity.kingdom) return target;
+            // 驻扎城丢了或者换了国家
+            pCity.data.removeLong(KeyGarrison);
+            return null;
+        }
+
+        static void SetGarrison(City pCity, City pTarget)
+        {
+            if (pTarget == null) pCity.data.removeLong(KeyGarrison);
+            else pCity.data.set(KeyGarrison, pTarget.id);
+        }
+
+        // 驻扎中的队长随机走动时，从驻扎城里挑地块；还没过海时交给原版，免得走离接人的地方
+        public static bool TakeGarrisonTile(Actor pActor, out WorldTile pTile)
+        {
+            pTile = null;
+            if (!pActor.isArmyGroupLeader()) return false;
+            City target = GetGarrison(pActor.city);
+            if (target == null || target.zones.Count == 0) return false;
+            WorldTile tile = target.zones.GetRandom().tiles.GetRandom();
+            if (!pActor.current_tile.isSameIsland(tile)) return false;
+            pTile = tile;
+            return true;
+        }
+
+        // 选中的军队已经驻扎在这座城：解除驻扎，交还原版 AI
+        public static bool Release(City pFrom, City pDest)
+        {
+            if (GetGarrison(pFrom) != pDest) return false;
+            SetGarrison(pFrom, null);
+            return true;
+        }
+
         // 召回：队长 → 召回城市里的目标地块，由 Patch_RallyTile 在原版"随机走动"任务里取用
         static readonly Dictionary<Actor, WorldTile> _rally = new Dictionary<Actor, WorldTile>();
 
@@ -42,7 +85,7 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 点的是自己国家的城市：军队前往那座城，到了之后交还给原版 AI
+        // 点的是自己国家的城市：军队前往那座城并驻扎
         public static string Recall(City pFrom, City pDest)
         {
             if (pFrom == null || pDest == null || pFrom.kingdom != pDest.kingdom) return "vd_tip_invalid";
@@ -68,6 +111,7 @@ namespace DiplomacyOverhaul
             pFrom.target_attack_city = null;
             pFrom.target_attack_zone = null;
             _forced.Remove(pFrom.id);
+            SetGarrison(pFrom, pDest);
 
             WorldTile tile = pDest.zones.GetRandom().tiles.GetRandom();
             Actor captain = pFrom.army.getCaptain();
@@ -121,6 +165,7 @@ namespace DiplomacyOverhaul
 
         static void Order(City pFrom, City pTarget)
         {
+            SetGarrison(pFrom, null);
             pFrom.target_attack_city = pTarget;
             // 原版在目标城市没有建筑时会把落点设成自己的城市，这里直接从目标城市的地块里选
             pFrom.target_attack_zone = pTarget.buildings.Count > 0
@@ -283,7 +328,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref ai.behaviours.BehResult __result)
         {
-            if (!Orders.TakeRallyTile(pActor, out WorldTile tile)) return true;
+            if (!Orders.TakeRallyTile(pActor, out WorldTile tile) && !Orders.TakeGarrisonTile(pActor, out tile)) return true;
             pActor.beh_tile_target = tile;
             __result = ai.behaviours.BehResult.Continue;
             return false;
@@ -313,10 +358,19 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 目标失效、被原版 AI 换掉后，命令自动解除
+    // 驻扎中的城市不挑进攻目标；目标失效、被原版 AI 换掉后，进攻命令自动解除
     [HarmonyPatch(typeof(ai.behaviours.CityBehCheckAttackZone), nameof(ai.behaviours.CityBehCheckAttackZone.execute))]
     static class Patch_CheckAttackZone
     {
+        static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
+        {
+            if (Orders.GetGarrison(pCity) == null) return true;
+            pCity.target_attack_city = null;
+            pCity.target_attack_zone = null;
+            __result = ai.behaviours.BehResult.Continue;
+            return false;
+        }
+
         static void Postfix(City pCity) => Orders.CheckForced(pCity);
     }
 }
