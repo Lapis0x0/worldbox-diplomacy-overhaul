@@ -34,6 +34,36 @@ namespace DiplomacyOverhaul
                 render_map = true,
                 add_camera_zoom_multiplier = false
             });
+            // 原版地图上军队旗子的精灵自带文字，只在调试选项里才显示人数；换成一直显示
+            QuantumSpriteAsset armies = AssetManager.quantum_sprites.get("armies");
+            if (armies != null) armies.draw_call = DrawArmyFlags;
+        }
+
+        static readonly Sprite FlagSprite = SpriteTextureLoader.getSprite("civ/icons/minimap_flag");
+
+        // 照抄原版 QuantumSpriteLibrary.drawArmies，只把人数改成一直显示
+        static void DrawArmyFlags(QuantumSpriteAsset pAsset)
+        {
+            if (!PlayerConfig.optionBoolEnabled("marks_armies")) return;
+            if (global::Zones.showArmyZones() && global::Zones.showMapNames()) return;
+            int num = 0;
+            for (int i = 0; i < World.world.armies.list.Count; i++)
+            {
+                if (num > 2) break;
+                Army army = World.world.armies.list[i];
+                if (!army.hasCaptain()) continue;
+                Actor captain = army.getCaptain();
+                if (captain.isInMagnet() || !captain.current_zone.visible || !captain.isKingdomCiv()) continue;
+                Kingdom kingdom = captain.kingdom;
+                var sprite = (QuantumSpriteWithText)QuantumSpriteLibrary.drawQuantumSprite(pAsset, captain.current_position, null, kingdom, captain.city);
+                sprite.text.gameObject.SetActive(true);
+                sprite.text.text = army.countUnits().ToString();
+                Renderer renderer = sprite.text.GetComponent<Renderer>();
+                renderer.sortingLayerID = sprite.sprite_renderer.sortingLayerID;
+                renderer.sortingOrder = sprite.sprite_renderer.sortingOrder;
+                if (!pAsset.group_system.is_within_active_index) num++;
+                sprite.setSprite(DynamicSprites.getIcon(FlagSprite, kingdom.getColor()));
+            }
         }
 
         // 热重载时资源已存在：Upsert 只换绘制函数，渲染用的对象保留
