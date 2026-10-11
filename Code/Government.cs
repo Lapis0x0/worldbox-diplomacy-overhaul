@@ -161,6 +161,7 @@ namespace DiplomacyOverhaul
             _lastCheck = now;
             Government.UpdateAll();
             Cycle.UpdateAll();
+            Feudal.UpdateTribute();
         }
     }
 }

@@ -7,11 +7,13 @@ namespace DiplomacyOverhaul
     {
         public const string Feudal = "vd_log_feudal";           // $lord$ 将 $city$ 分封给了 $ruler$
         public const string Capitulated = "vd_log_capitulated"; // $vassal$ 投降，成为 $lord$ 的附庸
+        public const string Tribute = "vd_log_tribute";         // $vassal$ 向 $lord$ 称臣
 
         public static void Init()
         {
             Register(Feudal, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(Capitulated, "ui/Icons/iconWar", Toolbox.color_log_warning, "$vassal$", "$lord$");
+            Register(Tribute, "ui/Icons/iconCrown", Toolbox.color_log_neutral, "$vassal$", "$lord$");
         }
 
         // 文案里的占位符依次对应消息的 special1~3

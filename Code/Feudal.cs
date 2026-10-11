@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using HarmonyLib;
+using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
     // AI 分封：大国不是只会吞并和镇压，也会把城市分出去做附庸。
     // 1. 偏远城市密谋叛乱成功时，宗主有概率把它分封出去，换来附庸而不是敌人
     // 2. 已到治理上限还在打仗，攻下的城市大概率分封出去，附近已有不大的附庸就并给那个附庸
+    // 3. 威逼称臣：实力悬殊、对强国不怀恨的邻国，不打仗直接称臣
     // 宗主自己是附庸时不分封（不允许附庸链）
     public static class Feudal
     {
@@ -13,6 +16,10 @@ namespace DiplomacyOverhaul
 
         // 附庸城市数到了这个数，打下的城不再并给它，另封新附庸
         const int VassalMaxCities = 5;
+
+        // 威逼称臣：强国实力至少是对方的这么多倍，满足条件后每年称臣的概率
+        const int TributePowerRatio = 3;
+        const float TributeChance = 0.1f;
 
         static bool CanGrant(Kingdom pLord) =>
             Settings.FeudalEnabled && pLord != null && pLord.isAlive() && pLord.isCiv() && !Vassals.IsVassal(pLord);
@@ -128,6 +135,58 @@ namespace DiplomacyOverhaul
                 if (n == capital || (n.kingdom == pVassal && capital.neighbours_cities.Contains(n))) return true;
             }
             return false;
+        }
+
+        // 每年一次：强国从强到弱依次威逼接壤的弱小邻国
+        public static void UpdateTribute()
+        {
+            if (!Settings.FeudalEnabled) return;
+            var lords = new List<Kingdom>();
+            foreach (Kingdom k in World.world.kingdoms)
+            {
+                if (CanGrant(k)) lords.Add(k);
+            }
+            lords.Sort((a, b) => Vassals.Power(b).CompareTo(Vassals.Power(a)));
+            foreach (Kingdom lord in lords)
+            {
+                // 前面的强国刚收了它做附庸
+                if (Vassals.IsVassal(lord)) continue;
+                float chance = TributeChance;
+                switch (Cycle.Get(lord))
+                {
+                    case CyclePhase.Prime: chance *= 2; break;
+                    case CyclePhase.Decline:
+                    case CyclePhase.Collapse: continue; // 没人怕衰落的帝国
+                }
+                foreach (Kingdom target in Neighbours(lord))
+                {
+                    if (!WillSubmit(target, lord) || !Randy.randomChance(chance)) continue;
+                    if (Vassals.MakeVassal(lord, target) != null) continue;
+                    WorldLogs.Add(WorldLogs.Tribute, target.hasCapital() ? target.capital.last_city_center : Vector2.zero, target.king,
+                        new[] { target.data.name, lord.data.name }, new[] { target, lord });
+                }
+            }
+        }
+
+        static bool WillSubmit(Kingdom pTarget, Kingdom pLord)
+        {
+            if (!pTarget.isAlive() || !pTarget.isCiv() || Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
+            if (pTarget.isInWarWith(pLord)) return false;
+            if (Vassals.Power(pLord) < Vassals.Power(pTarget) * TributePowerRatio) return false;
+            return World.world.diplomacy.getOpinion(pTarget, pLord).total >= 0;
+        }
+
+        static HashSet<Kingdom> Neighbours(Kingdom pKingdom)
+        {
+            var result = new HashSet<Kingdom>();
+            foreach (City city in pKingdom.getCities())
+            {
+                foreach (Kingdom k in city.neighbours_kingdoms)
+                {
+                    if (k != null && k != pKingdom) result.Add(k);
+                }
+            }
+            return result;
         }
 
         // 城市自立为国，由 pRuler 当国王，成为 pLord 的附庸
