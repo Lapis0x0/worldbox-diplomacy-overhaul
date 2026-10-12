@@ -21,7 +21,7 @@
 - 附庸不会自己发动战争，不能发起结盟、加入联盟，也不会被选为结盟对象。
 - 王国窗口显示「宗主」或「附庸」一栏，标题写成「政体 · 宗主名」。
 - 王国地图上，附庸的边界线用宗主的颜色，填充保持自己的颜色。
-- 联盟地图上，附庸显示为宗主所在联盟的颜色；宗主没有联盟时，整个集团用宗主国的颜色。
+- 联盟地图按阵营显示：附庸归入宗主的阵营，宗主有联盟时阵营是联盟，否则是宗主国。染色、名牌、悬停高亮、悬停提示和点击都按阵营；附庸不单独显示名牌，联盟名牌挂在视野内最强的成员或附庸首都上。
 
 ### 战争同进同退
 
@@ -187,4 +187,4 @@
 | `Appanage.cs` | 分封宗室密谋 |
 | `AllianceView.cs` | 联盟地图 |
 
-原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar` / `newWar`、`War.update`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`。
+原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar` / `newWar`、`War.update`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`MetaTypeLibrary.alliance` 的地图回调。
