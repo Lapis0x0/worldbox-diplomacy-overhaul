@@ -7,7 +7,7 @@ namespace DiplomacyOverhaul
     // AI 分封：大国不是只会吞并和镇压，也会把城市分出去做附庸。
     // 1. 偏远城市密谋叛乱成功时，宗主有概率把它分封出去，换来附庸而不是敌人
     // 2. 已到治理上限还在打仗，攻下的城市大概率分封出去，附近已有不大的附庸就并给那个附庸
-    // 3. 威逼称臣：实力悬殊、对强国不怀恨的邻国，不打仗直接称臣
+    // 3. 威逼称臣：强国国王发起密谋，实力悬殊、对强国不怀恨的邻国不打仗直接称臣
     // 宗主自己是附庸时不分封（不允许附庸链）
     public static class Feudal
     {
@@ -17,9 +17,11 @@ namespace DiplomacyOverhaul
         // 附庸城市数到了这个数，打下的城不再并给它，另封新附庸
         const int VassalMaxCities = 5;
 
-        // 威逼称臣：强国实力至少是对方的这么多倍，满足条件后每年称臣的概率
+        // 威逼称臣：强国实力至少是对方的这么多倍；帝国威名在外，门槛更低
         const int TributePowerRatio = 3;
-        const float TributeChance = 0.1f;
+        const int TributePowerRatioEmpire = 2;
+
+        public static PlotAsset plot_tribute;
 
         static bool CanGrant(Kingdom pLord) =>
             Settings.FeudalEnabled && pLord != null && pLord.isAlive() && pLord.isCiv() && !Vassals.IsVassal(pLord);
@@ -137,42 +139,85 @@ namespace DiplomacyOverhaul
             return false;
         }
 
-        // 每年一次：强国从强到弱依次威逼接壤的弱小邻国
-        public static void UpdateTribute()
+        // 威逼称臣密谋：强国国王遣使威逼最近的一个弱小邻国。衰落、崩溃中的国家没人怕
+        public static void Init()
         {
-            if (!Settings.FeudalEnabled) return;
-            var lords = new List<Kingdom>();
-            foreach (Kingdom k in World.world.kingdoms)
+            plot_tribute = Core.Upsert(AssetManager.plots_library, new PlotAsset
             {
-                if (CanGrant(k)) lords.Add(k);
-            }
-            lords.Sort((a, b) => Vassals.Power(b).CompareTo(Vassals.Power(a)));
-            foreach (Kingdom lord in lords)
-            {
-                // 前面的强国刚收了它做附庸
-                if (Vassals.IsVassal(lord)) continue;
-                float chance = TributeChance;
-                switch (Cycle.Get(lord))
+                id = "vd_tribute",
+                is_basic_plot = true,
+                path_icon = "plots/icons/plot_clan_ascension",
+                group_id = "diplomacy",
+                min_level = 4,
+                money_cost = 30,
+                min_renown_kingdom = 50,
+                can_be_done_by_king = true,
+                check_target_kingdom = true,
+                requires_diplomacy = true,
+                check_is_possible = pActor => CanDemand(pActor.kingdom)
+                                              && !World.world.plots.isPlotTypeAlreadyRunning(pActor, plot_tribute)
+                                              && FindTarget(pActor.kingdom) != null,
+                check_can_be_forced = pActor => CanDemand(pActor.kingdom) && FindTarget(pActor.kingdom) != null,
+                try_to_start_advanced = (pActor, pAsset, pForced) =>
                 {
-                    case CyclePhase.Prime: chance *= 2; break;
-                    case CyclePhase.Decline:
-                    case CyclePhase.Collapse: continue; // 没人怕衰落的帝国
-                }
-                foreach (Kingdom target in Neighbours(lord))
+                    Kingdom target = FindTarget(pActor.kingdom);
+                    if (target == null) return false;
+                    Plot plot = World.world.plots.newPlot(pActor, pAsset, pForced);
+                    plot.target_kingdom = target;
+                    return true;
+                },
+                check_should_continue = pActor =>
                 {
-                    if (!WillSubmit(target, lord) || !Randy.randomChance(chance)) continue;
-                    if (Vassals.MakeVassal(lord, target) != null) continue;
+                    Kingdom lord = pActor.kingdom;
+                    Kingdom target = pActor.plot.target_kingdom;
+                    return CanDemand(lord) && target != null && WillSubmit(target, lord);
+                },
+                action = pActor =>
+                {
+                    Kingdom lord = pActor.kingdom;
+                    Kingdom target = pActor.plot.target_kingdom;
+                    if (!CanDemand(lord) || target == null || !WillSubmit(target, lord)) return false;
+                    if (Vassals.MakeVassal(lord, target) != null) return false;
                     WorldLogs.Add(WorldLogs.Tribute, target.hasCapital() ? target.capital.last_city_center : Vector2.zero, target.king,
                         new[] { target.data.name, lord.data.name }, new[] { target, lord });
+                    return true;
+                }
+            });
+            if (!AssetManager.plots_library.basic_plots.Contains(plot_tribute))
+                AssetManager.plots_library.basic_plots.Add(plot_tribute);
+        }
+
+        static bool CanDemand(Kingdom pLord)
+        {
+            if (!CanGrant(pLord)) return false;
+            CyclePhase phase = Cycle.Get(pLord);
+            return phase != CyclePhase.Decline && phase != CyclePhase.Collapse;
+        }
+
+        // 接壤的邻国里最近的、愿意称臣的那个
+        static Kingdom FindTarget(Kingdom pLord)
+        {
+            Kingdom best = null;
+            float bestDist = float.MaxValue;
+            foreach (Kingdom k in Neighbours(pLord))
+            {
+                if (!WillSubmit(k, pLord)) continue;
+                float d = Kingdom.distanceBetweenKingdom(pLord, k);
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = k;
                 }
             }
+            return best;
         }
 
         static bool WillSubmit(Kingdom pTarget, Kingdom pLord)
         {
             if (!pTarget.isAlive() || !pTarget.isCiv() || Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
             if (pTarget.isInWarWith(pLord)) return false;
-            if (Vassals.Power(pLord) < Vassals.Power(pTarget) * TributePowerRatio) return false;
+            int ratio = Government.Current(pLord)?.id == Government.Empire ? TributePowerRatioEmpire : TributePowerRatio;
+            if (Vassals.Power(pLord) < Vassals.Power(pTarget) * ratio) return false;
             return World.world.diplomacy.getOpinion(pTarget, pLord).total >= 0;
         }
 

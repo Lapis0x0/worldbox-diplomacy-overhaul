@@ -27,6 +27,7 @@ namespace DiplomacyOverhaul
             _harmony.PatchAll(typeof(Core).Assembly);
             AddOpinion();
             AddPlot();
+            Feudal.Init();
             Government.Init();
             Cycle.Init();
             WorldLogs.Init();
@@ -194,6 +195,7 @@ namespace DiplomacyOverhaul
                     plot.target_kingdom = lord;
                     return true;
                 },
+                check_can_be_forced = pActor => Vassals.IsVassal(pActor.kingdom),
                 check_should_continue = pActor =>
                 {
                     Plot plot = pActor.plot;

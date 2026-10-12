@@ -267,7 +267,6 @@ namespace DiplomacyOverhaul
             Regime.UpdateAll();
             Government.UpdateAll();
             Cycle.UpdateAll();
-            Feudal.UpdateTribute();
         }
     }
 }
