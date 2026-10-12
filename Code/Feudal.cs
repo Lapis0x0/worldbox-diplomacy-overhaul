@@ -187,6 +187,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_tribute))
                 AssetManager.plots_library.basic_plots.Add(plot_tribute);
+            Motives.Register(plot_tribute, TributeMotive);
         }
 
         static bool CanDemand(Kingdom pLord)
@@ -214,13 +215,27 @@ namespace DiplomacyOverhaul
             return best;
         }
 
+        static int RequiredRatio(Kingdom pLord) =>
+            Government.Current(pLord)?.id == Government.Empire ? TributePowerRatioEmpire : TributePowerRatio;
+
         static bool WillSubmit(Kingdom pTarget, Kingdom pLord)
         {
             if (!pTarget.isAlive() || !pTarget.isCiv() || Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
             if (pTarget.isInWarWith(pLord)) return false;
-            int ratio = Government.Current(pLord)?.id == Government.Empire ? TributePowerRatioEmpire : TributePowerRatio;
-            if (Vassals.Power(pLord) < Vassals.Power(pTarget) * ratio) return false;
+            if (Vassals.Power(pLord) < Vassals.Power(pTarget) * RequiredRatio(pLord)) return false;
             return World.world.diplomacy.getOpinion(pTarget, pLord).total >= 0;
+        }
+
+        // 威逼称臣的动机：实力差距 × 性格。刚够门槛是 0.3，每多一倍门槛 +1，最多 2
+        static float TributeMotive(Actor pActor)
+        {
+            Kingdom lord = pActor.kingdom;
+            Kingdom target = FindTarget(lord);
+            if (target == null) return 0f;
+            float margin = Vassals.Power(lord) / (float)(Vassals.Power(target) * RequiredRatio(lord));
+            float situation = Mathf.Min(0.3f + (margin - 1f), 2f);
+            float stat = (Motives.Stat(pActor, Motives.Aggression) + Motives.Stat(pActor, Motives.Diplomacy)) / 2f;
+            return situation * Motives.Personality(pActor, stat, true);
         }
 
         static HashSet<Kingdom> Neighbours(Kingdom pKingdom)

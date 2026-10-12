@@ -187,7 +187,6 @@ namespace DiplomacyOverhaul
                     Kingdom lord = Vassals.GetOverlord(k);
                     if (lord == null) return false;
                     if (IsPlotRunning(plot_independence, k)) return false;
-                    if (World.world.diplomacy.getOpinion(k, lord).total >= Settings.RebelOpinion) return false;
                     // 宗主处在王朝衰落期，附庸看准它外强中干，不再看实力对比
                     if (Cycle.Get(lord) == CyclePhase.Decline) return true;
                     // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落；整合度越高，比例越低（行省约一半）
@@ -220,6 +219,20 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_independence))
                 AssetManager.plots_library.basic_plots.Add(plot_independence);
+            Motives.Register(plot_independence, IndependenceMotive);
+        }
+
+        // 独立的动机：怨恨 × 性格。好感低于设置值才开始怨恨，每再低 50 点 +1，最多 2；整合度越低越容易记恨
+        static float IndependenceMotive(Actor pActor)
+        {
+            Kingdom k = pActor.kingdom;
+            Kingdom lord = Vassals.GetOverlord(k);
+            if (lord == null) return 0f;
+            int opinion = World.world.diplomacy.getOpinion(k, lord).total;
+            float grudge = Mathf.Clamp((Settings.RebelOpinion - opinion) / 50f, 0f, 2f);
+            if (grudge <= 0f) return 0f;
+            grudge *= 1.2f - Integration.Get(k) / 100f;
+            return grudge * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Aggression), true);
         }
 
         // 这个国家是否已经有人在进行这种密谋。原版的 isPlotTypeAlreadyRunning 查的是全世界
