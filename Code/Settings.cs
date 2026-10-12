@@ -18,6 +18,7 @@ namespace DiplomacyOverhaul
         public static bool CycleEnabled => Bool("vd_group_cycle", "vd_cycle_enabled", true);
         public static bool GovernmentAutoEnabled => Bool("vd_group_government", "vd_gov_auto_enabled", true);
         public static bool GovernmentNameEnabled => Bool("vd_group_government", "vd_gov_name_enabled", true);
+        public static bool GovernmentEventsEnabled => Bool("vd_group_government", "vd_gov_events_enabled", true);
 
         static int Int(string pGroup, string pId, int pDefault)
         {

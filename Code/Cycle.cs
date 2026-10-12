@@ -12,14 +12,14 @@ namespace DiplomacyOverhaul
         Collapse = 4  // 崩溃
     }
 
-    // 王朝周期：只有帝国（6 座城及以上、不是附庸）才有。
+    // 王朝周期：6 座城及以上、不是附庸的大国才有，君主制、共和国都一样。
     // 新生 → 鼎盛 → 衰落 → 大叛乱 → 崩溃 → 挺过来回到新生，否则周期消失
     public static class Cycle
     {
         const string KeyPhase = "vd_cycle_phase";
         const string KeySince = "vd_cycle_since";
 
-        const int EmpireCities = 6;
+        public const int EmpireCities = 6;
         const int RenewalYears = 20;
         const int PrimeYears = 50;   // 人间五十年
         const int DeclineYears = 20;
@@ -203,6 +203,13 @@ namespace DiplomacyOverhaul
         {
             CyclePhase phase = Get(pKingdom);
             if (phase != CyclePhase.None && phase != CyclePhase.Collapse) Set(pKingdom, CyclePhase.Collapse);
+        }
+
+        // 乱世中改朝换代：新王朝从新生开始
+        public static void NewDynasty(Kingdom pKingdom)
+        {
+            if (!Settings.CycleEnabled) return;
+            if (Get(pKingdom) != CyclePhase.None || IsEmpire(pKingdom)) Set(pKingdom, CyclePhase.Renewal);
         }
 
         // 首都沦陷：新生期无事，鼎盛期跌入衰落，衰落期必定大叛乱

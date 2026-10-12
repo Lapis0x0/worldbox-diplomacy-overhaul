@@ -8,12 +8,22 @@ namespace DiplomacyOverhaul
         public const string Feudal = "vd_log_feudal";           // $lord$ 将 $city$ 分封给了 $ruler$
         public const string Capitulated = "vd_log_capitulated"; // $vassal$ 投降，成为 $lord$ 的附庸
         public const string Tribute = "vd_log_tribute";         // $vassal$ 向 $lord$ 称臣
+        public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
+        public const string RepublicFounded = "vd_log_republic_founded"; // $kingdom$ 王室绝嗣，$ruler$ 被推举执政，改制为共和国
+        public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝
+        public const string Usurped = "vd_log_usurped";                  // $ruler$ 篡夺 $kingdom$ 王位，建立新王朝
+        public const string Junta = "vd_log_junta";                      // $kingdom$ 的将领们夺取政权，$ruler$ 执政
 
         public static void Init()
         {
             Register(Feudal, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(Capitulated, "ui/Icons/iconWar", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(Tribute, "ui/Icons/iconCrown", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(Elected, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(RepublicFounded, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$kingdom$", "$ruler$");
+            Register(Crowned, "ui/Icons/iconCrown", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(Usurped, "ui/Icons/iconKings", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(Junta, "ui/Icons/iconArmy", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
         }
 
         // 文案里的占位符依次对应消息的 special1~3
