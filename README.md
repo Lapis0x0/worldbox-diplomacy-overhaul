@@ -1,5 +1,7 @@
 # 外交大修 Diplomacy Overhaul
 
+<img src="preview.png" alt="外交大修" width="320">
+
 为 WorldBox 加入更丰富的外交与战争玩法：附庸国、独立与投降、政体、王朝周期与大叛乱，以及一组直接指挥外交和军队的神力。
 
 - Steam 创意工坊：https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
