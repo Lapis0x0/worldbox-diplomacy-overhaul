@@ -180,9 +180,14 @@ namespace DiplomacyOverhaul
             d += Borders(pVassal, pLord) ? 1f : -1f;
             if (pVassal.culture != null && pVassal.culture == pLord.culture) d += 1f;
             if (pVassal.getSpecies() != pLord.getSpecies()) d -= 1f;
+            if (SameHouse(pVassal, pLord)) d += 1f;
             if (pVassal.countCities() * 2 >= pLord.countCities()) d -= 1f;
             return d;
         }
+
+        // 两国国王出自同一家族
+        static bool SameHouse(Kingdom pVassal, Kingdom pLord) =>
+            pVassal.hasKing() && pLord.hasKing() && pVassal.king.hasClan() && pVassal.king.clan == pLord.king.clan;
 
         static bool Borders(Kingdom pVassal, Kingdom pLord)
         {

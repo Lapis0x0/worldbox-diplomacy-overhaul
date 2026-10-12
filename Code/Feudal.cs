@@ -23,7 +23,7 @@ namespace DiplomacyOverhaul
 
         public static PlotAsset plot_tribute;
 
-        static bool CanGrant(Kingdom pLord) =>
+        internal static bool CanGrant(Kingdom pLord) =>
             Settings.FeudalEnabled && pLord != null && pLord.isAlive() && pLord.isCiv() && !Vassals.IsVassal(pLord);
 
         // 密谋叛乱时分封的概率：鼎盛时愿意分权，衰落时宁可镇压
@@ -39,7 +39,7 @@ namespace DiplomacyOverhaul
         }
 
         // 首都和与首都相邻的城市不分封
-        static bool NearCapital(City pCity)
+        internal static bool NearCapital(City pCity)
         {
             City capital = pCity.kingdom?.capital;
             if (capital == null) return false;
@@ -252,7 +252,7 @@ namespace DiplomacyOverhaul
         }
 
         // 城市自立为国，由 pRuler 当国王，成为 pLord 的附庸
-        static Kingdom Grant(City pCity, Actor pRuler, Kingdom pLord)
+        internal static Kingdom Grant(City pCity, Actor pRuler, Kingdom pLord)
         {
             if (pRuler.isCityLeader()) pRuler.city.removeLeader();
             Kingdom vassal = pCity.makeOwnKingdom(pRuler);

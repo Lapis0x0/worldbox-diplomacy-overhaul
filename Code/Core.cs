@@ -31,6 +31,7 @@ namespace DiplomacyOverhaul
             Government.Init();
             Cycle.Init();
             Restoration.Init();
+            Appanage.Init();
             Integration.Init();
             WorldLogs.Init();
             AllianceView.Init();

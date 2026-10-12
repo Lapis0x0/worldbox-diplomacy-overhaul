@@ -10,6 +10,7 @@ namespace DiplomacyOverhaul
         public const string Tribute = "vd_log_tribute";         // $vassal$ 向 $lord$ 称臣
         public const string Province = "vd_log_province";            // $vassal$ 成为 $lord$ 的行省
         public const string ProvinceLost = "vd_log_province_lost";   // $vassal$ 不再是 $lord$ 的行省
+        public const string Appanage = "vd_log_appanage";             // $lord$ 将 $city$ 封给宗室 $ruler$
         public const string Restored = "vd_log_restored";             // $ruler$ 中兴 $kingdom$
         public const string RestoreFailed = "vd_log_restore_failed";  // $ruler$ 力图中兴 $kingdom$，无功而返
         public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
@@ -25,6 +26,7 @@ namespace DiplomacyOverhaul
             Register(Tribute, "ui/Icons/iconCrown", Toolbox.color_log_neutral, "$vassal$", "$lord$");
             Register(Province, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$vassal$", "$lord$");
             Register(ProvinceLost, "ui/Icons/iconVillages", Toolbox.color_log_warning, "$vassal$", "$lord$");
+            Register(Appanage, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(Restored, "ui/Icons/iconFlowerBud", Toolbox.color_log_good, "$ruler$", "$kingdom$");
             Register(RestoreFailed, "ui/Icons/iconSeedCorrupted", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(Elected, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
