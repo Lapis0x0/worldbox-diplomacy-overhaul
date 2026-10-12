@@ -89,6 +89,14 @@
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconFireSkull",
       "BoolVal": true
+    },
+    {
+      "Id": "vd_restoration_chance",
+      "Type": "INT_SLIDER",
+      "IconPath": "ui/Icons/iconFlowerBud",
+      "IntVal": 30,
+      "MinIntVal": 0,
+      "MaxIntVal": 100
     }
   ]
 }

@@ -69,6 +69,11 @@ namespace DiplomacyOverhaul
             return (CyclePhase)phase;
         }
 
+        public static int YearsInPhase(Kingdom pKingdom) => Years(pKingdom);
+
+        // 中兴：衰落中的国家回到鼎盛，从头算起
+        public static void Restore(Kingdom pKingdom) => Set(pKingdom, CyclePhase.Prime);
+
         static int Years(Kingdom pKingdom)
         {
             pKingdom.data.get(KeySince, out int since, Date.getCurrentYear());
