@@ -187,8 +187,6 @@ namespace DiplomacyOverhaul
                     Kingdom lord = Vassals.GetOverlord(k);
                     if (lord == null) return false;
                     if (World.world.plots.isPlotTypeAlreadyRunning(pActor, plot_independence)) return false;
-                    // 鼎盛的帝国，附庸不敢密谋
-                    if (Cycle.Get(lord) == CyclePhase.Prime) return false;
                     if (World.world.diplomacy.getOpinion(k, lord).total >= Settings.RebelOpinion) return false;
                     // 宗主处在王朝衰落期，附庸看准它外强中干，不再看实力对比
                     if (Cycle.Get(lord) == CyclePhase.Decline) return true;
