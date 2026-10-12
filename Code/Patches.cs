@@ -133,7 +133,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 宗主参战 → 附庸跟随同一方；附庸被打 → 宗主加入防守方
+    // 宗主参战 → 附庸跟随同一方（宗主在攻方时按整合度决定）；附庸被打 → 宗主加入防守方
     // 宗主和附庸出现在同一场战争的对立两边时，附庸关系立即解除（神力宣战、背叛、附庸互攻……）
     static class Betrayal
     {
@@ -160,7 +160,7 @@ namespace DiplomacyOverhaul
             Betrayal.Check(__instance, pKingdom);
             foreach (Kingdom v in Vassals.GetVassals(pKingdom))
             {
-                if (!__instance.hasKingdom(v)) __instance.joinAttackers(v);
+                if (!__instance.hasKingdom(v) && Integration.JoinsOffensive(__instance, v)) __instance.joinAttackers(v);
             }
         }
     }
@@ -229,7 +229,7 @@ namespace DiplomacyOverhaul
             if (lord == null || rebel == null) return;
             if (pWinner == WarWinner.Defenders && !Vassals.IsVassal(lord) && !Vassals.HasVassals(rebel))
             {
-                Vassals.MakeVassal(lord, rebel);
+                Vassals.MakeVassal(lord, rebel, Integration.Conquered);
             }
         }
     }
@@ -242,7 +242,7 @@ namespace DiplomacyOverhaul
         {
             List<Kingdom> vassals = Vassals.GetVassals(pKingdom);
             if (vassals.Count == 0 && !Vassals.IsVassal(pKingdom)) return;
-            foreach (Kingdom v in vassals) v.data.removeLong(Vassals.KeyOverlord);
+            foreach (Kingdom v in vassals) Vassals.Clear(v);
             World.world.zone_calculator.dirtyAndClear();
         }
     }

@@ -179,7 +179,7 @@ namespace DiplomacyOverhaul
                     Kingdom lord = pActor.kingdom;
                     Kingdom target = pActor.plot.target_kingdom;
                     if (!CanDemand(lord) || target == null || !WillSubmit(target, lord)) return false;
-                    if (Vassals.MakeVassal(lord, target) != null) return false;
+                    if (Vassals.MakeVassal(lord, target, Integration.Tribute) != null) return false;
                     WorldLogs.Add(WorldLogs.Tribute, target.hasCapital() ? target.capital.last_city_center : Vector2.zero, target.king,
                         new[] { target.data.name, lord.data.name }, new[] { target, lord });
                     return true;
@@ -242,7 +242,7 @@ namespace DiplomacyOverhaul
             if (pRuler.isCityLeader()) pRuler.city.removeLeader();
             Kingdom vassal = pCity.makeOwnKingdom(pRuler);
             pRuler.joinCity(pCity);
-            if (Vassals.MakeVassal(pLord, vassal) != null) return null;
+            if (Vassals.MakeVassal(pLord, vassal, Integration.Feudal) != null) return null;
             return vassal;
         }
 

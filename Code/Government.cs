@@ -23,6 +23,7 @@ namespace DiplomacyOverhaul
         public const string MilitaryRepublic = "vd_gov_military_republic";
         public const string Duchy = "vd_gov_duchy";
         public const string Dominion = "vd_gov_dominion";
+        public const string Province = "vd_gov_province";
         // 旧版的城邦，已取消；旧存档里的会被换掉
         const string LegacyCityState = "vd_gov_city_state";
 
@@ -38,7 +39,7 @@ namespace DiplomacyOverhaul
         const float RepublicChanceMild = 0.25f;   // 名望之冠
         const float RepublicChanceBase = 0.1f;
 
-        static readonly string[] Ids = { Kingdom, Empire, Republic, MerchantRepublic, MilitaryRepublic, Duchy, Dominion };
+        static readonly string[] Ids = { Kingdom, Empire, Republic, MerchantRepublic, MilitaryRepublic, Duchy, Dominion, Province };
         static readonly HashSet<string> IdSet = new HashSet<string>(Ids);
         static readonly HashSet<string> RepublicIds = new HashSet<string> { Republic, MerchantRepublic, MilitaryRepublic };
 
@@ -53,7 +54,7 @@ namespace DiplomacyOverhaul
             }
             AddTraitGroup(GroupId, "#FFD27F", Ids,
                 new[] { "ui/Icons/iconKingdom", "ui/Icons/iconCrown", "ui/Icons/iconClan", "ui/Icons/iconMoney",
-                        "ui/Icons/iconArmy", "ui/Icons/iconKings", "ui/Icons/iconLoyalty" });
+                        "ui/Icons/iconArmy", "ui/Icons/iconKings", "ui/Icons/iconLoyalty", "ui/Icons/iconVillages" });
         }
 
         // 一组互斥的王国特质（政体、王朝周期）；组名的 key 是 trait_group_<组 id>
@@ -224,7 +225,11 @@ namespace DiplomacyOverhaul
             int cities = pKingdom.countCities();
             if (cities <= 0) return null;
             bool republic = Form(pKingdom) == GovForm.Republic;
-            if (Vassals.IsVassal(pKingdom)) return republic ? Dominion : Duchy;
+            if (Vassals.IsVassal(pKingdom))
+            {
+                if (Integration.IsProvince(pKingdom)) return Province;
+                return republic ? Dominion : Duchy;
+            }
             if (!republic) return cities >= Cycle.EmpireCities ? Empire : Kingdom;
             if (IsMilitary(pKingdom)) return MilitaryRepublic;
             if (pKingdom.culture != null && pKingdom.culture.hasTrait("golden_rule")) return MerchantRepublic;
@@ -299,6 +304,7 @@ namespace DiplomacyOverhaul
             Regime.UpdateAll();
             Government.UpdateAll();
             Cycle.UpdateAll();
+            Integration.UpdateAll();
         }
     }
 }

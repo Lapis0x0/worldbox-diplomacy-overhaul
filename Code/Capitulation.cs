@@ -64,10 +64,10 @@ namespace DiplomacyOverhaul
         {
             Kingdom lord = Vassals.Root(pWinner);
             // 投降方原有的附庸全部独立（不允许附庸链）
-            foreach (Kingdom v in Vassals.GetVassals(pLoser)) v.data.removeLong(Vassals.KeyOverlord);
+            foreach (Kingdom v in Vassals.GetVassals(pLoser)) Vassals.Clear(v);
 
             World.world.wars.endWar(pWar, pResult);
-            if (Vassals.MakeVassal(lord, pLoser) == null)
+            if (Vassals.MakeVassal(lord, pLoser, Integration.Conquered) == null)
             {
                 WorldLogs.Add(WorldLogs.Capitulated, pLoser.hasCapital() ? pLoser.capital.last_city_center : Vector2.zero, pLoser.king,
                     new[] { pLoser.data.name, lord.data.name }, new[] { pLoser, lord });

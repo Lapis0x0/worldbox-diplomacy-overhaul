@@ -28,9 +28,8 @@ namespace DiplomacyOverhaul
 
             foreach (Kingdom vassal in Vassals.GetVassals(pKingdom))
             {
-                int opinion = World.world.diplomacy.getOpinion(vassal, pKingdom).total;
-                // 好感 0 时 80% 会反，越恨越可能反；再忠心也有 30%
-                float chance = Mathf.Clamp(80 - opinion, 30, 95) / 100f;
+                // 整合度越低越可能反：刚投降的 90%，行省 10% 上下
+                float chance = Mathf.Clamp(90f - Integration.Get(vassal), 10f, 90f) / 100f;
                 if (Randy.randomChance(chance) && Core.StartIndependenceWar(vassal, pKingdom) != null) count++;
             }
 

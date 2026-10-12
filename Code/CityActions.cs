@@ -29,7 +29,7 @@ namespace DiplomacyOverhaul
             {
                 if (v == pSurvivor || !v.isAlive()) continue;
                 if (Vassals.IsVassal(pSurvivor)) Vassals.Release(v);
-                else Vassals.MakeVassal(pSurvivor, v);
+                else Vassals.MakeVassal(pSurvivor, v, Integration.Get(v));
             }
             AfterChange(pAbsorbed, pSurvivor);
             return null;

@@ -23,7 +23,7 @@ namespace DiplomacyOverhaul
             pKingdom.data.get(KeyOverlord, out long id, -1L);
             if (id < 0) return null;
             Kingdom lord = Find(id);
-            if (lord == null) pKingdom.data.removeLong(KeyOverlord);
+            if (lord == null) Clear(pKingdom);
             return lord;
         }
 
@@ -61,8 +61,15 @@ namespace DiplomacyOverhaul
         // 与原版 DiplomacyManager 计算 kingdom.power 的公式一致
         public static int Power(Kingdom k) => k.countTotalWarriors() * 2 + k.countCities() * 5 + 1;
 
-        // 返回 null 表示成功，否则返回失败原因的本地化 key
-        public static string MakeVassal(Kingdom pLord, Kingdom pVassal)
+        // 只清数据，不刷新战争和地图
+        public static void Clear(Kingdom pKingdom)
+        {
+            pKingdom.data.removeLong(KeyOverlord);
+            Integration.Clear(pKingdom);
+        }
+
+        // pIntegration 是整合度的起点，见 Integration。返回 null 表示成功，否则返回失败原因的本地化 key
+        public static string MakeVassal(Kingdom pLord, Kingdom pVassal, float pIntegration = Integration.Tribute)
         {
             if (pLord == null || pVassal == null || pLord == pVassal) return "vd_tip_invalid";
             if (IsVassal(pLord)) return "vd_tip_lord_is_vassal";
@@ -82,6 +89,7 @@ namespace DiplomacyOverhaul
             if (pVassal.hasAlliance()) pVassal.getAlliance().leave(pVassal);
 
             pVassal.data.set(KeyOverlord, pLord.id);
+            Integration.Set(pVassal, pIntegration);
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
 
             SyncWars(pVassal, pLord);
@@ -105,10 +113,10 @@ namespace DiplomacyOverhaul
 
             pNew = pCity.makeOwnKingdom(ruler);
             ruler.joinCity(pCity);
-            return MakeVassal(lord, pNew);
+            return MakeVassal(lord, pNew, Integration.Feudal);
         }
 
-        // 附庸的战争状态与宗主保持一致：只参加宗主参加的战争，并且站在同一边
+        // 附庸的战争状态与宗主保持一致：只参加宗主参加的战争，并且站在同一边；宗主在攻方的仗按整合度决定参不参加
         public static void SyncWars(Kingdom pVassal, Kingdom pLord)
         {
             foreach (War war in new List<War>(pVassal.getWars()))
@@ -121,7 +129,7 @@ namespace DiplomacyOverhaul
             foreach (War war in new List<War>(pLord.getWars()))
             {
                 if (war.hasEnded() || war.isTotalWar() || war.hasKingdom(pVassal)) continue;
-                if (war.isAttacker(pLord)) war.joinAttackers(pVassal);
+                if (war.isAttacker(pLord)) { if (Integration.JoinsOffensive(war, pVassal)) war.joinAttackers(pVassal); }
                 else if (war.isDefender(pLord)) war.joinDefenders(pVassal);
             }
         }
@@ -138,7 +146,7 @@ namespace DiplomacyOverhaul
         public static void Release(Kingdom pVassal)
         {
             if (pVassal?.data == null) return;
-            pVassal.data.removeLong(KeyOverlord);
+            Clear(pVassal);
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
             Refresh();
         }

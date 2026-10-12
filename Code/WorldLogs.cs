@@ -8,6 +8,8 @@ namespace DiplomacyOverhaul
         public const string Feudal = "vd_log_feudal";           // $lord$ 将 $city$ 分封给了 $ruler$
         public const string Capitulated = "vd_log_capitulated"; // $vassal$ 投降，成为 $lord$ 的附庸
         public const string Tribute = "vd_log_tribute";         // $vassal$ 向 $lord$ 称臣
+        public const string Province = "vd_log_province";            // $vassal$ 成为 $lord$ 的行省
+        public const string ProvinceLost = "vd_log_province_lost";   // $vassal$ 不再是 $lord$ 的行省
         public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
         public const string RepublicFounded = "vd_log_republic_founded"; // $kingdom$ 王室绝嗣，$ruler$ 被推举执政，改制为共和国
         public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝
@@ -19,6 +21,8 @@ namespace DiplomacyOverhaul
             Register(Feudal, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(Capitulated, "ui/Icons/iconWar", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(Tribute, "ui/Icons/iconCrown", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(Province, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(ProvinceLost, "ui/Icons/iconVillages", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(Elected, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(RepublicFounded, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$kingdom$", "$ruler$");
             Register(Crowned, "ui/Icons/iconCrown", Toolbox.color_log_warning, "$ruler$", "$kingdom$");

@@ -191,8 +191,9 @@ namespace DiplomacyOverhaul
                     if (World.world.diplomacy.getOpinion(k, lord).total >= Settings.RebelOpinion) return false;
                     // 宗主处在王朝衰落期，附庸看准它外强中干，不再看实力对比
                     if (Cycle.Get(lord) == CyclePhase.Decline) return true;
-                    // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落
-                    return Vassals.Power(lord) * 100 < Vassals.Power(k) * Settings.RebelPowerRatio;
+                    // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落；整合度越高，比例越低（行省约一半）
+                    float ratio = Settings.RebelPowerRatio * (1f - Integration.Get(k) / 200f);
+                    return Vassals.Power(lord) * 100 < Vassals.Power(k) * ratio;
                 },
                 try_to_start_advanced = (pActor, pAsset, pForced) =>
                 {
@@ -225,11 +226,12 @@ namespace DiplomacyOverhaul
         // 开战失败时恢复附庸关系并返回 null
         public static War StartIndependenceWar(Kingdom pRebel, Kingdom pLord)
         {
+            float integration = Integration.Get(pRebel);
             Vassals.Release(pRebel);
             War war = World.world.diplomacy.startWar(pRebel, pLord, WarTypeLibrary.normal);
             if (war == null)
             {
-                Vassals.MakeVassal(pLord, pRebel);
+                Vassals.MakeVassal(pLord, pRebel, integration);
                 return null;
             }
             war.data.set(Vassals.KeyWarLord, pLord.id);
