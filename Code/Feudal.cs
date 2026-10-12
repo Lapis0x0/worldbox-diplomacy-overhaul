@@ -157,7 +157,7 @@ namespace DiplomacyOverhaul
                 check_target_kingdom = true,
                 requires_diplomacy = true,
                 check_is_possible = pActor => CanDemand(pActor.kingdom)
-                                              && !World.world.plots.isPlotTypeAlreadyRunning(pActor, plot_tribute)
+                                              && !Core.IsPlotRunning(plot_tribute, pActor.kingdom)
                                               && FindTarget(pActor.kingdom) != null,
                 check_can_be_forced = pActor => CanDemand(pActor.kingdom) && FindTarget(pActor.kingdom) != null,
                 try_to_start_advanced = (pActor, pAsset, pForced) =>

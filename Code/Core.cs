@@ -186,7 +186,7 @@ namespace DiplomacyOverhaul
                     Kingdom k = pActor.kingdom;
                     Kingdom lord = Vassals.GetOverlord(k);
                     if (lord == null) return false;
-                    if (World.world.plots.isPlotTypeAlreadyRunning(pActor, plot_independence)) return false;
+                    if (IsPlotRunning(plot_independence, k)) return false;
                     if (World.world.diplomacy.getOpinion(k, lord).total >= Settings.RebelOpinion) return false;
                     // 宗主处在王朝衰落期，附庸看准它外强中干，不再看实力对比
                     if (Cycle.Get(lord) == CyclePhase.Decline) return true;
@@ -220,6 +220,16 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_independence))
                 AssetManager.plots_library.basic_plots.Add(plot_independence);
+        }
+
+        // 这个国家是否已经有人在进行这种密谋。原版的 isPlotTypeAlreadyRunning 查的是全世界
+        public static bool IsPlotRunning(PlotAsset pAsset, Kingdom pKingdom)
+        {
+            foreach (Plot plot in World.world.plots)
+            {
+                if (plot.isActive() && plot.isSameType(pAsset) && plot.getAuthor()?.kingdom == pKingdom) return true;
+            }
+            return false;
         }
 
         // 开战失败时恢复附庸关系并返回 null

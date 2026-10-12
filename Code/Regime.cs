@@ -237,6 +237,8 @@ namespace DiplomacyOverhaul
             {
                 Government.SetForm(pKingdom, GovForm.Republic, true);
                 ClearTerm(pKingdom);
+                // 没有家族的人发起不了密谋（原版 try_new_plot 的条件）
+                EnsureClan(general);
                 MakeRuler(pKingdom, general);
                 WorldLogs.Add(WorldLogs.Junta, Location(pKingdom), general,
                     new[] { pKingdom.data.name, general.getName() }, new[] { pKingdom, pKingdom });
