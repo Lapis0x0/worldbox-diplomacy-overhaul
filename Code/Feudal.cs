@@ -82,6 +82,8 @@ namespace DiplomacyOverhaul
                 lord = overlord;
             }
             if (!CanGrant(lord) || Vassals.SameBloc(lord, pCity.kingdom)) return false;
+            // 军事共和国打下的城自己吞
+            if (Government.IsMilitary(lord)) return false;
             if (lord.countCities() < lord.getMaxCities()) return false;
             if (!Randy.randomChance(ConquestChance)) return false;
 

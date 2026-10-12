@@ -158,6 +158,13 @@ namespace DiplomacyOverhaul
                 translation_key_negative = "loyalty_vd_cycle_decline",
                 calc = Cycle.CityLoyalty
             });
+            Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_republic",
+                translation_key = "loyalty_vd_republic",
+                translation_key_negative = "loyalty_vd_republic",
+                calc = Government.CityLoyalty
+            });
         }
 
         static void AddPlot()

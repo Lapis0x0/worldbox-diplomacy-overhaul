@@ -26,22 +26,72 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 挑战争目标：同集团不算；敢挑的对手强弱按政体（见 Government.WarStrengthRatio），
+    // 比例不是 1 时照抄原版重算，只把"对手兵力不超过自己"换成"不超过自己的若干倍"
     [HarmonyPatch(typeof(DiplomacyHelpers), nameof(DiplomacyHelpers.getWarTarget))]
     static class Patch_WarTarget
     {
-        static void Prefix() => BlocFilter.Depth++;
+        static bool Prefix(Kingdom pInitiatorKingdom, ref Kingdom __result)
+        {
+            BlocFilter.Depth++;
+            float ratio = Government.WarStrengthRatio(pInitiatorKingdom);
+            if (ratio == 1f) return true;
+            __result = Find(pInitiatorKingdom, ratio);
+            return false;
+        }
+
         static void Finalizer() => BlocFilter.Depth--;
+
+        static Kingdom Find(Kingdom pInitiator, float pRatio)
+        {
+            Kingdom result = null;
+            float best = float.MaxValue;
+            int own = pInitiator.hasAlliance() ? pInitiator.getAlliance().countWarriors() : pInitiator.countTotalWarriors();
+            using ListPool<Kingdom> list = World.world.wars.getNeutralKingdoms(pInitiator);
+            foreach (Kingdom k in list)
+            {
+                if (!k.hasCities() || !k.hasCapital() || k.getAge() < SimGlobals.m.minimum_kingdom_age_for_attack) continue;
+                int theirs = k.hasAlliance() ? k.getAlliance().countWarriors() : k.countTotalWarriors();
+                if (theirs > own * pRatio || !pInitiator.capital.reachableFrom(k.capital)) continue;
+                if (Date.getYearsSince(World.world.diplomacy.getRelation(pInitiator, k).data.timestamp_last_war_ended) < SimGlobals.m.minimum_years_between_wars) continue;
+                if (pInitiator.isOpinionTowardsKingdomGood(k)) continue;
+                float d = Kingdom.distanceBetweenKingdom(pInitiator, k);
+                if (d < best)
+                {
+                    best = d;
+                    result = k;
+                }
+            }
+            return result;
+        }
     }
 
-    // 附庸国不能自己发动战争
+    // 要不要开战：附庸国不能自己发动战争；停战年限按政体（见 Government.WarTimeout），其余照抄原版
     [HarmonyPatch(typeof(DiplomacyHelpers), nameof(DiplomacyHelpers.isWarNeeded))]
     static class Patch_IsWarNeeded
     {
         static bool Prefix(Kingdom pKingdom, ref bool __result)
         {
-            if (!Vassals.IsVassal(pKingdom)) return true;
-            __result = false;
+            if (Vassals.IsVassal(pKingdom))
+            {
+                __result = false;
+                return false;
+            }
+            int timeout = Government.WarTimeout(pKingdom);
+            if (timeout == SimGlobals.m.diplomacy_years_war_timeout) return true;
+            __result = Check(pKingdom, timeout);
             return false;
+        }
+
+        static bool Check(Kingdom pKingdom, int pTimeout)
+        {
+            if (!pKingdom.hasCities() || !pKingdom.hasCapital()) return false;
+            double last = pKingdom.data.timestamp_last_war;
+            if (last != -1.0 && Date.getYearsSince(last) <= pTimeout) return false;
+            if (World.world.wars.hasWars(pKingdom)) return false;
+            if (pKingdom.countTotalWarriors() <= SimGlobals.m.diplomacy_years_war_min_warriors) return false;
+            if (pKingdom.countCities() < 4 && pKingdom.getPopulationPeople() < pKingdom.getPopulationTotalPossible() * 0.6f) return false;
+            return true;
         }
     }
 

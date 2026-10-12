@@ -187,6 +187,38 @@ namespace DiplomacyOverhaul
             return RepublicChanceBase;
         }
 
+        // 开战倾向：停战多少年后才会再开战、敢挑兵力是自己多少倍的对手。王国、帝国同原版（5 年、1 倍）
+        public static int WarTimeout(Kingdom pKingdom)
+        {
+            switch (Current(pKingdom)?.id)
+            {
+                case Republic: return 10;
+                case MerchantRepublic: return 15;
+                case MilitaryRepublic: return 2;
+                default: return SimGlobals.m.diplomacy_years_war_timeout;
+            }
+        }
+
+        public static float WarStrengthRatio(Kingdom pKingdom)
+        {
+            switch (Current(pKingdom)?.id)
+            {
+                case MerchantRepublic: return 0.5f;
+                case MilitaryRepublic: return 1.25f;
+                default: return 1f;
+            }
+        }
+
+        // 诸家族共治的共和国城市更安定；军事共和国没有这份加成
+        public const int RepublicLoyalty = 5;
+
+        public static int CityLoyalty(City pCity)
+        {
+            Kingdom k = pCity.kingdom;
+            if (k == null || !IsRepublic(k) || IsMilitary(k)) return 0;
+            return RepublicLoyalty;
+        }
+
         static string Desired(Kingdom pKingdom)
         {
             int cities = pKingdom.countCities();
