@@ -21,7 +21,7 @@ namespace DiplomacyOverhaul
         const float RepublicOnExtinction = 0.4f;
         const float RepublicOnExtinctionLeaning = 0.8f;
         // 称帝：每年的基础概率，乘上执政性格的权重
-        const float EmperorChance = 0.01f;
+        const float EmperorChance = 0.005f;
         // 夺权：崩溃期每年的概率，崇尚武勇的文化翻倍
         const float CoupChance = 0.1f;
 
