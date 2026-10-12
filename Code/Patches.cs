@@ -271,6 +271,9 @@ namespace DiplomacyOverhaul
         {
             LocalizedText title = FindTitle(pWindow);
             if (title == null) return;
+            // 副标题里宗主名、周期阶段带颜色标签，原版这行没开富文本
+            UnityEngine.UI.Text text = title.GetComponent<UnityEngine.UI.Text>();
+            if (text != null) text.supportRichText = true;
             title.setKeyAndUpdate(Government.TitleKey(pKingdom));
         }
 
