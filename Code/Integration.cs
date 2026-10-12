@@ -5,11 +5,20 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 整合度：附庸在「自立」和「归化」之间的位置，0–100，每年随宗主的周期阶段和两国的结构因素变动。
-    // 涨到 ProvinceAt 成为行省（按共和国的规则推举执政），跌破 ProvinceUntil 退回自治领
+    // 涨到 ProvinceAt 成为行省（按共和国的规则推举执政），跌破 ProvinceUntil 退回自治领。
+    // 所在的档次显示成王国特质（特质组「整合度」），玩家在特质编辑器里换一档，整合度就设到那一档的中间
     public static class Integration
     {
         const string Key = "vd_integration";
         const string KeyProvince = "vd_province";
+        // 最近一次自动显示的档次；和当前特质不一致说明玩家手动改过
+        const string KeyShown = "vd_integration_shown";
+
+        public const string GroupId = "vd_integration";
+        // 积怨、离心、归附、一体
+        static readonly string[] TraitIds = { "vd_integ_grudge", "vd_integ_drift", "vd_integ_loyal", "vd_integ_unity" };
+        static readonly float[] TierFloor = { 0f, 30f, 50f, 90f };
+        static readonly float[] TierMid = { 15f, 40f, 70f, 95f };
 
         // 成为附庸时的起点
         public const float Feudal = 70f;      // 分封
@@ -23,6 +32,57 @@ namespace DiplomacyOverhaul
         const float WarSwing = 5f;
         // 宗主主动开的仗，附庸至少有这么大的概率参战
         const int MinJoinChance = 30;
+
+        public static void Init()
+        {
+            Government.AddTraitGroup(GroupId, "#9FD4FF", TraitIds,
+                new[] { "ui/Icons/iconRebellion", "ui/Icons/iconKingdomList", "ui/Icons/iconLoyalty", "ui/Icons/iconKingdom" });
+        }
+
+        static int Tier(float pValue)
+        {
+            for (int i = TierFloor.Length - 1; i > 0; i--)
+            {
+                if (pValue >= TierFloor[i]) return i;
+            }
+            return 0;
+        }
+
+        // 当前显示的档次，没有特质时是 -1
+        static int TraitTier(Kingdom pKingdom)
+        {
+            foreach (KingdomTrait t in pKingdom.getTraits())
+            {
+                int i = System.Array.IndexOf(TraitIds, t.id);
+                if (i >= 0) return i;
+            }
+            return -1;
+        }
+
+        static void SyncTrait(Kingdom pKingdom)
+        {
+            int tier = Tier(Get(pKingdom));
+            pKingdom.data.set(KeyShown, tier);
+            if (TraitTier(pKingdom) != tier) pKingdom.addTrait(TraitIds[tier], true);
+        }
+
+        static void RemoveTrait(Kingdom pKingdom)
+        {
+            int shown = TraitTier(pKingdom);
+            if (shown >= 0) pKingdom.removeTrait(TraitIds[shown]);
+            pKingdom.data.removeInt(KeyShown);
+        }
+
+        // 玩家在特质编辑器里换了档次：整合度设到那一档的中间
+        static bool CheckManual(Kingdom pVassal, Kingdom pLord)
+        {
+            int shown = TraitTier(pVassal);
+            pVassal.data.get(KeyShown, out int last, -1);
+            if (shown < 0 || last < 0 || shown == last) return false;
+            pVassal.data.set(Key, TierMid[shown]);
+            UpdateStatus(pVassal, pLord);
+            return true;
+        }
 
         public static float Get(Kingdom pKingdom)
         {
@@ -48,6 +108,7 @@ namespace DiplomacyOverhaul
         {
             pKingdom.data.removeFloat(Key);
             pKingdom.data.removeBool(KeyProvince);
+            RemoveTrait(pKingdom);
         }
 
         static void Add(Kingdom pVassal, Kingdom pLord, float pDelta)
@@ -61,6 +122,7 @@ namespace DiplomacyOverhaul
         // 越过门槛时改变档次；pLord 为 null 时不记世界日志
         static void UpdateStatus(Kingdom pVassal, Kingdom pLord)
         {
+            SyncTrait(pVassal);
             float value = Get(pVassal);
             bool province = IsProvince(pVassal);
             if (!province && value >= ProvinceAt)
@@ -93,7 +155,13 @@ namespace DiplomacyOverhaul
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 Kingdom lord = Vassals.GetOverlord(k);
-                if (lord != null) Add(k, lord, Drift(k, lord));
+                if (lord == null)
+                {
+                    if (TraitTier(k) >= 0) RemoveTrait(k);
+                    continue;
+                }
+                if (CheckManual(k, lord)) continue;
+                Add(k, lord, Drift(k, lord));
             }
         }
 

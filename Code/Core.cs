@@ -30,6 +30,7 @@ namespace DiplomacyOverhaul
             Feudal.Init();
             Government.Init();
             Cycle.Init();
+            Integration.Init();
             WorldLogs.Init();
             AllianceView.Init();
             Powers.Init();
