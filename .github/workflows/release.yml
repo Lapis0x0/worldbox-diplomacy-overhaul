@@ -1,0 +1,40 @@
+# 推送 v* tag 时：打发布包，从 CHANGELOG.md 取这个版本的说明，建 GitHub Release
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: tag 与 mod.json 版本一致
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("mod.json", encoding="utf-8"))["version"])')
+          [ "${GITHUB_REF_NAME}" = "v${version}" ] || { echo "tag ${GITHUB_REF_NAME} 与 mod.json 版本 ${version} 不一致"; exit 1; }
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: 打包
+        run: tools/package.sh dist
+
+      - name: 更新说明
+        run: |
+          tools/release-notes.sh "$VERSION" > notes.md
+          [ -s notes.md ] || { echo "CHANGELOG.md 里没有 ${VERSION} 的说明"; exit 1; }
+          cat >> notes.md <<'MD'
+
+          ---
+
+          **安装 Install**：创意工坊订阅 / Subscribe on the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294 ；或手动安装，见 / or install manually, see [README](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul#手动安装)
+          MD
+
+      - name: 建 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "外交大修 Diplomacy Overhaul ${VERSION}" --notes-file notes.md

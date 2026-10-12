@@ -19,6 +19,17 @@
 
 每个系统的具体规则和实现见 [docs/](docs/README.md)。
 
+## 手动安装
+
+不用创意工坊时，可以手动安装：
+
+1. 先安装 [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+2. 从 [Releases](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul/releases) 下载最新的 `DiplomacyOverhaul-v*.zip`
+3. 解压到游戏目录下的 `Mods` 文件夹，解压后应该是 `Mods/DiplomacyOverhaul/mod.json`。Steam 版的游戏目录可以在库里右键 WorldBox →「管理」→「浏览本地文件」找到
+4. 启动游戏，NML 会自动编译加载
+
+更新时删掉旧的 `DiplomacyOverhaul` 文件夹再解压新的。已经在创意工坊订阅的不要再手动安装，两份会冲突。
+
 ## 本地开发
 
 - 把仓库放进（或软链接到）`worldbox/Mods/DiplomacyOverhaul`，NML 启动时会编译 `Code/` 下的源码；`bin/`、`obj/` 和以 `.` 开头的文件不会被编译或上传
@@ -26,7 +37,8 @@
 - 热重载：游戏开着时运行 `tools/hot-reload.sh`，改动会在一两秒内生效，不用重启游戏
   - 改 `Main.cs`、`DevReload.cs`、`mod.json`、`default_config.json` 仍需重启
   - `Core.Start` 必须能重复执行：资源用 `Core.Upsert` 注册，Tab 按钮会被清掉重建
-- 发布：在 NML 模组列表里连点封面 8 次后等 3 秒打开上传窗口；更新时在顶部填创意工坊物品 ID，空着会新建物品
+- 发版：改 `mod.json` 的版本号，在 `CHANGELOG.md` 写好这个版本的中英文说明并提交，然后运行 `tools/release.sh`。脚本检查工作区、版本号、语言文件和编译后打 tag 推送，GitHub Actions 自动建 Release 并附上发布包（`tools/package.sh` 也可以单独打包）
+- 上传创意工坊：在 NML 模组列表里连点封面 8 次后等 3 秒打开上传窗口；更新时在顶部填创意工坊物品 ID，空着会新建物品
 
 ## 许可证
 
