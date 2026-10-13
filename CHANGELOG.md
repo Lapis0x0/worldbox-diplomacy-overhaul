@@ -2,6 +2,28 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.6.0
+
+### 中文
+
+1. 新增附庸整合度机制，附庸类型会随整合度变化而变化，并影响对应国家的外交行为
+2. 添加新的附庸类型：行省
+3. 国王新增「中兴」和「分封宗室」密谋
+4. 优化联盟视图下的展示逻辑
+5. 去除原版代码中的大量重复计算，约优化提高 20% 的性能
+6. 修复开启原版「军队旁显示人数」选项后，未选中的军队不显示人数的问题
+7. 修复右键盟友附庸国的城市时，军队直接向其宣战而不是前往驻扎的问题
+
+### English
+
+1. New vassal integration system: a vassal's type changes with its integration and shapes its kingdom's diplomacy
+2. New vassal type: Province
+3. New king plots: Restoration and Appanage
+4. Improved how the alliance map view is displayed
+5. Removed a large amount of redundant computation from the base game, improving performance by about 20%
+6. Fixed unselected armies not showing their size when the base game's "Show Amount Near Army" option is enabled
+7. Fixed armies declaring war on an ally's vassal instead of garrisoning when you right-click its city
+
 ## 0.5.0
 
 ### 中文
