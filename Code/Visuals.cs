@@ -34,43 +34,22 @@ namespace DiplomacyOverhaul
                 render_map = true,
                 add_camera_zoom_multiplier = false
             });
-            // 原版地图上军队旗子的精灵自带文字，只在调试选项里才显示人数；换成选中的军队显示
+            // 原版地图上军队旗子的精灵自带文字，只在调试选项里才显示人数；改为选中的军队显示，打开了那个选项则全部显示
             QuantumSpriteAsset armies = AssetManager.quantum_sprites.get("armies");
             if (armies != null) armies.draw_call = DrawArmyFlags;
         }
 
         static readonly Sprite FlagSprite = SpriteTextureLoader.getSprite("civ/icons/minimap_flag");
 
-        // 原版文字缩放 2.5，缩远时比旗子还大，压在名牌上；缩小一半，下面垫一层错开的黑字当阴影
-        const float CountScale = 1.25f;
-        const string ShadowName = "vd_shadow";
-
+        // 样式和原版打开「军队旁显示人数」时相同
         static void ShowCount(QuantumSpriteWithText pSprite, string pText)
         {
             TextMesh text = pSprite.text;
             text.gameObject.SetActive(true);
-            text.transform.localScale = new Vector3(CountScale, CountScale, 1f);
             text.text = pText;
             Renderer renderer = text.GetComponent<Renderer>();
             renderer.sortingLayerID = pSprite.sprite_renderer.sortingLayerID;
-            renderer.sortingOrder = pSprite.sprite_renderer.sortingOrder + 1;
-
-            Transform shadowT = text.transform.Find(ShadowName);
-            if (shadowT == null)
-            {
-                GameObject copy = Object.Instantiate(text.gameObject, text.transform);
-                copy.name = ShadowName;
-                shadowT = copy.transform;
-                shadowT.localScale = Vector3.one;
-                shadowT.localPosition = new Vector3(0.12f, -0.12f, 0f);
-                TextMesh dark = copy.GetComponent<TextMesh>();
-                dark.color = new Color(0f, 0f, 0f, 0.8f);
-            }
-            TextMesh shadow = shadowT.GetComponent<TextMesh>();
-            shadow.text = pText;
-            Renderer shadowRenderer = shadowT.GetComponent<Renderer>();
-            shadowRenderer.sortingLayerID = renderer.sortingLayerID;
-            shadowRenderer.sortingOrder = pSprite.sprite_renderer.sortingOrder;
+            renderer.sortingOrder = pSprite.sprite_renderer.sortingOrder;
         }
 
         // 正在下令的军队：框选、单击旗帜、拉近框选的士兵所属的军队，或者指挥军队神力选好的那支
@@ -82,12 +61,13 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 照抄原版 QuantumSpriteLibrary.drawArmies，只把人数改成选中的军队显示
+        // 照抄原版 QuantumSpriteLibrary.drawArmies，只改人数：选中的军队显示；打开了原版「军队旁显示人数」选项则全部显示
         static void DrawArmyFlags(QuantumSpriteAsset pAsset)
         {
             if (!PlayerConfig.optionBoolEnabled("marks_armies")) return;
             if (global::Zones.showArmyZones() && global::Zones.showMapNames()) return;
             List<Army> selected = CommandedArmies();
+            bool show_all = DebugConfig.isOn(DebugOption.ShowAmountNearArmy);
             int num = 0;
             for (int i = 0; i < World.world.armies.list.Count; i++)
             {
@@ -98,7 +78,7 @@ namespace DiplomacyOverhaul
                 if (captain.isInMagnet() || !captain.current_zone.visible || !captain.isKingdomCiv()) continue;
                 Kingdom kingdom = captain.kingdom;
                 var sprite = (QuantumSpriteWithText)QuantumSpriteLibrary.drawQuantumSprite(pAsset, captain.current_position, null, kingdom, captain.city);
-                if (selected.Contains(army)) ShowCount(sprite, army.countUnits().ToString());
+                if (show_all || selected.Contains(army)) ShowCount(sprite, army.countUnits().ToString());
                 else sprite.text.gameObject.SetActive(false);
                 if (!pAsset.group_system.is_within_active_index) num++;
                 sprite.setSprite(DynamicSprites.getIcon(FlagSprite, kingdom.getColor()));
