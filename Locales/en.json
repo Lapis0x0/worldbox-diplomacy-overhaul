@@ -131,6 +131,8 @@
   "vd_group_cycle": "Dynastic Cycle",
   "vd_cycle_enabled": "Great realms go through renewal, prime, decline and collapse",
   "vd_restoration_chance": "Restoration plot success chance (%)",
+  "vd_group_perf": "Performance",
+  "vd_perf_enabled": "Skip redundant work in the base game for smoother play without changing outcomes",
   "opinion_vd_cycle": "Overlord's fortunes",
   "loyalty_vd_cycle_prime": "Golden age",
   "loyalty_vd_cycle_decline": "Waning fortunes",

@@ -7,8 +7,9 @@ namespace DiplomacyOverhaul
     {
         protected override void OnModLoad()
         {
-            Core.Start(GetConfig());
-            DevReload.Install(gameObject, GetDeclaration().FolderPath, GetConfig());
+            string folder = GetDeclaration().FolderPath;
+            Core.Start(GetConfig(), folder);
+            DevReload.Install(gameObject, folder, GetConfig());
             LogInfo("外交大修 loaded");
         }
     }

@@ -131,6 +131,8 @@
   "vd_group_cycle": "王朝周期",
   "vd_cycle_enabled": "大国经历新生、鼎盛、衰落、崩溃的王朝周期",
   "vd_restoration_chance": "中兴密谋成功的概率（百分比）",
+  "vd_group_perf": "性能",
+  "vd_perf_enabled": "优化原版的重复计算，让游戏更流畅，不改变游戏结果",
   "opinion_vd_cycle": "宗主国运",
   "loyalty_vd_cycle_prime": "太平盛世",
   "loyalty_vd_cycle_decline": "国运衰微",

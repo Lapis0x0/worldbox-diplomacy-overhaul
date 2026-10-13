@@ -20,9 +20,10 @@ namespace DiplomacyOverhaul
         static Harmony _harmony;
         public static PlotAsset plot_independence;
 
-        public static void Start(ModConfig pConfig)
+        public static void Start(ModConfig pConfig, string pFolder)
         {
             Settings.Config = pConfig;
+            Perf.Perf.Start(pFolder);
             _harmony = new Harmony(HarmonyId);
             _harmony.PatchAll(typeof(Core).Assembly);
             AddOpinion();
@@ -44,6 +45,7 @@ namespace DiplomacyOverhaul
 
         public static void Stop()
         {
+            Perf.Perf.Stop();
             _harmony?.UnpatchSelf();
             _harmony = null;
         }

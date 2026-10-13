@@ -98,5 +98,13 @@
       "MinIntVal": 0,
       "MaxIntVal": 100
     }
+  ],
+  "vd_group_perf": [
+    {
+      "Id": "vd_perf_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconClock",
+      "BoolVal": true
+    }
   ]
 }

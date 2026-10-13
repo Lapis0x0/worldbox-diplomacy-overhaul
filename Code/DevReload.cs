@@ -49,13 +49,13 @@ namespace DiplomacyOverhaul
                 Call(_core, "Stop");
                 try
                 {
-                    Call(next, "Start", _config);
+                    Call(next, "Start", _config, _folder);
                 }
                 catch
                 {
                     // 新版本启动失败：恢复旧版本，游戏继续可用
                     Call(next, "Stop");
-                    Call(_core, "Start", _config);
+                    Call(_core, "Start", _config, _folder);
                     throw;
                 }
                 _core = next;
