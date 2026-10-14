@@ -14,8 +14,8 @@ namespace DiplomacyOverhaul
         // 超出治理上限时，攻下的城市分封出去的概率
         const float ConquestChance = 0.75f;
 
-        // 附庸城市数到了这个数，打下的城不再并给它，另封新附庸
-        const int VassalMaxCities = 5;
+        // 附庸靠打仗最多长到这么多座城：到了这个数，打下的城不再归它或并给它
+        const int VassalMaxCities = 3;
 
         // 威逼称臣：强国实力至少是对方的这么多倍；帝国威名在外，门槛更低
         const int TributePowerRatio = 3;
@@ -69,27 +69,48 @@ namespace DiplomacyOverhaul
         }
 
         // 原版攻下城市、正要并入 pConqueror。返回 true 表示已分封给新附庸，原版不必再并入；
-        // 返回 false 时 pConqueror 可能被换成了附近的附庸，交给原版并入
+        // 返回 false 时 pConqueror 可能被换成了宗主或附近的附庸，交给原版并入
         public static bool TryConquest(City pCity, ref Kingdom pConqueror)
         {
-            Kingdom lord = pConqueror;
             Kingdom overlord = Vassals.GetOverlord(pConqueror);
             if (overlord != null)
             {
-                // 附庸随宗主出征打下的城：和自己领土接壤就照原版归自己；
-                // 隔着别国的飞地按宗主打下的城处理，免得附庸在远处冒出一块
-                if (Touches(pCity, pConqueror)) return false;
-                lord = overlord;
+                // 附庸打下的城最后没留给自己：战果被夺，整合度下降
+                Kingdom vassal = pConqueror;
+                bool granted = VassalConquest(pCity, ref pConqueror, overlord);
+                if (granted || pConqueror != vassal) Integration.OnSpoilsTaken(vassal, overlord);
+                return granted;
             }
+
+            Kingdom lord = pConqueror;
             if (!CanGrant(lord) || Vassals.SameBloc(lord, pCity.kingdom)) return false;
             // 军事共和国打下的城自己吞
             if (Government.IsMilitary(lord)) return false;
             if (lord.countCities() < lord.getMaxCities()) return false;
             if (!Randy.randomChance(ConquestChance)) return false;
+            return Redistribute(pCity, ref pConqueror, lord);
+        }
 
-            // 附近已有附庸（挨着它的首都或首都旁的城）：并给它，免得连打几座城冒出一串一城小国。
-            // 离附庸首都远、或附庸已经够大，就另封新附庸，附庸不会一路越滚越大
-            foreach (Kingdom v in Vassals.GetVassals(lord))
+        // 附庸随宗主出征打下的城：和自己领土接壤、自己不到 3 座城时照原版归自己。
+        // 否则（已经够大，或是隔着别国的飞地）宗主没到上限、又和这座城接壤就归宗主，
+        // 不然给附近的小附庸或另封新附庸，附庸不会靠打仗越滚越大
+        static bool VassalConquest(City pCity, ref Kingdom pConqueror, Kingdom pLord)
+        {
+            if (Touches(pCity, pConqueror) && pConqueror.countCities() < VassalMaxCities) return false;
+            if (!CanGrant(pLord) || Vassals.SameBloc(pLord, pCity.kingdom)) return false;
+            if (pLord.countCities() < pLord.getMaxCities() && Touches(pCity, pLord))
+            {
+                pConqueror = pLord;
+                return false;
+            }
+            return Redistribute(pCity, ref pConqueror, pLord);
+        }
+
+        // 宗主不收的城：附近已有小附庸（挨着它的首都或首都旁的城）就并给它，免得连打几座城冒出一串一城小国；
+        // 没有就从城里挑一个居民另封新附庸；空城没人可封，归宗主
+        static bool Redistribute(City pCity, ref Kingdom pConqueror, Kingdom pLord)
+        {
+            foreach (Kingdom v in Vassals.GetVassals(pLord))
             {
                 if (v.countCities() < VassalMaxCities && NearCapital(pCity, v))
                 {
@@ -107,13 +128,21 @@ namespace DiplomacyOverhaul
                     break;
                 }
             }
-            if (ruler == null) return false;
+            if (ruler == null)
+            {
+                pConqueror = pLord;
+                return false;
+            }
 
             World.world.game_stats.data.citiesConquered++;
             World.world.map_stats.citiesConquered++;
-            Kingdom vassal = Grant(pCity, ruler, lord, Integration.Granted);
-            if (vassal == null) return false;
-            Log(lord, pCity, vassal);
+            Kingdom vassal = Grant(pCity, ruler, pLord, Integration.Granted);
+            if (vassal == null)
+            {
+                pConqueror = pLord;
+                return false;
+            }
+            Log(pLord, pCity, vassal);
             return true;
         }
 

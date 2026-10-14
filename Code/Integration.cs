@@ -33,6 +33,8 @@ namespace DiplomacyOverhaul
         // 低于这个值时心存旧怨，上升速度减半
         const float GrudgeBelow = 30f;
         const float WarSwing = 5f;
+        // 附庸打下的城被宗主拿走或分给别人
+        const float SpoilsTaken = 3f;
         // 宗主主动开的仗，附庸至少有这么大的概率参战
         const int MinJoinChance = 30;
 
@@ -250,6 +252,9 @@ namespace DiplomacyOverhaul
             h ^= h >> 31;
             return (int)(h % 100UL) < chance;
         }
+
+        // 附庸打下的城没留给自己（归了宗主、别的附庸或新封的附庸）
+        public static void OnSpoilsTaken(Kingdom pVassal, Kingdom pLord) => Add(pVassal, pLord, -SpoilsTaken);
 
         // 跟着宗主打赢的附庸整合度上升，宗主打输则所有附庸下降
         public static void OnWarEnded(War pWar, WarWinner pWinner)
