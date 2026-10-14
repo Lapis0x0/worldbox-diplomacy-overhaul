@@ -1,0 +1,10 @@
+A 2x2 sprite sheet of 4 game UI icons for the pixel-art god-simulation game WorldBox, drawn exactly in the style of the two reference images, which show original WorldBox icons (each a 28x28 pixel-art sprite scaled up 16x). Match them precisely: chunky square pixels on a strict 28x28 grid, each art pixel a crisp square block, limited palette, bold readable silhouette, dark outline on the shadow side, simple 2-3 tone shading, light from the upper left, no anti-aliasing, no gradients, no text.
+
+The icons are government types shown as kingdom traits. They form one family, REPUBLICS, so they share one main element: a small classical assembly hall seen from the front, a triangular pediment roof on top of four thick columns standing on a stepped base, built of warm cream-white stone with light brown shading (like the stone and wood tones in the references). Draw this hall identically in icons 1-3; only the addition changes.
+
+1. Republic: the assembly hall alone, with a small red banner on a short pole on the roof peak.
+2. Merchant republic: the same hall, with one big shiny gold coin (like the reference gold coin) leaning in front of its lower right corner, overlapping the steps.
+3. Military republic: the same hall, with two crossed swords (like the reference crossed swords) in front of its lower part, overlapping the columns.
+4. An alternative design of the plain republic hall for comparison: a rounder dome-roofed senate building with columns, same colors.
+
+Each icon centered in its own equal square cell, compact, the hall filling about 55% of the cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no shadows on the background, no borders, no labels.

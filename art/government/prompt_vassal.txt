@@ -1,0 +1,12 @@
+The first image shows pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x): the original golden crown, our republic assembly hall icon, the original villages icon, and the original conquered-city icon. The second image shows more original WorldBox icons.
+
+Match the ORIGINAL WorldBox look closely, not a generic mobile-game look: objects seen slightly from the side in 3/4 view, the crown points shaped like little flames, warm orange and brown shading with a dark brown outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid, limited palette, no anti-aliasing, no gradients, no text.
+
+Draw a 2x2 sheet of 4 icons for VASSAL government types, shown as kingdom traits. They share one element: the overlord's banner, a tall narrow hanging BLUE banner (royal blue cloth with a gold tip, hanging down from a horizontal bar on a thin wooden pole), standing behind the main object at its upper right, as if the overlord planted it there.
+
+1. Duchy (a vassal monarchy): a small low golden ducal coronet, clearly smaller and humbler than the original crown, with only three flame-like points and one magenta gem, the blue banner behind it at upper right.
+2. Dominion (a vassal republic): the republic assembly hall from the reference, drawn a bit smaller, same colors, the blue banner behind it at upper right (the hall's own red roof flag removed).
+3. Province (a big region directly ruled by the overlord): a sturdy stone city gate with crenellated walls on both sides and a gatehouse tower above the arched gate, warm grey-brown stone like the references, the same blue banner flying from the top of the gatehouse.
+4. Alternative duchy: the small coronet resting on a little red cushion, with the blue banner behind it.
+
+Each icon centered in its own square cell, compact, the main object about 45% of the cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no labels.

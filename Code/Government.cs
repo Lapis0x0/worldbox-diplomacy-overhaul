@@ -53,8 +53,8 @@ namespace DiplomacyOverhaul
                 AssetManager.kingdoms_traits.dict.Remove(LegacyCityState);
             }
             AddTraitGroup(GroupId, "#FFD27F", Ids,
-                new[] { "ui/Icons/iconKingdom", "ui/Icons/iconCrown", "ui/Icons/iconClan", "ui/Icons/iconMoney",
-                        "ui/Icons/iconArmy", "ui/Icons/iconKings", "ui/Icons/iconLoyalty", "ui/Icons/iconVillages" });
+                new[] { "ui/Icons/iconKingdom", "ui/Icons/iconKingdomList", "ui/Icons/vd_gov_republic", "ui/Icons/vd_gov_merchant_republic",
+                        "ui/Icons/vd_gov_military_republic", "ui/Icons/vd_gov_duchy", "ui/Icons/vd_gov_dominion", "ui/Icons/vd_gov_province" });
         }
 
         // 一组互斥的王国特质（政体、王朝周期）；组名的 key 是 trait_group_<组 id>

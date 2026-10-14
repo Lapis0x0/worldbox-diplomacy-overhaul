@@ -1,0 +1,7 @@
+The first image shows 3 pixel-art icons for the game WorldBox (28x28 sprites scaled up 16x): a small ducal coronet, a small assembly hall, and a stone city gate (ignore the leftover wooden poles). The second image shows original WorldBox icons for style.
+
+These are VASSAL government types. Mark all three as vassals with the same golden chain in the same place: a short heavy golden chain of 5 chunky links hanging horizontally UNDER the object, both ends fastened to the bottom left and bottom right corners of the object, sagging slightly in the middle like a U, close below the object. Thick links with a clear hole, 2-pixel-thick metal, dark brown outline, orange-gold shading like the original crown. Symmetric, centered under the object, bold and readable at 28x28.
+
+Make a 2x2 sheet: 1 the coronet with the chain under it, 2 the hall with the chain under it, 3 the city gate with the chain under it, 4 alternative: the coronet with the same chain wrapped horizontally across its front band instead.
+
+Redraw the objects as in the first image (remove the wooden poles), same size and colors, the object plus chain centered in the cell. Style exactly like the references: chunky square pixels on a strict 28x28 grid, limited palette, no anti-aliasing, no gradients, no text. The object about 45% of the cell width. Background flat uniform medium grey (#808080), no labels.
