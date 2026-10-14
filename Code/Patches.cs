@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using NeoModLoader.General;
@@ -320,6 +321,37 @@ namespace DiplomacyOverhaul
         {
             pColor.a = pAlpha;
             return pColor;
+        }
+    }
+
+    // 好感逐项计算：某一项抛异常时这一项记 0，其余照算。原版一项出错整次计算作废并重抛，
+    // 其他模组的好感项或特质出错时，每次算好感都会报错刷屏。每个出错的项只记一次日志
+    [HarmonyPatch(typeof(KingdomOpinion), nameof(KingdomOpinion.calculate))]
+    static class Patch_OpinionCalculate
+    {
+        static readonly HashSet<string> _reported = new HashSet<string>();
+
+        static bool Prefix(KingdomOpinion __instance, Kingdom pMain, Kingdom pTarget)
+        {
+            __instance.total = 0;
+            __instance.results.Clear();
+            foreach (OpinionAsset asset in AssetManager.opinion_library.list)
+            {
+                int value;
+                try
+                {
+                    value = asset.calc(pMain, pTarget);
+                }
+                catch (Exception e)
+                {
+                    if (_reported.Add(asset.id))
+                        Debug.LogError($"[外交大修] 好感项 {asset.id} 出错，已按 0 计算（{pMain?.data?.name} → {pTarget?.data?.name}）：{e}");
+                    continue;
+                }
+                __instance.total += value;
+                if (value != 0) __instance.results.Add(asset, value);
+            }
+            return false;
         }
     }
 }

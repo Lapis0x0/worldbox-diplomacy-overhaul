@@ -249,7 +249,8 @@ namespace DiplomacyOverhaul
 
         static bool WillSubmit(Kingdom pTarget, Kingdom pLord)
         {
-            if (!pTarget.isAlive() || !pTarget.isCiv() || Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
+            if (!pTarget.isAlive() || !pTarget.isCiv() || pTarget.countCities() == 0) return false;
+            if (Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
             if (pTarget.isInWarWith(pLord)) return false;
             if (Vassals.Power(pLord) < Vassals.Power(pTarget) * RequiredRatio(pLord)) return false;
             return World.world.diplomacy.getOpinion(pTarget, pLord).total >= 0;
