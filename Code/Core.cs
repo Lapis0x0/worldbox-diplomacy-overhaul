@@ -181,6 +181,12 @@ namespace DiplomacyOverhaul
                 translation_key = "opinion_vd_cycle",
                 calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Cycle.VassalOpinion(pTarget) : 0
             });
+            Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_weak_lord",
+                translation_key = "opinion_vd_weak_lord",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Cycle.WeakLordOpinion(pTarget) : 0
+            });
             Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_cycle",

@@ -182,6 +182,8 @@ namespace DiplomacyOverhaul
             if (pVassal.getSpecies() != pLord.getSpecies()) d -= 1f;
             if (SameHouse(pVassal, pLord)) d += 1f;
             if (pVassal.countCities() * 2 >= pLord.countCities()) d -= 1f;
+            // 宗主自己不到 6 座城，每少一座再 -1
+            d -= Cycle.Shortfall(pLord);
             return d;
         }
 

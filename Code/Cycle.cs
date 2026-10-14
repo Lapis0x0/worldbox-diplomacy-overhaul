@@ -13,7 +13,7 @@ namespace DiplomacyOverhaul
         Collapse = 4  // 崩溃
     }
 
-    // 王朝周期：6 座城及以上、不是附庸的大国才有，君主制、共和国都一样。
+    // 王朝周期：不是附庸、自己有 6 座城或者有附庸的国家才有，君主制、共和国都一样。
     // 新生 → 鼎盛 → 衰落 → 大叛乱 → 崩溃 → 挺过来回到新生，否则周期消失
     //
     // 阶段由天命值（0–100）推动：每年天命向「应得天命」靠拢一成，
@@ -38,6 +38,7 @@ namespace DiplomacyOverhaul
         const float RulerWeight = 0.6f, RulerMid = 29f, RulerCap = 10f, NoRuler = -10f;
         const float VassalWeight = 0.2f, VassalMid = 50f;
         const float PeopleWeight = 40f, PeopleMid = 0.33f, PeopleCap = 5f;
+        const float SmallLord = 5f;       // 宗主势小：自己不到 6 座城的宗主，每少一座城
 
         const float WarWon = 5f, WarLost = -10f;
         const float CityLost = -2f, CityGained = 1f, CapitalLost = -15f;
@@ -132,8 +133,8 @@ namespace DiplomacyOverhaul
         // 治理的各项，普通大国都记 0
         public struct Governance
         {
-            public float Cities, Ruler, Vassals, People;
-            public float Total => Cities + Ruler + Vassals + People;
+            public float Cities, Ruler, Vassals, People, SmallLord;
+            public float Total => Cities + Ruler + Vassals + People + SmallLord;
         }
 
         public static Governance Govern(Kingdom pKingdom)
@@ -165,6 +166,8 @@ namespace DiplomacyOverhaul
             int units = pKingdom.countUnits();
             if (units > 0)
                 g.People = Mathf.Clamp(PeopleWeight * (PeopleMid - (float)pKingdom.countHomeless() / units), -PeopleCap, PeopleCap);
+            // 小国带着一群附庸，镇不住
+            g.SmallLord = -SmallLord * Shortfall(pKingdom);
             return g;
         }
 
@@ -226,6 +229,14 @@ namespace DiplomacyOverhaul
         public static bool IsEmpire(Kingdom pKingdom) =>
             pKingdom.isAlive() && pKingdom.isCiv() && !Vassals.IsVassal(pKingdom) && pKingdom.countCities() >= EmpireCities;
 
+        // 有周期：独立的大国，或者带着附庸的宗主（哪怕自己已经很小）
+        static bool Eligible(Kingdom pKingdom) =>
+            IsEmpire(pKingdom) || pKingdom.isAlive() && pKingdom.isCiv() && !Vassals.IsVassal(pKingdom) && Vassals.HasVassals(pKingdom);
+
+        // 宗主自己比大国少几座城；不是宗主或者已经够大时为 0
+        public static int Shortfall(Kingdom pLord) =>
+            Vassals.HasVassals(pLord) ? Mathf.Max(0, EmpireCities - pLord.countCities()) : 0;
+
         public static void UpdateAll()
         {
             if (!Settings.CycleEnabled)
@@ -256,8 +267,8 @@ namespace DiplomacyOverhaul
             if (phase == CyclePhase.Collapse)
             {
                 if (InCrisis(pKingdom)) return;
-                // 叛乱打完了：还保住帝国规模就是中兴
-                if (IsEmpire(pKingdom))
+                // 叛乱打完了：还保住帝国规模或附庸就是中兴
+                if (Eligible(pKingdom))
                 {
                     NewDynastyMandate(pKingdom);
                     Set(pKingdom, CyclePhase.Renewal);
@@ -265,7 +276,7 @@ namespace DiplomacyOverhaul
                 else Set(pKingdom, CyclePhase.None);
                 return;
             }
-            if (!IsEmpire(pKingdom))
+            if (!Eligible(pKingdom))
             {
                 if (phase != CyclePhase.None) Set(pKingdom, CyclePhase.None);
                 return;
@@ -345,7 +356,7 @@ namespace DiplomacyOverhaul
         {
             if (!Settings.CycleEnabled) return "vd_tip_cycle_disabled";
             CyclePhase phase = Get(pKingdom);
-            if (phase == CyclePhase.None && !IsEmpire(pKingdom)) return "vd_tip_cycle_not_empire";
+            if (phase == CyclePhase.None && !Eligible(pKingdom)) return "vd_tip_cycle_not_empire";
             switch (phase)
             {
                 case CyclePhase.None:
@@ -386,7 +397,7 @@ namespace DiplomacyOverhaul
         public static void NewDynasty(Kingdom pKingdom)
         {
             if (!Settings.CycleEnabled) return;
-            if (Get(pKingdom) == CyclePhase.None && !IsEmpire(pKingdom)) return;
+            if (Get(pKingdom) == CyclePhase.None && !Eligible(pKingdom)) return;
             NewDynastyMandate(pKingdom);
             Set(pKingdom, CyclePhase.Renewal);
         }
@@ -422,6 +433,9 @@ namespace DiplomacyOverhaul
                 default: return 0;
             }
         }
+
+        // 附庸对宗主的好感：宗主自己不到 6 座城，每少一座 -10
+        public static int WeakLordOpinion(Kingdom pLord) => -10 * Shortfall(pLord);
 
         // 帝国城市的忠诚：鼎盛 +10；衰落从 -1 起每年再 -1，最多 -30。
         // 忠诚降到负数的城市会自己起事，大叛乱之前各地就零星叛乱
@@ -464,6 +478,7 @@ namespace DiplomacyOverhaul
             Line(pTooltip, "vd_mandate_ruler", g.Ruler);
             if (Vassals.HasVassals(k)) Line(pTooltip, "vd_mandate_vassals", g.Vassals);
             Line(pTooltip, "vd_mandate_people", g.People);
+            if (g.SmallLord != 0f) Line(pTooltip, "vd_mandate_small_lord", g.SmallLord);
             Line(pTooltip, "vd_mandate_decay", -Cycle.Aging(k));
             pTooltip.showStatValues();
         }

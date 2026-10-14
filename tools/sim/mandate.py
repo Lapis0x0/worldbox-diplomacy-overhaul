@@ -45,6 +45,8 @@ class Model:
     restore_m: float = 15.0
     restore_age: float = 40.0
 
+    small_lord: float = 5.0    # 尾大不掉：带着附庸、自己不到 6 座城的宗主，每少一座城治理减多少
+
     def target(self, k):
         return self.base + self.governance(k) - k.decay * k.decay / self.aging
 
@@ -60,6 +62,8 @@ class Model:
         if k.vassals:
             t += self.w_vassal * (k.integration - 50)
         t += max(-self.people_cap, min(self.people_cap, self.w_people * (0.33 - k.homeless)))
+        if k.vassals and k.cities < EMPIRE:
+            t -= self.small_lord * (EMPIRE - k.cities)
         return t
 
 
@@ -85,6 +89,7 @@ class World:
     restore_ok: float = 0.30
 
 
+EMPIRE = 6  # 有周期：自己 6 座城以上，或者有附庸（且自己不是附庸）
 PRIME_LOYALTY = 10  # 现有的周期修正，换算成「不忠城市占比」的变化见 Kingdom.effective_disloyal
 
 
@@ -186,7 +191,7 @@ def step(k: Kingdom, mdl: Model):
     if k.phase == "collapse":
         k.crisis += 1
         if k.crisis >= w.crisis_min and r.random() < w.crisis_end:
-            return "renewal" if k.cities >= 6 else "end"
+            return "renewal" if k.cities >= EMPIRE or k.vassals else "end"
         return None
     k.age += 1
     k.decay += mdl.decay_rate(k)
@@ -199,7 +204,7 @@ def step(k: Kingdom, mdl: Model):
             events.append("restore")
     k.m = max(0.0, min(100.0, k.m))
 
-    if k.cities < 6:
+    if k.cities < EMPIRE and not k.vassals:
         return "end"
     if k.phase == "renewal":
         if k.m >= mdl.prime_at or k.age >= mdl.renewal_max and k.m >= mdl.decline_below:
