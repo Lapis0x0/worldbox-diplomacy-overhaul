@@ -28,7 +28,7 @@ namespace DiplomacyOverhaul
         // 旧版的城邦，已取消；旧存档里的会被换掉
         const string LegacyCityState = "vd_gov_city_state";
 
-        // 最近一次自动设置的政体；与当前政体不一致说明玩家手动改过
+        // 最近一次设置或生效的政体；与当前政体不一致说明玩家手动改过
         const string KeyAuto = "vd_gov_auto";
         const string KeyLocked = "vd_gov_locked";
         const string KeyForm = "vd_gov_form";
@@ -252,16 +252,20 @@ namespace DiplomacyOverhaul
 
             if (locked)
             {
+                // 锁定后玩家又换了一次
+                if (current != null)
+                {
+                    if (current != last) ApplyManual(pKingdom, current);
+                    return;
+                }
                 // 玩家把政体删掉 = 交还给自动判定
-                if (current != null) return;
                 data.removeBool(KeyLocked);
             }
             else if (last != null && current != null && current != last && last != LegacyCityState)
             {
-                // 玩家在特质编辑器里改过政体：锁定，政体大类跟着玩家的选择走
+                // 玩家在特质编辑器里改过政体：锁定
                 data.set(KeyLocked, true);
-                if (RepublicIds.Contains(current)) SetForm(pKingdom, GovForm.Republic, current == MilitaryRepublic);
-                else if (current == Kingdom || current == Empire) SetForm(pKingdom, GovForm.Monarchy);
+                ApplyManual(pKingdom, current);
                 return;
             }
 
@@ -269,6 +273,15 @@ namespace DiplomacyOverhaul
             if (desired == null || desired == current) return;
             pKingdom.addTrait(desired, true);
             data.set(KeyAuto, desired);
+        }
+
+        // 政体大类和附庸的行省状态跟着玩家的选择走
+        static void ApplyManual(Kingdom pKingdom, string pGov)
+        {
+            pKingdom.data.set(KeyAuto, pGov);
+            if (RepublicIds.Contains(pGov)) SetForm(pKingdom, GovForm.Republic, pGov == MilitaryRepublic);
+            else if (pGov == Kingdom || pGov == Empire) SetForm(pKingdom, GovForm.Monarchy);
+            Integration.ApplyTitle(pKingdom, pGov);
         }
 
         // 旧版的城邦特质：资产已从库里移除，只能按 id 找到实例再删

@@ -164,6 +164,37 @@ namespace DiplomacyOverhaul
             World.world.zone_calculator.dirtyAndClear();
         }
 
+        // 玩家在特质编辑器里给附庸选了政体：选行省、世袭行省就成为行省，选公国、自治领就退出行省，
+        // 整合度挪到对应的位置，政体大类照自动成为这一档时的规则
+        public static void ApplyTitle(Kingdom pVassal, string pGov)
+        {
+            if (!Vassals.IsVassal(pVassal)) return;
+            bool hereditary = pGov == Government.HereditaryProvince;
+            bool province = hereditary || pGov == Government.Province;
+            if (!province && pGov != Government.Duchy && pGov != Government.Dominion) return;
+            Government.SetForm(pVassal, hereditary || pGov == Government.Duchy ? GovForm.Monarchy : GovForm.Republic);
+            if (hereditary) pVassal.trySetRoyalClan();
+            if (province == IsProvince(pVassal) && hereditary == IsHereditary(pVassal)) return;
+
+            float value = Get(pVassal);
+            if (province)
+            {
+                pVassal.data.set(KeyProvince, true);
+                if (hereditary) pVassal.data.set(KeyHereditary, true);
+                else pVassal.data.removeBool(KeyHereditary);
+                if (value < ProvinceAt) value = TierMid[TierMid.Length - 1];
+            }
+            else
+            {
+                pVassal.data.removeBool(KeyProvince);
+                pVassal.data.removeBool(KeyHereditary);
+                if (value >= ProvinceAt) value = TierMid[TierMid.Length - 2];
+            }
+            pVassal.data.set(Key, value);
+            SyncTrait(pVassal);
+            World.world.zone_calculator.dirtyAndClear();
+        }
+
         static void Log(string pId, Kingdom pVassal, Kingdom pLord)
         {
             if (pLord == null) return;
