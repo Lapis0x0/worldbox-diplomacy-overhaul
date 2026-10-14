@@ -56,7 +56,7 @@ namespace DiplomacyOverhaul
             if (!CanGrant(lord) || NearCapital(city)) return false;
             if (!Randy.randomChance(RebellionChance(lord))) return false;
 
-            Kingdom vassal = Grant(city, pActor, lord);
+            Kingdom vassal = Grant(city, pActor, lord, Integration.Feudal);
             if (vassal == null) return false;
             // 同原版叛乱：参与密谋的其他城市一起归入新国家
             foreach (Actor unit in pPlot.units)
@@ -111,7 +111,7 @@ namespace DiplomacyOverhaul
 
             World.world.game_stats.data.citiesConquered++;
             World.world.map_stats.citiesConquered++;
-            Kingdom vassal = Grant(pCity, ruler, lord);
+            Kingdom vassal = Grant(pCity, ruler, lord, Integration.Granted);
             if (vassal == null) return false;
             Log(lord, pCity, vassal);
             return true;
@@ -252,12 +252,12 @@ namespace DiplomacyOverhaul
         }
 
         // 城市自立为国，由 pRuler 当国王，成为 pLord 的附庸
-        internal static Kingdom Grant(City pCity, Actor pRuler, Kingdom pLord)
+        internal static Kingdom Grant(City pCity, Actor pRuler, Kingdom pLord, float pIntegration)
         {
             if (pRuler.isCityLeader()) pRuler.city.removeLeader();
             Kingdom vassal = pCity.makeOwnKingdom(pRuler);
             pRuler.joinCity(pCity);
-            if (Vassals.MakeVassal(pLord, vassal, Integration.Feudal) != null) return null;
+            if (Vassals.MakeVassal(pLord, vassal, pIntegration) != null) return null;
             return vassal;
         }
 

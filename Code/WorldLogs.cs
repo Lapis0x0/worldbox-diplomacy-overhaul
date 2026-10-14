@@ -10,6 +10,8 @@ namespace DiplomacyOverhaul
         public const string Tribute = "vd_log_tribute";         // $vassal$ 向 $lord$ 称臣
         public const string Province = "vd_log_province";            // $vassal$ 成为 $lord$ 的行省
         public const string ProvinceLost = "vd_log_province_lost";   // $vassal$ 不再是 $lord$ 的行省
+        public const string HereditaryProvince = "vd_log_hereditary_province"; // $vassal$ 成为 $lord$ 的世袭行省
+        public const string HereditaryLost = "vd_log_hereditary_lost";         // $vassal$ 不再世袭，改为 $lord$ 的行省
         public const string Appanage = "vd_log_appanage";             // $lord$ 将 $city$ 封给宗室 $ruler$
         public const string DirectRule = "vd_log_direct_rule";            // $lord$ 将 $vassal$ 收归直辖
         public const string DirectRulePart = "vd_log_direct_rule_part";   // $lord$ 将 $vassal$ 的 $count$ 座城收归直辖
@@ -27,6 +29,8 @@ namespace DiplomacyOverhaul
             Register(Capitulated, "ui/Icons/iconWar", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(Tribute, "ui/Icons/vd_power_make_vassal", Toolbox.color_log_neutral, "$vassal$", "$lord$");
             Register(Province, "ui/Icons/vd_gov_province", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(HereditaryProvince, "ui/Icons/vd_gov_province", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(HereditaryLost, "ui/Icons/vd_gov_province", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(ProvinceLost, "ui/Icons/vd_gov_dominion", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(Appanage, "ui/Icons/vd_power_release_city", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(DirectRule, "ui/Icons/vd_power_annex", Toolbox.color_log_neutral, "$lord$", "$vassal$");

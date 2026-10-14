@@ -24,6 +24,7 @@ namespace DiplomacyOverhaul
         public const string Duchy = "vd_gov_duchy";
         public const string Dominion = "vd_gov_dominion";
         public const string Province = "vd_gov_province";
+        public const string HereditaryProvince = "vd_gov_hereditary_province";
         // 旧版的城邦，已取消；旧存档里的会被换掉
         const string LegacyCityState = "vd_gov_city_state";
 
@@ -39,7 +40,7 @@ namespace DiplomacyOverhaul
         const float RepublicChanceMild = 0.25f;   // 名望之冠
         const float RepublicChanceBase = 0.1f;
 
-        static readonly string[] Ids = { Kingdom, Empire, Republic, MerchantRepublic, MilitaryRepublic, Duchy, Dominion, Province };
+        static readonly string[] Ids = { Kingdom, Empire, Republic, MerchantRepublic, MilitaryRepublic, Duchy, Dominion, Province, HereditaryProvince };
         static readonly HashSet<string> IdSet = new HashSet<string>(Ids);
         static readonly HashSet<string> RepublicIds = new HashSet<string> { Republic, MerchantRepublic, MilitaryRepublic };
 
@@ -54,7 +55,8 @@ namespace DiplomacyOverhaul
             }
             AddTraitGroup(GroupId, "#FFD27F", Ids,
                 new[] { "ui/Icons/iconKingdom", "ui/Icons/iconKingdomList", "ui/Icons/vd_gov_republic", "ui/Icons/vd_gov_merchant_republic",
-                        "ui/Icons/vd_gov_military_republic", "ui/Icons/vd_gov_duchy", "ui/Icons/vd_gov_dominion", "ui/Icons/vd_gov_province" });
+                        "ui/Icons/vd_gov_military_republic", "ui/Icons/vd_gov_duchy", "ui/Icons/vd_gov_dominion", "ui/Icons/vd_gov_province",
+                        "ui/Icons/vd_gov_province" });
         }
 
         // 一组互斥的王国特质（政体、王朝周期）；组名的 key 是 trait_group_<组 id>
@@ -229,7 +231,7 @@ namespace DiplomacyOverhaul
             bool republic = Form(pKingdom) == GovForm.Republic;
             if (Vassals.IsVassal(pKingdom))
             {
-                if (Integration.IsProvince(pKingdom)) return Province;
+                if (Integration.IsProvince(pKingdom)) return Integration.IsHereditary(pKingdom) ? HereditaryProvince : Province;
                 return republic ? Dominion : Duchy;
             }
             if (!republic) return cities >= Cycle.EmpireCities ? Empire : Kingdom;

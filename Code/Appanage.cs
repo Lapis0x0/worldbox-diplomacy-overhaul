@@ -110,7 +110,7 @@ namespace DiplomacyOverhaul
             List<City> cities = PickCities(lord, count);
             if (cities.Count == 0) return false;
 
-            Kingdom vassal = Feudal.Grant(cities[0], heir, lord);
+            Kingdom vassal = Feudal.Grant(cities[0], heir, lord, Integration.Granted);
             if (vassal == null) return false;
             for (int i = 1; i < cities.Count; i++) cities[i].joinAnotherKingdom(vassal);
             // 宗室立的是王朝，不掷政体

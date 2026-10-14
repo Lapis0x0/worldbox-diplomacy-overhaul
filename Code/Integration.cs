@@ -5,12 +5,14 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 整合度：附庸在「自立」和「归化」之间的位置，0–100，每年随宗主的周期阶段和两国的结构因素变动。
-    // 涨到 ProvinceAt 成为行省（按共和国的规则推举执政），跌破 ProvinceUntil 退回自治领。
+    // 涨到 ProvinceAt 成为行省，跌破 ProvinceUntil 退回自治领或公国。附庸国王和宗主国王同一家族时是世袭行省，
+    // 保留君主制和王室；否则是普通行省，按共和国的规则推举执政。世袭行省的家族和宗主王室不再一致，就改成普通行省。
     // 所在的档次显示成王国特质（特质组「整合度」），玩家在特质编辑器里换一档，整合度就设到那一档的中间
     public static class Integration
     {
         const string Key = "vd_integration";
         const string KeyProvince = "vd_province";
+        const string KeyHereditary = "vd_hereditary";
         // 最近一次自动显示的档次；和当前特质不一致说明玩家手动改过
         const string KeyShown = "vd_integration_shown";
 
@@ -21,7 +23,8 @@ namespace DiplomacyOverhaul
         static readonly float[] TierMid = { 15f, 40f, 70f, 95f };
 
         // 成为附庸时的起点
-        public const float Feudal = 70f;      // 分封
+        public const float Granted = 95f;     // 分封宗室、攻城改分封、神力分封附庸：一出来就是行省
+        public const float Feudal = 70f;      // 叛乱改分封：和叛军妥协，先自治
         public const float Tribute = 35f;     // 威逼称臣、神力册封
         public const float Conquered = 0f;    // 投降、独立失败
 
@@ -90,6 +93,13 @@ namespace DiplomacyOverhaul
             return value < 0f ? Tribute : value;
         }
 
+        public static bool IsHereditary(Kingdom pKingdom)
+        {
+            if (pKingdom?.data == null) return false;
+            pKingdom.data.get(KeyHereditary, out bool hereditary, false);
+            return hereditary;
+        }
+
         public static bool IsProvince(Kingdom pKingdom)
         {
             if (pKingdom?.data == null) return false;
@@ -108,6 +118,7 @@ namespace DiplomacyOverhaul
         {
             pKingdom.data.removeFloat(Key);
             pKingdom.data.removeBool(KeyProvince);
+            pKingdom.data.removeBool(KeyHereditary);
             RemoveTrait(pKingdom);
         }
 
@@ -128,12 +139,21 @@ namespace DiplomacyOverhaul
             if (!province && value >= ProvinceAt)
             {
                 pVassal.data.set(KeyProvince, true);
-                if (!Government.IsLocked(pVassal)) Government.SetForm(pVassal, GovForm.Republic);
-                Log(WorldLogs.Province, pVassal, pLord);
+                // 成为附庸时 pLord 是 null，关系已经记下了
+                Kingdom lord = pLord ?? Vassals.GetOverlord(pVassal);
+                bool hereditary = lord != null && SameHouse(pVassal, lord);
+                if (hereditary) pVassal.data.set(KeyHereditary, true);
+                if (!Government.IsLocked(pVassal))
+                {
+                    Government.SetForm(pVassal, hereditary ? GovForm.Monarchy : GovForm.Republic);
+                    if (hereditary) pVassal.trySetRoyalClan();
+                }
+                Log(hereditary ? WorldLogs.HereditaryProvince : WorldLogs.Province, pVassal, pLord);
             }
             else if (province && value < ProvinceUntil)
             {
                 pVassal.data.removeBool(KeyProvince);
+                pVassal.data.removeBool(KeyHereditary);
                 Log(WorldLogs.ProvinceLost, pVassal, pLord);
             }
             else return;
@@ -163,8 +183,21 @@ namespace DiplomacyOverhaul
                     continue;
                 }
                 if (CheckManual(k, lord)) continue;
+                CheckHouse(k, lord);
                 Add(k, lord, Drift(k, lord));
             }
+        }
+
+        // 世袭行省的统治家族和宗主王室不再一致（宗主改朝换代、行省绝嗣），改成普通行省。
+        // 王位空着时不判断，等新君即位
+        static void CheckHouse(Kingdom pVassal, Kingdom pLord)
+        {
+            if (!IsHereditary(pVassal)) return;
+            if (!pVassal.hasKing() || !pLord.hasKing() || SameHouse(pVassal, pLord)) return;
+            pVassal.data.removeBool(KeyHereditary);
+            if (!Government.IsLocked(pVassal)) Government.SetForm(pVassal, GovForm.Republic);
+            if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
+            Log(WorldLogs.HereditaryLost, pVassal, pLord);
         }
 
         // 宗主的阶段决定方向，结构因素决定快慢

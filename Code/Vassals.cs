@@ -113,7 +113,7 @@ namespace DiplomacyOverhaul
 
             pNew = pCity.makeOwnKingdom(ruler);
             ruler.joinCity(pCity);
-            return MakeVassal(lord, pNew, Integration.Feudal);
+            return MakeVassal(lord, pNew, Integration.Granted);
         }
 
         // 附庸的战争状态与宗主保持一致：只参加宗主参加的战争，并且站在同一边；宗主在攻方的仗按整合度决定参不参加
