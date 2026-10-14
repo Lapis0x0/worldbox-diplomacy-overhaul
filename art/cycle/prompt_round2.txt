@@ -1,0 +1,9 @@
+Edit the first image (a 2x2 sheet of 4 pixel-art crown icons for the game WorldBox). The second image shows original WorldBox icons for style.
+
+These icons will be shrunk to 28x28 pixels, so draw them on a strict pixel grid: every icon is exactly 28 by 28 art pixels, each art pixel a crisp square block of exactly 32x32 image pixels, aligned to the cell. No half-pixels, no anti-aliasing, no soft edges.
+
+Keep icon 1 (crown with green sprout), icon 2 (shining crown with sparkle rays) and icon 3 (tarnished tilted crown) as they are, only cleaned onto the grid.
+
+Redraw icon 4 (collapse) so it stays readable at 28x28: the same crown split cleanly down the middle into exactly two halves, the halves tilted away from each other with a clear dark gap between them, the metal dull grey-brown, the magenta gem dark and cracked, 3 or 4 small orange ember pixels in the gap. No smoke, no extra fragments.
+
+Background stays flat uniform medium grey (#808080), no labels.

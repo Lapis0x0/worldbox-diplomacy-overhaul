@@ -12,7 +12,7 @@ trap 'rm -rf "$stage"' EXIT
 
 mkdir -p "$stage/$name" "$out"
 cp mod.json default_config.json preview.png LICENSE "$stage/$name/"
-cp -R Code Locales "$stage/$name/"
+cp -R Code Locales GameResources "$stage/$name/"
 find "$stage" -name '.DS_Store' -delete
 
 zip_path="$(cd "$out" && pwd)/$name-v$version.zip"

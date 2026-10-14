@@ -1,0 +1,11 @@
+The first image shows a series of 4 pixel-art icons (28x28 sprites scaled up 16x) for the game WorldBox: the four phases of a dynasty. From left: 1 renewal (crown with a green sprout), 2 the plain original crown (placeholder for the phase I need), 3 decline (tarnished tilted crown), 4 collapse (crown broken apart with flames). The second image shows more original WorldBox icons for style.
+
+Draw the missing phase: PRIME, the dynasty at the height of its power and glory. It must be the same golden crown as in the series (same shape, same magenta gem, same palette and shading), plus one small addition that says "glorious peak". It sits right next to the plain crown icon in the game UI, so it must be clearly distinct from the plain crown, but it must NOT be bigger: the whole icon stays within the same footprint as the plain crown, compact, no scattered rays or dots spreading out to the edges.
+
+Make a 2x2 sheet with 4 different ideas, one per cell:
+1. the crown resting on a small red royal velvet cushion with gold tassels
+2. the crown with a tight golden glow hugging its outline and 2-3 tiny sparkles touching its tips
+3. the crown with a small green laurel wreath around its lower band
+4. your own best idea for "dynasty at its peak", compact
+
+Style exactly like the references: chunky square pixels on a strict 28x28 grid (each art pixel a crisp block), limited palette, dark outline on the shadow side, no anti-aliasing, no gradients, no text. Each icon centered in its cell, filling about 60% of the cell. Background flat uniform medium grey (#808080), no labels.

@@ -36,7 +36,7 @@ namespace DiplomacyOverhaul
         {
             Government.AddTraitGroup(GroupId, "#FFB347",
                 new[] { TraitIds[1], TraitIds[2], TraitIds[3], TraitIds[4] },
-                new[] { "ui/Icons/iconFlowerBud", "ui/Icons/iconResGold", "ui/Icons/iconSeedCorrupted", "ui/Icons/iconDeadKingdom" });
+                new[] { "ui/Icons/vd_cycle_renewal", "ui/Icons/vd_cycle_prime", "ui/Icons/vd_cycle_decline", "ui/Icons/vd_cycle_collapse" });
         }
 
         static CyclePhase TraitPhase(Kingdom pKingdom)

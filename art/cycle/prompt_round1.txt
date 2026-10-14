@@ -1,0 +1,10 @@
+A sprite sheet of 4 game UI icons for the pixel-art god-simulation game WorldBox, drawn exactly in the style of the reference image: the reference shows original WorldBox icons, each a 28x28 pixel-art sprite scaled up 16x. Match it precisely: chunky square pixels on a strict 28x28 grid, limited palette, bold readable silhouette, dark outline on the shadow side, simple 2-3 tone shading, no anti-aliasing, no gradients, no text.
+
+The 4 icons are the four phases of a dynasty cycle, shown as kingdom traits. They must read as one series: every icon is the SAME golden royal crown (same shape as the reference crown, with a magenta gem in the center), and only its condition changes, so the player sees the dynasty rise and fall at a glance:
+
+1. Renewal (a new dynasty rising): a small, bright new crown with a fresh green sprout with two leaves growing up out of its center.
+2. Prime (the dynasty at its height): the crown at its grandest, shining gold, magenta gem glowing, small white-yellow sparkle rays radiating around it.
+3. Decline (the dynasty fading): the same crown tarnished to dull brownish gold, tilted slightly, the gem dark, one side point bent, a few dark cracks.
+4. Collapse (the dynasty falling apart): the crown broken into 3 pieces flying apart, dark grey-brown, small red-orange flames and smoke at the break.
+
+Layout: a 2x2 grid (1 and 2 on top, 3 and 4 below), each centered in its own equal square cell, each icon filling about 80% of its cell, nothing touching the cell borders. Background: flat uniform medium grey (#808080) everywhere, no shadows on the background, no borders, no labels.

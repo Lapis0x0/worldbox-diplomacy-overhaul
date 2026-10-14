@@ -69,7 +69,7 @@ namespace DiplomacyOverhaul
 
             for (int i = 0; i < pIds.Length; i++)
             {
-                Core.Upsert(AssetManager.kingdoms_traits, new KingdomTrait
+                KingdomTrait trait = Core.Upsert(AssetManager.kingdoms_traits, new KingdomTrait
                 {
                     id = pIds[i],
                     group_id = pGroupId,
@@ -79,6 +79,8 @@ namespace DiplomacyOverhaul
                     has_description_2 = false,
                     rarity = Rarity.R0_Normal
                 });
+                // 热重载时图标可能换了，清掉缓存的旧图
+                trait.cached_sprite = null;
             }
 
             // 特质库在模组加载前已经 link 过，互斥关系要自己补上
