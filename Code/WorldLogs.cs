@@ -21,19 +21,19 @@ namespace DiplomacyOverhaul
 
         public static void Init()
         {
-            Register(Feudal, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
+            Register(Feudal, "ui/Icons/vd_power_release_city", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(Capitulated, "ui/Icons/iconWar", Toolbox.color_log_warning, "$vassal$", "$lord$");
-            Register(Tribute, "ui/Icons/iconCrown", Toolbox.color_log_neutral, "$vassal$", "$lord$");
-            Register(Province, "ui/Icons/iconVillages", Toolbox.color_log_neutral, "$vassal$", "$lord$");
-            Register(ProvinceLost, "ui/Icons/iconVillages", Toolbox.color_log_warning, "$vassal$", "$lord$");
-            Register(Appanage, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
-            Register(Restored, "ui/Icons/iconFlowerBud", Toolbox.color_log_good, "$ruler$", "$kingdom$");
-            Register(RestoreFailed, "ui/Icons/iconSeedCorrupted", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
-            Register(Elected, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
-            Register(RepublicFounded, "ui/Icons/iconClan", Toolbox.color_log_neutral, "$kingdom$", "$ruler$");
-            Register(Crowned, "ui/Icons/iconCrown", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
-            Register(Usurped, "ui/Icons/iconKings", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
-            Register(Junta, "ui/Icons/iconArmy", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
+            Register(Tribute, "ui/Icons/vd_power_make_vassal", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(Province, "ui/Icons/vd_gov_province", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(ProvinceLost, "ui/Icons/vd_gov_dominion", Toolbox.color_log_warning, "$vassal$", "$lord$");
+            Register(Appanage, "ui/Icons/vd_power_release_city", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
+            Register(Restored, "ui/Icons/vd_cycle_prime", Toolbox.color_log_good, "$ruler$", "$kingdom$");
+            Register(RestoreFailed, "ui/Icons/vd_cycle_decline", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(Elected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(RepublicFounded, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$kingdom$", "$ruler$");
+            Register(Crowned, "ui/Icons/iconKingdomList", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
         }
 
         // 文案里的占位符依次对应消息的 special1~3
