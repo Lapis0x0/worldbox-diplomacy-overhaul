@@ -150,18 +150,18 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 城市被攻占时记下它是不是首都，攻占完成后交给王朝周期处理
+    // 城市易手时记下原主和是不是被攻占的首都，易手后交给王朝周期处理
     [HarmonyPatch(typeof(City), nameof(City.joinAnotherKingdom))]
-    static class Patch_CapitalCaptured
+    static class Patch_CityChanged
     {
-        static void Prefix(City __instance, bool pCaptured, out Kingdom __state)
+        static void Prefix(City __instance, bool pCaptured, out KeyValuePair<Kingdom, bool> __state)
         {
-            __state = pCaptured && __instance.isCapitalCity() ? __instance.kingdom : null;
+            __state = new KeyValuePair<Kingdom, bool>(__instance.kingdom, pCaptured && __instance.isCapitalCity());
         }
 
-        static void Postfix(Kingdom __state)
+        static void Postfix(City __instance, KeyValuePair<Kingdom, bool> __state)
         {
-            if (__state != null) Cycle.OnCapitalLost(__state);
+            Cycle.OnCityChanged(__state.Key, __instance.kingdom, __state.Value);
         }
     }
 }
