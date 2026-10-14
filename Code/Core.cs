@@ -132,17 +132,17 @@ namespace DiplomacyOverhaul
                 "vd_settings", () => NeoModLoader.ui.ModConfigureWindow.ShowWindow(Settings.Config),
                 SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);
             AddSeparator(tab);
-            AddPower(tab, Powers.MakeVassal, "ui/Icons/iconCrown");
-            AddPower(tab, Powers.InciteIndependence, "ui/Icons/iconRebellion");
+            AddPower(tab, Powers.MakeVassal, "ui/Icons/vd_power_make_vassal");
+            AddPower(tab, Powers.InciteIndependence, "ui/Icons/vd_power_incite_independence");
             AddPower(tab, Powers.GreatRebellion, "ui/Icons/iconFireSkull");
-            AddPower(tab, Powers.Mandate, "ui/Icons/iconDivineLight");
-            AddPower(tab, Powers.ReleaseCity, "ui/Icons/iconVillages");
+            AddPower(tab, Powers.Mandate, "ui/Icons/vd_power_mandate");
+            AddPower(tab, Powers.ReleaseCity, "ui/Icons/vd_power_release_city");
             AddSeparator(tab);
-            AddPower(tab, Powers.CommandArmy, "ui/Icons/iconArrowAttackTarget");
-            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/iconArmyList");
+            AddPower(tab, Powers.CommandArmy, "ui/Icons/vd_power_command_army");
+            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/vd_power_order_kingdom_attack");
             AddSeparator(tab);
-            AddPower(tab, Powers.TransferCity, "ui/Icons/iconCityConquered");
-            AddPower(tab, Powers.Annex, "ui/Icons/iconKingdomList");
+            AddPower(tab, Powers.TransferCity, "ui/Icons/vd_power_transfer_city");
+            AddPower(tab, Powers.Annex, "ui/Icons/vd_power_annex");
 
             // PowersTab 只在激活的子节点个数变化时才重新排版；热重载换按钮后个数可能不变，强制它重排
             tab._children = -1;

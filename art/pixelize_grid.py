@@ -1,7 +1,7 @@
 """按草图自身的像素网格还原成 28x28：AI 画的「像素块」大小不一定整齐，切错网格会把相邻两块混色、整体发糊。
 这里对每个图标单独量出块的边长和起点（找颜色突变最集中的等距位置，横竖共用一个边长），在每块中间取色，尽量原样保留 AI 画的像素。
 和主体分开的小零件（闪光之类）常常没对齐主体的网格，按主体网格取色会缺笔画，所以按它自己的外框单独取色，再放到最近的格子上。
-用法: pixelize_grid.py 草图.png 行 列 输出前缀 名字...（名字按从左到右、从上到下的格子顺序）"""
+用法: pixelize_grid.py 草图.png 行 列 输出前缀 名字...（名字按从左到右、从上到下的格子顺序，- 表示跳过）"""
 import sys
 import numpy as np
 from PIL import Image
@@ -70,7 +70,9 @@ def sample(img, m, a0, a1, b0, b1):
     return np.median(img[a0:a1, b0:b1][mm], axis=0)
 
 
+failed = False
 for k, name in enumerate(names):
+    if name == "-": continue
     r, c = divmod(k, cols)
     cell = im[r * H // rows:(r + 1) * H // rows, c * W // cols:(c + 1) * W // cols]
     mask = np.abs(cell - bg).sum(axis=2) > 40
@@ -110,9 +112,20 @@ for k, name in enumerate(names):
                 if c is not None: small[oy + j, ox + i] = (*c, 255)
     ys2, xs2 = np.nonzero(small[..., 3])
     small = small[ys2.min():ys2.max() + 1, xs2.min():xs2.max() + 1]
+    # 只超出一两格时，从两边裁掉像素最少的那几列（行），通常只是边缘的轮廓
+    while small.shape[1] > N and small.shape[1] - N <= 2:
+        left, right = small[:, 0, 3].astype(bool).sum(), small[:, -1, 3].astype(bool).sum()
+        small = small[:, 1:] if left <= right else small[:, :-1]
+    while small.shape[0] > N and small.shape[0] - N <= 2:
+        top, bottom = small[0, :, 3].astype(bool).sum(), small[-1, :, 3].astype(bool).sum()
+        small = small[1:] if top <= bottom else small[:-1]
     h, w = small.shape[:2]
-    if h > N or w > N: sys.exit(f"{name}: {w}x{h} 超过 28")
+    if h > N or w > N:
+        print(f"{name}: {w}x{h} 超过 28，跳过（让生图模型画小一点）", file=sys.stderr)
+        failed = True
+        continue
     canvas = np.zeros((N, N, 4), np.uint8)
     canvas[(N - h) // 2:(N - h) // 2 + h, (N - w) // 2:(N - w) // 2 + w] = small
     Image.fromarray(canvas).save(f"{out}{name}.png")
     print(f"{name}: 块 {px:.1f}x{py:.1f}px, {w}x{h}")
+if failed: sys.exit(1)

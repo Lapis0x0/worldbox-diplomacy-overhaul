@@ -1,0 +1,22 @@
+The first image shows pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x). Top row: our small three-pointed ducal coronet (used for vassal states), the original golden crown, the original villages icon. Bottom row: the original conquered-city icon, the original divine light icon, the original burning skull. The second image shows more original icons.
+
+Draw a 2x2 sheet of 4 god-power button icons about vassal states, one per cell:
+1. Make vassal (a god grants a kingdom the status of vassal): the small ducal coronet resting on a small red royal velvet cushion with gold tassels, as if being presented.
+2. Incite independence (a vassal rises against its overlord): the small ducal coronet bursting through a short golden chain, the chain snapped into two pieces flying apart on both sides, a few small spark pixels at the break.
+3. Release city as vassal (a city becomes a new vassal state): a small cluster of houses like the original villages icon, with the small ducal coronet sitting on the roof of the middle house.
+4. Annex kingdom (a big kingdom swallows a small one): the original big golden crown on the right, and the small ducal coronet on the left being pulled into it along a short curved golden arrow.
+
+Match the original WorldBox look: objects seen slightly from the side in 3/4 view, crown points shaped like little flames, warm orange and brown shading with a dark brown outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid (each art pixel a crisp square block), limited palette, no anti-aliasing, no gradients, no text. Each icon centered in its own square cell, compact, the main object about 50% of the cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no labels.
+
+
+---- 第二组 ----
+
+The first image shows pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x). Top row: our small three-pointed ducal coronet, the original golden crown, the original villages icon. Bottom row: the original conquered-city icon, the original divine light icon, the original burning skull. The second image shows more original icons.
+
+Draw a 2x2 sheet of 4 god-power button icons, one per cell:
+1. Transfer city (a god hands a city over to another kingdom): a big golden key in the foreground leaning across a small cluster of houses like the original villages icon.
+2. Transfer city, alternative: the small cluster of houses with a short curved golden arrow arching over it from left to right.
+3. Mandate of heaven (a great kingdom moves to the next stage of its rise and fall): the original divine light icon (a beam of light falling from a small grey cloud) shining down onto the original golden crown below it.
+4. Mandate of heaven, alternative: the original golden crown with a small golden sun with short rays rising behind it.
+
+Match the original WorldBox look: objects seen slightly from the side in 3/4 view, crown points shaped like little flames, warm orange and brown shading with a dark brown outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid (each art pixel a crisp square block), limited palette, no anti-aliasing, no gradients, no text. Each icon centered in its own square cell, compact, the main object about 50% of the cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no labels.

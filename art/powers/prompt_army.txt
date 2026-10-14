@@ -1,0 +1,9 @@
+The first image shows original pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x): the army icon (olive-green knight helmets), the army list icon, the attack target icon (red crosshair and arrow), and the war icon (crossed swords). The second image shows more original icons.
+
+Draw a 2x2 sheet of 4 god-power button icons for commanding armies, one per cell:
+1. Command army (the god sends one army to a target): ONE olive-green knight helmet exactly like the original army helmet, with a short thick red arrow beside it pointing to the right.
+2. Whole kingdom attacks (the god sends all armies of a kingdom to a target): THREE olive-green knight helmets in a tight group like the original army list icon, with a bigger thick red arrow beside them pointing to the right.
+3. Command army, alternative: a commander's war banner, a red swallow-tailed flag on a wooden pole, planted in a small mound of earth.
+4. Whole kingdom attacks, alternative: a curved brown war horn with a gold rim, blowing, with three short white sound lines coming out of its mouth.
+
+Match the original WorldBox look: chunky square pixels on a strict grid, limited palette, dark outline on the shadow side, hand-made slightly playful feel, no anti-aliasing, no gradients, no text. Draw every icon SMALL with big chunky pixels, about the detail of an original 28x28 icon: each icon about 40% of its cell width, centered in its cell. Background flat uniform medium grey (#808080), no labels.

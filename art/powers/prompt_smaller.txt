@@ -1,0 +1,5 @@
+The first image is a 3x2 sheet of 6 pixel-art god-power icons for the game WorldBox. Redraw exactly the same 6 icons in the same 3x2 layout and the same order, keeping each design, its colors and its WorldBox pixel-art style, but draw every icon SMALLER: each icon only about 40% of its cell width, centered in its cell, with the same chunky pixel size as now, so each icon has fewer, bigger pixels and simpler detail, like an original 28x28 WorldBox icon (the second image shows original icons for the right amount of detail).
+
+The 6 icons, left to right, top to bottom: 1 small coronet on a red cushion, 2 small coronet breaking a golden chain, 3 small coronet on top of a cluster of houses, 4 small coronet pulled along a curved arrow into a big crown, 5 golden key across a cluster of houses, 6 a beam of light from a grey cloud shining onto a crown.
+
+Chunky square pixels on a strict grid, limited palette, dark outline on the shadow side, no anti-aliasing, no gradients, no text. Background flat uniform medium grey (#808080), no labels.
