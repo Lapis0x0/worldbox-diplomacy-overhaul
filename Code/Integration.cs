@@ -138,6 +138,8 @@ namespace DiplomacyOverhaul
             }
             else return;
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
+            // 行省在王国地图上用宗主的颜色，重画一遍
+            World.world.zone_calculator.dirtyAndClear();
         }
 
         static void Log(string pId, Kingdom pVassal, Kingdom pLord)

@@ -299,20 +299,27 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 地图：附庸国的边界线使用宗主国的颜色，填充保持自己的颜色
+    // 地图：附庸国的边界线使用宗主国的颜色；行省连填充也用宗主国的颜色，看上去是宗主版图的一部分，
+    // 和宗主之间仍留一条边界线。只换颜色、保留原来的透明度，选中别国时的淡出照常
     [HarmonyPatch(typeof(ZoneCalculator), "applyMetaColorsToZone")]
     static class Patch_ZoneBorder
     {
-        static void Prefix(TileZone pZone, ref Color32 pColorOutside)
+        static void Prefix(TileZone pZone, ref Color32 pColorInside, ref Color32 pColorOutside)
         {
             if (World.world.getCachedMapMetaAsset()?.map_mode != MetaType.Kingdom) return;
             Kingdom k = pZone?.city?.kingdom;
             if (k == null) return;
             Kingdom lord = Vassals.GetOverlord(k);
             if (lord == null) return;
-            Color32 c = lord.getColor().getColorMainSecond32();
-            c.a = pColorOutside.a;
-            pColorOutside = c;
+            ColorAsset color = lord.getColor();
+            pColorOutside = WithAlpha(color.getColorMainSecond32(), pColorOutside.a);
+            if (Integration.IsProvince(k)) pColorInside = WithAlpha(color.getColorBorderInsideAlpha32(), pColorInside.a);
+        }
+
+        static Color32 WithAlpha(Color32 pColor, byte pAlpha)
+        {
+            pColor.a = pAlpha;
+            return pColor;
         }
     }
 }
