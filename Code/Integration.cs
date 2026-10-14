@@ -36,7 +36,7 @@ namespace DiplomacyOverhaul
         public static void Init()
         {
             Government.AddTraitGroup(GroupId, "#9FD4FF", TraitIds,
-                new[] { "ui/Icons/iconRebellion", "ui/Icons/iconKingdomList", "ui/Icons/iconLoyalty", "ui/Icons/iconKingdom" });
+                new[] { "ui/Icons/vd_integ_grudge", "ui/Icons/vd_integ_drift", "ui/Icons/vd_integ_loyal", "ui/Icons/vd_integ_unity" });
         }
 
         static int Tier(float pValue)

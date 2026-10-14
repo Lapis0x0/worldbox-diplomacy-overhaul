@@ -1,0 +1,10 @@
+The first image shows original pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x). The first one is the original LOYALTY icon: a red heart wearing a small golden crown. The second image shows more original icons for style.
+
+Draw 3 more icons in a series with this loyalty icon, showing how much a vassal state is bound to its overlord. Every icon uses the SAME heart and crown as the original loyalty icon (same shape, same red and gold palette, same shading, light from the upper left), only its condition changes:
+
+1. Grudge (the vassal resents its overlord): the heart turned dark purplish red and dull, with a small steel dagger stuck diagonally into it, the crown slightly tilted.
+2. Drift (the vassal is drifting away): the heart cracked down the middle with a jagged split, the two halves leaning apart to the left and right with a clear dark gap between them, the crown still on top of the left half.
+3. Unity (the vassal has become one with its overlord): two hearts overlapping and merging into one, the front one exactly the original heart, the back one a slightly darker red, one golden crown on top of both, a few tiny white-yellow sparkle pixels around.
+4. The original loyalty icon redrawn exactly as it is, for comparison.
+
+Match the original WorldBox look: chunky square pixels on a strict 28x28 grid, each art pixel a crisp block, limited palette, dark outline on the shadow side, hand-made slightly playful feel, no anti-aliasing, no gradients, no text. Each icon centered in its own square cell, compact, the heart about 45% of the cell width. Background flat uniform medium grey (#808080), no labels.
