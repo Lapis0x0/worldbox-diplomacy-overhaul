@@ -2,6 +2,34 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.7.0
+
+### 中文
+
+1. 新增战争和谈机制，战争会按战果以和平、赔款、割让附庸或称臣结束，取代原来的投降
+2. 引入天命值系统，王朝周期改为由天命值驱动，受城市忠诚、君主能力、附庸整合度、民生和战争胜负影响
+3. 添加新的附庸类型：世袭行省；宗主分封出去的附庸默认直接成为行省或世袭行省
+4. 国王新增「收归直辖」密谋，国土未达治理上限时会将行省的城市收归直接统治
+5. 王国视图下，行省的颜色与宗主国保持一致
+6. 优化附庸叛乱逻辑：附庸独立时退出随宗主参加的战争，宗主作战期间离心的附庸更容易起兵
+7. 优化战争机制和附庸攻城后的分配逻辑
+8. 重新设计并绘制模组相关图标
+9. 修复宗主国规模缩小后不再经历王朝周期、仍能长期保有大量附庸的问题
+10. 修复与其他模组同时使用时，好感计算出错导致报错刷屏的问题
+
+### English
+
+1. New war peace talks: wars now end by peace, reparations, ceding vassals, or submission depending on how they went, replacing the old capitulation
+2. New Mandate system: dynastic cycles are now driven by Mandate, which is shaped by city loyalty, ruler ability, vassal integration, living conditions, and war outcomes
+3. New vassal type: Hereditary Province; vassals granted out by an overlord now become provinces or hereditary provinces right away
+4. New king plot: Direct Rule, which brings a province's cities under direct rule when the kingdom is below its governance limit
+5. Provinces now share their overlord's color in the kingdom map view
+6. Improved vassal rebellion: vassals leave their overlord's wars when they declare independence, and disloyal vassals are more likely to rise up while their overlord is at war
+7. Improved war mechanics and how cities conquered by vassals are assigned
+8. Redesigned and redrew the mod's icons
+9. Fixed overlords that had shrunk no longer going through dynastic cycles and keeping many vassals for a long time
+10. Fixed error spam from opinion calculation when used together with other mods
+
 ## 0.6.0
 
 ### 中文
