@@ -303,7 +303,7 @@ namespace DiplomacyOverhaul
         {
             double now = World.world.getCurWorldTime();
             // 读档或换世界后时间可能倒退
-            if (_lastCheck >= 0 && now >= _lastCheck && now - _lastCheck < Capitulation.YearLength) return;
+            if (_lastCheck >= 0 && now >= _lastCheck && now - _lastCheck < PeaceTalks.YearLength) return;
             _lastCheck = now;
             Regime.UpdateAll();
             Government.UpdateAll();

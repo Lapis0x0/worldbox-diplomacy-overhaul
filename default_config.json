@@ -31,36 +31,28 @@
       "BoolVal": true
     }
   ],
-  "vd_group_capitulation": [
+  "vd_group_peace": [
     {
-      "Id": "vd_capitulation_enabled",
+      "Id": "vd_peace_enabled",
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconWar",
       "BoolVal": true
     },
     {
-      "Id": "vd_capitulation_min_years",
+      "Id": "vd_peace_min_years",
       "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconWar",
-      "IntVal": 5,
+      "IconPath": "ui/Icons/iconClock",
+      "IntVal": 3,
       "MinIntVal": 1,
-      "MaxIntVal": 50
+      "MaxIntVal": 30
     },
     {
-      "Id": "vd_capitulation_city_loss",
+      "Id": "vd_peace_reparations",
       "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconKingdomDestroyed",
-      "IntVal": 50,
-      "MinIntVal": 10,
-      "MaxIntVal": 90
-    },
-    {
-      "Id": "vd_capitulation_power_ratio",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconWarriors",
-      "IntVal": 200,
-      "MinIntVal": 100,
-      "MaxIntVal": 500
+      "IconPath": "ui/Icons/iconMoney",
+      "IntVal": 20,
+      "MinIntVal": 0,
+      "MaxIntVal": 80
     }
   ],
   "vd_group_government": [

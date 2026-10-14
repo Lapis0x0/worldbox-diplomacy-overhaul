@@ -415,11 +415,14 @@ namespace DiplomacyOverhaul
         }
 
         // 战争分出胜负：胜方 +5，败方 -10，议和不变
+        static float WarDelta(War pWar, bool pWon) =>
+            PeaceTalks.MandateDelta(pWar, pWon, out float d) ? d : pWon ? WarWon : WarLost;
+
         public static void OnWarEnded(War pWar, WarWinner pWinner)
         {
             if (pWinner != WarWinner.Attackers && pWinner != WarWinner.Defenders) return;
-            foreach (Kingdom k in pWar.getAttackers()) AddMandate(k, pWinner == WarWinner.Attackers ? WarWon : WarLost);
-            foreach (Kingdom k in pWar.getDefenders()) AddMandate(k, pWinner == WarWinner.Defenders ? WarWon : WarLost);
+            foreach (Kingdom k in pWar.getAttackers()) AddMandate(k, WarDelta(pWar, pWinner == WarWinner.Attackers));
+            foreach (Kingdom k in pWar.getDefenders()) AddMandate(k, WarDelta(pWar, pWinner == WarWinner.Defenders));
         }
 
         // 附庸对宗主的好感：新生 +10，鼎盛 +20；衰落从 -10 起每年再 -3，最多 -90，人心一年年散去

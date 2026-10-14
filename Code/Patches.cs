@@ -221,6 +221,8 @@ namespace DiplomacyOverhaul
             if (pWar?.data == null) return;
             pWar.data.get(Vassals.KeyWarLord, out long lordId, -1L);
             if (lordId < 0) return;
+            // 和谈签约的独立战争按和约处理：宗主谈到称臣档，叛乱方重新成为附庸
+            if (PeaceTalks.TreatyOf(pWar) != Treaty.None) pWinner = WarWinner.Nobody;
             pWar.data.get(Vassals.KeyWarRebel, out long rebelId, -1L);
             pWar.data.removeLong(Vassals.KeyWarLord);
             pWar.data.removeLong(Vassals.KeyWarRebel);

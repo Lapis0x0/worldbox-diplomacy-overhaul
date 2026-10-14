@@ -56,6 +56,7 @@
 | 叛乱改分封 | 70 |
 | 威逼称臣、神力册封附庸 | 35 |
 | 投降、独立战争失败重新成为附庸 | 0 |
+| 和谈中被败方让出 | 35 |
 
 附庸随被吞并的宗主转给吞并方时，整合度不变。装模组前就有的附庸从 35 开始。
 
@@ -118,14 +119,7 @@
 
 ### 投降
 
-每场战争每年检查一次（总体战除外），双方的主攻方、主守方都可能投降：
-
-- 开战至少 5 年（设置项）。
-- 一方丢掉的城市达到开战时城市数的 50%（设置项）。开战时的城市数在战争开始时记下；装模组前就开始的战争从第一次检查时开始记。
-- 胜方的实力达到败方的 200%（设置项）。实力沿用原版公式：战士数 × 2 + 城市数 × 5 + 1。
-- 败方不能向自己的附庸投降。
-
-投降后：败方原有的附庸全部独立，战争以胜方获胜结束，败方成为胜方的附庸；胜方本身是附庸时，败方成为胜方宗主的附庸。世界日志记一条。
+和谈谈到称臣档时，败方成为胜方的附庸；胜方本身是附庸时，败方成为胜方宗主的附庸。败方原有的附庸，和胜方集团接壤的有一定概率归胜方，其余独立。和谈谈到让出附庸档时，败方也会交出一部分附庸。规则见[和谈](peace.md)。
 
 ### 分封
 
@@ -211,10 +205,9 @@
 | `Integration.cs` | 整合度、行省、附庸参不参加宗主的进攻、战争胜负对整合度的影响 |
 | `Patches.cs` | 集团过滤、附庸不能宣战结盟、战争同进同退、背叛、独立战争结局、王国窗口、边界颜色 |
 | `Core.cs` | 好感修正、独立密谋、发动独立战争 |
-| `Capitulation.cs` | 投降 |
 | `Feudal.cs` | 叛乱改分封、攻城改分封、威逼称臣密谋 |
 | `Appanage.cs` | 分封宗室密谋 |
 | `DirectRule.cs` | 收归直辖密谋 |
 | `AllianceView.cs` | 联盟地图 |
 
-原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar` / `newWar`、`War.update`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`MetaTypeLibrary.alliance` 的地图回调。
+原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`MetaTypeLibrary.alliance` 的地图回调。

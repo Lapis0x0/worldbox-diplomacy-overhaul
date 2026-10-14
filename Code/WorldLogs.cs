@@ -7,6 +7,10 @@ namespace DiplomacyOverhaul
     {
         public const string Feudal = "vd_log_feudal";           // $lord$ 将 $city$ 分封给了 $ruler$
         public const string Capitulated = "vd_log_capitulated"; // $vassal$ 投降，成为 $lord$ 的附庸
+        public const string Ceded = "vd_log_ceded";             // $vassal$ 归附 $lord$
+        public const string PeaceWhite = "vd_log_peace_white";             // $attacker$ 与 $defender$ 议和
+        public const string PeaceReparations = "vd_log_peace_reparations"; // $loser$ 向 $winner$ 赔款求和
+        public const string PeaceCession = "vd_log_peace_cession";         // $loser$ 赔款并让出附庸，与 $winner$ 议和
         public const string Tribute = "vd_log_tribute";         // $vassal$ 向 $lord$ 称臣
         public const string Province = "vd_log_province";            // $vassal$ 成为 $lord$ 的行省
         public const string ProvinceLost = "vd_log_province_lost";   // $vassal$ 不再是 $lord$ 的行省
@@ -27,6 +31,10 @@ namespace DiplomacyOverhaul
         {
             Register(Feudal, "ui/Icons/vd_power_release_city", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
             Register(Capitulated, "ui/Icons/iconWar", Toolbox.color_log_warning, "$vassal$", "$lord$");
+            Register(Ceded, "ui/Icons/vd_power_make_vassal", Toolbox.color_log_neutral, "$vassal$", "$lord$");
+            Register(PeaceWhite, "ui/Icons/iconWar", Toolbox.color_log_neutral, "$attacker$", "$defender$");
+            Register(PeaceReparations, "ui/Icons/iconWar", Toolbox.color_log_neutral, "$loser$", "$winner$");
+            Register(PeaceCession, "ui/Icons/iconWar", Toolbox.color_log_warning, "$loser$", "$winner$");
             Register(Tribute, "ui/Icons/vd_power_make_vassal", Toolbox.color_log_neutral, "$vassal$", "$lord$");
             Register(Province, "ui/Icons/vd_gov_province", Toolbox.color_log_neutral, "$vassal$", "$lord$");
             Register(HereditaryProvince, "ui/Icons/vd_gov_province", Toolbox.color_log_neutral, "$vassal$", "$lord$");

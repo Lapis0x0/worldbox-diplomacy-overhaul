@@ -11,10 +11,9 @@ namespace DiplomacyOverhaul
         public static int RebelOpinion => Int("vd_group_vassal", "vd_rebel_opinion", 0);
         public static int RebelPowerRatio => Int("vd_group_vassal", "vd_rebel_power_ratio", 120);
         public static bool FeudalEnabled => Bool("vd_group_vassal", "vd_feudal_enabled", true);
-        public static bool CapitulationEnabled => Bool("vd_group_capitulation", "vd_capitulation_enabled", true);
-        public static int CapitulationMinYears => Int("vd_group_capitulation", "vd_capitulation_min_years", 5);
-        public static int CapitulationCityLoss => Int("vd_group_capitulation", "vd_capitulation_city_loss", 50);
-        public static int CapitulationPowerRatio => Int("vd_group_capitulation", "vd_capitulation_power_ratio", 200);
+        public static bool PeaceEnabled => Bool("vd_group_peace", "vd_peace_enabled", true);
+        public static int PeaceMinYears => Int("vd_group_peace", "vd_peace_min_years", 3);
+        public static int PeaceReparations => Int("vd_group_peace", "vd_peace_reparations", 20);
         public static bool CycleEnabled => Bool("vd_group_cycle", "vd_cycle_enabled", true);
         public static int RestorationChance => Int("vd_group_cycle", "vd_restoration_chance", 30);
         public static bool GovernmentAutoEnabled => Bool("vd_group_government", "vd_gov_auto_enabled", true);

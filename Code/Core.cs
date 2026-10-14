@@ -40,6 +40,7 @@ namespace DiplomacyOverhaul
             Government.Init();
             Cycle.Init();
             Restoration.Init();
+            PeaceTalks.Init();
             Appanage.Init();
             DirectRule.Init();
             Integration.Init();
