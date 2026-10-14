@@ -87,6 +87,17 @@
 - 退回附庸时显示为自治领；独立后是共和国。
 - 手动锁定政体的国家可以成为行省，但大类和称号不变。
 
+### 收归直辖
+
+不是附庸、也不在衰落或崩溃期的国家，城市数还没到原版的治理上限时，国王（共和国是执政）可以发起「收归直辖」密谋（等级至少 4，金币至少 30），条件是它有行省。离上限越远越想发起，治理型的国王更积极，见[密谋与动机](plots.md)。
+
+- 选哪个行省：接壤的优先，其次整合度高的。
+- 收几座：离上限空几座收几座，最多 3 座。先收和宗主接壤的城，其次离宗主首都近的，行省的首都最后收。
+- 空位够把行省剩下的城全部收下时，整个行省并入宗主，行省消失；否则行省少了几座城，仍是行省，等下次有空位再收。
+- 世界日志记一条。
+
+收回的城不会让宗主超出上限，所以不会刚收回来又被分封宗室分出去。和分封宗室一起，宗主的直辖版图会围着治理上限来回调整：超了分封出去，空了从行省收回来。
+
 ## 好感
 
 附庸对宗主有两条好感修正，在原版好感明细里能看到：
@@ -187,6 +198,7 @@
 | `Capitulation.cs` | 投降 |
 | `Feudal.cs` | 叛乱改分封、攻城改分封、威逼称臣密谋 |
 | `Appanage.cs` | 分封宗室密谋 |
+| `DirectRule.cs` | 收归直辖密谋 |
 | `AllianceView.cs` | 联盟地图 |
 
 原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar` / `newWar`、`War.update`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`MetaTypeLibrary.alliance` 的地图回调。

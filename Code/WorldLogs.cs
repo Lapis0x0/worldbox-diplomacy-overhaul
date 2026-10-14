@@ -11,6 +11,8 @@ namespace DiplomacyOverhaul
         public const string Province = "vd_log_province";            // $vassal$ 成为 $lord$ 的行省
         public const string ProvinceLost = "vd_log_province_lost";   // $vassal$ 不再是 $lord$ 的行省
         public const string Appanage = "vd_log_appanage";             // $lord$ 将 $city$ 封给宗室 $ruler$
+        public const string DirectRule = "vd_log_direct_rule";            // $lord$ 将 $vassal$ 收归直辖
+        public const string DirectRulePart = "vd_log_direct_rule_part";   // $lord$ 将 $vassal$ 的 $count$ 座城收归直辖
         public const string Restored = "vd_log_restored";             // $ruler$ 中兴 $kingdom$
         public const string RestoreFailed = "vd_log_restore_failed";  // $ruler$ 力图中兴 $kingdom$，无功而返
         public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
@@ -27,6 +29,8 @@ namespace DiplomacyOverhaul
             Register(Province, "ui/Icons/vd_gov_province", Toolbox.color_log_neutral, "$vassal$", "$lord$");
             Register(ProvinceLost, "ui/Icons/vd_gov_dominion", Toolbox.color_log_warning, "$vassal$", "$lord$");
             Register(Appanage, "ui/Icons/vd_power_release_city", Toolbox.color_log_neutral, "$lord$", "$city$", "$ruler$");
+            Register(DirectRule, "ui/Icons/vd_power_annex", Toolbox.color_log_neutral, "$lord$", "$vassal$");
+            Register(DirectRulePart, "ui/Icons/vd_power_annex", Toolbox.color_log_neutral, "$lord$", "$vassal$", "$count$");
             Register(Restored, "ui/Icons/vd_cycle_prime", Toolbox.color_log_good, "$ruler$", "$kingdom$");
             Register(RestoreFailed, "ui/Icons/vd_cycle_decline", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(Elected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
