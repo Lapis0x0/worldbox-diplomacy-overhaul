@@ -203,6 +203,9 @@ namespace DiplomacyOverhaul
                 translation_key_negative = "loyalty_vd_republic",
                 calc = Government.CityLoyalty
             });
+            // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉
+            LoyaltyAsset conquest = AssetManager.loyalty_library.get("new_conquest");
+            if (conquest != null) conquest.calc = _ => 0;
         }
 
         static void AddPlot()

@@ -90,7 +90,9 @@ class World:
 
 
 EMPIRE = 6  # 有周期：自己 6 座城以上，或者有附庸（且自己不是附庸）
-PRIME_LOYALTY = 10  # 现有的周期修正，换算成「不忠城市占比」的变化见 Kingdom.effective_disloyal
+PRIME_LOYALTY = 10  # 鼎盛期的周期修正，换算成「不忠城市占比」的变化见 Kingdom.disloyal_cities
+DECLINE_LOYALTY = 8.0  # 衰落期每低于 50 一点天命扣的忠诚
+LOYALTY_LOW, LOYALTY_HIGH = 150, 270  # 大国非首都城市的原版忠诚大致在这个范围（游戏里取样）
 
 
 @dataclass
@@ -120,10 +122,11 @@ class Kingdom:
         return max(0.0, min(1.0, self.quality - 0.04 * over))
 
     def disloyal_cities(self):
-        """真正会起事的城：原版忠诚加上周期修正（衰落期每年 -1，最多 -30）。"""
+        """真正会起事的城：原版忠诚加上周期修正（衰落期按天命扣，忠诚按均匀分布换算成不忠的城）。"""
         share = 1 - self.loyal_share()
         if self.phase == "decline":
-            share += min(0.3, 0.01 * (1 + self.decline_years))
+            cut = DECLINE_LOYALTY * max(0.0, 50 - self.m)
+            share += self.loyal_share() * max(0.0, min(1.0, (cut - LOYALTY_LOW) / (LOYALTY_HIGH - LOYALTY_LOW)))
         elif self.phase == "prime":
             share -= 0.1
         share = max(0.0, min(1.0, share))
@@ -317,7 +320,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, default=2000)
     ap.add_argument("--plot")
+    ap.add_argument("--decline-loyalty", type=float, default=DECLINE_LOYALTY)
     a = ap.parse_args()
+    globals()["DECLINE_LOYALTY"] = a.decline_loyalty
     mdl = Model()
     print("各阶段年数：10%/50%/90% 分位，只统计以大叛乱收场的王朝")
     for name, scale in [("太平", 0.4), ("平常", 1.0), ("多战", 2.0), ("乱世", 3.5)]:

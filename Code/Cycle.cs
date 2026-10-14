@@ -50,6 +50,7 @@ namespace DiplomacyOverhaul
         const int RenewalMax = 30;        // 新生最多这么多年
         const float RebellionBelow = 20f;
         const float RestoreMandate = 15f, RestoreDecay = 40f;
+        const float DeclineLoyalty = 8f;  // 衰落期天命每低于 50 一点，城市忠诚 -8
         const int InitialDecayMax = 60;   // 读档时已有的大国，积弊在 0 到这个值之间随机
 
         public const string GroupId = "vd_cycle";
@@ -449,7 +450,7 @@ namespace DiplomacyOverhaul
             switch (Get(k))
             {
                 case CyclePhase.Prime: return 10;
-                case CyclePhase.Decline: return -System.Math.Min(30, 1 + Years(k));
+                case CyclePhase.Decline: return -Mathf.RoundToInt(DeclineLoyalty * Mathf.Max(0f, DeclineBelow - Mandate(k)));
                 default: return 0;
             }
         }
