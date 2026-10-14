@@ -267,8 +267,21 @@ namespace DiplomacyOverhaul
             int opinion = World.world.diplomacy.getOpinion(k, lord).total;
             float grudge = Mathf.Clamp((Settings.RebelOpinion - opinion) / 50f, 0f, 2f);
             if (grudge <= 0f) return 0f;
-            grudge *= 1.2f - Integration.Get(k) / 100f;
+            float integration = Integration.Get(k);
+            grudge *= 1.2f - integration / 100f;
+            // 宗主亲自打仗时后方空虚，整合度越低越想趁机起兵：整合度 0 时 ×2，50 以上不变
+            if (LordAtWar(lord)) grudge *= 1f + Mathf.Clamp01(1f - integration / 50f);
             return grudge * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Aggression), true);
+        }
+
+        // 宗主是不是某场战争的主攻方或主守方；帮别人打的仗不算
+        static bool LordAtWar(Kingdom pLord)
+        {
+            foreach (War w in pLord.getWars())
+            {
+                if (!w.hasEnded() && (w.isMainAttacker(pLord) || w.isMainDefender(pLord))) return true;
+            }
+            return false;
         }
 
         // 这个国家是否已经有人在进行这种密谋。原版的 isPlotTypeAlreadyRunning 查的是全世界
@@ -294,7 +307,21 @@ namespace DiplomacyOverhaul
             }
             war.data.set(Vassals.KeyWarLord, pLord.id);
             war.data.set(Vassals.KeyWarRebel, pRebel.id);
+            LeaveLordWars(pRebel, pLord, war);
             return war;
+        }
+
+        // 退出随宗主参加的战争：起兵的附庸不再替宗主打仗，免得同时与宗主和宗主的敌人为敌。自己是主攻方或主守方的仗照打
+        static void LeaveLordWars(Kingdom pRebel, Kingdom pLord, War pIndependence)
+        {
+            foreach (War w in new List<War>(pRebel.getWars()))
+            {
+                if (w == pIndependence || w.hasEnded() || w.isTotalWar()) continue;
+                if (w.isMainAttacker(pRebel) || w.isMainDefender(pRebel)) continue;
+                bool sameSide = (w.isAttacker(pRebel) && w.isAttacker(pLord))
+                                || (w.isDefender(pRebel) && w.isDefender(pLord));
+                if (sameSide) w.removeFromWar(pRebel, true);
+            }
         }
     }
 }
