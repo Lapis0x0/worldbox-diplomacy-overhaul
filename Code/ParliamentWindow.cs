@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 namespace DiplomacyOverhaul
 {
     // 议会窗口：从王国窗口左侧页签栏打开。左边是议席和氏族，右边是政策和议案。
-    // 界面用原版的窗口贴图拼出来，内容有变化时整页重建
+    // 界面用原版的窗口贴图拼出来，分成几块，每块只在自己用到的数据变了时重建；选中氏族只改样式
     public static class ParliamentWindow
     {
         const string WindowId = "vd_parliament";
@@ -35,7 +35,30 @@ namespace DiplomacyOverhaul
         static long _selected = -1;
         static PolicyTab _tab = PolicyTab.Domestic;
         static string _open;
-        static string _signature;
+        static Section _frame, _seats, _clans, _compass, _detail, _policies, _bill;
+        static Section[] _sections;
+        static Section _section;
+        static RectTransform _parent;
+        static long _appliedSelected = -2;
+        static Text _billWhen;
+
+        // 窗口的一块：记着上次建它时的数据指纹，按氏族调淡的图形和选中框
+        class Section
+        {
+            public RectTransform root;
+            public string key;
+            public long kingdom = -1;
+            public readonly List<Dim> dims = new List<Dim>();
+            public readonly Dictionary<long, GameObject> frames = new Dictionary<long, GameObject>();
+        }
+
+        struct Dim
+        {
+            public long clan;
+            public Graphic graphic;
+            public Outline outline;
+            public float alpha;
+        }
 
         public static Color FactionColor(Faction pFaction)
         {
@@ -127,9 +150,10 @@ namespace DiplomacyOverhaul
             _kingdom = pKingdom;
             Create();
             BuildTabs();
-            _signature = null;
+            LM.AddToCurrentLocale("vd_parliament_window_title", _kingdom.data.name);
+            _window.titleText.GetComponent<LocalizedText>().setKeyAndUpdate("vd_parliament_window_title");
             ScrollWindow.showWindow(WindowId);
-            Rebuild();
+            Refresh();
         }
 
         static void Create()
@@ -155,6 +179,8 @@ namespace DiplomacyOverhaul
             _root.pivot = new Vector2(0.5f, 0.5f);
             _root.sizeDelta = new Vector2(W, H);
             _root.anchoredPosition = Vector2.zero;
+            _sections = new[] { _frame = NewSection("frame"), _seats = NewSection("seats"), _clans = NewSection("clans"), _compass = NewSection("compass"),
+                _detail = NewSection("detail"), _policies = NewSection("policies"), _bill = NewSection("bill") };
             _window.gameObject.AddComponent<ParliamentWindowTicker>();
         }
 
@@ -214,6 +240,12 @@ namespace DiplomacyOverhaul
                 kingdomWindow.tabs.showTab(pTab);
         }
 
+        static Section NewSection(string pName)
+        {
+            RectTransform rt = Box(_root, 0f, 0f, W, H, "vd_section_" + pName);
+            return new Section { root = rt };
+        }
+
         internal static void Tick()
         {
             if (_window == null || !_window.gameObject.activeInHierarchy) return;
@@ -222,40 +254,127 @@ namespace DiplomacyOverhaul
                 _window.clickHide();
                 return;
             }
-            if (Signature() != _signature) Rebuild();
+            Refresh();
         }
 
-        // 内容的指纹：议席、政策、议案、选中状态任何一项变了就重建
-        static string Signature()
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.Append(_kingdom.id).Append('|').Append(_selected).Append('|').Append((int)_tab).Append('|').Append(_open)
-              .Append('|').Append(Parliament.NextSession(_kingdom)).Append('|').Append(Date.getCurrentYear());
-            foreach (ParliamentClan pc in Parliament.Clans(_kingdom))
-                sb.Append('|').Append(pc.clan.id).Append(':').Append(pc.seats).Append(':').Append((int)pc.faction);
-            foreach (Policy p in Policies.All) sb.Append('|').Append(p.shown(_kingdom) ? p.Get(_kingdom) : -1);
-            Bill bill = Parliament.GetBill(_kingdom);
-            if (bill != null) sb.Append("|b").Append(bill.policy.id).Append(bill.option);
-            return sb.ToString();
-        }
-
-        static void Rebuild()
+        // 每块算一个数据指纹，和上次不同才重建那一块
+        static void Refresh()
         {
             if (_root == null || _kingdom == null) return;
-            for (int i = _root.childCount - 1; i >= 0; i--)
+            List<ParliamentClan> clans = Parliament.Clans(_kingdom);
+            if (_selected >= 0 && clans.Find(c => c.clan.id == _selected) == null) _selected = -1;
+            bool republic = Government.IsRepublic(_kingdom);
+            string k = _kingdom.id + "|";
+
+            var ck = new System.Text.StringBuilder(k);
+            foreach (ParliamentClan pc in clans)
+                ck.Append(pc.clan.id).Append(':').Append(pc.clan.name).Append(':').Append(pc.seats).Append(':').Append((int)pc.faction).Append(':').Append(pc.ruling).Append('|');
+            string clanKey = ck.ToString();
+
+            bool built = Build(_frame, "frame", BuildFrame);
+            built |= Build(_seats, clanKey + (_kingdom.countCities() >= 3), () =>
             {
-                GameObject child = _root.GetChild(i).gameObject;
+                if (_kingdom.countCities() >= 3 && clans.Count > 0) Hemicycle(clans, LeftX, Top + 24f);
+                else Banner(clans, LeftX, Top + 24f);
+            });
+            built |= Build(_clans, clanKey + republic, () => ClanList(clans));
+
+            var pk = new System.Text.StringBuilder(clanKey);
+            foreach (ParliamentClan pc in clans) pk.Append(pc.x.ToString("F2")).Append(',').Append(pc.y.ToString("F2")).Append('|');
+            built |= Build(_compass, pk.ToString(), () => Compass(clans, LeftX + ListW + 4f, ListY, LeftW - ListW - 4f, ListRows * (RowH + 2f) - 2f));
+
+            string detail = DetailText(clans);
+            Build(_detail, k + detail, () => Detail(detail, LeftX, ListY + ListRows * (RowH + 2f) + 2f));
+
+            Bill bill = Parliament.GetBill(_kingdom);
+            var ok = new System.Text.StringBuilder(k).Append((int)_tab).Append('|').Append(_open).Append('|').Append(republic).Append('|');
+            foreach (Policy p in Policies.All) ok.Append(p.shown(_kingdom) ? p.Get(_kingdom) : -1).Append(',');
+            if (bill != null) ok.Append('b').Append(bill.policy.id).Append(bill.option);
+            Build(_policies, ok.ToString(), () => BuildPolicies(bill));
+
+            VoteResult result = bill != null ? Parliament.Vote(_kingdom, bill, clans) : null;
+            var bk = new System.Text.StringBuilder(clanKey);
+            if (bill != null)
+            {
+                bk.Append('b').Append(bill.policy.id).Append(bill.option).Append('|').Append(bill.policy.Get(_kingdom)).Append('|').Append(result.yes).Append(':').Append(result.no);
+                foreach (ParliamentClan pc in clans) bk.Append(result.votes.TryGetValue(pc.clan, out bool v) && v ? 'y' : 'n');
+            }
+            if (Build(_bill, bk.ToString(), () => BuildBill(clans, bill, result))) built = true;
+            // 离表决还有几年：跨年只改这一行字
+            if (bill != null && _billWhen != null)
+            {
+                string when = BillWhen(bill, result);
+                if (_billWhen.text != when) _billWhen.text = when;
+            }
+
+            if (built || _appliedSelected != _selected) ApplySelection();
+        }
+
+        // 数据指纹变了就拆掉这一块重建，同一个国家时保留各个列表滚到的位置
+        static bool Build(Section pSection, string pKey, Action pBuild)
+        {
+            if (pSection.key == pKey) return false;
+            var scrolls = new Dictionary<string, float>();
+            if (pSection.kingdom == _kingdom.id)
+            {
+                foreach (ScrollRect sr in pSection.root.GetComponentsInChildren<ScrollRect>()) scrolls[sr.name] = sr.content.anchoredPosition.y;
+            }
+            for (int i = pSection.root.childCount - 1; i >= 0; i--)
+            {
+                GameObject child = pSection.root.GetChild(i).gameObject;
                 child.SetActive(false);
                 Object.Destroy(child);
             }
-            _signature = Signature();
-            LM.AddToCurrentLocale("vd_parliament_window_title", _kingdom.data.name);
-            _window.titleText.GetComponent<LocalizedText>().setKeyAndUpdate("vd_parliament_window_title");
+            pSection.dims.Clear();
+            pSection.frames.Clear();
+            if (pSection == _bill) _billWhen = null;
+            pSection.key = pKey;
+            pSection.kingdom = _kingdom.id;
+            _section = pSection;
+            _parent = pSection.root;
+            pBuild();
+            foreach (ScrollRect sr in pSection.root.GetComponentsInChildren<ScrollRect>())
+            {
+                if (!scrolls.TryGetValue(sr.name, out float y)) continue;
+                float max = Mathf.Max(0f, sr.content.rect.height - ((RectTransform)sr.transform).rect.height);
+                sr.content.anchoredPosition = new Vector2(sr.content.anchoredPosition.x, Mathf.Clamp(y, 0f, max));
+            }
+            return true;
+        }
 
-            List<ParliamentClan> clans = Parliament.Clans(_kingdom);
-            if (_selected >= 0 && clans.Find(c => c.clan.id == _selected) == null) _selected = -1;
-            BuildLeft(clans);
-            BuildRight(clans);
+        // 选中一个氏族：其他氏族的议席和坐标点调淡，列表里给它加黄框
+        static void ApplySelection()
+        {
+            _appliedSelected = _selected;
+            foreach (Section s in _sections)
+            {
+                foreach (Dim d in s.dims)
+                {
+                    if (d.graphic == null) continue;
+                    float a = _selected < 0 || _selected == d.clan ? 1f : d.alpha;
+                    Color c = d.graphic.color;
+                    d.graphic.color = new Color(c.r, c.g, c.b, a);
+                    if (d.outline != null) d.outline.effectColor = new Color(Edge.r, Edge.g, Edge.b, a);
+                }
+                foreach (KeyValuePair<long, GameObject> f in s.frames)
+                {
+                    if (f.Value != null) f.Value.SetActive(f.Key == _selected);
+                }
+            }
+        }
+
+        static void Select(long pClan)
+        {
+            _selected = _selected == pClan ? -1 : pClan;
+            Refresh();
+        }
+
+        // 不随数据变的部分：三个分区标题
+        static void BuildFrame()
+        {
+            Header(LeftX, Top, LeftW, LM.Get("vd_parliament_seats"), IconPath);
+            Header(RightX, Top, RightW, LM.Get("vd_parliament_policies"), "ui/Icons/iconKings");
+            Header(RightX, BillY, RightW, LM.Get("vd_parliament_bill"), "ui/Icons/iconDiplomacy");
         }
 
         // ---------- 左边：议会 ----------
@@ -265,37 +384,26 @@ namespace DiplomacyOverhaul
         const float Top = 26f;
         const int ListRows = 5;
 
-        static void BuildLeft(List<ParliamentClan> pClans)
-        {
-            Header(LeftX, Top, LeftW, LM.Get("vd_parliament_seats"), IconPath);
-            float y = Top + 24f;
-            if (_kingdom.countCities() >= 3 && pClans.Count > 0) Hemicycle(pClans, LeftX, y);
-            else Banner(pClans, LeftX, y);
-            y += 146f;
+        const float ListW = 176f, RowH = 15f, ListY = Top + 24f + 146f;
+        const float PolicyY = Top + 43f, PolicyH = 112f, BillY = PolicyY + PolicyH + 4f;
 
+        static void ClanList(List<ParliamentClan> pClans)
+        {
             List<ParliamentClan> list = RulingFirst(pClans);
-            const float listW = 176f, rowH = 15f;
-            RectTransform content = Scroll(LeftX, y, listW, ListRows * (rowH + 2f), list.Count * (rowH + 2f));
+            RectTransform content = Scroll("scroll_clans", LeftX, ListY, ListW, ListRows * (RowH + 2f), list.Count * (RowH + 2f));
             float ry = 0f;
             foreach (ParliamentClan pc in list)
             {
-                ParliamentClan clan = pc;
-                RectTransform row = Button(content, 0f, ry, listW - 6f, rowH, "ui/special/windowInnerSlicedRound", () =>
-                {
-                    _selected = _selected == clan.clan.id ? -1 : clan.clan.id;
-                    Rebuild();
-                });
-                Swatch(row, 6f, (rowH - 6f) / 2f, 6f, FactionColor(pc.faction), 1f);
-                Text(row, pc.clan.name, 16f, 0f, 90f, rowH, 7, Ink, TextAnchor.MiddleLeft);
-                if (pc.ruling) Text(row, LM.Get(Government.IsRepublic(_kingdom) ? "vd_parliament_ruling" : "vd_parliament_royal"), 16f + Measure(pc.clan.name, 7) + 3f, 0f, 30f, rowH, 6, Gold, TextAnchor.MiddleLeft);
-                Text(row, LM.Get(FactionKey(pc.faction)), 108f, 0f, 36f, rowH, 6, Muted, TextAnchor.MiddleLeft);
-                Text(row, pc.seats.ToString(), listW - 40f, 0f, 28f, rowH, 7, Gold, TextAnchor.MiddleRight);
-                if (pc.clan.id == _selected) Frame(row, -1f);
-                ry += rowH + 2f;
+                long id = pc.clan.id;
+                RectTransform row = Button(content, 0f, ry, ListW - 6f, RowH, "ui/special/windowInnerSlicedRound", () => Select(id));
+                Swatch(row, 6f, (RowH - 6f) / 2f, 6f, FactionColor(pc.faction), 1f);
+                Text(row, pc.clan.name, 16f, 0f, 90f, RowH, 7, Ink, TextAnchor.MiddleLeft);
+                if (pc.ruling) Text(row, LM.Get(Government.IsRepublic(_kingdom) ? "vd_parliament_ruling" : "vd_parliament_royal"), 16f + Measure(pc.clan.name, 7) + 3f, 0f, 30f, RowH, 6, Gold, TextAnchor.MiddleLeft);
+                Text(row, LM.Get(FactionKey(pc.faction)), 108f, 0f, 36f, RowH, 6, Muted, TextAnchor.MiddleLeft);
+                Text(row, pc.seats.ToString(), ListW - 40f, 0f, 28f, RowH, 7, Gold, TextAnchor.MiddleRight);
+                _section.frames[id] = Frame(row, -1f).gameObject;
+                ry += RowH + 2f;
             }
-
-            Compass(pClans, LeftX + listW + 4f, y, LeftW - listW - 4f, ListRows * (rowH + 2f) - 2f);
-            Detail(pClans, LeftX, y + ListRows * (rowH + 2f) + 2f);
         }
 
         static List<ParliamentClan> RulingFirst(List<ParliamentClan> pClans)
@@ -317,16 +425,15 @@ namespace DiplomacyOverhaul
         static void Hemicycle(List<ParliamentClan> pClans, float pX, float pY)
         {
             const float aw = 262f, ah = 132f;
-            RectTransform area = Box(_root, pX + 2f, pY, aw, ah);
+            RectTransform area = Box(_parent, pX + 2f, pY, aw, ah);
             int total = Parliament.TotalSeats(pClans);
             List<Vector3> seats = SeatLayout(total, aw, ah, out float size);
             int s = 0;
             foreach (ParliamentClan pc in pClans)
             {
-                float alpha = _selected < 0 || _selected == pc.clan.id ? 1f : 0.25f;
                 Color color = FactionColor(pc.faction);
                 for (int i = 0; i < pc.seats && s < seats.Count; i++, s++)
-                    Swatch(area, seats[s].x - size / 2f, seats[s].y - size / 2f, size, color, alpha);
+                    Dimmable(pc, Swatch(area, seats[s].x - size / 2f, seats[s].y - size / 2f, size, color, 1f), 0.25f);
             }
 
             var bySeats = new Dictionary<Faction, int>();
@@ -346,7 +453,7 @@ namespace DiplomacyOverhaul
         // 一、两座城的国家不画半圆：「某某家独掌朝政」「某某家主导朝政」
         static void Banner(List<ParliamentClan> pClans, float pX, float pY)
         {
-            RectTransform area = Box(_root, pX, pY, LeftW, 132f);
+            RectTransform area = Box(_parent, pX, pY, LeftW, 132f);
             Icon(area, "ui/Icons/iconKings", (LeftW - 28f) / 2f, 36f, 28f);
             ParliamentClan top = null;
             foreach (ParliamentClan pc in pClans)
@@ -420,7 +527,7 @@ namespace DiplomacyOverhaul
         // 立场坐标图：横轴激进（左）到保守（右），纵轴集权（上）到分权（下），王室的点戴皇冠
         static void Compass(List<ParliamentClan> pClans, float pX, float pY, float pW, float pH)
         {
-            RectTransform slot = Sliced(_root, "ui/special/windowInnerSlicedRound", pX, pY, pW, pH);
+            RectTransform slot = Sliced(_parent, "ui/special/windowInnerSlicedRound", pX, pY, pW, pH);
             float cx = pW / 2f, cy = pH / 2f;
             Rect(slot, cx - 0.5f, 8f, 1f, pH - 16f, Line);
             Rect(slot, 4f, cy - 0.5f, pW - 8f, 1f, Line);
@@ -431,37 +538,40 @@ namespace DiplomacyOverhaul
             {
                 float size = 3f + Mathf.Sqrt(pc.seats) * 0.45f;
                 float x = cx - pc.x * rx, y = cy - pc.y * ry;
-                float alpha = _selected < 0 || _selected == pc.clan.id ? 1f : 0.3f;
-                Swatch(slot, x - size / 2f, y - size / 2f, size, FactionColor(pc.faction), alpha);
-                if (pc.ruling)
-                {
-                    RectTransform crown = Icon(slot, "ui/Icons/iconCrown", x - 5f, y - size / 2f - 10f, 10f);
-                    crown.GetComponent<Image>().color = new Color(1f, 1f, 1f, alpha);
-                }
+                Dimmable(pc, Swatch(slot, x - size / 2f, y - size / 2f, size, FactionColor(pc.faction), 1f), 0.3f);
+                if (pc.ruling) Dimmable(pc, Icon(slot, "ui/Icons/iconCrown", x - 5f, y - size / 2f - 10f, 10f), 0.3f);
             }
         }
 
+        static void Dimmable(ParliamentClan pClan, RectTransform pTarget, float pAlpha)
+        {
+            _section.dims.Add(new Dim { clan = pClan.clan.id, graphic = pTarget.GetComponent<Graphic>(), outline = pTarget.GetComponent<Outline>(), alpha = pAlpha });
+        }
+
         // 选中的氏族：族长和占的城
-        static void Detail(List<ParliamentClan> pClans, float pX, float pY)
+        static string DetailText(List<ParliamentClan> pClans)
         {
             ParliamentClan pc = pClans.Find(c => c.clan.id == _selected);
-            if (pc == null) return;
+            if (pc == null) return "";
             var parts = new List<string>();
             Actor chief = pc.clan.getChief();
             if (chief != null && chief.isAlive()) parts.Add($"{LM.Get("vd_parliament_chief")} <color=#8fb0ff>{chief.getName()}</color>");
             var cities = new List<string>();
             foreach (City c in pc.cities) cities.Add(c.data.name);
             if (cities.Count > 0) parts.Add(string.Join(LM.Get("vd_parliament_separator"), cities));
-            Text(_root, string.Join(" · ", parts), pX, pY, LeftW, 20f, 6, Muted, TextAnchor.UpperLeft).GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
+            return string.Join(" · ", parts);
+        }
+
+        static void Detail(string pText, float pX, float pY)
+        {
+            if (pText.Length == 0) return;
+            Text(_parent, pText, pX, pY, LeftW, 20f, 6, Muted, TextAnchor.UpperLeft).GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
         }
 
         // ---------- 右边：政策和议案 ----------
 
-        static void BuildRight(List<ParliamentClan> pClans)
+        static void BuildPolicies(Bill bill)
         {
-            Header(RightX, Top, RightW, LM.Get("vd_parliament_policies"), "ui/Icons/iconKings");
-            Bill bill = Parliament.GetBill(_kingdom);
-
             // 页签：只显示有政策的
             var tabs = new List<PolicyTab>();
             foreach (PolicyTab t in new[] { PolicyTab.Domestic, PolicyTab.Military, PolicyTab.Diplomacy })
@@ -473,11 +583,11 @@ namespace DiplomacyOverhaul
             for (int i = 0; i < tabs.Count; i++)
             {
                 PolicyTab t = tabs[i];
-                RectTransform tab = Button(_root, RightX + i * (tw + 4f), Top + 23f, tw, 16f,
+                RectTransform tab = Button(_parent, RightX + i * (tw + 4f), Top + 23f, tw, 16f,
                     t == _tab ? "ui/tab_button_sort_selected" : "ui/tab_button_sort", () =>
                     {
                         _tab = t;
-                        Rebuild();
+                        Refresh();
                     });
                 Text(tab, LM.Get("vd_policy_tab_" + t.ToString().ToLowerInvariant()), 0f, 0f, tw, 16f, 7, Color.white, TextAnchor.MiddleCenter);
                 if (bill != null && bill.policy.tab == t) Swatch(tab, tw - 12f, 4f, 5f, Hex("#ffd23a"), 1f);
@@ -485,10 +595,9 @@ namespace DiplomacyOverhaul
 
             // 政策列表
             var shown = Policies.All.FindAll(p => p.tab == _tab && p.shown(_kingdom));
-            float listY = Top + 43f, listH = 112f;
             float contentH = 0f;
             foreach (Policy p in shown) contentH += (p.id == _open ? 42f : 22f) + 3f;
-            RectTransform content = Scroll(RightX, listY, RightW, listH, contentH);
+            RectTransform content = Scroll("scroll_policies", RightX, PolicyY, RightW, PolicyH, contentH);
             float y = 0f;
             foreach (Policy p in shown)
             {
@@ -501,7 +610,7 @@ namespace DiplomacyOverhaul
                     ? Button(slot, 0f, 0f, RightW - 8f, 22f, null, () =>
                     {
                         _open = _open == policy.id ? null : policy.id;
-                        Rebuild();
+                        Refresh();
                     })
                     : Box(slot, 0f, 0f, RightW - 8f, 22f);
                 RectTransform icon = Icon(head, p.icon, 5f, 4f, 14f);
@@ -531,8 +640,6 @@ namespace DiplomacyOverhaul
                 }
                 y += h + 3f;
             }
-
-            BuildBill(pClans, bill, listY + listH + 4f);
         }
 
         // 共和国的说明里没有王冠，换成国库
@@ -549,34 +656,36 @@ namespace DiplomacyOverhaul
             if (!pPolicy.CanPropose(_kingdom)) return;
             if (pPolicy.Get(_kingdom) == pOption) Parliament.ClearBill(_kingdom);
             else Parliament.SetBill(_kingdom, new Bill { policy = pPolicy, option = pOption, player = true });
-            Rebuild();
+            Refresh();
         }
 
-        static void BuildBill(List<ParliamentClan> pClans, Bill pBill, float pY)
+        static string BillWhen(Bill pBill, VoteResult pResult)
         {
-            Header(RightX, pY, RightW, LM.Get("vd_parliament_bill"), "ui/Icons/iconDiplomacy");
-            float y = pY + 23f;
+            bool passes = Parliament.Passes(pBill, pResult);
+            int years = Mathf.Max(0, Parliament.NextSession(_kingdom) - Date.getCurrentYear());
+            string verdict = $"<color=#{ColorUtility.ToHtmlStringRGB(passes ? YesText : NoText)}>{LM.Get(passes ? "vd_parliament_will_pass" : "vd_parliament_will_fail")}</color>";
+            return LM.Get("vd_parliament_vote_in").Replace("$years$", years.ToString()) + " · " + verdict;
+        }
+
+        static void BuildBill(List<ParliamentClan> pClans, Bill pBill, VoteResult result)
+        {
+            float y = BillY + 23f;
             if (pBill == null)
             {
-                RectTransform msg = Sliced(_root, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 18f);
+                RectTransform msg = Sliced(_parent, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 18f);
                 Text(msg, LM.Get("vd_parliament_no_bill"), 8f, 0f, RightW - 16f, 18f, 7, Color.white, TextAnchor.MiddleLeft);
-                Text(_root, LM.Get("vd_parliament_no_bill_hint"), RightX + 3f, y + 21f, RightW - 6f, 10f, 6, Muted, TextAnchor.MiddleLeft);
+                Text(_parent, LM.Get("vd_parliament_no_bill_hint"), RightX + 3f, y + 21f, RightW - 6f, 10f, 6, Muted, TextAnchor.MiddleLeft);
                 return;
             }
 
-            VoteResult result = Parliament.Vote(_kingdom, pBill, pClans);
-            bool passes = Parliament.Passes(pBill, result);
-            RectTransform title = Sliced(_root, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 18f);
+            RectTransform title = Sliced(_parent, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 18f);
             string titleText = LM.Get(pBill.policy.id) + LM.Get("vd_parliament_colon") + LM.Get(pBill.policy.OptionKey(pBill.policy.Get(_kingdom)))
                                + " → " + LM.Get(pBill.policy.OptionKey(pBill.option));
             Text(title, titleText, 7f, 0f, RightW - 14f, 18f, 7, Ink, TextAnchor.MiddleLeft);
-            int years = Mathf.Max(0, Parliament.NextSession(_kingdom) - Date.getCurrentYear());
-            string verdict = $"<color=#{ColorUtility.ToHtmlStringRGB(passes ? YesText : NoText)}>{LM.Get(passes ? "vd_parliament_will_pass" : "vd_parliament_will_fail")}</color>";
-            Text(title, LM.Get("vd_parliament_vote_in").Replace("$years$", years.ToString()) + " · " + verdict,
-                7f, 0f, RightW - 14f, 18f, 6, Muted, TextAnchor.MiddleRight);
+            _billWhen = Text(title, BillWhen(pBill, result), 7f, 0f, RightW - 14f, 18f, 6, Muted, TextAnchor.MiddleRight).GetComponent<Text>();
             y += 20f;
 
-            RectTransform bar = Sliced(_root, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 16f);
+            RectTransform bar = Sliced(_parent, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 16f);
             float inner = RightW - 6f;
             float yesW = result.Total > 0 ? inner * result.yes / result.Total : 0f;
             Rect(bar, 3f, 3f, yesW, 10f, YesBar);
@@ -588,7 +697,7 @@ namespace DiplomacyOverhaul
 
             List<ParliamentClan> list = RulingFirst(pClans);
             const float rowH = 11f;
-            RectTransform votes = Scroll(RightX, y, RightW, 3 * rowH, list.Count * rowH);
+            RectTransform votes = Scroll("scroll_votes", RightX, y, RightW, 3 * rowH, list.Count * rowH);
             float ry = 0f;
             foreach (ParliamentClan pc in list)
             {
@@ -603,24 +712,24 @@ namespace DiplomacyOverhaul
             y += 3 * rowH + 3f;
 
             float bw = (RightW - 50f - 8f) / 2f;
-            RectTransform vote = Button(_root, RightX, y, bw, 18f, "ui/special/special_buttonRed", () =>
+            RectTransform vote = Button(_parent, RightX, y, bw, 18f, "ui/special/special_buttonRed", () =>
             {
                 Bill b = Parliament.GetBill(_kingdom);
                 if (b != null) Parliament.VoteNow(_kingdom, b);
-                Rebuild();
+                Refresh();
             });
             Text(vote, LM.Get("vd_parliament_submit"), 0f, 0f, bw, 18f, 7, Color.white, TextAnchor.MiddleCenter);
-            RectTransform force = Button(_root, RightX + bw + 4f, y, bw, 18f, "ui/special/special_buttonGray", () =>
+            RectTransform force = Button(_parent, RightX + bw + 4f, y, bw, 18f, "ui/special/special_buttonGray", () =>
             {
                 Bill b = Parliament.GetBill(_kingdom);
                 if (b != null) Parliament.Enact(_kingdom, b);
-                Rebuild();
+                Refresh();
             });
             Text(force, LM.Get("vd_parliament_force"), 0f, 0f, bw, 18f, 7, Color.white, TextAnchor.MiddleCenter);
-            RectTransform withdraw = Button(_root, RightX + 2f * bw + 8f, y, 50f, 18f, "ui/special/special_buttonGray", () =>
+            RectTransform withdraw = Button(_parent, RightX + 2f * bw + 8f, y, 50f, 18f, "ui/special/special_buttonGray", () =>
             {
                 Parliament.ClearBill(_kingdom);
-                Rebuild();
+                Refresh();
             });
             Text(withdraw, LM.Get("vd_parliament_withdraw"), 0f, 0f, 50f, 18f, 7, Color.white, TextAnchor.MiddleCenter);
         }
@@ -679,7 +788,7 @@ namespace DiplomacyOverhaul
         }
 
         // 选中的黄框
-        static void Frame(RectTransform pTarget, float pInset)
+        static RectTransform Frame(RectTransform pTarget, float pInset)
         {
             RectTransform rt = Sliced(pTarget, "ui/special/buttonSelected", 0f, 0f, 0f, 0f);
             rt.anchorMin = Vector2.zero;
@@ -687,6 +796,7 @@ namespace DiplomacyOverhaul
             rt.offsetMin = new Vector2(pInset, pInset);
             rt.offsetMax = new Vector2(-pInset, -pInset);
             rt.GetComponent<Image>().fillCenter = false;
+            return rt;
         }
 
         static RectTransform Button(Transform pParent, float pX, float pY, float pW, float pH, string pSprite, Action pClick)
@@ -751,16 +861,16 @@ namespace DiplomacyOverhaul
         // 分区标题条：原版的标签页底图，两端各一个图标
         static void Header(float pX, float pY, float pW, string pText, string pIcon)
         {
-            RectTransform bar = Sliced(_root, "ui/special/background_tab_content", pX, pY, pW, 20f);
+            RectTransform bar = Sliced(_parent, "ui/special/background_tab_content", pX, pY, pW, 20f);
             Icon(bar, pIcon, 6f, 3f, 14f);
             Icon(bar, pIcon, pW - 20f, 3f, 14f);
             Text(bar, pText, 0f, 0f, pW, 18f, 9, HeaderGold, TextAnchor.MiddleCenter);
         }
 
         // 能滚动的列表，返回内容节点
-        static RectTransform Scroll(float pX, float pY, float pW, float pH, float pContentH)
+        static RectTransform Scroll(string pName, float pX, float pY, float pW, float pH, float pContentH)
         {
-            RectTransform view = Box(_root, pX, pY, pW, pH, "scroll");
+            RectTransform view = Box(_parent, pX, pY, pW, pH, pName);
             view.gameObject.AddComponent<RectMask2D>();
             Image hit = view.gameObject.AddComponent<Image>();
             hit.color = new Color(0f, 0f, 0f, 0f);
