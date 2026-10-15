@@ -11,7 +11,7 @@ namespace DiplomacyOverhaul
         public const int AutonomyOpinion = 15;
         public const int ResentOpinion = -20;
         // 每年转化的比例：每座城里文化或宗教和宗主不同的居民
-        const float YearlyShare = 0.1f;
+        public const float YearlyShare = 0.1f;
 
         // 宗主在强制同化，附庸的文化或宗教还和宗主不同
         public static bool Resents(Kingdom pVassal, Kingdom pLord) =>

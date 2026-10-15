@@ -816,7 +816,7 @@ namespace DiplomacyOverhaul
                             isCurrent ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray", () => Pick(policy, option));
                         Text(ob, LM.Get(p.OptionKey(o)), 0f, 0f, ow, 15f, 6, Color.white, TextAnchor.MiddleCenter);
                         if (bill != null && bill.policy == p && bill.option == o) Frame(ob, -1.5f);
-                        Tip(ob, p.OptionKey(o), DescriptionKey(p, o));
+                        OptionTip(ob, policy, option);
                     }
                 }
                 y += h + 3f;
@@ -998,11 +998,21 @@ namespace DiplomacyOverhaul
             return rt;
         }
 
-        static void Tip(RectTransform pTarget, string pTitle, string pDescription)
+        // 正在悬停的政策选项和它的数字行，由 Patch_PolicyTip 加进原版提示
+        internal static string TipName;
+        internal static List<(string key, string value)> TipEffects;
+
+        // 政策选项的悬停提示：一句说明，下面是这一档的数字
+        static void OptionTip(RectTransform pTarget, Policy pPolicy, int pOption)
         {
             var trigger = pTarget.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
             var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
-            enter.callback.AddListener(_ => Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = pTitle, tip_description = pDescription }));
+            enter.callback.AddListener(_ =>
+            {
+                TipName = pPolicy.OptionKey(pOption);
+                TipEffects = Policies.Effects(_kingdom, pPolicy, pOption);
+                Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = TipName, tip_description = DescriptionKey(pPolicy, pOption) });
+            });
             trigger.triggers.Add(enter);
             var exit = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit };
             exit.callback.AddListener(_ => Tooltip.hideTooltip());
@@ -1065,6 +1075,19 @@ namespace DiplomacyOverhaul
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 8f;
             return content;
+        }
+    }
+
+    // 政策选项的提示：在原版属性栏里列出这一档的数字
+    [HarmonyLib.HarmonyPatch(typeof(TooltipLibrary), "showTip")]
+    static class Patch_PolicyTip
+    {
+        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        {
+            if (pData == null || pData.tip_name != ParliamentWindow.TipName || ParliamentWindow.TipEffects == null) return;
+            if (ParliamentWindow.TipEffects.Count == 0) return;
+            foreach (var (key, value) in ParliamentWindow.TipEffects) pTooltip.addLineText(key, value);
+            pTooltip.showStatValues();
         }
     }
 

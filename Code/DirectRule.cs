@@ -45,7 +45,6 @@ namespace DiplomacyOverhaul
         static int Free(Kingdom pKingdom)
         {
             if (Vassals.IsVassal(pKingdom)) return 0;
-            if (Policies.Value(pKingdom, Policies.Territory) == Policies.Feudal) return 0;
             CyclePhase phase = Cycle.Get(pKingdom);
             if (phase == CyclePhase.Decline || phase == CyclePhase.Collapse) return 0;
             return Mathf.Max(0, pKingdom.getMaxCities() - pKingdom.countCities());
@@ -131,12 +130,11 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 动机：离治理上限的余量 × 性格。空 1 座是 0.5，每多一座 +0.5，最多 2
+        // 动机：离治理上限的余量 × 领地制度 × 性格。空 1 座是 0.5，每多一座 +0.5，最多 2
         static float Motive(Actor pActor)
         {
             float situation = Mathf.Min(Free(pActor.kingdom) * 0.5f, 2f);
-            if (Policies.Value(pActor.kingdom, Policies.Territory) == Policies.DirectRule) situation *= 2f;
-            return situation * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
+            return situation * Policies.ReclaimFactor(pActor.kingdom) * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
         }
     }
 }

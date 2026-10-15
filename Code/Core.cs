@@ -290,11 +290,7 @@ namespace DiplomacyOverhaul
             grudge *= 1.2f - integration / 100f;
             // 宗主亲自打仗时后方空虚，整合度越低越想趁机起兵：整合度 0 时 ×2，50 以上不变
             if (LordAtWar(lord)) grudge *= 1f + Mathf.Clamp01(1f - integration / 50f);
-            switch (Policies.Value(k, Policies.Overlord))
-            {
-                case Policies.SeekAutonomy: grudge *= 1.5f; break;
-                case Policies.Loyal: grudge *= 0.5f; break;
-            }
+            grudge *= Policies.IndependenceFactor(k);
             return grudge * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Aggression), true);
         }
 

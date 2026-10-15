@@ -45,7 +45,6 @@ namespace DiplomacyOverhaul
         static int Excess(Kingdom pKingdom)
         {
             if (!Feudal.CanGrant(pKingdom) || Government.Form(pKingdom) != GovForm.Monarchy) return 0;
-            if (Policies.Value(pKingdom, Policies.Territory) == Policies.DirectRule) return 0;
             return Mathf.Max(0, pKingdom.countCities() - pKingdom.getMaxCities());
         }
 
@@ -123,12 +122,11 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 动机：超出治理上限的程度 × 性格。超出 1 座是 0.5，每多一座 +0.5，最多 2
+        // 动机：超出治理上限的程度 × 领地制度 × 性格。超出 1 座是 0.5，每多一座 +0.5，最多 2
         static float Motive(Actor pActor)
         {
             float situation = Mathf.Min(Excess(pActor.kingdom) * 0.5f, 2f);
-            if (Policies.Value(pActor.kingdom, Policies.Territory) == Policies.Feudal) situation *= 2f;
-            return situation * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
+            return situation * Policies.AppanageFactor(pActor.kingdom) * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
         }
     }
 }

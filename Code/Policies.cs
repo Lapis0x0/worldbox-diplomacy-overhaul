@@ -199,17 +199,16 @@ namespace DiplomacyOverhaul
         }
 
         // ---------- 各项政策的数值 ----------
+        // 三档选项的倍数按选项排：中间一档都是 1（照常）
 
-        // 领地制度对分封概率的倍数
-        public static float FeudalChance(Kingdom pLord)
-        {
-            switch (Value(pLord, Territory))
-            {
-                case Feudal: return 1.5f;
-                case DirectRule: return 0f;
-                default: return 1f;
-            }
-        }
+        // 领地制度：叛乱、攻城改分封的概率，分封宗室、收归直辖的动机
+        static readonly float[] GrantFactors = { 1.5f, 1f, 0.5f };
+        static readonly float[] AppanageFactors = { 2f, 1f, 0.5f };
+        static readonly float[] ReclaimFactors = { 0.5f, 1f, 2f };
+
+        public static float FeudalChance(Kingdom pLord) => GrantFactors[Value(pLord, Territory)];
+        public static float AppanageFactor(Kingdom pKingdom) => AppanageFactors[Value(pKingdom, Territory)];
+        public static float ReclaimFactor(Kingdom pKingdom) => ReclaimFactors[Value(pKingdom, Territory)];
 
         // 海军方针：每个港口运输船的上限。中间一档是原版的 1 艘
         public const string TransportBoat = "boat_type_transport";
@@ -224,27 +223,82 @@ namespace DiplomacyOverhaul
         }
 
         // 外交路线：停战期和敢挑的对手的倍数
-        public static float WarTimeoutFactor(Kingdom pKingdom)
+        static readonly float[] WarTimeoutFactors = { 2f, 1f, 0.5f };
+        static readonly float[] WarStrengthFactors = { 0.5f, 1f, 1.25f };
+
+        public static float WarTimeoutFactor(Kingdom pKingdom) =>
+            DiplomacyOverhaul.Vassals.IsVassal(pKingdom) ? 1f : WarTimeoutFactors[Value(pKingdom, War)];
+
+        public static float WarStrengthFactor(Kingdom pKingdom) =>
+            DiplomacyOverhaul.Vassals.IsVassal(pKingdom) ? 1f : WarStrengthFactors[Value(pKingdom, War)];
+
+        // 附庸政策（宗主的）、对宗主方针（附庸自己的）：整合度每年的变动
+        static readonly float[] VassalsDrift = { -1f, 0f, 0f };
+        static readonly float[] OverlordDrift = { -1f, 0f, 1f };
+        // 对宗主方针：独立密谋动机的倍数
+        static readonly float[] IndependenceFactors = { 1.5f, 1f, 0.5f };
+
+        public static float IntegrationDrift(Kingdom pVassal, Kingdom pLord) =>
+            VassalsDrift[Value(pLord, Vassals)] + OverlordDrift[Value(pVassal, Overlord)];
+
+        public static float IndependenceFactor(Kingdom pVassal) => IndependenceFactors[Value(pVassal, Overlord)];
+
+        // 选项悬停提示里的数字行：偏离照常的项才列，上缴比例和运输船上限每档都列
+        public static List<(string key, string value)> Effects(Kingdom pKingdom, Policy pPolicy, int pOption)
         {
-            if (DiplomacyOverhaul.Vassals.IsVassal(pKingdom)) return 1f;
-            switch (Value(pKingdom, War))
+            var rows = new List<(string, string)>();
+            bool republic = Government.IsRepublic(pKingdom);
+            switch (pPolicy.id)
             {
-                case Pacifism: return 2f;
-                case Expansion: return 0.5f;
-                default: return 1f;
+                case Tax:
+                    rows.Add((republic ? "vd_eff_tribute_republic" : "vd_eff_tribute", Percent(TributeRates[pOption])));
+                    break;
+                case Territory:
+                    if (pOption == LimitedFeudal) break;
+                    rows.Add(("vd_eff_grant", Change(GrantFactors[pOption])));
+                    // 共和国没有王室，不分封宗室
+                    if (!republic) rows.Add(("vd_eff_appanage", Change(AppanageFactors[pOption])));
+                    rows.Add(("vd_eff_reclaim", Change(ReclaimFactors[pOption])));
+                    break;
+                case Navy:
+                    rows.Add(("vd_eff_transports", TransportLimit[pOption].ToString()));
+                    break;
+                case War:
+                    if (pOption == Balance) break;
+                    rows.Add(("vd_eff_war_timeout", Change(WarTimeoutFactors[pOption])));
+                    rows.Add(("vd_eff_war_strength", Change(WarStrengthFactors[pOption])));
+                    break;
+                case Vassals:
+                    if (pOption == Autonomy)
+                    {
+                        rows.Add(("vd_eff_vassal_opinion", Signed(DiplomacyOverhaul.Assimilation.AutonomyOpinion)));
+                        rows.Add(("vd_eff_vassal_integration", Signed(VassalsDrift[pOption])));
+                    }
+                    else if (pOption == Assimilation)
+                    {
+                        rows.Add(("vd_eff_assimilation", Percent(DiplomacyOverhaul.Assimilation.YearlyShare)));
+                        rows.Add(("vd_eff_vassal_resent", Signed(DiplomacyOverhaul.Assimilation.ResentOpinion)));
+                    }
+                    break;
+                case Overlord:
+                    if (pOption == Obligation) break;
+                    rows.Add(("vd_eff_integration", Signed(OverlordDrift[pOption])));
+                    rows.Add(("vd_eff_independence", Change(IndependenceFactors[pOption])));
+                    break;
             }
+            return rows;
         }
 
-        public static float WarStrengthFactor(Kingdom pKingdom)
+        static string Percent(float pValue) => UnityEngine.Mathf.RoundToInt(pValue * 100f) + "%";
+
+        static string Signed(float pValue)
         {
-            if (DiplomacyOverhaul.Vassals.IsVassal(pKingdom)) return 1f;
-            switch (Value(pKingdom, War))
-            {
-                case Pacifism: return 0.5f;
-                case Expansion: return 1.25f;
-                default: return 1f;
-            }
+            int v = UnityEngine.Mathf.RoundToInt(pValue);
+            return v > 0 ? "+" + v : v.ToString();
         }
+
+        // 倍数写成增减的百分比：×1.5 是 +50%，×0.5 是 -50%
+        static string Change(float pFactor) => Signed((pFactor - 1f) * 100f) + "%";
     }
 
     // 城主上缴国王的比例由税收体制决定，不再看原版的贡赋特质
