@@ -41,7 +41,7 @@ namespace DiplomacyOverhaul
             {
                 case Faction.Reformist: return Hex("#e5473b");
                 case Faction.Republican: return Hex("#f2a52e");
-                case Faction.OldHouses: return Hex("#23a98f");
+                case Faction.Aristocrats: return Hex("#23a98f");
                 default: return Hex("#3b7be0");
             }
         }

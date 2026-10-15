@@ -7,7 +7,7 @@ namespace DiplomacyOverhaul
     public enum Faction
     {
         Royalist,   // 保王派：保守、集权
-        OldHouses,  // 世家派：保守、分权
+        Aristocrats, // 贵族派：保守、分权
         Reformist,  // 维新派：激进、集权
         Republican  // 共和派：激进、分权
     }
@@ -78,7 +78,8 @@ namespace DiplomacyOverhaul
                 pc.cities.Add(city);
             }
             var list = new List<ParliamentClan>(map.Values);
-            foreach (ParliamentClan pc in list) Stance(pKingdom, pc);
+            var context = new StanceContext(pKingdom, list);
+            foreach (ParliamentClan pc in list) Stance(pKingdom, pc, context);
             list.Sort((a, b) =>
             {
                 int fa = FactionOrder(a.faction), fb = FactionOrder(b.faction);
@@ -87,14 +88,14 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 半圆从左到右：维新、共和、世家、保王
+        // 半圆从左到右：维新、共和、贵族、保王
         public static int FactionOrder(Faction pFaction)
         {
             switch (pFaction)
             {
                 case Faction.Reformist: return 0;
                 case Faction.Republican: return 1;
-                case Faction.OldHouses: return 2;
+                case Faction.Aristocrats: return 2;
                 default: return 3;
             }
         }
@@ -111,13 +112,35 @@ namespace DiplomacyOverhaul
         public static Faction FactionOf(float pX, float pY)
         {
             if (pY >= 0f) return pX < 0f ? Faction.Royalist : Faction.Reformist;
-            return pX < 0f ? Faction.OldHouses : Faction.Republican;
+            return pX < 0f ? Faction.Aristocrats : Faction.Republican;
         }
 
-        // 保守-激进：占着城的都算当权，偏保守，君主国的王室更保守；野心勃勃、暴躁偏激进，知足、诚实偏保守；族长越老越保守。
-        // 集权-分权：执政的家族偏集权，占着地方城市的偏分权，占的城越多越偏。
-        // 族长占一半，族人的平均值占一半；每个氏族再有一点自己的家风
-        static void Stance(Kingdom pKingdom, ParliamentClan pClan)
+        // 门第和离首都的远近都和同一个议会里的其他氏族比
+        class StanceContext
+        {
+            public readonly float meanLogAge;
+            public readonly Vector2 capital;
+            public readonly float farthest;
+
+            public StanceContext(Kingdom pKingdom, List<ParliamentClan> pClans)
+            {
+                float sum = 0f;
+                foreach (ParliamentClan pc in pClans) sum += LogAge(pc.clan);
+                meanLogAge = pClans.Count > 0 ? sum / pClans.Count : 0f;
+                if (!pKingdom.hasCapital()) return;
+                capital = pKingdom.capital.last_city_center;
+                foreach (City city in pKingdom.getCities()) farthest = Mathf.Max(farthest, Vector2.Distance(city.last_city_center, capital));
+            }
+        }
+
+        // 刚建的家族按 10 年算，免得 0 岁的家族把倍数拉得没边
+        static float LogAge(Clan pClan) => Mathf.Log(Date.getYearsSince(pClan.data.created_time) + 10f);
+
+        // 保守-激进：门第，比议会里的平均老 4 倍 -0.3、新 4 倍 +0.3；君主国的王室再 -0.2；
+        // 野心勃勃、暴躁偏激进，知足、诚实偏保守，族长越老越保守（族长占一半，族人的平均值占一半）。
+        // 集权-分权：离首都的远近，占的城平均离首都越近越集权，最近 +0.3、和最远的城一样远 -0.3；王室再 +0.2。
+        // 每个氏族再有一点自己的家风
+        static void Stance(Kingdom pKingdom, ParliamentClan pClan, StanceContext pContext)
         {
             Clan clan = pClan.clan;
             Actor chief = clan.getChief();
@@ -132,10 +155,17 @@ namespace DiplomacyOverhaul
             }
             float membersX = n > 0 ? sum / n : 0f;
 
-            // 共和国的执政只是轮流坐庄，和其他城主家族一样
-            float standing = pClan.ruling && !Government.IsRepublic(pKingdom) ? -0.4f : -0.1f;
-            float x = 0.5f * chiefX + 0.5f * membersX + standing + HouseStyle(clan.id, 1);
-            float y = (pClan.ruling ? 0.35f : -0.15f - Mathf.Min(0.1f * pClan.cities.Count, 0.45f)) + HouseStyle(clan.id, 2) * 0.8f;
+            float lineage = -0.3f * Mathf.Clamp((LogAge(clan) - pContext.meanLogAge) / Mathf.Log(4f), -1f, 1f);
+            // 共和国的执政只是轮流坐庄，和其他氏族一样
+            bool royal = pClan.ruling && !Government.IsRepublic(pKingdom);
+            float x = lineage + (royal ? -0.2f : 0f) + 0.5f * chiefX + 0.5f * membersX + HouseStyle(clan.id, 1);
+
+            float distance = 0f;
+            foreach (City city in pClan.cities) distance += Vector2.Distance(city.last_city_center, pContext.capital);
+            distance /= Mathf.Max(1, pClan.cities.Count);
+            float near = pContext.farthest > 0f ? 0.3f - 0.6f * Mathf.Clamp01(distance / pContext.farthest) : 0f;
+            float y = near + (pClan.ruling ? 0.2f : 0f) + HouseStyle(clan.id, 2);
+
             pClan.x = Mathf.Clamp(x, -1f, 1f);
             pClan.y = Mathf.Clamp(y, -1f, 1f);
             pClan.faction = FactionOf(pClan.x, pClan.y);
@@ -154,14 +184,14 @@ namespace DiplomacyOverhaul
         // 35 岁不偏，15 岁 +0.2，75 岁 -0.4
         static float AgeTemper(Actor pActor) => -Mathf.Clamp((pActor.getAge() - 35) / 40f, -0.5f, 1f) * 0.4f;
 
-        // 家风：按氏族 id 定下的一点固定偏向，-0.35 到 +0.35
+        // 家风：按氏族 id 定下的一点固定偏向，-0.2 到 +0.2
         static float HouseStyle(long pClanId, int pSalt)
         {
             ulong h = (ulong)pClanId * 0x9E3779B97F4A7C15UL + (ulong)pSalt * 0xC2B2AE3D27D4EB4FUL;
             h ^= h >> 29;
             h *= 0xBF58476D1CE4E5B9UL;
             h ^= h >> 32;
-            return ((h % 1000UL) / 999f - 0.5f) * 0.7f;
+            return ((h % 1000UL) / 999f - 0.5f) * 0.4f;
         }
 
         // ---------- 表决 ----------

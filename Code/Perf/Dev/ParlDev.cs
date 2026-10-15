@@ -97,7 +97,7 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"    {p.id} = {p.Get(k)}{(p.CanPropose(k) ? "" : " (locked)")}");
             }
             foreach (ParliamentClan pc in clans)
-                Dev.Log($"    {pc.clan.name}{(pc.ruling ? "*" : "")} seats={pc.seats} cities={pc.cities.Count} stance=({pc.x:0.00},{pc.y:0.00}) {pc.faction}");
+                Dev.Log($"    {pc.clan.name}{(pc.ruling ? "*" : "")} seats={pc.seats} cities={pc.cities.Count} stance=({pc.x:0.00},{pc.y:0.00}) {pc.faction} age={Date.getYearsSince(pc.clan.data.created_time)} chiefs={pc.clan.data.past_chiefs?.Count ?? 0}");
             Bill bill = Parliament.GetBill(k);
             if (bill == null) { Dev.Log("    bill: none"); return; }
             VoteResult r = Parliament.Vote(k, bill, clans);
