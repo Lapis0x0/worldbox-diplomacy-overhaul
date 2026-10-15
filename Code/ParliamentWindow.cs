@@ -7,12 +7,14 @@ using Object = UnityEngine.Object;
 
 namespace DiplomacyOverhaul
 {
-    // 议会窗口：从王国窗口右侧的按钮打开。左边是议席和氏族，右边是政策和议案。
+    // 议会窗口：从王国窗口左侧页签栏打开。左边是议席和氏族，右边是政策和议案。
     // 界面用原版的窗口贴图拼出来，内容有变化时整页重建
     public static class ParliamentWindow
     {
         const string WindowId = "vd_parliament";
         const string ButtonName = "vd_parliament_button";
+        const string TabsName = "vd_parliament_tabs";
+        const string KingdomWindowId = "kingdom";
         public const string IconPath = "ui/Icons/vd_parliament";
         const float W = 560f, H = 330f;
 
@@ -124,6 +126,7 @@ namespace DiplomacyOverhaul
             if (_kingdom != pKingdom) _selected = -1;
             _kingdom = pKingdom;
             Create();
+            BuildTabs();
             _signature = null;
             ScrollWindow.showWindow(WindowId);
             Rebuild();
@@ -153,6 +156,62 @@ namespace DiplomacyOverhaul
             _root.sizeDelta = new Vector2(W, H);
             _root.anchoredPosition = Vector2.zero;
             _window.gameObject.AddComponent<ParliamentWindowTicker>();
+        }
+
+        // 左侧页签栏：照王国窗口的页签栏复制一份，议会那格选中，点别的格回到王国窗口的那一页。
+        // 每次打开都重新复制，跟着王国窗口当前显示哪些页签
+        static void BuildTabs()
+        {
+            Transform background = _window.transform.Find("Background");
+            Transform old = background.Find(TabsName);
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            if (!ScrollWindow._all_windows.TryGetValue(KingdomWindowId, out ScrollWindow kingdomWindow) || kingdomWindow == null) return;
+            // 热重载后王国窗口还没重新打开过，议会按钮还没加回去
+            KingdomWindow kingdomTabs = kingdomWindow.GetComponent<KingdomWindow>();
+            if (kingdomTabs != null) EnsureButton(kingdomTabs);
+            RectTransform source = kingdomWindow.transform.Find("Background/Tabs") as RectTransform;
+            if (source == null) return;
+
+            // 先复制到一个没激活的节点下，原版页签组件不会初始化，拆掉后再挂到窗口上
+            var holder = new GameObject("vd_parliament_tabs_holder");
+            holder.SetActive(false);
+            GameObject go = Object.Instantiate(source.gameObject, holder.transform);
+            go.name = TabsName;
+            foreach (Component c in go.GetComponentsInChildren<Component>(true))
+            {
+                if (c is PlatformRemover) Object.DestroyImmediate(c);
+            }
+            foreach (Component c in go.GetComponentsInChildren<Component>(true))
+            {
+                if (c is WindowMetaTab || c is WindowMetaTabButtonsContainer || c is DragOrderElement || c is ScrollableButton || c is UnityEngine.EventSystems.EventTrigger) Object.DestroyImmediate(c);
+            }
+            foreach (Transform t in go.transform)
+            {
+                Button button = t.GetComponent<Button>();
+                if (button == null) continue;
+                bool self = t.name == ButtonName;
+                t.GetComponent<Image>().sprite = SpriteTextureLoader.getSprite(self ? "ui/tab_button_vertical_selected" : "ui/tab_button_vertical");
+                button.onClick = new Button.ButtonClickedEvent();
+                string tab = t.name;
+                if (!self) button.onClick.AddListener(() => OpenKingdomTab(tab));
+            }
+
+            // 和王国窗口里一样，贴着窗口左上角
+            RectTransform from = (RectTransform)source.parent;
+            RectTransform to = (RectTransform)background;
+            go.transform.SetParent(background, false);
+            Vector3 offset = source.localPosition - new Vector3(from.rect.xMin, from.rect.yMax);
+            go.transform.localPosition = new Vector3(to.rect.xMin, to.rect.yMax) + offset;
+            Object.Destroy(holder);
+        }
+
+        static void OpenKingdomTab(string pTab)
+        {
+            if (_kingdom == null || !_kingdom.isAlive()) return;
+            SelectedMetas.selected_kingdom = _kingdom;
+            ScrollWindow.showWindow(KingdomWindowId);
+            if (ScrollWindow._all_windows.TryGetValue(KingdomWindowId, out ScrollWindow kingdomWindow) && kingdomWindow != null)
+                kingdomWindow.tabs.showTab(pTab);
         }
 
         internal static void Tick()
