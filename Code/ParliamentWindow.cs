@@ -697,7 +697,9 @@ namespace DiplomacyOverhaul
 
             List<ParliamentClan> list = RulingFirst(pClans);
             const float rowH = 11f;
-            RectTransform votes = Scroll("scroll_votes", RightX, y, RightW, 3 * rowH, list.Count * rowH);
+            // 按钮贴着窗口底部，名单占满中间
+            float buttonsY = H - 30f;
+            RectTransform votes = Scroll("scroll_votes", RightX, y, RightW, buttonsY - 3f - y, list.Count * rowH);
             float ry = 0f;
             foreach (ParliamentClan pc in list)
             {
@@ -709,7 +711,7 @@ namespace DiplomacyOverhaul
                 Text(votes, LM.Get(yes ? "vd_parliament_yes" : "vd_parliament_no"), RightW - 40f, ry, 30f, rowH, 6, yes ? YesText : NoText, TextAnchor.MiddleRight);
                 ry += rowH;
             }
-            y += 3 * rowH + 3f;
+            y = buttonsY;
 
             float bw = (RightW - 50f - 8f) / 2f;
             RectTransform vote = Button(_parent, RightX, y, bw, 18f, "ui/special/special_buttonRed", () =>
