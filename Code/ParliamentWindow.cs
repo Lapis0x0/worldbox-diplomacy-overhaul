@@ -18,6 +18,7 @@ namespace DiplomacyOverhaul
         const string KingdomWindowId = "kingdom";
         public const string IconPath = "ui/Icons/vd_parliament";
         const float W = 560f, H = 330f;
+        const float Margin = 6f, TitleSpace = 20f;
 
         static readonly Color Ink = Hex("#f4f1e8");
         static readonly Color Muted = Hex("#cfc8b4");
@@ -42,6 +43,7 @@ namespace DiplomacyOverhaul
         static RectTransform _parent;
         static long _appliedSelected = -2;
         static Text _billWhen;
+        static float _shift;
 
         // 窗口的一块：记着上次建它时的数据指纹，按氏族调淡的图形和选中框
         class Section
@@ -247,12 +249,50 @@ namespace DiplomacyOverhaul
             LM.AddToCurrentLocale("vd_parliament_window_title", _kingdom.data.name);
             _window.titleText.GetComponent<LocalizedText>().setKeyAndUpdate("vd_parliament_window_title");
             ScrollWindow.showWindow(WindowId);
+            Fit();
             Refresh();
+        }
+
+        // 窗口比原版的宽，屏幕窄时放不下：在左边原版工具栏和屏幕右边之间，整体缩小到能完整显示（连同左侧页签栏），
+        // 还挤的话往右挪。窗口自身的位置归原版的滑入动画管，挪的是窗口里的各个部件
+        static void Fit()
+        {
+            Canvas canvas = _window.GetComponentInParent<Canvas>();
+            Transform parent = _window.transform.parent;
+            if (canvas == null || parent == null) return;
+            var corners = new Vector3[4];
+            ((RectTransform)canvas.transform).GetWorldCorners(corners);
+            float left = parent.InverseTransformPoint(corners[0]).x;
+            float right = parent.InverseTransformPoint(corners[2]).x;
+            float height = parent.InverseTransformPoint(corners[2]).y - parent.InverseTransformPoint(corners[0]).y;
+            // 工具栏随窗口打开从屏幕外滑进来，按它滑到的位置算，不看动画走到哪了
+            RectTransform toolbar = canvas.transform.Find("WindowToolbarContainer/WindowToolbar") as RectTransform;
+            UiMover mover = toolbar != null && toolbar.gameObject.activeInHierarchy ? toolbar.GetComponent<UiMover>() : null;
+            if (mover != null && mover.visible)
+            {
+                Vector3 edge = toolbar.parent.TransformPoint(mover.initPos + new Vector3(toolbar.rect.xMax * toolbar.localScale.x, 0f));
+                left = Mathf.Max(left, parent.InverseTransformPoint(edge).x);
+            }
+            // 窗口居中，按伸得最远的一边算（页签栏伸在背景左边外面）
+            float side = W / 2f;
+            foreach (Transform c in _window.transform.Find("Background"))
+            {
+                if (!c.gameObject.activeSelf) continue;
+                Rect r = ((RectTransform)c).rect;
+                side = Mathf.Max(side, -(c.localPosition.x + r.xMin), c.localPosition.x + r.xMax);
+            }
+            side += Margin;
+            float s = Mathf.Min(1f, (right - left) / (2f * side), height / (H + 2f * (TitleSpace + Margin)));
+            float shift = Mathf.Max(0f, left - (-s * side)) / s;
+            _window.transform.localScale = new Vector3(s, s, 1f);
+            foreach (Transform c in _window.transform) c.localPosition += new Vector3(shift - _shift, 0f, 0f);
+            _shift = shift;
         }
 
         static void Create()
         {
             if (_window != null) return;
+            _shift = 0f;
             _window = WindowCreator.CreateEmptyWindow(WindowId, WindowId);
             // 新建的窗口会先播一段收起动画，动画没完原版不接受打开窗口，直接放完
             ScrollWindow.finishAnimations();
@@ -348,6 +388,7 @@ namespace DiplomacyOverhaul
                 _window.clickHide();
                 return;
             }
+            Fit();
             Refresh();
         }
 
