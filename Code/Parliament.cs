@@ -114,7 +114,7 @@ namespace DiplomacyOverhaul
             return pX < 0f ? Faction.OldHouses : Faction.Republican;
         }
 
-        // 保守-激进：君主国的王室偏保守，其余偏激进，共和国各家族都偏激进；野心勃勃、暴躁偏激进，知足、诚实偏保守；族长越老越保守。
+        // 保守-激进：占着城的都算当权，偏保守，君主国的王室更保守；野心勃勃、暴躁偏激进，知足、诚实偏保守；族长越老越保守。
         // 集权-分权：执政的家族偏集权，占着地方城市的偏分权，占的城越多越偏。
         // 族长占一半，族人的平均值占一半；每个氏族再有一点自己的家风
         static void Stance(Kingdom pKingdom, ParliamentClan pClan)
@@ -132,8 +132,8 @@ namespace DiplomacyOverhaul
             }
             float membersX = n > 0 ? sum / n : 0f;
 
-            // 共和国没有王室可以维护，各家族都偏向共和；执政只是轮流坐庄，不算当权
-            float standing = Government.IsRepublic(pKingdom) ? 0.4f : pClan.ruling ? -0.4f : 0.15f;
+            // 共和国的执政只是轮流坐庄，和其他城主家族一样
+            float standing = pClan.ruling && !Government.IsRepublic(pKingdom) ? -0.4f : -0.1f;
             float x = 0.5f * chiefX + 0.5f * membersX + standing + HouseStyle(clan.id, 1);
             float y = (pClan.ruling ? 0.35f : -0.15f - Mathf.Min(0.1f * pClan.cities.Count, 0.45f)) + HouseStyle(clan.id, 2) * 0.8f;
             pClan.x = Mathf.Clamp(x, -1f, 1f);
@@ -166,6 +166,17 @@ namespace DiplomacyOverhaul
 
         // ---------- 表决 ----------
 
+        // 改政体时各家族的切身利益，加在议案通过后的距离上（正数是吃亏）：
+        // 改君主制，执政家族会成为王室，其他家族要受人统治；改共和制，王室失去王位，其他家族有机会轮流执政
+        const float FormInterest = 0.25f;
+
+        static float Interest(Kingdom pKingdom, ParliamentClan pClan, Policy pPolicy, int pOption)
+        {
+            if (pPolicy.id != Policies.Form) return 0f;
+            bool toMonarchy = pOption == (int)GovForm.Monarchy;
+            return pClan.ruling == toMonarchy ? -FormInterest : FormInterest;
+        }
+
         static float Distance(float pX, float pY, (float x, float y) pPoint)
         {
             float dx = pX - pPoint.x, dy = pY - pPoint.y;
@@ -180,7 +191,7 @@ namespace DiplomacyOverhaul
             var after = Policies.Coordinate(pKingdom, pBill.policy, pBill.option);
             foreach (ParliamentClan pc in pClans)
             {
-                bool yes = Distance(pc.x, pc.y, after) < Distance(pc.x, pc.y, before);
+                bool yes = Distance(pc.x, pc.y, after) + Interest(pKingdom, pc, pBill.policy, pBill.option) < Distance(pc.x, pc.y, before);
                 result.votes[pc.clan] = yes;
                 if (yes) result.yes += pc.seats;
                 else result.no += pc.seats;
@@ -259,7 +270,7 @@ namespace DiplomacyOverhaul
                 for (int o = 0; o < p.count; o++)
                 {
                     if (o == current) continue;
-                    float d = Distance(proposer.x, proposer.y, Policies.Coordinate(pKingdom, p, o));
+                    float d = Distance(proposer.x, proposer.y, Policies.Coordinate(pKingdom, p, o)) + Interest(pKingdom, proposer, p, o);
                     if (d > bestDistance + 0.001f) continue;
                     if (d < bestDistance - 0.001f)
                     {
