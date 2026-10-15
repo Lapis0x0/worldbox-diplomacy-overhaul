@@ -441,23 +441,18 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 选中的氏族：族长、立场、占的城
+        // 选中的氏族：族长和占的城
         static void Detail(List<ParliamentClan> pClans, float pX, float pY)
         {
             ParliamentClan pc = pClans.Find(c => c.clan.id == _selected);
             if (pc == null) return;
+            var parts = new List<string>();
             Actor chief = pc.clan.getChief();
-            string line1 = $"<color=#ffffff>{pc.clan.name}</color>";
-            if (chief != null && chief.isAlive()) line1 += $" · {LM.Get("vd_parliament_chief")} <color=#8fb0ff>{chief.getName()}</color>";
-            line1 += " · " + LM.Get(FactionKey(pc.faction)) + LM.Get("vd_parliament_stance")
-                .Replace("$x$", LM.Get(pc.x < -0.3f ? "vd_parliament_lean_conservative" : pc.x > 0.3f ? "vd_parliament_lean_radical" : "vd_parliament_lean_middle"))
-                .Replace("$y$", LM.Get(pc.y > 0.3f ? "vd_parliament_lean_central" : pc.y < -0.3f ? "vd_parliament_lean_local" : "vd_parliament_lean_middle"));
+            if (chief != null && chief.isAlive()) parts.Add($"{LM.Get("vd_parliament_chief")} <color=#8fb0ff>{chief.getName()}</color>");
             var cities = new List<string>();
-            foreach (City c in pc.cities)
-                cities.Add(LM.Get("vd_parliament_city").Replace("$city$", c.data.name).Replace("$pop$", c.getPopulationPeople().ToString()));
-            string line2 = LM.Get("vd_parliament_cities") + string.Join(LM.Get("vd_parliament_separator"), cities);
-            Text(_root, line1, pX, pY, LeftW, 10f, 6, Muted, TextAnchor.MiddleLeft);
-            Text(_root, line2, pX, pY + 10f, LeftW, 10f, 6, Muted, TextAnchor.MiddleLeft).GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
+            foreach (City c in pc.cities) cities.Add(c.data.name);
+            if (cities.Count > 0) parts.Add(string.Join(LM.Get("vd_parliament_separator"), cities));
+            Text(_root, string.Join(" · ", parts), pX, pY, LeftW, 20f, 6, Muted, TextAnchor.UpperLeft).GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
         }
 
         // ---------- 右边：政策和议案 ----------
