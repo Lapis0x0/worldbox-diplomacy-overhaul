@@ -94,10 +94,16 @@ namespace DiplomacyOverhaul
             }
             foreach (Button b in Resources.FindObjectsOfTypeAll<Button>())
             {
-                if (b != null && b.name == ButtonName) Object.Destroy(b.gameObject);
+                if (b != null && b.name == ButtonName) Object.DestroyImmediate(b.gameObject);
             }
             _window = null;
             _root = null;
+            // 按钮平时在王国窗口显示概览页时加上，重开窗口可能直接停在别的页签，这里马上加回去
+            if (ScrollWindow._all_windows.TryGetValue(KingdomWindowId, out ScrollWindow kingdomWindow) && kingdomWindow != null)
+            {
+                KingdomWindow tabs = kingdomWindow.GetComponent<KingdomWindow>();
+                if (tabs != null) EnsureButton(tabs);
+            }
         }
 
         // ---------- 王国窗口里的按钮 ----------
