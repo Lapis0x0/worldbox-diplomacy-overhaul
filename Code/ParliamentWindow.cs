@@ -373,6 +373,23 @@ namespace DiplomacyOverhaul
         {
             _selected = _selected == pClan ? -1 : pClan;
             Refresh();
+            ScrollToSelected();
+        }
+
+        // 选中的氏族不在列表的可见范围里时，把列表滚过去
+        static void ScrollToSelected()
+        {
+            if (_selected < 0 || !_clans.frames.TryGetValue(_selected, out GameObject frame) || frame == null) return;
+            var row = (RectTransform)frame.transform.parent;
+            var content = (RectTransform)row.parent;
+            ScrollRect scroll = content.parent.GetComponent<ScrollRect>();
+            float viewH = ((RectTransform)scroll.transform).rect.height;
+            float top = -row.anchoredPosition.y, bottom = top + row.rect.height;
+            float y = content.anchoredPosition.y;
+            if (top < y) y = top;
+            else if (bottom > y + viewH) y = bottom - viewH;
+            scroll.StopMovement();
+            content.anchoredPosition = new Vector2(content.anchoredPosition.x, y);
         }
 
         // 不随数据变的部分：三个分区标题
@@ -434,13 +451,18 @@ namespace DiplomacyOverhaul
             RectTransform area = Box(_parent, pX + 2f, pY, aw, ah);
             int total = Parliament.TotalSeats(pClans);
             List<Vector3> seats = SeatLayout(total, aw, ah, out float size);
+            var owners = new long[seats.Count];
             int s = 0;
             foreach (ParliamentClan pc in pClans)
             {
                 Color color = FactionColor(pc.faction);
                 for (int i = 0; i < pc.seats && s < seats.Count; i++, s++)
+                {
                     Dimmable(pc, Swatch(area, seats[s].x - size / 2f, seats[s].y - size / 2f, size, color, 1f), 0.25f);
+                    owners[s] = pc.clan.id;
+                }
             }
+            SeatClicks(area, seats, owners, size);
 
             var bySeats = new Dictionary<Faction, int>();
             foreach (ParliamentClan pc in pClans) bySeats[pc.faction] = (bySeats.TryGetValue(pc.faction, out int n) ? n : 0) + pc.seats;
@@ -454,6 +476,30 @@ namespace DiplomacyOverhaul
             Text(area, LM.Get(FactionKey(top)) + " " + topSeats, 0f, ah - 24f, aw, 18f, 14, FactionColor(top), TextAnchor.MiddleCenter);
             Text(area, LM.Get("vd_parliament_radical"), 0f, ah + 1f, 40f, 9f, 6, Muted, TextAnchor.MiddleLeft);
             Text(area, LM.Get("vd_parliament_conservative"), aw - 40f, ah + 1f, 40f, 9f, 6, Muted, TextAnchor.MiddleRight);
+        }
+
+        // 点半圆里的议席，选中它所属的氏族：找离点击位置最近的议席
+        static void SeatClicks(RectTransform pArea, List<Vector3> pSeats, long[] pOwners, float pSize)
+        {
+            Image hit = pArea.gameObject.AddComponent<Image>();
+            hit.color = new Color(0f, 0f, 0f, 0f);
+            var trigger = pArea.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var click = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerClick };
+            click.callback.AddListener(data =>
+            {
+                var e = (UnityEngine.EventSystems.PointerEventData)data;
+                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(pArea, e.position, e.pressEventCamera, out Vector2 local)) return;
+                var point = new Vector2(local.x, -local.y);
+                int best = -1;
+                float bestDist = pSize;
+                for (int i = 0; i < pSeats.Count; i++)
+                {
+                    float d = Vector2.Distance(point, pSeats[i]);
+                    if (d < bestDist) { bestDist = d; best = i; }
+                }
+                if (best >= 0) Select(pOwners[best]);
+            });
+            trigger.triggers.Add(click);
         }
 
         // 一、两座城的国家不画半圆：「某某家独掌朝政」「某某家主导朝政」
