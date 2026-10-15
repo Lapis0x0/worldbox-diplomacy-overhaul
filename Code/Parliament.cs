@@ -133,12 +133,15 @@ namespace DiplomacyOverhaul
             }
         }
 
+        const float MeritCentral = 0.2f;
+
         // 刚建的家族按 10 年算，免得 0 岁的家族把倍数拉得没边
         static float LogAge(Clan pClan) => Mathf.Log(Date.getYearsSince(pClan.data.created_time) + 10f);
 
         // 保守-激进：门第，比议会里的平均老 4 倍 -0.3、新 4 倍 +0.3；君主国的王室再 -0.2；
         // 野心勃勃、暴躁偏激进，知足、诚实偏保守，族长越老越保守（族长占一半，族人的平均值占一半）。
-        // 集权-分权：离首都的远近，占的城平均离首都越近越集权，最近 +0.3、和最远的城一样远 -0.3；王室再 +0.2。
+        // 集权-分权：离首都的远近，占的城平均离首都越近越集权，最近 +0.3、和最远的城一样远 -0.3；王室再 +0.2；
+        // 城主是按唯才是举任命的城，按占的城里的比例最多再 +0.2。
         // 每个氏族再有一点自己的家风
         static void Stance(Kingdom pKingdom, ParliamentClan pClan, StanceContext pContext)
         {
@@ -164,7 +167,12 @@ namespace DiplomacyOverhaul
             foreach (City city in pClan.cities) distance += Vector2.Distance(city.last_city_center, pContext.capital);
             distance /= Mathf.Max(1, pClan.cities.Count);
             float near = pContext.farthest > 0f ? 0.3f - 0.6f * Mathf.Clamp01(distance / pContext.farthest) : 0f;
-            float y = near + (pClan.ruling ? 0.2f : 0f) + HouseStyle(clan.id, 2);
+            // 靠唯才是举当上城主的家族，城是朝廷给的，偏向集权
+            int merit = 0;
+            foreach (City city in pClan.cities)
+                if (Offices.IsMeritAppointee(city)) merit++;
+            float promoted = MeritCentral * merit / Mathf.Max(1, pClan.cities.Count);
+            float y = near + (pClan.ruling ? 0.2f : 0f) + promoted + HouseStyle(clan.id, 2);
 
             pClan.x = Mathf.Clamp(x, -1f, 1f);
             pClan.y = Mathf.Clamp(y, -1f, 1f);
@@ -319,7 +327,7 @@ namespace DiplomacyOverhaul
             pBill.policy.Set(pKingdom, pBill.option);
             ClearBill(pKingdom);
             WorldLogs.Add(WorldLogs.PolicyEnacted, Location(pKingdom), pKingdom.king,
-                new[] { pKingdom.data.name, LM.Get(pBill.policy.OptionKey(pBill.option)) }, new[] { pKingdom, pKingdom });
+                new[] { pKingdom.data.name, LM.Get(pBill.policy.OptionName(pKingdom, pBill.option)) }, new[] { pKingdom, pKingdom });
         }
 
         // 交付表决：现在就按议席投票，通过就生效；不管通不通过，议案都撤下

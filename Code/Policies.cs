@@ -55,6 +55,14 @@ namespace DiplomacyOverhaul
         public float Position(int pOption) => count <= 1 ? 0f : -1f + 2f * pOption / (count - 1);
 
         public string OptionKey(int pOption) => id + "_" + pOption;
+
+        // 共和国没有王室，有的选项换一个名字
+        public string OptionName(Kingdom pKingdom, int pOption)
+        {
+            string key = OptionKey(pOption);
+            if (Government.IsRepublic(pKingdom) && LocalizedTextManager.stringExists(key + "_republic")) key += "_republic";
+            return key;
+        }
     }
 
     public static class Policies
@@ -64,6 +72,8 @@ namespace DiplomacyOverhaul
         public const string Tax = "vd_pol_tax";
         public const string Territory = "vd_pol_territory";
         public const string Form = "vd_pol_form";
+        public const string Office = "vd_pol_office";
+        public const string Customs = "vd_pol_customs";
         public const string Army = "vd_pol_army";
         public const string Navy = "vd_pol_navy";
         public const string War = "vd_pol_war";
@@ -74,6 +84,10 @@ namespace DiplomacyOverhaul
         public const int TaxFarming = 0, TaxShared = 1, TaxCentral = 2;
         // 领地制度：分封制、有限分封、中央直辖
         public const int Feudal = 0, LimitedFeudal = 1, DirectRule = 2;
+        // 选官制度：世袭、宗室优先（原版）、唯才是举
+        public const int Hereditary = 0, RoyalFirst = 1, Merit = 2;
+        // 教化政策：因俗而治、顺其自然、同文同教
+        public const int LocalCustoms = 0, NaturalCourse = 1, Uniformity = 2;
         // 海军方针：陆权优先、海陆并重、海权优先
         public const int LandPower = 0, BalancedForces = 1, SeaPower = 2;
         // 外交路线：和平主义、均势政策、扩张主义
@@ -107,6 +121,8 @@ namespace DiplomacyOverhaul
                 // 附庸不分封，这一项对它没有意义
                 shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
             });
+            Add(new Policy { id = Office, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, icon = "ui/Icons/iconLeaders" });
+            Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
             Add(new Policy
             {
                 id = Form, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, count = 2, icon = "ui/Icons/iconKings",
@@ -210,6 +226,11 @@ namespace DiplomacyOverhaul
         public static float AppanageFactor(Kingdom pKingdom) => AppanageFactors[Value(pKingdom, Territory)];
         public static float ReclaimFactor(Kingdom pKingdom) => ReclaimFactors[Value(pKingdom, Territory)];
 
+        // 教化政策：原版忠诚里文化、语言、宗教不同的扣分
+        static readonly float[] ForeignLoyaltyFactors = { 0.5f, 1f, 1.5f };
+
+        public static float ForeignLoyaltyFactor(Kingdom pKingdom) => ForeignLoyaltyFactors[Value(pKingdom, Customs)];
+
         // 海军方针：每个港口运输船的上限。中间一档是原版的 1 艘
         public const string TransportBoat = "boat_type_transport";
         static readonly int[] TransportLimit = { 0, 1, 3 };
@@ -259,6 +280,11 @@ namespace DiplomacyOverhaul
                     // 共和国没有王室，不分封宗室
                     if (!republic) rows.Add(("vd_eff_appanage", Change(AppanageFactors[pOption])));
                     rows.Add(("vd_eff_reclaim", Change(ReclaimFactors[pOption])));
+                    break;
+                case Customs:
+                    if (pOption == NaturalCourse) break;
+                    if (pOption == Uniformity) rows.Add(("vd_eff_uniformity", Percent(DiplomacyOverhaul.Assimilation.YearlyShare)));
+                    rows.Add(("vd_eff_foreign_loyalty", Change(ForeignLoyaltyFactors[pOption])));
                     break;
                 case Navy:
                     rows.Add(("vd_eff_transports", TransportLimit[pOption].ToString()));

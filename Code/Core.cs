@@ -218,9 +218,19 @@ namespace DiplomacyOverhaul
                 translation_key_negative = "loyalty_vd_republic",
                 calc = Government.CityLoyalty
             });
+            // 原版的文化、语言、宗教：扣的部分按教化政策变
+            SetLoyalty("culture", Assimilation.CultureLoyalty);
+            SetLoyalty("language", Assimilation.LanguageLoyalty);
+            SetLoyalty("religion", Assimilation.ReligionLoyalty);
             // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉
             LoyaltyAsset conquest = AssetManager.loyalty_library.get("new_conquest");
             if (conquest != null) conquest.calc = _ => 0;
+        }
+
+        static void SetLoyalty(string pId, LoyaltyDelegateCalc pCalc)
+        {
+            LoyaltyAsset asset = AssetManager.loyalty_library.get(pId);
+            if (asset != null) asset.calc = pCalc;
         }
 
         static void AddPlot()

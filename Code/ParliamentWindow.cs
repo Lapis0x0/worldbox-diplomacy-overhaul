@@ -798,7 +798,7 @@ namespace DiplomacyOverhaul
                 if (!p.active) icon.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.4f);
                 Text(head, LM.Get(p.id), 23f, 0f, 90f, 22f, 7, p.active ? Ink : Muted, TextAnchor.MiddleLeft);
                 int current = p.Get(_kingdom);
-                string currentName = LM.Get(p.OptionKey(current));
+                string currentName = LM.Get(p.OptionName(_kingdom, current));
                 float pillW = Measure(currentName, 6) + 14f;
                 RectTransform pill = Sliced(head, p.active ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray",
                     RightW - 30f - pillW, 4f, pillW, 14f);
@@ -814,7 +814,7 @@ namespace DiplomacyOverhaul
                         bool isCurrent = o == current;
                         RectTransform ob = Button(slot, 23f + o * (ow + 4f), 23f, ow, 15f,
                             isCurrent ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray", () => Pick(policy, option));
-                        Text(ob, LM.Get(p.OptionKey(o)), 0f, 0f, ow, 15f, 6, Color.white, TextAnchor.MiddleCenter);
+                        Text(ob, LM.Get(p.OptionName(_kingdom, o)), 0f, 0f, ow, 15f, 6, Color.white, TextAnchor.MiddleCenter);
                         if (bill != null && bill.policy == p && bill.option == o) Frame(ob, -1.5f);
                         OptionTip(ob, policy, option);
                     }
@@ -860,8 +860,8 @@ namespace DiplomacyOverhaul
             }
 
             RectTransform title = Sliced(_parent, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 18f);
-            string titleText = LM.Get(pBill.policy.id) + LM.Get("vd_parliament_colon") + LM.Get(pBill.policy.OptionKey(pBill.policy.Get(_kingdom)))
-                               + " → " + LM.Get(pBill.policy.OptionKey(pBill.option));
+            string titleText = LM.Get(pBill.policy.id) + LM.Get("vd_parliament_colon") + LM.Get(pBill.policy.OptionName(_kingdom, pBill.policy.Get(_kingdom)))
+                               + " → " + LM.Get(pBill.policy.OptionName(_kingdom, pBill.option));
             Text(title, titleText, 7f, 0f, RightW - 14f, 18f, 7, Ink, TextAnchor.MiddleLeft);
             _billWhen = Text(title, BillWhen(pBill, result), 7f, 0f, RightW - 14f, 18f, 6, Muted, TextAnchor.MiddleRight).GetComponent<Text>();
             y += 20f;
@@ -1009,7 +1009,7 @@ namespace DiplomacyOverhaul
             var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
             enter.callback.AddListener(_ =>
             {
-                TipName = pPolicy.OptionKey(pOption);
+                TipName = pPolicy.OptionName(_kingdom, pOption);
                 TipEffects = Policies.Effects(_kingdom, pPolicy, pOption);
                 Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = TipName, tip_description = DescriptionKey(pPolicy, pOption) });
             });
