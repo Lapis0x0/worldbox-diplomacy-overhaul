@@ -299,5 +299,16 @@
   "vd_pol_overlord_2_info": "国家甘愿归附宗主",
   "opinion_vd_autonomy": "自治特许",
   "opinion_vd_assimilation": "强制同化",
-  "vd_log_policy": "$kingdom$ 推行$policy$"
+  "vd_log_policy": "$kingdom$ 推行$policy$",
+  "vd_pol_army": "兵制",
+  "vd_pol_army_0": "地方私兵",
+  "vd_pol_army_1": "双轨兵制",
+  "vd_pol_army_2": "中央常备军",
+  "vd_pol_navy": "海军方针",
+  "vd_pol_navy_0": "陆权优先",
+  "vd_pol_navy_0_info": "港口不再建造运输船",
+  "vd_pol_navy_1": "海陆并重",
+  "vd_pol_navy_1_info": "港口照常建造运输船",
+  "vd_pol_navy_2": "海权优先",
+  "vd_pol_navy_2_info": "港口大量建造运输船"
 }

@@ -112,6 +112,12 @@ namespace DiplomacyOverhaul
 
         // ---------- 窗口 ----------
 
+        public static void Open(Kingdom pKingdom, PolicyTab pTab)
+        {
+            _tab = pTab;
+            Open(pKingdom);
+        }
+
         public static void Open(Kingdom pKingdom)
         {
             if (pKingdom == null || !pKingdom.isAlive()) return;
@@ -402,7 +408,7 @@ namespace DiplomacyOverhaul
             Header(RightX, Top, RightW, LM.Get("vd_parliament_policies"), "ui/Icons/iconKings");
             Bill bill = Parliament.GetBill(_kingdom);
 
-            // 页签：第一版没有军事页
+            // 页签：只显示有政策的
             var tabs = new List<PolicyTab>();
             foreach (PolicyTab t in new[] { PolicyTab.Domestic, PolicyTab.Military, PolicyTab.Diplomacy })
             {
@@ -436,20 +442,25 @@ namespace DiplomacyOverhaul
                 bool open = p.id == _open;
                 float h = open ? 42f : 22f;
                 RectTransform slot = Sliced(content, "ui/special/windowInnerSlicedRound", 0f, y, RightW - 8f, h);
-                RectTransform head = Button(slot, 0f, 0f, RightW - 8f, 22f, null, () =>
-                {
-                    _open = _open == policy.id ? null : policy.id;
-                    Rebuild();
-                });
-                Icon(head, p.icon, 5f, 4f, 14f);
-                Text(head, LM.Get(p.id), 23f, 0f, 90f, 22f, 7, Ink, TextAnchor.MiddleLeft);
+                // 还没有效果的政策灰着，不能点开
+                RectTransform head = p.active
+                    ? Button(slot, 0f, 0f, RightW - 8f, 22f, null, () =>
+                    {
+                        _open = _open == policy.id ? null : policy.id;
+                        Rebuild();
+                    })
+                    : Box(slot, 0f, 0f, RightW - 8f, 22f);
+                RectTransform icon = Icon(head, p.icon, 5f, 4f, 14f);
+                if (!p.active) icon.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.4f);
+                Text(head, LM.Get(p.id), 23f, 0f, 90f, 22f, 7, p.active ? Ink : Muted, TextAnchor.MiddleLeft);
                 int current = p.Get(_kingdom);
                 string currentName = LM.Get(p.OptionKey(current));
                 float pillW = Measure(currentName, 6) + 14f;
-                RectTransform pill = Sliced(head, "ui/special/special_buttonRed", RightW - 30f - pillW, 4f, pillW, 14f);
-                Text(pill, currentName, 0f, 0f, pillW, 14f, 6, Color.white, TextAnchor.MiddleCenter);
+                RectTransform pill = Sliced(head, p.active ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray",
+                    RightW - 30f - pillW, 4f, pillW, 14f);
+                Text(pill, currentName, 0f, 0f, pillW, 14f, 6, p.active ? Color.white : Muted, TextAnchor.MiddleCenter);
                 if (bill != null && bill.policy == p) Frame(pill, -1.5f);
-                Text(head, open ? "▲" : "▼", RightW - 24f, 0f, 12f, 22f, 6, Muted, TextAnchor.MiddleCenter);
+                if (p.active) Text(head, open ? "▲" : "▼", RightW - 24f, 0f, 12f, 22f, 6, Muted, TextAnchor.MiddleCenter);
                 if (open)
                 {
                     float ow = (RightW - 8f - 23f - 6f - 4f * (p.count - 1)) / p.count;

@@ -299,5 +299,16 @@
   "vd_pol_overlord_2_info": "The kingdom gladly submits to its overlord",
   "opinion_vd_autonomy": "Charter of autonomy",
   "opinion_vd_assimilation": "Forced assimilation",
-  "vd_log_policy": "$kingdom$ adopts $policy$"
+  "vd_log_policy": "$kingdom$ adopts $policy$",
+  "vd_pol_army": "Army",
+  "vd_pol_army_0": "Local Levies",
+  "vd_pol_army_1": "Dual Command",
+  "vd_pol_army_2": "Standing Army",
+  "vd_pol_navy": "Naval Doctrine",
+  "vd_pol_navy_0": "Land Power",
+  "vd_pol_navy_0_info": "Ports stop building transport ships",
+  "vd_pol_navy_1": "Balanced Forces",
+  "vd_pol_navy_1_info": "Ports build transport ships as usual",
+  "vd_pol_navy_2": "Sea Power",
+  "vd_pol_navy_2_info": "Ports build many transport ships"
 }

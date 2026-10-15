@@ -29,6 +29,8 @@ namespace DiplomacyOverhaul
         public string icon;
         // 通过要多少议席赞成
         public float threshold = 0.5f;
+        // 还没有效果的政策：界面里摆出来但不能点，不提案，不算进国家坐标
+        public bool active = true;
         public Func<Kingdom, bool> shown = _ => true;
         public Func<Kingdom, bool> proposable;
         public Func<Kingdom, int> read;
@@ -47,7 +49,7 @@ namespace DiplomacyOverhaul
             else pKingdom.data.set(id, pOption);
         }
 
-        public bool CanPropose(Kingdom pKingdom) => shown(pKingdom) && (proposable == null || proposable(pKingdom));
+        public bool CanPropose(Kingdom pKingdom) => active && shown(pKingdom) && (proposable == null || proposable(pKingdom));
 
         // 选项在轴上的位置：三个选项是 -1、0、+1，两个选项是 -1、+1
         public float Position(int pOption) => count <= 1 ? 0f : -1f + 2f * pOption / (count - 1);
@@ -62,6 +64,8 @@ namespace DiplomacyOverhaul
         public const string Tax = "vd_pol_tax";
         public const string Territory = "vd_pol_territory";
         public const string Form = "vd_pol_form";
+        public const string Army = "vd_pol_army";
+        public const string Navy = "vd_pol_navy";
         public const string War = "vd_pol_war";
         public const string Vassals = "vd_pol_vassals";
         public const string Overlord = "vd_pol_overlord";
@@ -70,6 +74,8 @@ namespace DiplomacyOverhaul
         public const int TaxFarming = 0, TaxShared = 1, TaxCentral = 2;
         // 领地制度：分封制、有限分封、中央直辖
         public const int Feudal = 0, LimitedFeudal = 1, DirectRule = 2;
+        // 海军方针：陆权优先、海陆并重、海权优先
+        public const int LandPower = 0, BalancedForces = 1, SeaPower = 2;
         // 外交路线：和平主义、均势政策、扩张主义
         public const int Pacifism = 0, Balance = 1, Expansion = 2;
         // 附庸政策：自治特许、封臣契约、强制同化
@@ -109,6 +115,9 @@ namespace DiplomacyOverhaul
                 read = k => (int)Government.Form(k),
                 write = (k, v) => Regime.Reform(k, (GovForm)v)
             });
+            // 兵制要等中央军（WORLD-26），先摆出来
+            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, icon = "ui/Icons/iconArmy", active = false });
+            Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
             Add(new Policy
             {
                 id = War, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Radical, icon = "ui/Icons/iconWar",
@@ -180,7 +189,7 @@ namespace DiplomacyOverhaul
             int nx = 0, ny = 0;
             foreach (Policy p in All)
             {
-                if (!p.shown(pKingdom)) continue;
+                if (!p.active || !p.shown(pKingdom)) continue;
                 int option = p == pChanged ? pOption : p.Get(pKingdom);
                 float pos = p.Position(option);
                 if (p.axis == PolicyAxis.Radical) { sx += pos; nx++; }
@@ -200,6 +209,18 @@ namespace DiplomacyOverhaul
                 case DirectRule: return 0f;
                 default: return 1f;
             }
+        }
+
+        // 海军方针：每个港口运输船的上限。中间一档是原版的 1 艘
+        public const string TransportBoat = "boat_type_transport";
+        static readonly int[] TransportLimit = { 0, 1, 3 };
+        public static readonly int MaxTransports = 3;
+
+        public static int TransportCap(Docks pDocks)
+        {
+            Kingdom k = pDocks?.building?.city?.kingdom;
+            if (k == null || !k.isAlive()) return 1;
+            return TransportLimit[Value(k, Navy)];
         }
 
         // 外交路线：停战期和敢挑的对手的倍数
@@ -233,6 +254,58 @@ namespace DiplomacyOverhaul
         static bool Prefix(Kingdom __instance, ref float __result)
         {
             __result = Policies.TributeRate(__instance);
+            return false;
+        }
+    }
+
+    // 海军方针：原版每个港口每种船最多 1 艘，写死在这几个方法里。运输船的上限换成政策给的数；
+    // 「超额」只按最高的上限算，政策改小时已有的船不会被原版当成超额炸掉
+    [HarmonyPatch(typeof(Docks), nameof(Docks.isFull))]
+    static class Patch_DocksFull
+    {
+        static bool Prefix(Docks __instance, string pType, ref bool __result)
+        {
+            if (pType != Policies.TransportBoat) return true;
+            __result = __instance.countBoatTypes(pType) >= Policies.TransportCap(__instance);
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(Docks), nameof(Docks.isOverfilled))]
+    static class Patch_DocksOverfilled
+    {
+        static bool Prefix(Docks __instance, string pType, ref bool __result)
+        {
+            if (pType != Policies.TransportBoat) return true;
+            __result = __instance.countBoatTypes(pType) > Policies.MaxTransports;
+            return false;
+        }
+    }
+
+    // 照抄原版造船，只把「这种船已经有 1 艘就不造」换成按上限
+    [HarmonyPatch(typeof(Docks), nameof(Docks.buildBoatFromHere))]
+    static class Patch_DocksBuildBoat
+    {
+        static bool Prefix(Docks __instance, City pCity, ref Actor __result)
+        {
+            __result = null;
+            ActorAsset asset = __instance.building.asset.getRandomBoatAssetToBuild(pCity);
+            if (asset == null) return false;
+            int limit = asset.boat_type == Policies.TransportBoat ? Policies.TransportCap(__instance) : 1;
+            if (__instance.countBoatTypes(asset.boat_type) >= limit) return false;
+            if (!pCity.hasEnoughResourcesFor(asset.cost)) return false;
+            if (__instance.tiles_ocean.Count == 0)
+            {
+                __instance.recalculateOceanTiles();
+                return false;
+            }
+            WorldTile tile = __instance.tiles_ocean.GetRandom();
+            if (!tile.region.island.goodForDocks()) return false;
+            Actor boat = World.world.units.createNewUnit(asset.id, tile);
+            if (boat == null) return false;
+            __instance.addBoatToDock(boat);
+            pCity.spendResourcesForBuildingAsset(asset.cost);
+            __result = boat;
             return false;
         }
     }

@@ -31,7 +31,9 @@ namespace DiplomacyOverhaul.Perf
     //   gc                       强制完整回收，打印回收前后的占用（得到活对象的大小）
     //   parl [list [数量]]        列出城市最多的几个国家的议会：议席、氏族立场、政策、议案
     //   parl stats               各项政策每个选项有多少国家在用
-    //   parl show|session|open [国家 id 或名字]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口
+    //   parl set <国家> <政策 id> <选项>   直接改一个国家的政策
+    //   parl boats [数量]         城市最多的几个国家每个港口的运输船数
+    //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy）
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {

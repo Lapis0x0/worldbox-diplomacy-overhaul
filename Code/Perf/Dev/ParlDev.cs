@@ -12,7 +12,32 @@ namespace DiplomacyOverhaul.Perf
             {
                 Kingdom target = Find(a.Length > 2 ? a[2] : null);
                 SelectedMetas.selected_kingdom = target;
-                ParliamentWindow.Open(target);
+                if (a.Length > 3) ParliamentWindow.Open(target, (PolicyTab)System.Enum.Parse(typeof(PolicyTab), a[3], true));
+                else ParliamentWindow.Open(target);
+                return;
+            }
+            if (mode == "set")
+            {
+                // parl set <国家> <政策 id> <选项>
+                Kingdom target = Find(a[2]);
+                Policy policy = Policies.Get(a[3]);
+                if (target == null || policy == null) { Dev.Log("  ! kingdom or policy not found"); return; }
+                policy.Set(target, int.Parse(a[4]));
+                Dev.Log($"  {target.data.name} {policy.id} = {policy.Get(target)}");
+                return;
+            }
+            if (mode == "boats")
+            {
+                // 各国港口里运输船的数量
+                foreach (Kingdom k in World.world.kingdoms.OrderByDescending(k => k.countCities()).Take(a.Length > 2 ? int.Parse(a[2]) : 8))
+                {
+                    if (!k.isAlive() || !k.isCiv()) continue;
+                    var counts = new System.Collections.Generic.List<int>();
+                    foreach (City city in k.getCities())
+                    foreach (Building b in city.buildings)
+                        if (b.component_docks != null && !b.isRekt()) counts.Add(b.component_docks.countBoatTypes(Policies.TransportBoat));
+                    Dev.Log($"  {k.data.name} navy={Policies.Value(k, Policies.Navy)} docks={counts.Count} transports=[{string.Join(",", counts)}]");
+                }
                 return;
             }
             if (mode == "stats")
