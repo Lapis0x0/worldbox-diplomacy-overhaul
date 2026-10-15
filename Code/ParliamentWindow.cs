@@ -14,6 +14,7 @@ namespace DiplomacyOverhaul
         const string WindowId = "vd_parliament";
         const string ButtonName = "vd_parliament_button";
         const string TabsName = "vd_parliament_tabs";
+        const string SideName = "vd_parliament_side";
         const string KingdomWindowId = "kingdom";
         public const string IconPath = "ui/Icons/vd_parliament";
         const float W = 560f, H = 330f;
@@ -96,6 +97,11 @@ namespace DiplomacyOverhaul
             {
                 if (b != null && b.name == ButtonName) Object.DestroyImmediate(b.gameObject);
             }
+            foreach (RectTransform t in Resources.FindObjectsOfTypeAll<RectTransform>())
+            {
+                if (t != null && t.name == SideName) Object.DestroyImmediate(t.gameObject);
+            }
+            _side = null;
             _window = null;
             _root = null;
             // 按钮平时在王国窗口显示概览页时加上，重开窗口可能直接停在别的页签，这里马上加回去
@@ -139,6 +145,88 @@ namespace DiplomacyOverhaul
             // 原版这一栏有两个挨着的空位，收掉一个，页签栏保持原来的长度
             tabs.Find("space (2)")?.gameObject.SetActive(false);
             LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)tabs);
+        }
+
+        // ---------- 右下角的快捷按钮 ----------
+
+        // 选中王国时左下角有原版的王国图标和取消按钮（CanvasLeft/SideCenterLeft），
+        // 右下角对称放一个议会按钮，跟着它一起滑进滑出
+        static UiMover _side;
+
+        static UiMover CreateSide()
+        {
+            PowerButtonSelector selector = PowerButtonSelector.instance;
+            Transform left = selector.cancelUnitSelectedMover.transform;
+            RectTransform leftSide = (RectTransform)left.parent;
+            Transform canvasRight = leftSide.parent.parent.Find("CanvasRight");
+            Transform template = left.Find("Main Container/CancelSpecialSelector");
+            if (canvasRight == null || template == null) return null;
+
+            GameObject side = new GameObject(SideName, typeof(RectTransform));
+            RectTransform sideRect = (RectTransform)side.transform;
+            sideRect.SetParent(canvasRight, false);
+            // CanvasRight 挂着竖排布局，不让它摆这个容器
+            side.AddComponent<LayoutElement>().ignoreLayout = true;
+            sideRect.anchorMin = sideRect.anchorMax = new Vector2(1f, 0f);
+            sideRect.pivot = leftSide.pivot;
+            sideRect.sizeDelta = leftSide.sizeDelta;
+            sideRect.anchoredPosition = leftSide.anchoredPosition;
+
+            // 原版按钮在移动器正中，移动器从屏幕外滑进来；这里左右反过来，
+            // 按钮比原版矮，往右下角收一些，贴近屏幕边和底栏
+            GameObject moverGo = new GameObject("Mover", typeof(RectTransform));
+            RectTransform moverRect = (RectTransform)moverGo.transform;
+            moverRect.SetParent(sideRect, false);
+            moverRect.sizeDelta = ((RectTransform)left).sizeDelta;
+            UiMover leftMover = selector.cancelUnitSelectedMover;
+            UiMover mover = moverGo.AddComponent<UiMover>();
+            mover.initInitPos = false;
+            mover.initPos = new Vector3(-20f, leftMover.initPos.y - 27f, 0f);
+            mover.hidePos = new Vector3(-leftMover.hidePos.x, mover.initPos.y, 0f);
+            mover.setVisible(false, true);
+
+            GameObject go = Object.Instantiate(template.gameObject, moverRect);
+            go.name = "Button";
+            foreach (Component c in go.GetComponents<Component>())
+            {
+                if (c is SelectedPowerTabTopContainer || c is Animator) Object.DestroyImmediate(c);
+            }
+            Object.DestroyImmediate(go.transform.Find("IconX").gameObject);
+            Object.DestroyImmediate(go.transform.Find("bg").gameObject);
+            RectTransform rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(32f, 32f);
+            RectTransform icon = (RectTransform)go.transform.Find("Icon");
+            icon.anchoredPosition = Vector2.zero;
+            icon.GetComponent<Image>().sprite = SpriteTextureLoader.getSprite(IconPath);
+
+            Button button = go.GetComponent<Button>();
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() => Open(SelectedKingdom()));
+            TipButton tip = go.AddComponent<TipButton>();
+            tip.showOnClick = false;
+            tip.textOnClick = "vd_parliament";
+            tip.textOnClickDescription = "vd_parliament_description";
+            return mover;
+        }
+
+        static Kingdom SelectedKingdom()
+        {
+            if (SelectedUnit.isSet() || !SelectedObjects.isNanoObjectSet()) return null;
+            return SelectedObjects.getSelectedNanoObject() as Kingdom;
+        }
+
+        internal static void UpdateSide()
+        {
+            bool show = PowerButtonSelector.instance.cancelUnitSelectedMover.visible && SelectedKingdom() != null;
+            if (_side == null)
+            {
+                if (!show) return;
+                _side = CreateSide();
+                if (_side == null) return;
+            }
+            _side.setVisible(show);
         }
 
         // ---------- 窗口 ----------

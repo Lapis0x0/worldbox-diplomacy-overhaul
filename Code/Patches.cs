@@ -250,6 +250,13 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 左下角的王国取消按钮显示或收起时，右下角的议会按钮跟着
+    [HarmonyPatch(typeof(PowerButtonSelector), "updateSelectedUnitCancelButton")]
+    static class Patch_SelectedCancelButton
+    {
+        static void Postfix() => ParliamentWindow.UpdateSide();
+    }
+
     // 王国窗口：标题下方的"王国"换成政体名（附庸接上宗主名），并显示宗主 / 附庸
     [HarmonyPatch(typeof(KingdomWindow), "showStatsRows")]
     static class Patch_KingdomWindow
