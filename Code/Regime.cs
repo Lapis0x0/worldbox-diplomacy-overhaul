@@ -141,6 +141,25 @@ namespace DiplomacyOverhaul
             if (Settings.GovernmentAutoEnabled) Government.Update(pKingdom);
         }
 
+        // 议会改政体：改共和制时撤销王室，现任君主下台，下一次检查国王时推举执政；
+        // 改君主制时现任执政的家族成为王室
+        public static void Reform(Kingdom pKingdom, GovForm pForm)
+        {
+            if (Government.Form(pKingdom) == pForm) return;
+            ClearTerm(pKingdom);
+            Government.SetForm(pKingdom, pForm);
+            if (pForm == GovForm.Republic)
+            {
+                if (pKingdom.hasKing()) pKingdom.removeKing();
+            }
+            else if (pKingdom.hasKing() && pKingdom.king.isAlive())
+            {
+                EnsureClan(pKingdom.king);
+                pKingdom.trySetRoyalClan();
+            }
+            AfterChange(pKingdom);
+        }
+
         // ---------- 每年 ----------
 
         public static void UpdateAll()

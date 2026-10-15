@@ -193,25 +193,30 @@ namespace DiplomacyOverhaul
         }
 
         // 开战倾向：停战多少年后才会再开战、敢挑兵力是自己多少倍的对手。王国、帝国同原版（5 年、1 倍）
+        // 再乘上外交路线的倍数
         public static int WarTimeout(Kingdom pKingdom)
         {
+            int years;
             switch (Current(pKingdom)?.id)
             {
-                case Republic: return 10;
-                case MerchantRepublic: return 15;
-                case MilitaryRepublic: return 2;
-                default: return SimGlobals.m.diplomacy_years_war_timeout;
+                case Republic: years = 10; break;
+                case MerchantRepublic: years = 15; break;
+                case MilitaryRepublic: years = 2; break;
+                default: years = SimGlobals.m.diplomacy_years_war_timeout; break;
             }
+            return UnityEngine.Mathf.RoundToInt(years * Policies.WarTimeoutFactor(pKingdom));
         }
 
         public static float WarStrengthRatio(Kingdom pKingdom)
         {
+            float ratio;
             switch (Current(pKingdom)?.id)
             {
-                case MerchantRepublic: return 0.5f;
-                case MilitaryRepublic: return 1.25f;
-                default: return 1f;
+                case MerchantRepublic: ratio = 0.5f; break;
+                case MilitaryRepublic: ratio = 1.25f; break;
+                default: ratio = 1f; break;
             }
+            return ratio * Policies.WarStrengthFactor(pKingdom);
         }
 
         // 诸家族共治的共和国城市更安定；军事共和国没有这份加成
@@ -322,6 +327,8 @@ namespace DiplomacyOverhaul
             Government.UpdateAll();
             Cycle.UpdateAll();
             Integration.UpdateAll();
+            Assimilation.UpdateAll();
+            Parliament.UpdateAll();
         }
     }
 }

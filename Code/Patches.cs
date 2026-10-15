@@ -285,6 +285,7 @@ namespace DiplomacyOverhaul
             Kingdom k = SelectedMetas.selected_kingdom;
             if (k == null) return;
             UpdateTitle(__instance, k);
+            ParliamentWindow.EnsureButton(__instance);
 
             Kingdom lord = Vassals.GetOverlord(k);
             if (lord != null)

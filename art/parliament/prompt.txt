@@ -1,0 +1,12 @@
+The first image shows original pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x): a stone law tablet, a sealed letter, a talking figure with speech bubbles, and the golden crown. The second image shows more original WorldBox icons for style.
+
+Match the ORIGINAL WorldBox look closely, not a generic mobile-game look: objects seen slightly from the side in 3/4 view, warm orange and brown shading with a dark brown outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid, limited palette, no anti-aliasing, no gradients, no text.
+
+Draw a 2x2 sheet of 4 alternative icons for a PARLIAMENT button, where noble clans hold seats and vote on laws:
+
+1. A small parliament seen from slightly above in 3/4 view: a half-ring (horseshoe) of tiny chunky seat blocks in four colors grouped side by side (red, orange, teal, royal blue), around a little brown wooden speaker's lectern in the middle front.
+2. A rolled parchment bill, half unrolled, cream paper with a few dark lines suggesting writing, a big red wax seal hanging from a ribbon at its bottom, and a feather quill crossing behind it.
+3. A small wooden ballot box with metal corners seen in 3/4 view, a rolled cream paper ballot being dropped into the slot on its top.
+4. Alternative: the original stone law tablet from the reference, with a small wooden judge's gavel lying across its lower right corner.
+
+Each icon centered in its own equal square cell, compact, each object about 40% of its cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no shadows on the background, no borders, no labels.

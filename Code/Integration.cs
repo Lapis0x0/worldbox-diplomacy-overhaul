@@ -247,6 +247,13 @@ namespace DiplomacyOverhaul
             }
             d += Borders(pVassal, pLord) ? 1f : -1f;
             if (pVassal.culture != null && pVassal.culture == pLord.culture) d += 1f;
+            if (pVassal.religion != null && pVassal.religion == pLord.religion) d += 1f;
+            if (Policies.Value(pLord, Policies.Vassals) == Policies.Autonomy) d -= 1f;
+            switch (Policies.Value(pVassal, Policies.Overlord))
+            {
+                case Policies.SeekAutonomy: d -= 1f; break;
+                case Policies.Loyal: d += 1f; break;
+            }
             if (pVassal.getSpecies() != pLord.getSpecies()) d -= 1f;
             if (SameHouse(pVassal, pLord)) d += 1f;
             if (pVassal.countCities() * 2 >= pLord.countCities()) d -= 1f;

@@ -29,6 +29,9 @@ namespace DiplomacyOverhaul.Perf
     //   gcinfo                   打印 GC 模式和托管堆大小
     //   heap <标签> [行数]        遍历托管堆，按类型统计个数和大小（很慢）
     //   gc                       强制完整回收，打印回收前后的占用（得到活对象的大小）
+    //   parl [list [数量]]        列出城市最多的几个国家的议会：议席、氏族立场、政策、议案
+    //   parl stats               各项政策每个选项有多少国家在用
+    //   parl show|session|open [国家 id 或名字]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {
@@ -184,6 +187,7 @@ namespace DiplomacyOverhaul.Perf
                 }
                 case "heap": HeapWalk.Run(a[1], a.Length > 2 ? int.Parse(a[2]) : 40); break;
                 case "fav": Fav(a[1], int.Parse(a[2])); break;
+                case "parl": ParlDev.Run(a); break;
                 case "end": Log("@done " + (a.Length > 1 ? a[1] : "")); break;
                 default: Log("! unknown command"); break;
             }

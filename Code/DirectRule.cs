@@ -45,6 +45,7 @@ namespace DiplomacyOverhaul
         static int Free(Kingdom pKingdom)
         {
             if (Vassals.IsVassal(pKingdom)) return 0;
+            if (Policies.Value(pKingdom, Policies.Territory) == Policies.Feudal) return 0;
             CyclePhase phase = Cycle.Get(pKingdom);
             if (phase == CyclePhase.Decline || phase == CyclePhase.Collapse) return 0;
             return Mathf.Max(0, pKingdom.getMaxCities() - pKingdom.countCities());
@@ -134,6 +135,7 @@ namespace DiplomacyOverhaul
         static float Motive(Actor pActor)
         {
             float situation = Mathf.Min(Free(pActor.kingdom) * 0.5f, 2f);
+            if (Policies.Value(pActor.kingdom, Policies.Territory) == Policies.DirectRule) situation *= 2f;
             return situation * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
         }
     }

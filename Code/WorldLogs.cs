@@ -26,6 +26,7 @@ namespace DiplomacyOverhaul
         public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝
         public const string Usurped = "vd_log_usurped";                  // $ruler$ 篡夺 $kingdom$ 王位，建立新王朝
         public const string Junta = "vd_log_junta";                      // $kingdom$ 的将领们夺取政权，$ruler$ 执政
+        public const string PolicyEnacted = "vd_log_policy";             // $kingdom$ 推行$policy$
 
         public static void Init()
         {
@@ -50,6 +51,7 @@ namespace DiplomacyOverhaul
             Register(Crowned, "ui/Icons/iconKingdomList", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
+            Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
         }
 
         // 文案里的占位符依次对应消息的 special1~3

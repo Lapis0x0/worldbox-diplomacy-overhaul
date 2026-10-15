@@ -54,7 +54,7 @@ namespace DiplomacyOverhaul
             City city = pActor.city;
             Kingdom lord = city?.kingdom;
             if (!CanGrant(lord) || NearCapital(city)) return false;
-            if (!Randy.randomChance(RebellionChance(lord))) return false;
+            if (!Randy.randomChance(RebellionChance(lord) * Policies.FeudalChance(lord))) return false;
 
             Kingdom vassal = Grant(city, pActor, lord, Integration.Feudal);
             if (vassal == null) return false;
@@ -87,7 +87,7 @@ namespace DiplomacyOverhaul
             // 军事共和国打下的城自己吞
             if (Government.IsMilitary(lord)) return false;
             if (lord.countCities() < lord.getMaxCities()) return false;
-            if (!Randy.randomChance(ConquestChance)) return false;
+            if (!Randy.randomChance(ConquestChance * Policies.FeudalChance(lord))) return false;
             return Redistribute(pCity, ref pConqueror, lord);
         }
 

@@ -38,6 +38,7 @@ namespace DiplomacyOverhaul
             AddPlot();
             Feudal.Init();
             Government.Init();
+            Policies.Init();
             Cycle.Init();
             Restoration.Init();
             PeaceTalks.Init();
@@ -50,6 +51,7 @@ namespace DiplomacyOverhaul
             Orders.Init();
             Visuals.Init();
             BoxCommand.Init();
+            ParliamentWindow.Init();
             BuildTab();
         }
 
@@ -189,6 +191,19 @@ namespace DiplomacyOverhaul
                 translation_key = "opinion_vd_weak_lord",
                 calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Cycle.WeakLordOpinion(pTarget) : 0
             });
+            Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_autonomy",
+                translation_key = "opinion_vd_autonomy",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget
+                                           && Policies.Value(pTarget, Policies.Vassals) == Policies.Autonomy ? Assimilation.AutonomyOpinion : 0
+            });
+            Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_assimilation",
+                translation_key = "opinion_vd_assimilation",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget && Assimilation.Resents(pMain, pTarget) ? Assimilation.ResentOpinion : 0
+            });
             Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_cycle",
@@ -275,6 +290,11 @@ namespace DiplomacyOverhaul
             grudge *= 1.2f - integration / 100f;
             // 宗主亲自打仗时后方空虚，整合度越低越想趁机起兵：整合度 0 时 ×2，50 以上不变
             if (LordAtWar(lord)) grudge *= 1f + Mathf.Clamp01(1f - integration / 50f);
+            switch (Policies.Value(k, Policies.Overlord))
+            {
+                case Policies.SeekAutonomy: grudge *= 1.5f; break;
+                case Policies.Loyal: grudge *= 0.5f; break;
+            }
             return grudge * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Aggression), true);
         }
 

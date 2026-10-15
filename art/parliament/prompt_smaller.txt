@@ -1,0 +1,5 @@
+The first image is a pixel-art parliament icon for the game WorldBox: a half-ring of seat blocks in four colors (red, orange, teal, royal blue from left to right) around a small wooden speaker's lectern. Redraw exactly this icon, keeping its design, its colors and its WorldBox pixel-art style, but draw it SMALLER and simpler, like an original 28x28 WorldBox icon (the second image shows original icons for the right amount of detail): fewer seats, each seat one chunky block, the four color groups clearly separated, the lectern small in the front center.
+
+Make a 2x2 sheet with 4 versions of this icon, each centered in its own equal square cell, each icon only about 35% of its cell width, with the same chunky pixel size as the original, so each icon has fewer, bigger pixels. Version 1 and 2: as described. Version 3: the half-ring seen a bit more from above, so the ring looks deeper. Version 4: the same half-ring without the lectern.
+
+Chunky square pixels on a strict grid, limited palette, dark brown outline on the shadow side, warm brown wood for the seat backs, no anti-aliasing, no gradients, no text. Background flat uniform medium grey (#808080), no labels.

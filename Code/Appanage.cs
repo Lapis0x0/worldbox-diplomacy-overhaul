@@ -45,6 +45,7 @@ namespace DiplomacyOverhaul
         static int Excess(Kingdom pKingdom)
         {
             if (!Feudal.CanGrant(pKingdom) || Government.Form(pKingdom) != GovForm.Monarchy) return 0;
+            if (Policies.Value(pKingdom, Policies.Territory) == Policies.DirectRule) return 0;
             return Mathf.Max(0, pKingdom.countCities() - pKingdom.getMaxCities());
         }
 
@@ -126,6 +127,7 @@ namespace DiplomacyOverhaul
         static float Motive(Actor pActor)
         {
             float situation = Mathf.Min(Excess(pActor.kingdom) * 0.5f, 2f);
+            if (Policies.Value(pActor.kingdom, Policies.Territory) == Policies.Feudal) situation *= 2f;
             return situation * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
         }
     }
