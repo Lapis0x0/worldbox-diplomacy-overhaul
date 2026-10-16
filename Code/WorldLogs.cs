@@ -20,7 +20,7 @@ namespace DiplomacyOverhaul
         public const string DirectRule = "vd_log_direct_rule";            // $lord$ 将 $vassal$ 收归直辖
         public const string DirectRulePart = "vd_log_direct_rule_part";   // $lord$ 将 $vassal$ 的 $count$ 座城收归直辖
         public const string Restored = "vd_log_restored";             // $ruler$ 中兴 $kingdom$
-        public const string RestoreFailed = "vd_log_restore_failed";  // $ruler$ 力图中兴 $kingdom$，无功而返
+        public const string RestoreFailed = "vd_log_restore_failed";  // $ruler$ 中兴 $kingdom$ 失败，国势更衰
         public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
         public const string RepublicFounded = "vd_log_republic_founded"; // $kingdom$ 王室绝嗣，$ruler$ 被推举执政，改制为共和国
         public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝

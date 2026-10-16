@@ -48,7 +48,7 @@
   "vd_log_capitulated": "$vassal$ capitulated and became a vassal of $lord$",
   "vd_log_tribute": "$vassal$ submitted to $lord$",
   "vd_log_restored": "$ruler$ restored $kingdom$ to its glory",
-  "vd_log_restore_failed": "$ruler$ tried to restore $kingdom$ and failed",
+  "vd_log_restore_failed": "$ruler$ failed to restore $kingdom$, and the realm sank further",
   "vd_log_appanage": "$lord$ granted $city$ to royal kin $ruler$",
   "vd_log_direct_rule": "$lord$ brought $vassal$ under direct rule",
   "vd_log_direct_rule_part": "$lord$ brought $count$ cities of $vassal$ under direct rule",

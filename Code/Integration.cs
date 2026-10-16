@@ -233,7 +233,7 @@ namespace DiplomacyOverhaul
             Log(WorldLogs.HereditaryLost, pVassal, pLord);
         }
 
-        // 宗主的阶段决定方向，结构因素决定快慢
+        // 宗主的阶段决定方向，结构因素决定快慢。衰落期 -3，天命每低于 50 五点再 -1；崩溃期再 -1
         static float Drift(Kingdom pVassal, Kingdom pLord)
         {
             float d;
@@ -241,8 +241,8 @@ namespace DiplomacyOverhaul
             {
                 case CyclePhase.Renewal:
                 case CyclePhase.Prime: d = 1f; break;
-                case CyclePhase.Decline: d = -3f; break;
-                case CyclePhase.Collapse: d = -4f; break;
+                case CyclePhase.Decline: d = DeclineDrift(pLord); break;
+                case CyclePhase.Collapse: d = DeclineDrift(pLord) - 1f; break;
                 default: d = 0f; break;
             }
             d += Borders(pVassal, pLord) ? 1f : -1f;
@@ -256,6 +256,8 @@ namespace DiplomacyOverhaul
             d -= Cycle.Shortfall(pLord);
             return d;
         }
+
+        static float DeclineDrift(Kingdom pLord) => -3f - Mathf.Max(0f, 50f - Cycle.Mandate(pLord)) / 5f;
 
         // 两国国王出自同一家族
         static bool SameHouse(Kingdom pVassal, Kingdom pLord) =>

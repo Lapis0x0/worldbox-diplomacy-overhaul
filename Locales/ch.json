@@ -48,7 +48,7 @@
   "vd_log_capitulated": "$vassal$ 投降，成为 $lord$ 的附庸",
   "vd_log_tribute": "$vassal$ 向 $lord$ 称臣",
   "vd_log_restored": "$ruler$ 中兴 $kingdom$",
-  "vd_log_restore_failed": "$ruler$ 力图中兴 $kingdom$，事败",
+  "vd_log_restore_failed": "$ruler$ 中兴 $kingdom$ 失败，国势更衰",
   "vd_log_appanage": "$lord$ 将 $city$ 封给宗室 $ruler$",
   "vd_log_direct_rule": "$lord$ 将 $vassal$ 收归直辖",
   "vd_log_direct_rule_part": "$lord$ 将 $vassal$ 的 $count$ 座城收归直辖",
