@@ -117,15 +117,7 @@ namespace DiplomacyOverhaul
         {
             All.Clear();
             _byId.Clear();
-            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney" });
-            Add(new Policy
-            {
-                id = Territory, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconVillages",
-                // 附庸不分封，这一项对它没有意义
-                shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
-            });
-            Add(new Policy { id = Office, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, icon = "ui/Icons/iconLeaders" });
-            Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
+            // 内政按 政体 → 选官 → 领地 → 税收 → 教化 排，界面照这个顺序显示
             Add(new Policy
             {
                 id = Form, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, count = 2, icon = "ui/Icons/iconKings",
@@ -134,6 +126,15 @@ namespace DiplomacyOverhaul
                 read = k => (int)Government.Form(k),
                 write = (k, v) => Regime.Reform(k, (GovForm)v)
             });
+            Add(new Policy { id = Office, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, icon = "ui/Icons/iconLeaders" });
+            Add(new Policy
+            {
+                id = Territory, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconVillages",
+                // 附庸不分封，这一项对它没有意义
+                shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
+            });
+            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney" });
+            Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
             // 兵制要等中央军（WORLD-26），先摆出来
             Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, icon = "ui/Icons/iconArmy", active = false });
             Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
