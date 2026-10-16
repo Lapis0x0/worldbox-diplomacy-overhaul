@@ -23,6 +23,10 @@ timeout="${DEV_TIMEOUT:-900}"
 waited=0
 until grep -q "@done $token" "$dir/out.log"; do
   if ! pgrep -qf "worldbox.app/Contents/MacOS/WorldBox"; then echo "✗ 游戏没有在运行" >&2; exit 1; fi
+  # 命令开始执行后又出现 ready：游戏中途热重载，剩下的命令被清空了
+  if tail -n +$((start + 1)) "$dir/out.log" | awk '/^> /{run=1} run && /^ready$/{bad=1} END{exit !bad}'; then
+    echo "✗ 命令执行到一半游戏重载了，剩下的没跑，重新发一次：" >&2; tail -n +$((start + 1)) "$dir/out.log" >&2; exit 1
+  fi
   if [ "$waited" -ge "$timeout" ]; then echo "✗ 超时，最后的输出：" >&2; tail -n +$((start + 1)) "$dir/out.log" >&2; exit 1; fi
   sleep 1; waited=$((waited + 1))
 done

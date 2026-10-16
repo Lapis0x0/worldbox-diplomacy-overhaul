@@ -14,6 +14,21 @@ if ! build=$(dotnet build -nologo -v q -p:AssemblyName="$name" -o "$out" 2>&1); 
   exit 1
 fi
 
+log="$HOME/Library/Logs/mkarpenko/WorldBox/Player.log"
+before=$(wc -l < "$log" 2>/dev/null || echo 0)
 echo "$PWD/$out/$name.dll" > bin/reload.signal.tmp
 mv bin/reload.signal.tmp bin/reload.signal
 echo "已通知游戏重载 $name"
+
+# 等游戏真正载入新版本再退出：重载会清空正在执行的开发命令，紧接着跑 tools/dev.sh 不能和它撞上
+pgrep -qf "worldbox.app/Contents/MacOS/WorldBox" || exit 0
+for _ in $(seq 60); do
+  new=$(tail -n +$((before + 1)) "$log")
+  if grep -qF "hot reloaded $name.dll" <<< "$new"; then echo "✓ 重载完成"; exit 0; fi
+  if grep -qF "hot reload failed" <<< "$new"; then
+    echo "✗ 重载失败，见 $log" >&2; exit 1
+  fi
+  sleep 0.5
+done
+echo "✗ 30 秒内游戏没有完成重载" >&2
+exit 1
