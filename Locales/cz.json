@@ -237,6 +237,7 @@
   "vd_election_map": "封疆",
   "vd_election_capital": "首都",
   "vd_election_people": "$n$ 人",
+  "vd_election_clan_cities": "$n$ 座城",
   "vd_election_city_seats": "$n$ 席",
   "vd_election_leader": "城主",
   "vd_parliament": "议会",

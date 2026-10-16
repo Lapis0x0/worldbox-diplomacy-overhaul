@@ -237,6 +237,7 @@
   "vd_election_map": "Domains",
   "vd_election_capital": "capital",
   "vd_election_people": "$n$ people",
+  "vd_election_clan_cities": "$n$ cities",
   "vd_election_city_seats": "$n$ seats",
   "vd_election_leader": "Governor",
   "vd_parliament": "Parliament",
