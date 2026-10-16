@@ -20,7 +20,7 @@ namespace DiplomacyOverhaul
     // 应得天命 = 底数 + 治理 - (积弊 + 沉疴)² / 100。治理看城市归心、君主、附庸、民生，普通大国记 0；
     // 积弊每年 +1 - 治理 / 25，治理好的王朝老得慢。早年几乎不老，晚年积重难返。
     // 沉疴是平叛留下的旧伤，每撑过一次大叛乱 +10，只有改朝换代才清掉
-    // 战争胜负、得失城市直接加减天命。数值的推演见 tools/sim/mandate.py
+    // 战争胜负、得失城市直接加减天命
     public static class Cycle
     {
         const string KeyPhase = "vd_cycle_phase";
@@ -28,7 +28,6 @@ namespace DiplomacyOverhaul
         const string KeyMandate = "vd_mandate";
         const string KeyDecay = "vd_decay";
         const string KeyScar = "vd_scar";
-        const string KeyFrozenOpinion = "vd_cycle_frozen_opinion"; // 崩溃期沿用大叛乱时附庸的好感
         const string KeyDamage = "vd_mandate_damage";             // 已经应用到单位属性上的伤害百分比
 
         public const int EmpireCities = 6;
@@ -48,14 +47,15 @@ namespace DiplomacyOverhaul
         const float CityLost = -2f, CityGained = 1f, CapitalLost = -15f;
 
         const float Start = 60f;          // 新王朝的起点
-        const float PrimeAt = 75f;        // 涨到这里进入鼎盛；衰落中涨回来就是中兴
+        const float PrimeAt = 70f;        // 涨到这里进入鼎盛；衰落中涨回来就是中兴
         const float DeclineBelow = 50f;
-        const float StillbornBelow = 40f; // 新生期就跌到这里，直接衰落
-        const int RenewalMax = 30;        // 新生最多这么多年
+        const float StillbornBelow = 40f; // 新生期跌到这里就衰落；新生不限年数，没站稳也没垮就一直是新生
         const float RebellionBelow = 20f;
         const float RestoreMandate = 15f, RestoreDecay = 40f, RestoreScar = 5f;
         const float ScarPerRebellion = 10f;
         const float DeclineLoyalty = 8f;  // 衰落期天命每低于 50 一点，城市忠诚 -8
+        const float DeclineOpinion = 10f, DeclineOpinionPer = 3f; // 衰落期附庸好感 -10，天命每低于 50 一点再 -3
+        const int DeclineOpinionMax = 90;
         const int InitialDecayMax = 60;   // 读档时已有的大国，积弊在 0 到这个值之间随机
 
         public const string GroupId = "vd_cycle";
@@ -278,11 +278,9 @@ namespace DiplomacyOverhaul
                 pKingdom.data.removeFloat(KeyMandate);
                 pKingdom.data.removeFloat(KeyDecay);
                 pKingdom.data.removeFloat(KeyScar);
-                pKingdom.data.removeInt(KeyFrozenOpinion);
                 RefreshDamage(pKingdom);
                 return;
             }
-            if (pPhase != CyclePhase.Collapse) pKingdom.data.removeInt(KeyFrozenOpinion);
             pKingdom.data.set(KeyPhase, (int)pPhase);
             pKingdom.data.set(KeySince, Date.getCurrentYear() - pYearsAgo);
             RefreshDamage(pKingdom);
@@ -381,9 +379,8 @@ namespace DiplomacyOverhaul
             switch (phase)
             {
                 case CyclePhase.Renewal:
-                    bool done = Years(pKingdom) >= RenewalMax;
-                    if (m >= PrimeAt || done && m >= DeclineBelow) Set(pKingdom, CyclePhase.Prime);
-                    else if (m < StillbornBelow || done) Set(pKingdom, CyclePhase.Decline);
+                    if (m >= PrimeAt) Set(pKingdom, CyclePhase.Prime);
+                    else if (m < StillbornBelow) Set(pKingdom, CyclePhase.Decline);
                     break;
                 case CyclePhase.Prime:
                     if (m < DeclineBelow) Set(pKingdom, CyclePhase.Decline);
@@ -455,10 +452,8 @@ namespace DiplomacyOverhaul
         public static void OnGreatRebellion(Kingdom pKingdom)
         {
             CyclePhase phase = Get(pKingdom);
-            if (phase == CyclePhase.None || phase == CyclePhase.Collapse) return;
-            // 附庸的好感冻结在这一刻；城市忠诚跟着天命走，天命在崩溃期本来就不变
-            pKingdom.data.set(KeyFrozenOpinion, Mathf.Min(0, VassalOpinion(pKingdom)));
-            Set(pKingdom, CyclePhase.Collapse);
+            // 崩溃期天命不变，城市忠诚和附庸好感的扣减都停在这一刻
+            if (phase != CyclePhase.None && phase != CyclePhase.Collapse) Set(pKingdom, CyclePhase.Collapse);
         }
 
         // 乱世中改朝换代：新王朝从新生开始
@@ -493,18 +488,17 @@ namespace DiplomacyOverhaul
             foreach (Kingdom k in pWar.getDefenders()) AddMandate(k, WarDelta(pWar, pWinner == WarWinner.Defenders));
         }
 
-        // 附庸对宗主的好感：新生 +10，鼎盛 +20；衰落从 -10 起每年再 -3，最多 -90，人心一年年散去；
-        // 崩溃期沿用大叛乱爆发时的值
+        // 附庸对宗主的好感：新生 +10，鼎盛 +20；衰落和崩溃期 -10，天命每低于 50 一点再 -3，最多 -90
         public static int VassalOpinion(Kingdom pLord)
         {
             switch (Get(pLord))
             {
                 case CyclePhase.Renewal: return 10;
                 case CyclePhase.Prime: return 20;
-                case CyclePhase.Decline: return -System.Math.Min(90, 10 + 3 * Years(pLord));
+                case CyclePhase.Decline:
                 case CyclePhase.Collapse:
-                    pLord.data.get(KeyFrozenOpinion, out int frozen, 0);
-                    return frozen;
+                    float below = Mathf.Max(0f, DeclineBelow - Mandate(pLord));
+                    return -Mathf.Min(DeclineOpinionMax, Mathf.RoundToInt(DeclineOpinion + DeclineOpinionPer * below));
                 default: return 0;
             }
         }
