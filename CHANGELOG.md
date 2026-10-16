@@ -2,6 +2,34 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.8.0
+
+### 中文
+
+1. 引入动态议会与国家政策机制
+2. 引入全新的选举机制，新增「选举与任命」窗口
+3. 天命值现在会影响国家军队的战斗力
+4. 新增沉疴机制，王朝平定大叛乱后会留下沉疴，缩短之后的王朝周期
+5. 中兴密谋失败时会降低天命值
+6. 王朝衰落期的城市忠诚改为随天命值下降而不是机械的随时间推移
+7. 去除原版攻下城市后全国所有城市忠诚大幅提升的设定
+8. 修复宗主的盟友可能会对宗主的附庸宣战的问题
+9. 修复帝国进入崩溃期后，城市和附庸的不满会消失的问题
+10. 修复打开模组设置页时刷「missing text」报错的问题
+
+### English
+
+1. New dynamic parliament and national policy system
+2. New election system, with a new Elections & Offices window
+3. Mandate now affects the strength of a kingdom's army
+4. New Old Wounds mechanic: a dynasty that puts down a great rebellion is left with old wounds that shorten its later cycles
+5. A failed Restoration plot now lowers Mandate
+6. City loyalty during dynastic decline now falls with Mandate instead of mechanically over time
+7. Removed the vanilla rule where conquering a city sharply raises loyalty in every city of the kingdom
+8. Fixed an overlord's allies being able to declare war on the overlord's vassals
+9. Fixed city and vassal discontent disappearing once an empire enters collapse
+10. Fixed "missing text" errors spamming when opening the mod settings page
+
 ## 0.7.0
 
 ### 中文

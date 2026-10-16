@@ -1,8 +1,8 @@
 {
   "name": "外交大修 Diplomacy Overhaul",
   "author": "Lapis0x0",
-  "version": "0.7.0",
-  "description": "加入附庸国、独立与和谈、政体与政体变迁、王朝周期与大叛乱，以及直接指挥军队的神力。",
+  "version": "0.8.0",
+  "description": "加入附庸国、独立与和谈、议会与选举、政体与政体变迁、王朝周期与大叛乱，以及直接指挥军队的神力。",
   "GUID": "shizhiyun_diplomacy_overhaul",
   "targetGameBuild": 719,
   "UsePublicizedAssembly": true,
