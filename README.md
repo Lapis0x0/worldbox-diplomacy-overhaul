@@ -1,50 +1,53 @@
-# 外交大修 Diplomacy Overhaul
+# Diplomacy Overhaul 外交大修
 
-<img src="preview.png" alt="外交大修" width="320">
+English | [中文](README.zh-CN.md)
 
-为 WorldBox 加入更丰富的外交与战争玩法：附庸国、独立与和谈、政体与政体变迁、王朝周期与大叛乱，以及一组直接指挥外交和军队的神力。
+<img src="preview.png" alt="Diplomacy Overhaul" width="320">
 
-- Steam 创意工坊：https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
-- 依赖：[NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+Deeper diplomacy and warfare for WorldBox: vassals, independence and peace talks, parliaments and elections, governments and how they change, dynastic cycles and great rebellions, plus a set of powers for directing diplomacy and armies yourself.
 
-## 主要内容
+- Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
+- Requires: [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+- Fully localized in English and Chinese; follows the game's language setting
 
-- 附庸体系：宗主与附庸同进同退；大国会把叛乱的城市、管不过来的新领土分封为附庸或封给王室成员，也会遣使威逼弱小的邻国称臣；附庸有整合度，归心已久的成为行省，宗室的封国成为世袭行省，宗主管得过来时会把行省收归直辖，离心的会密谋独立
-- 议会与政策：各家族按占据的城市分得议席，按立场对议案投票，推行内政、军事和外交政策；共和国的执政由议会选举，「选举与任命」窗口里能看到候选人、王位继承顺位和各家族的封地
-- 政体：君主制的王国 / 帝国，共和国 / 商人共和国 / 军事共和国，附庸称公国或自治领；新国家按文化倾向决定政体，不同政体开战和治理各有倾向
-- 政体变迁：共和国的执政由议会选举，任期届满改选；王室绝嗣时君主国可能改制为共和国而不分裂；鼎盛的大共和国可能被野心勃勃的执政改为帝国；王朝崩溃时将领可能夺权
-- 王朝周期：大国的天命随城市人心、君主、附庸和战争起落，影响军队的战斗力；积弊日深，平定大叛乱后还会留下沉疴，经历新生、鼎盛、衰落、崩溃；衰落时附庸离心、城市不稳，雄主可以密谋中兴
-- 大叛乱：国内多地同时揭竿而起，附庸纷纷独立；首都沦陷或天命已尽时爆发
-- 战争：打到一定程度时双方和谈，按战果以和平、赔款、割让附庸或称臣收场；攻城时军队主动清剿守军，兵力悬殊时可以直接破城
-- 指挥军队：框选军队后右键下令，进攻别国城市、驻守本国和友方城市、城外扎营，跨海自动调船
-- 城镇管理：移交城市、吞并王国
-- 性能优化：去掉原版的重复计算，大地图上帧率提高约 20%，游戏结果不变
+## Features
 
-所有功能都在底部「外交大修」Tab 里，各项数值可在 Tab 里的设置按钮中调整。数据保存在原版存档中，可以直接用于已有存档。
+- Vassals: overlords and vassals fight side by side. Large kingdoms grant rebel cities and lands they can't govern to vassals or royal relatives, and send envoys to pressure weak neighbors into submission. Vassals have integration: loyal ones become Provinces, royal fiefs become Hereditary Provinces, overlords absorb Provinces once they can govern them, and restless vassals plot for independence
+- Parliament and policies: families win seats from the cities they hold, vote on bills by their stance, and enact domestic, military and diplomatic policies. Republics elect their leader in parliament; the Elections & Offices window shows candidates, the line of succession and each family's lands
+- Governments: monarchies as Kingdoms or Empires; Republics, Merchant Republics and Military Republics; vassals are Duchies or Dominions. New nations pick a government from their culture, and each government has its own leanings in war and rule
+- Changing governments: republican leaders are elected and stand again when their term ends; a monarchy whose royal line dies out may become a republic instead of splitting; an ambitious leader of a great republic at its prime may proclaim an empire; generals may seize power when a dynasty collapses
+- Dynastic cycles: a great power's Mandate of Heaven rises and falls with its cities, ruler, vassals and wars, and affects how well its armies fight. Problems pile up, and putting down a great rebellion leaves old wounds. Dynasties go through Renewal, Prime, Decline and Collapse; in decline vassals drift away and cities grow unstable, and a strong ruler can plot a Restoration
+- Great Rebellion: uprisings break out across the realm at once and vassals declare independence; triggered when the capital falls or the Mandate runs out
+- War: when a war has gone far enough, both sides hold peace talks and settle by the results with peace, reparations, ceding vassals or submission. Besieging armies hunt down defenders and can storm a city outright with overwhelming numbers
+- Army command: box-select armies and right-click to attack foreign cities, garrison your own or friendly cities, or camp in the field; boats are arranged automatically across the sea
+- City management: transfer cities, annex kingdoms
+- Performance: removes redundant calculations in vanilla, about 20% higher frame rate on large maps with identical results
 
-每个系统的具体规则和实现见 [docs/](docs/README.md)。
+Everything lives in the Diplomacy Overhaul tab at the bottom, and values can be tuned from the settings button in that tab. Data is stored in vanilla saves, so it works with existing worlds.
 
-## 手动安装
+Detailed rules for each system are in [docs/](docs/README.md) (Chinese).
 
-不用创意工坊时，可以手动安装：
+## Manual installation
 
-1. 先安装 [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
-2. 从 [Releases](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul/releases) 下载最新的 `DiplomacyOverhaul-v*.zip`
-3. 解压到游戏目录下的 `Mods` 文件夹，解压后应该是 `Mods/DiplomacyOverhaul/mod.json`。Steam 版的游戏目录可以在库里右键 WorldBox →「管理」→「浏览本地文件」找到
-4. 启动游戏，NML 会自动编译加载
+If you don't use the Workshop:
 
-更新时删掉旧的 `DiplomacyOverhaul` 文件夹再解压新的。已经在创意工坊订阅的不要再手动安装，两份会冲突。
+1. Install [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+2. Download the latest `DiplomacyOverhaul-v*.zip` from [Releases](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul/releases)
+3. Extract it into the `Mods` folder in the game directory so that you get `Mods/DiplomacyOverhaul/mod.json`. On Steam, find the game directory by right-clicking WorldBox in your library → Manage → Browse local files
+4. Launch the game; NML compiles and loads the mod
 
-## 本地开发
+To update, delete the old `DiplomacyOverhaul` folder before extracting the new one. If you already subscribe on the Workshop, don't install manually as well; the two copies conflict.
 
-- 把仓库放进（或软链接到）`worldbox/Mods/DiplomacyOverhaul`，NML 启动时会编译 `Code/` 下的源码；`bin/`、`obj/` 和以 `.` 开头的文件不会被编译或上传
-- 本地编译检查：`dotnet build`（需要 .NET SDK，引用游戏目录里的程序集）
-- 热重载：游戏开着时运行 `tools/hot-reload.sh`，改动会在一两秒内生效，不用重启游戏
-  - 改 `Main.cs`、`DevReload.cs`、`mod.json`、`default_config.json` 仍需重启
-  - `Core.Start` 必须能重复执行：资源用 `Core.Upsert` 注册，Tab 按钮会被清掉重建
-- 发版：改 `mod.json` 的版本号，在 `CHANGELOG.md` 写好这个版本的中英文说明并提交，然后运行 `tools/release.sh`。脚本检查工作区、版本号、语言文件和编译后打 tag 推送，GitHub Actions 自动建 Release 并附上发布包（`tools/package.sh` 也可以单独打包）
-- 上传创意工坊：在 NML 模组列表里连点封面 8 次后等 3 秒打开上传窗口；更新时在顶部填创意工坊物品 ID，空着会新建物品
+## Development
 
-## 许可证
+- Put (or symlink) the repository at `worldbox/Mods/DiplomacyOverhaul`. NML compiles the sources under `Code/` at startup; `bin/`, `obj/` and files starting with `.` are not compiled or uploaded
+- Local build check: `dotnet build` (needs the .NET SDK; references assemblies from the game directory)
+- Hot reload: with the game running, run `tools/hot-reload.sh` and changes take effect within a second or two without restarting
+  - Changes to `Main.cs`, `DevReload.cs`, `mod.json` and `default_config.json` still need a restart
+  - `Core.Start` must be safe to run repeatedly: register assets with `Core.Upsert`; tab buttons are cleared and rebuilt
+- Release: bump the version in `mod.json`, write this version's Chinese and English notes in `CHANGELOG.md` and commit, then run `tools/release.sh`. The script checks the working tree, version, locale files and build, then tags and pushes; GitHub Actions creates the Release with the package attached (`tools/package.sh` can also package on its own)
+- Upload to the Workshop: in the NML mod list, click the cover 8 times and wait 3 seconds to open the upload window. When updating, enter the Workshop item ID at the top; leaving it empty creates a new item
 
-MIT，见 [LICENSE](LICENSE)。
+## License
+
+MIT, see [LICENSE](LICENSE).

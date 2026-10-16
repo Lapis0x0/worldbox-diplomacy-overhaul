@@ -31,7 +31,7 @@ jobs:
 
           ---
 
-          **安装 Install**：创意工坊订阅 / Subscribe on the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294 ；或手动安装，见 / or install manually, see [README](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul#手动安装)
+          **安装 Install**：创意工坊订阅 / Subscribe on the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294 ；或手动安装，见 / or install manually, see [中文说明](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul/blob/main/README.zh-CN.md#手动安装) / [README](https://github.com/Lapis0x0/worldbox-diplomacy-overhaul#manual-installation)
           MD
 
       - name: 建 Release
