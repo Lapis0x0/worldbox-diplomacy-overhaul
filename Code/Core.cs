@@ -218,6 +218,13 @@ namespace DiplomacyOverhaul
                 translation_key_negative = "loyalty_vd_republic",
                 calc = Government.CityLoyalty
             });
+            Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_dissent",
+                translation_key = "loyalty_vd_dissent_content",
+                translation_key_negative = "loyalty_vd_dissent",
+                calc = Parliament.CityLoyalty
+            });
             // 原版的文化、语言、宗教：扣的部分按教化政策变
             SetLoyalty("culture", Assimilation.CultureLoyalty);
             SetLoyalty("language", Assimilation.LanguageLoyalty);

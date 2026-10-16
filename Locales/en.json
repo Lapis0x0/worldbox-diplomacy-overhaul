@@ -151,6 +151,8 @@
   "opinion_vd_weak_lord": "Weak overlord",
   "loyalty_vd_cycle_prime": "Golden age",
   "loyalty_vd_cycle_decline": "Waning fortunes",
+  "loyalty_vd_dissent_content": "Favored policies",
+  "loyalty_vd_dissent": "Opposed policies",
   "loyalty_vd_republic": "Republican rule",
   "trait_group_vd_cycle": "Dynastic Cycle",
   "kingdom_trait_vd_cycle_renewal": "Renewal",

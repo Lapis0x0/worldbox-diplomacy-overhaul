@@ -291,7 +291,7 @@ namespace DiplomacyOverhaul
             return next;
         }
 
-        // 按议席抽一位提案人，挑一项改动让国家离自己的立场最近；对现状满意就不提
+        // 按议席抽一位提案人，由它起草议案
         public static Bill Draft(Kingdom pKingdom, List<ParliamentClan> pClans)
         {
             int total = TotalSeats(pClans);
@@ -303,11 +303,22 @@ namespace DiplomacyOverhaul
                 if (pick < pc.seats) { proposer = pc; break; }
                 pick -= pc.seats;
             }
+            return DraftBy(pKingdom, pClans, proposer);
+        }
 
-            // 同一条轴上的几项政策改一档，国家坐标挪得一样多；一样好的改动里随机挑一项
-            float now = Distance(proposer.x, proposer.y, Policies.Coordinate(pKingdom));
-            var best = new List<Bill>();
-            float bestDistance = now - Satisfied;
+        public class Option
+        {
+            public Bill bill;
+            public float gain;    // 通过后国家离提案人的立场近了多少
+            public float margin;  // 按眼下的立场表决，赞成的席位比例减去通过线
+        }
+
+        // 提案人能提的每一项改动
+        public static List<Option> Options(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer)
+        {
+            var list = new List<Option>();
+            int total = TotalSeats(pClans);
+            float now = Distance(pProposer.x, pProposer.y, Policies.Coordinate(pKingdom));
             foreach (Policy p in Policies.All)
             {
                 if (!p.CanPropose(pKingdom)) continue;
@@ -315,17 +326,76 @@ namespace DiplomacyOverhaul
                 for (int o = 0; o < p.count; o++)
                 {
                     if (o == current) continue;
-                    float d = Distance(proposer.x, proposer.y, Policies.Coordinate(pKingdom, p, o)) + Interest(pKingdom, proposer, p, o);
-                    if (d > bestDistance + 0.001f) continue;
-                    if (d < bestDistance - 0.001f)
-                    {
-                        best.Clear();
-                        bestDistance = d;
-                    }
-                    best.Add(new Bill { policy = p, option = o, proposer = proposer.clan.id });
+                    var bill = new Bill { policy = p, option = o, proposer = pProposer.clan.id };
+                    float d = Distance(pProposer.x, pProposer.y, Policies.Coordinate(pKingdom, p, o)) + Interest(pKingdom, pProposer, p, o);
+                    VoteResult vote = Vote(pKingdom, bill, pClans);
+                    list.Add(new Option { bill = bill, gain = now - d, margin = total > 0 ? (float)vote.yes / total - p.threshold : 0f });
                 }
             }
+            return list;
+        }
+
+        // 表决在几年后，各氏族的立场会变：按眼下的票数差估一个通过的把握，差 8% 的席位约七成把握，差 20% 九成以上
+        const float PassScale = 0.08f;
+        // 明知过不了也提，表明立场：过不了的议案按收益的这么多算
+        const float Protest = 0.2f;
+        // 算上通过的把握，收益不到这么多就不提
+        const float MinExpected = 0.05f;
+
+        static float PassChance(float pMargin) => 1f / (1f + Mathf.Exp(-pMargin / PassScale));
+
+        // 挑收益乘通过的把握最高的一项：能过的优先，过不了的只有收益大得多时才提；对现状满意就不提
+        public static Bill DraftBy(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer)
+        {
+            var best = new List<Bill>();
+            float bestScore = MinExpected;
+            foreach (Option opt in Options(pKingdom, pClans, pProposer))
+            {
+                if (opt.gain < Satisfied) continue;
+                float score = opt.gain * (Protest + (1f - Protest) * PassChance(opt.margin));
+                if (score < bestScore - 0.001f) continue;
+                if (score > bestScore + 0.001f)
+                {
+                    best.Clear();
+                    bestScore = score;
+                }
+                best.Add(opt.bill);
+            }
             return best.Count > 0 ? best[Randy.randomInt(0, best.Count)] : null;
+        }
+
+        // ---------- 政见不合 ----------
+
+        // 国家现行政策离氏族的立场越远，它占的城忠诚越低：0.2 以内 +10，到 1 时 -100，中间连续变化
+        const float ContentDistance = 0.2f;
+        const float WorstDistance = 1f;
+        const int ContentLoyalty = 10;
+        const int WorstLoyalty = -100;
+
+        // 每个国家按年算一次各城的修正，有议案生效时重算
+        static readonly Dictionary<long, (int year, Dictionary<long, int> cities)> _dissent = new Dictionary<long, (int, Dictionary<long, int>)>();
+
+        public static int DissentLoyalty(float pDistance) =>
+            Mathf.RoundToInt(Mathf.Lerp(ContentLoyalty, WorstLoyalty, Mathf.Clamp01((pDistance - ContentDistance) / (WorstDistance - ContentDistance))));
+
+        public static int CityLoyalty(City pCity)
+        {
+            Kingdom k = pCity.kingdom;
+            if (k == null || !k.isCiv() || pCity.isCapitalCity()) return 0;
+            int year = Date.getCurrentYear();
+            if (!_dissent.TryGetValue(k.id, out var entry) || entry.year != year)
+            {
+                var cities = new Dictionary<long, int>();
+                var coordinate = Policies.Coordinate(k);
+                foreach (ParliamentClan pc in Clans(k))
+                {
+                    int loyalty = DissentLoyalty(Distance(pc.x, pc.y, coordinate));
+                    foreach (City c in pc.cities) cities[c.id] = loyalty;
+                }
+                entry = (year, cities);
+                _dissent[k.id] = entry;
+            }
+            return entry.cities.TryGetValue(pCity.id, out int value) ? value : 0;
         }
 
         // 议案生效。不管是表决通过还是直接通过，世界日志都记一条
@@ -333,6 +403,7 @@ namespace DiplomacyOverhaul
         {
             pBill.policy.Set(pKingdom, pBill.option);
             ClearBill(pKingdom);
+            _dissent.Remove(pKingdom.id);
             WorldLogs.Add(WorldLogs.PolicyEnacted, Location(pKingdom), pKingdom.king,
                 new[] { pKingdom.data.name, LM.Get(pBill.policy.OptionName(pKingdom, pBill.option)) }, new[] { pKingdom, pKingdom });
         }

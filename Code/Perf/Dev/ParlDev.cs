@@ -59,6 +59,70 @@ namespace DiplomacyOverhaul.Perf
                 foreach (var pair in counts) Dev.Log($"    {pair.Key}: {string.Join(" / ", pair.Value)}");
                 return;
             }
+            if (mode == "sim")
+            {
+                // parl sim <轮数>：每个国家连开几轮议会（立场不变，不写世界日志），统计议案和政见距离后恢复原样
+                int rounds = int.Parse(a[2]);
+                int bills = 0, passed = 0, none = 0;
+                var dists = new System.Collections.Generic.List<float>();
+                var seatDist = new System.Collections.Generic.List<(float d, int s)>();
+                var moves = new System.Collections.Generic.Dictionary<string, int>();
+                foreach (Kingdom k in World.world.kingdoms)
+                {
+                    if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
+                    var clans = Parliament.Clans(k);
+                    if (clans.Count < 2) continue;
+                    var saved = Policies.All.Select(p => p.Get(k)).ToList();
+                    for (int r = 0; r < rounds; r++)
+                    {
+                        Bill bill = Parliament.Draft(k, clans);
+                        if (bill == null) { none++; continue; }
+                        bills++;
+                        if (Parliament.Passes(bill, Parliament.Vote(k, bill, clans)))
+                        {
+                            passed++;
+                            bill.policy.Set(k, bill.option);
+                            if (r >= rounds / 2) { string key = bill.policy.id; moves[key] = moves.TryGetValue(key, out int m) ? m + 1 : 1; }
+                        }
+                    }
+                    var c = Policies.Coordinate(k);
+                    foreach (ParliamentClan pc in clans)
+                    {
+                        float d = UnityEngine.Mathf.Sqrt((pc.x - c.x) * (pc.x - c.x) + (pc.y - c.y) * (pc.y - c.y));
+                        dists.Add(d);
+                        seatDist.Add((d, pc.seats));
+                    }
+                    for (int i = 0; i < Policies.All.Count; i++) if (Policies.All[i].Get(k) != saved[i]) Policies.All[i].Set(k, saved[i]);
+                }
+                dists.Sort();
+                int n = dists.Count;
+                float wsum = 0f; int ssum = 0;
+                foreach (var (d, s) in seatDist) { wsum += d * s; ssum += s; }
+                Dev.Log($"  bills={bills} passed={passed} none={none} passRate={(float)passed / UnityEngine.Mathf.Max(1, bills):F2}");
+                Dev.Log($"  dist p10={dists[n / 10]:F2} p25={dists[n / 4]:F2} p50={dists[n / 2]:F2} p75={dists[n * 3 / 4]:F2} p90={dists[n * 9 / 10]:F2} max={dists[n - 1]:F2} seatWeighted={wsum / ssum:F2}");
+                Dev.Log("  late moves: " + string.Join(" ", moves.Select(m => m.Key + "=" + m.Value)));
+                return;
+            }
+            if (mode == "draft")
+            {
+                // 每个国家每个氏族当提案人时能提的改动：收益、按眼下立场的票数差；以及各氏族离国家坐标的距离
+                foreach (Kingdom k in World.world.kingdoms.OrderByDescending(k => k.countCities()).Take(a.Length > 2 ? int.Parse(a[2]) : 20))
+                {
+                    if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
+                    var clans = Parliament.Clans(k);
+                    if (clans.Count < 2) continue;
+                    var c = Policies.Coordinate(k);
+                    Dev.Log($"## {k.data.name} cities={k.countCities()} seats={Parliament.TotalSeats(clans)} coord=({c.x:F2},{c.y:F2})");
+                    foreach (ParliamentClan pc in clans)
+                    {
+                        float dist = UnityEngine.Mathf.Sqrt((pc.x - c.x) * (pc.x - c.x) + (pc.y - c.y) * (pc.y - c.y));
+                        var opts = Parliament.Options(k, clans, pc).OrderByDescending(o => o.gain).Where(o => o.gain > 0f).Take(5);
+                        Dev.Log($"  {pc.clan.name} seats={pc.seats} ruling={pc.ruling} pos=({pc.x:F2},{pc.y:F2}) dist={dist:F2} dissent={Parliament.DissentLoyalty(dist)} cities={pc.cities.Count} loyalty=[{string.Join(",", pc.cities.Select(x => (x.isCapitalCity() ? "cap" : "") + x.getCachedLoyalty() + "/" + Parliament.CityLoyalty(x)))}]");
+                        foreach (var o in opts) Dev.Log($"      {o.bill.policy.id}->{o.bill.option} gain={o.gain:F2} margin={o.margin:F2}");
+                    }
+                }
+                return;
+            }
             if (mode == "session" || mode == "show")
             {
                 Kingdom k = Find(a.Length > 2 ? a[2] : null);
