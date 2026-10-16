@@ -177,11 +177,24 @@ namespace DiplomacyOverhaul
 
         // 新国家（包括旧存档里还没有记录的）掷一次政体。
         // 原版一局里文化很少，文化只改变概率，同一文化下的国家也各不相同
+        // 已经有政体特质的（旧存档）按特质定，没有才掷
         static void EnsureForm(Kingdom pKingdom)
         {
             pKingdom.data.get(KeyForm, out int form, -1);
             if (form >= 0) return;
-            SetForm(pKingdom, Randy.randomChance(RepublicChance(pKingdom.culture)) ? GovForm.Republic : GovForm.Monarchy);
+            string current = Current(pKingdom)?.id;
+            GovForm? known = FormOf(current);
+            if (known != null) SetForm(pKingdom, known.Value, current == MilitaryRepublic);
+            else SetForm(pKingdom, Randy.randomChance(RepublicChance(pKingdom.culture)) ? GovForm.Republic : GovForm.Monarchy);
+        }
+
+        // 政体特质对应的大类，和自动判定一致：自治领、行省是共和制，公国、世袭行省是君主制
+        static GovForm? FormOf(string pGov)
+        {
+            if (pGov == null) return null;
+            if (RepublicIds.Contains(pGov) || pGov == Dominion || pGov == Province) return GovForm.Republic;
+            if (pGov == Kingdom || pGov == Empire || pGov == Duchy || pGov == HereditaryProvince) return GovForm.Monarchy;
+            return null;
         }
 
         static float RepublicChance(Culture pCulture)
@@ -258,12 +271,14 @@ namespace DiplomacyOverhaul
             if (locked)
             {
                 // 锁定后玩家又换了一次
-                if (current != null)
+                if (current != null && current != last)
                 {
-                    if (current != last) ApplyManual(pKingdom, current);
+                    ApplyManual(pKingdom, current);
                     return;
                 }
-                // 玩家把政体删掉 = 交还给自动判定
+                // 锁定的特质和大类对得上就不动；对不上（旧存档补掷大类时会出现）以大类为准。
+                // 玩家把政体删掉也一样：交还给自动判定
+                if (current != null && FormOf(current) == Form(pKingdom)) return;
                 data.removeBool(KeyLocked);
             }
             else if (last != null && current != null && current != last && last != LegacyCityState)
