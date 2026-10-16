@@ -7,7 +7,7 @@ using UnityPools;
 
 namespace DiplomacyOverhaul
 {
-    // 同一集团（宗主 + 附庸）互不作为 AI 的战争目标和结盟对象。
+    // 同一阵营（见 Camp：宗主、附庸、宗主的盟友和盟友的附庸）互不作为 AI 的战争目标和结盟对象。
     // getNeutralKingdoms 也被王国窗口的「关系」栏使用，所以只在 AI 挑目标期间过滤。
     static class BlocFilter
     {
@@ -22,22 +22,21 @@ namespace DiplomacyOverhaul
             if (BlocFilter.Depth <= 0) return;
             for (int i = __result.Count - 1; i >= 0; i--)
             {
-                if (Vassals.SameBloc(pKingdom, __result[i])) __result.RemoveAt(i);
+                if (Camp.Same(pKingdom, __result[i])) __result.RemoveAt(i);
             }
         }
     }
 
-    // 挑战争目标：同集团不算；敢挑的对手强弱按政体（见 Government.WarStrengthRatio），
-    // 比例不是 1 时照抄原版重算，只把"对手兵力不超过自己"换成"不超过自己的若干倍"
+    // 挑战争目标：照抄原版，改了三处：同阵营不算；双方兵力都按整个阵营算（原版只算联盟，附庸挨打时宗主、
+    // 宗主的盟友都会来救）；敢挑的对手强弱按政体（见 Government.WarStrengthRatio），
+    // "对手兵力不超过自己"换成"不超过自己的若干倍"
     [HarmonyPatch(typeof(DiplomacyHelpers), nameof(DiplomacyHelpers.getWarTarget))]
     static class Patch_WarTarget
     {
         static bool Prefix(Kingdom pInitiatorKingdom, ref Kingdom __result)
         {
             BlocFilter.Depth++;
-            float ratio = Government.WarStrengthRatio(pInitiatorKingdom);
-            if (ratio == 1f) return true;
-            __result = Find(pInitiatorKingdom, ratio);
+            __result = Find(pInitiatorKingdom, Government.WarStrengthRatio(pInitiatorKingdom));
             return false;
         }
 
@@ -47,12 +46,13 @@ namespace DiplomacyOverhaul
         {
             Kingdom result = null;
             float best = float.MaxValue;
-            int own = pInitiator.hasAlliance() ? pInitiator.getAlliance().countWarriors() : pInitiator.countTotalWarriors();
+            Dictionary<NanoObject, int> warriors = Camp.Warriors();
+            warriors.TryGetValue(Camp.Of(pInitiator), out int own);
             using ListPool<Kingdom> list = World.world.wars.getNeutralKingdoms(pInitiator);
             foreach (Kingdom k in list)
             {
                 if (!k.hasCities() || !k.hasCapital() || k.getAge() < SimGlobals.m.minimum_kingdom_age_for_attack) continue;
-                int theirs = k.hasAlliance() ? k.getAlliance().countWarriors() : k.countTotalWarriors();
+                warriors.TryGetValue(Camp.Of(k), out int theirs);
                 if (theirs > own * pRatio || !pInitiator.capital.reachableFrom(k.capital)) continue;
                 if (Date.getYearsSince(World.world.diplomacy.getRelation(pInitiator, k).data.timestamp_last_war_ended) < SimGlobals.m.minimum_years_between_wars) continue;
                 if (pInitiator.isOpinionTowardsKingdomGood(k)) continue;

@@ -49,15 +49,13 @@ namespace DiplomacyOverhaul
 
         static bool HasArmy(City pCity) => pCity.hasArmy() && pCity.army.countUnits() > 0;
 
-        // 本国、同一集团（宗主和附庸）、同一联盟：点它们的城市是去驻扎守城，不是宣战。
-        // 附庸归入宗主的阵营：盟友的附庸、宗主的盟友也算友方
+        // 本国和同阵营（见 Camp）：点它们的城市是去驻扎守城，不是宣战
         public static bool Friendly(Kingdom a, Kingdom b)
         {
             if (a == null || b == null) return false;
             if (a == b) return true;
             if (a.isEnemy(b)) return false;
-            return Vassals.SameBloc(a, b) || Alliance.isSame(a.getAlliance(), b.getAlliance())
-                || Alliance.isSame(Vassals.Root(a).getAlliance(), Vassals.Root(b).getAlliance());
+            return Camp.Same(a, b);
         }
 
         // 驻扎：军队所属城市 → 驻扎的城市 id，存在城市数据里，读档后照样守着。可以驻扎在附庸、宗主、盟友的城里。

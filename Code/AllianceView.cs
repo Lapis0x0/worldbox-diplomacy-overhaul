@@ -3,8 +3,7 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 联盟地图模式按阵营显示：附庸归入宗主的阵营
-    // 宗主有联盟时阵营是联盟，否则是宗主国；染色、名牌、高亮、提示、点击都按阵营
+    // 联盟地图模式按阵营显示（见 Camp）：染色、名牌、高亮、提示、点击都按阵营
     public static class AllianceView
     {
         public static void Init()
@@ -15,13 +14,6 @@ namespace DiplomacyOverhaul
             a.check_tile_has_meta = HasMeta;
             a.check_cursor_tooltip = Tooltip;
             a.click_action_zone = Click;
-        }
-
-        // 王国所在的阵营：宗主的联盟，没有联盟就是宗主国
-        public static NanoObject Faction(Kingdom k)
-        {
-            Kingdom root = Vassals.Root(k);
-            return (NanoObject)root.getAlliance() ?? root;
         }
 
         static Kingdom KingdomOn(TileZone pZone)
@@ -65,10 +57,10 @@ namespace DiplomacyOverhaul
         {
             Kingdom hovered = KingdomOn(pTile.zone);
             if (hovered == null) return;
-            NanoObject faction = Faction(hovered);
+            NanoObject faction = Camp.Of(hovered);
             foreach (Kingdom k in World.world.kingdoms)
             {
-                if (Faction(k) != faction) continue;
+                if (Camp.Of(k) != faction) continue;
                 foreach (City city in k.getCities()) QuantumSpriteLibrary.colorZones(pQAsset, city.zones, pQAsset.color);
             }
             if (PlayerConfig.optionBoolEnabled("highlight_kingdom_enemies")) QuantumSpriteLibrary.colorEnemies(pQAsset, hovered);
@@ -77,14 +69,14 @@ namespace DiplomacyOverhaul
         static bool HasMeta(TileZone pZone, MetaTypeAsset pAsset, int pZoneOption)
         {
             Kingdom k = KingdomOn(pZone);
-            return k != null && Faction(k) is Alliance;
+            return k != null && Camp.Of(k) is Alliance;
         }
 
         static bool Tooltip(TileZone pZone, MetaTypeAsset pAsset, int pZoneOption)
         {
             Kingdom k = KingdomOn(pZone);
             if (k == null) return false;
-            NanoObject faction = Faction(k);
+            NanoObject faction = Camp.Of(k);
             if (faction is Alliance) pAsset.cursor_tooltip_action(faction);
             else MetaTypeLibrary.kingdom.cursor_tooltip_action(faction);
             return true;
@@ -94,7 +86,7 @@ namespace DiplomacyOverhaul
         {
             Kingdom k = KingdomOn(pTile?.zone);
             if (k == null || k.isNeutral()) return false;
-            NanoObject faction = Faction(k);
+            NanoObject faction = Camp.Of(k);
             if (faction is Alliance) MetaTypeLibrary.alliance.selectAndInspect(faction);
             else MetaTypeLibrary.kingdom.selectAndInspect(faction);
             return true;
@@ -116,12 +108,32 @@ namespace DiplomacyOverhaul
     }
 
     // 联盟图层的名牌：每个联盟一个名牌，挂在视野内最强的成员或附庸首都上；
-    // 没有联盟的集团只在宗主首都显示宗主国名，附庸不单独显示
+    // 没有联盟的集团只在宗主首都显示宗主国名，附庸不单独显示。名牌上的人口是整个阵营的
     [HarmonyPatch(typeof(NameplateLibrary), "actionAlliance")]
     static class Patch_AllianceNameplates
     {
+        static readonly AccessTools.FieldRef<NameplateText, NameplateRenderingType> LastMode =
+            AccessTools.FieldRefAccess<NameplateText, NameplateRenderingType>("_last_mode");
+        static readonly System.Func<NameplateText, string, int, string> Format =
+            AccessTools.MethodDelegate<System.Func<NameplateText, string, int, string>>(AccessTools.Method(typeof(NameplateText), "getStringForNameplate"));
+        static readonly System.Action<NameplateText, string, Vector3, int> SetText =
+            AccessTools.MethodDelegate<System.Action<NameplateText, string, Vector3, int>>(AccessTools.Method(typeof(NameplateText), "setText"));
+        static readonly System.Action<NameplateText, int> SetPriority =
+            AccessTools.MethodDelegate<System.Action<NameplateText, int>>(AccessTools.Method(typeof(NameplateText), "setPriority"));
+
         static bool InCamera(Kingdom k) =>
             k.hasCapital() && World.world.move_camera.isWithinCameraViewNotPowerBar(k.capital.city_center);
+
+        // 原版写好名牌后，把人口换成整个阵营的；打开原版「显示战士数」时附上阵营的兵力
+        static void CampText(NameplateText pPlate, NanoObject pCamp, string pName, Vector3 pPos)
+        {
+            int population = Camp.Population(pCamp);
+            string text = Format(pPlate, pName, population);
+            if (LastMode(pPlate) == NameplateRenderingType.Full && DebugConfig.isOn(DebugOption.ShowWarriorsCityText))
+                text += " | " + Camp.Warriors(pCamp);
+            SetText(pPlate, text, pPos, 10);
+            SetPriority(pPlate, population);
+        }
 
         static bool Prefix(NameplateLibrary __instance, NameplateManager pManager, NameplateAsset pAsset)
         {
@@ -133,7 +145,10 @@ namespace DiplomacyOverhaul
                     if (Vassals.Root(k).getAlliance() != alliance || !InCamera(k)) continue;
                     if (best == null || best.power < k.power) best = k;
                 }
-                if (best != null) pManager.prepareNext(pAsset, alliance).showTextAlliance(alliance, best.capital);
+                if (best == null) continue;
+                NameplateText plate = pManager.prepareNext(pAsset, alliance);
+                plate.showTextAlliance(alliance, best.capital);
+                CampText(plate, alliance, alliance.name, best.capital.city_center);
             }
 
             int count = 0;
@@ -142,9 +157,30 @@ namespace DiplomacyOverhaul
                 if (Vassals.IsVassal(k) || k.hasAlliance() || !InCamera(k)) continue;
                 if (count >= pAsset.max_nameplate_count) break;
                 count++;
-                pManager.prepareNext(__instance._plate_kingdom, k).showTextKingdom(k, k.capital.city_center);
+                NameplateText plate = pManager.prepareNext(__instance._plate_kingdom, k);
+                plate.showTextKingdom(k, k.capital.city_center);
+                if (Vassals.HasVassals(k)) CampText(plate, k, Government.DisplayName(k), k.capital.city_center);
             }
             return false;
+        }
+    }
+
+    // 联盟的悬停提示：人口和兵力算整个阵营，成员的附庸也算进去
+    [HarmonyPatch(typeof(TooltipLibrary), "showAlliance")]
+    static class Patch_AllianceTooltip
+    {
+        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        {
+            Alliance alliance = pData?.alliance;
+            if (alliance == null) return;
+            Set(pTooltip, "i_population", Camp.Population(alliance));
+            Set(pTooltip, "i_army", Camp.Warriors(alliance));
+        }
+
+        static void Set(Tooltip pTooltip, string pName, int pValue)
+        {
+            StatsIcon icon = pTooltip.transform.FindRecursive(pName)?.GetComponent<StatsIcon>();
+            if (icon != null) icon.setValue(pValue);
         }
     }
 }

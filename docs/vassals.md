@@ -17,11 +17,14 @@
 
 宗主和它的所有附庸算一个**集团**。
 
-- 原版 AI 挑战争目标、挑结盟对象时，跳过同集团的国家。
+集团再加上宗主的联盟算一个**阵营**：宗主有联盟时，阵营是联盟的所有成员和成员的附庸；没有联盟时，阵营就是这个集团。
+
+- 原版 AI 挑战争目标、挑结盟对象时，跳过同阵营的国家，所以盟友不会去打宗主的附庸。
+- AI 挑战争目标时，双方兵力都按整个阵营算（原版只算联盟）。附庸挨打时宗主和宗主的盟友都会来救，想打附庸的国家要掂量整个阵营。
 - 附庸不会自己发动战争，不能发起结盟、加入联盟，也不会被选为结盟对象。
 - 王国窗口显示「宗主」或「附庸」一栏，标题写成「政体 · 宗主名」。
 - 王国地图上，附庸的边界线用宗主的颜色，填充保持自己的颜色；行省的填充也用宗主的颜色，看上去是宗主版图的一部分，和宗主之间仍有边界线。
-- 联盟地图按阵营显示：附庸归入宗主的阵营，宗主有联盟时阵营是联盟，否则是宗主国。染色、名牌、悬停高亮、悬停提示和点击都按阵营；附庸不单独显示名牌，联盟名牌挂在视野内最强的成员或附庸首都上。
+- 联盟地图按阵营显示：染色、名牌、悬停高亮、悬停提示和点击都按阵营；附庸不单独显示名牌，联盟名牌挂在视野内最强的成员或附庸首都上。名牌上的人口、联盟悬停提示里的人口和兵力都算整个阵营。
 
 ### 战争同进同退
 
@@ -213,6 +216,7 @@
 | `Feudal.cs` | 叛乱改分封、攻城改分封、威逼称臣密谋 |
 | `Appanage.cs` | 分封宗室密谋 |
 | `DirectRule.cs` | 收归直辖密谋 |
+| `Camp.cs` | 阵营的判定和人口、兵力统计 |
 | `AllianceView.cs` | 联盟地图 |
 
-原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`MetaTypeLibrary.alliance` 的地图回调。
+原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`TooltipLibrary.showAlliance`、`MetaTypeLibrary.alliance` 的地图回调。
