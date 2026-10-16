@@ -212,7 +212,7 @@
 - 原版忠诚 `culture`、`language`、`religion` 三项换成照抄原版再乘教化政策倍数的版本。
 - 外交路线乘在 `Government.WarTimeout`、`Government.WarStrengthRatio` 上。
 - `Docks.isFull`、`Docks.isOverfilled`、`Docks.buildBoatFromHere`：运输船的上限按海军方针；超额只按最高的 4 艘算。
-- `Actor.updateStats`：算完属性后，陆上单位的伤害乘海军方针的倍数；海军方针改动时全国单位重算属性。
+- `Actor.updateStats`：算完属性后，陆上单位的伤害乘海军方针的倍数，全国单位再乘天命的倍数（见[王朝周期](cycle.md#军队伤害)）；海军方针改动时全国单位重算属性。
 - 附庸政策、臣属方针改 `Integration` 的每年变动和 `Core` 的独立动机。
 - `KingdomWindow.showStatsRows`：给王国窗口左侧页签栏加上议会。
 - `PowerButtonSelector.updateSelectedUnitCancelButton`：左下角的选中取消按钮显示或收起时，右下角的议会按钮跟着。

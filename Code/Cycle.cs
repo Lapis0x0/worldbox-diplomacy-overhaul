@@ -14,11 +14,12 @@ namespace DiplomacyOverhaul
     }
 
     // 王朝周期：不是附庸、自己有 6 座城或者有附庸的国家才有，君主制、共和国都一样。
-    // 新生 → 鼎盛 → 衰落 → 大叛乱 → 崩溃 → 挺过来回到新生，否则周期消失
+    // 新生 → 鼎盛 → 衰落 → 大叛乱 → 崩溃 → 平叛后回到衰落、改朝换代回到新生，否则周期消失
     //
     // 阶段由天命值（0–100）推动：每年天命向「应得天命」靠拢一成，
-    // 应得天命 = 底数 + 治理 - 积弊² / 100。治理看城市归心、君主、附庸、民生，普通大国记 0；
+    // 应得天命 = 底数 + 治理 - (积弊 + 沉疴)² / 100。治理看城市归心、君主、附庸、民生，普通大国记 0；
     // 积弊每年 +1 - 治理 / 25，治理好的王朝老得慢。早年几乎不老，晚年积重难返。
+    // 沉疴是平叛留下的旧伤，每撑过一次大叛乱 +10，只有改朝换代才清掉
     // 战争胜负、得失城市直接加减天命。数值的推演见 tools/sim/mandate.py
     public static class Cycle
     {
@@ -26,6 +27,9 @@ namespace DiplomacyOverhaul
         const string KeySince = "vd_cycle_since";
         const string KeyMandate = "vd_mandate";
         const string KeyDecay = "vd_decay";
+        const string KeyScar = "vd_scar";
+        const string KeyFrozenOpinion = "vd_cycle_frozen_opinion"; // 崩溃期沿用大叛乱时附庸的好感
+        const string KeyDamage = "vd_mandate_damage";             // 已经应用到单位属性上的伤害百分比
 
         public const int EmpireCities = 6;
 
@@ -49,7 +53,8 @@ namespace DiplomacyOverhaul
         const float StillbornBelow = 40f; // 新生期就跌到这里，直接衰落
         const int RenewalMax = 30;        // 新生最多这么多年
         const float RebellionBelow = 20f;
-        const float RestoreMandate = 15f, RestoreDecay = 40f;
+        const float RestoreMandate = 15f, RestoreDecay = 40f, RestoreScar = 5f;
+        const float ScarPerRebellion = 10f;
         const float DeclineLoyalty = 8f;  // 衰落期天命每低于 50 一点，城市忠诚 -8
         const int InitialDecayMax = 60;   // 读档时已有的大国，积弊在 0 到这个值之间随机
 
@@ -99,10 +104,11 @@ namespace DiplomacyOverhaul
 
         public static int YearsInPhase(Kingdom pKingdom) => Years(pKingdom);
 
-        // 中兴密谋成功：清掉一部分积弊，天命回到鼎盛
+        // 中兴密谋成功：清掉一部分积弊和一点沉疴，天命回到鼎盛
         public static void Restore(Kingdom pKingdom)
         {
             SetDecay(pKingdom, Mathf.Max(0f, Decay(pKingdom) - RestoreDecay));
+            SetScar(pKingdom, Scar(pKingdom) - RestoreScar);
             SetMandate(pKingdom, Mathf.Max(Mandate(pKingdom) + RestoreMandate, PrimeAt));
             Set(pKingdom, CyclePhase.Prime);
         }
@@ -121,8 +127,50 @@ namespace DiplomacyOverhaul
             return d;
         }
 
-        static void SetMandate(Kingdom pKingdom, float pValue) => pKingdom.data.set(KeyMandate, Mathf.Clamp(pValue, 0f, 100f));
+        public static float Scar(Kingdom pKingdom)
+        {
+            pKingdom.data.get(KeyScar, out float s, 0f);
+            return s;
+        }
+
+        static void SetMandate(Kingdom pKingdom, float pValue)
+        {
+            pKingdom.data.set(KeyMandate, Mathf.Clamp(pValue, 0f, 100f));
+            RefreshDamage(pKingdom);
+        }
+
         static void SetDecay(Kingdom pKingdom, float pValue) => pKingdom.data.set(KeyDecay, Mathf.Max(0f, pValue));
+        static void SetScar(Kingdom pKingdom, float pValue) => pKingdom.data.set(KeyScar, Mathf.Max(0f, pValue));
+
+        // ---------- 军队伤害 ----------
+
+        // 天命对应的伤害增减（百分比），控制点之间线性插值。100 以上留给以后突破上限的天命
+        static readonly float[] DamageAt = { 0f, 20f, 35f, 50f, 80f, 100f, 150f, 200f };
+        static readonly float[] DamagePct = { -25f, -15f, -5f, 0f, 5f, 10f, 25f, 40f };
+
+        public static int DamagePercent(Kingdom pKingdom)
+        {
+            if (Get(pKingdom) == CyclePhase.None) return 0;
+            float m = Mandate(pKingdom);
+            if (m < 0f) return 0;
+            int last = DamageAt.Length - 1;
+            if (m >= DamageAt[last]) return Mathf.RoundToInt(DamagePct[last]);
+            int i = 1;
+            while (m > DamageAt[i]) i++;
+            float t = (m - DamageAt[i - 1]) / (DamageAt[i] - DamageAt[i - 1]);
+            return Mathf.RoundToInt(Mathf.Lerp(DamagePct[i - 1], DamagePct[i], t));
+        }
+
+        // 伤害变了一档，全国单位重算属性（见 Policies 的 Patch_LandDamage）
+        static void RefreshDamage(Kingdom pKingdom)
+        {
+            int pct = DamagePercent(pKingdom);
+            pKingdom.data.get(KeyDamage, out int applied, 0);
+            if (pct == applied) return;
+            if (pct == 0) pKingdom.data.removeInt(KeyDamage);
+            else pKingdom.data.set(KeyDamage, pct);
+            foreach (Actor a in pKingdom.units) a.setStatsDirty();
+        }
 
         static void AddMandate(Kingdom pKingdom, float pDelta)
         {
@@ -174,18 +222,25 @@ namespace DiplomacyOverhaul
 
         public static float Aging(Kingdom pKingdom)
         {
-            float d = Decay(pKingdom);
+            float d = Decay(pKingdom) + Scar(pKingdom);
             return d * d / AgingDiv;
+        }
+
+        // 老化里算在沉疴头上的部分，按两者的比例分
+        public static float ScarAging(Kingdom pKingdom)
+        {
+            float d = Decay(pKingdom), s = Scar(pKingdom);
+            return d + s > 0f ? Aging(pKingdom) * s / (d + s) : 0f;
         }
 
         public static float Target(Kingdom pKingdom, Governance pGov) => Base + pGov.Total - Aging(pKingdom);
 
         // 进入某个阶段的人工设定（特质编辑器、神力、旧存档）：天命设到 pMandate，
-        // 积弊设到让应得天命正好等于它，好像王朝本来就走到了这一步
+        // 积弊设到让应得天命正好等于它，好像王朝本来就走到了这一步；沉疴不动
         static void Place(Kingdom pKingdom, CyclePhase pPhase, float pMandate)
         {
             if (pPhase == CyclePhase.Renewal) SetDecay(pKingdom, 0f);
-            else SetDecay(pKingdom, Mathf.Sqrt(Mathf.Max(0f, Base + Govern(pKingdom).Total - pMandate) * AgingDiv));
+            else SetDecay(pKingdom, Mathf.Sqrt(Mathf.Max(0f, Base + Govern(pKingdom).Total - pMandate) * AgingDiv) - Scar(pKingdom));
             SetMandate(pKingdom, pMandate);
             Set(pKingdom, pPhase);
         }
@@ -204,6 +259,7 @@ namespace DiplomacyOverhaul
         {
             SetMandate(pKingdom, Start);
             SetDecay(pKingdom, 0f);
+            SetScar(pKingdom, 0f);
         }
 
         static int Years(Kingdom pKingdom)
@@ -221,10 +277,15 @@ namespace DiplomacyOverhaul
                 pKingdom.data.removeInt(KeySince);
                 pKingdom.data.removeFloat(KeyMandate);
                 pKingdom.data.removeFloat(KeyDecay);
+                pKingdom.data.removeFloat(KeyScar);
+                pKingdom.data.removeInt(KeyFrozenOpinion);
+                RefreshDamage(pKingdom);
                 return;
             }
+            if (pPhase != CyclePhase.Collapse) pKingdom.data.removeInt(KeyFrozenOpinion);
             pKingdom.data.set(KeyPhase, (int)pPhase);
             pKingdom.data.set(KeySince, Date.getCurrentYear() - pYearsAgo);
+            RefreshDamage(pKingdom);
         }
 
         public static bool IsEmpire(Kingdom pKingdom) =>
@@ -268,11 +329,14 @@ namespace DiplomacyOverhaul
             if (phase == CyclePhase.Collapse)
             {
                 if (InCrisis(pKingdom)) return;
-                // 叛乱打完了：还保住帝国规模或附庸就是中兴
+                // 叛乱打完了，原王朝还保住帝国规模或附庸：平叛，回到衰落，积弊清零但留下沉疴。
+                // 改朝换代在崩溃期当中就回到了新生（见 NewDynasty），走不到这里
                 if (Eligible(pKingdom))
                 {
-                    NewDynastyMandate(pKingdom);
-                    Set(pKingdom, CyclePhase.Renewal);
+                    SetScar(pKingdom, Scar(pKingdom) + ScarPerRebellion);
+                    SetDecay(pKingdom, 0f);
+                    SetMandate(pKingdom, EntryMandate(CyclePhase.Decline));
+                    Set(pKingdom, CyclePhase.Decline);
                 }
                 else Set(pKingdom, CyclePhase.None);
                 return;
@@ -391,7 +455,10 @@ namespace DiplomacyOverhaul
         public static void OnGreatRebellion(Kingdom pKingdom)
         {
             CyclePhase phase = Get(pKingdom);
-            if (phase != CyclePhase.None && phase != CyclePhase.Collapse) Set(pKingdom, CyclePhase.Collapse);
+            if (phase == CyclePhase.None || phase == CyclePhase.Collapse) return;
+            // 附庸的好感冻结在这一刻；城市忠诚跟着天命走，天命在崩溃期本来就不变
+            pKingdom.data.set(KeyFrozenOpinion, Mathf.Min(0, VassalOpinion(pKingdom)));
+            Set(pKingdom, CyclePhase.Collapse);
         }
 
         // 乱世中改朝换代：新王朝从新生开始
@@ -426,7 +493,8 @@ namespace DiplomacyOverhaul
             foreach (Kingdom k in pWar.getDefenders()) AddMandate(k, WarDelta(pWar, pWinner == WarWinner.Defenders));
         }
 
-        // 附庸对宗主的好感：新生 +10，鼎盛 +20；衰落从 -10 起每年再 -3，最多 -90，人心一年年散去
+        // 附庸对宗主的好感：新生 +10，鼎盛 +20；衰落从 -10 起每年再 -3，最多 -90，人心一年年散去；
+        // 崩溃期沿用大叛乱爆发时的值
         public static int VassalOpinion(Kingdom pLord)
         {
             switch (Get(pLord))
@@ -434,6 +502,9 @@ namespace DiplomacyOverhaul
                 case CyclePhase.Renewal: return 10;
                 case CyclePhase.Prime: return 20;
                 case CyclePhase.Decline: return -System.Math.Min(90, 10 + 3 * Years(pLord));
+                case CyclePhase.Collapse:
+                    pLord.data.get(KeyFrozenOpinion, out int frozen, 0);
+                    return frozen;
                 default: return 0;
             }
         }
@@ -441,7 +512,7 @@ namespace DiplomacyOverhaul
         // 附庸对宗主的好感：宗主自己不到 6 座城，每少一座 -10
         public static int WeakLordOpinion(Kingdom pLord) => -10 * Shortfall(pLord);
 
-        // 帝国城市的忠诚：鼎盛 +10；衰落从 -1 起每年再 -1，最多 -30。
+        // 帝国城市的忠诚：鼎盛 +10；衰落和崩溃期天命每低于 50 一点 -8（崩溃期天命不变，沿用大叛乱时的值）。
         // 忠诚降到负数的城市会自己起事，大叛乱之前各地就零星叛乱
         public static int CityLoyalty(City pCity)
         {
@@ -450,7 +521,8 @@ namespace DiplomacyOverhaul
             switch (Get(k))
             {
                 case CyclePhase.Prime: return 10;
-                case CyclePhase.Decline: return -Mathf.RoundToInt(DeclineLoyalty * Mathf.Max(0f, DeclineBelow - Mandate(k)));
+                case CyclePhase.Decline:
+                case CyclePhase.Collapse: return -Mathf.RoundToInt(DeclineLoyalty * Mathf.Max(0f, DeclineBelow - Mandate(k)));
                 default: return 0;
             }
         }
@@ -464,7 +536,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 周期特质的提示：在原版属性栏里显示天命、趋向和治理各项，只在打开的王国正是这一阶段时
+    // 周期特质的提示：在原版属性栏里显示天命、治理各项、老化和军队伤害，只在打开的王国正是这一阶段时
     [HarmonyPatch(typeof(TooltipLibrary), "showKingdomTrait")]
     static class Patch_MandateTooltip
     {
@@ -477,13 +549,16 @@ namespace DiplomacyOverhaul
             if (phase == CyclePhase.None || phase == CyclePhase.Collapse || Cycle.Mandate(k) < 0f) return;
             Cycle.Governance g = Cycle.Govern(k);
             pTooltip.addLineText("vd_mandate_value", Mathf.RoundToInt(Cycle.Mandate(k)).ToString());
-            pTooltip.addLineText("vd_mandate_target", Mathf.RoundToInt(Cycle.Target(k, g)).ToString());
             Line(pTooltip, "vd_mandate_cities", g.Cities);
             Line(pTooltip, "vd_mandate_ruler", g.Ruler);
             if (Vassals.HasVassals(k)) Line(pTooltip, "vd_mandate_vassals", g.Vassals);
             Line(pTooltip, "vd_mandate_people", g.People);
             if (g.SmallLord != 0f) Line(pTooltip, "vd_mandate_small_lord", g.SmallLord);
-            Line(pTooltip, "vd_mandate_decay", -Cycle.Aging(k));
+            float scar = Cycle.ScarAging(k);
+            Line(pTooltip, "vd_mandate_decay", scar - Cycle.Aging(k));
+            if (Cycle.Scar(k) > 0f) Line(pTooltip, "vd_mandate_scar", -scar);
+            int dmg = Cycle.DamagePercent(k);
+            if (dmg != 0) pTooltip.addLineText("vd_mandate_damage", (dmg > 0 ? "+" : "") + dmg + "%", dmg > 0 ? "#8FE07A" : "#FF8F7A");
             pTooltip.showStatValues();
         }
 

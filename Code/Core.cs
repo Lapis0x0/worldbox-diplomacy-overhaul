@@ -259,8 +259,9 @@ namespace DiplomacyOverhaul
                     Kingdom lord = Vassals.GetOverlord(k);
                     if (lord == null) return false;
                     if (IsPlotRunning(plot_independence, k)) return false;
-                    // 宗主处在王朝衰落期，附庸看准它外强中干，不再看实力对比
-                    if (Cycle.Get(lord) == CyclePhase.Decline) return true;
+                    // 宗主处在王朝衰落或崩溃期，附庸看准它外强中干，不再看实力对比
+                    CyclePhase phase = Cycle.Get(lord);
+                    if (phase == CyclePhase.Decline || phase == CyclePhase.Collapse) return true;
                     // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落；整合度越高，比例越低（行省约一半）
                     float ratio = Settings.RebelPowerRatio * (1f - Integration.Get(k) / 200f);
                     return Vassals.Power(lord) * 100 < Vassals.Power(k) * ratio;
