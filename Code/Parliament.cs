@@ -28,6 +28,8 @@ namespace DiplomacyOverhaul
         public Policy policy;
         public int option;
         public bool player;
+        // 起草议案的氏族；玩家提的或旧存档里的议案是 -1
+        public long proposer = -1;
     }
 
     public class VoteResult
@@ -45,6 +47,7 @@ namespace DiplomacyOverhaul
         const string KeyBillPolicy = "vd_bill_policy";
         const string KeyBillOption = "vd_bill_option";
         const string KeyBillPlayer = "vd_bill_player";
+        const string KeyBillProposer = "vd_bill_proposer";
 
         const int MinInterval = 4;
         const int MaxInterval = 6;
@@ -249,7 +252,8 @@ namespace DiplomacyOverhaul
             if (policy == null) return null;
             pKingdom.data.get(KeyBillOption, out int option, -1);
             pKingdom.data.get(KeyBillPlayer, out bool player, false);
-            var bill = new Bill { policy = policy, option = option, player = player };
+            pKingdom.data.get(KeyBillProposer, out long proposer, -1L);
+            var bill = new Bill { policy = policy, option = option, player = player, proposer = proposer };
             return Valid(pKingdom, bill) ? bill : null;
         }
 
@@ -268,6 +272,8 @@ namespace DiplomacyOverhaul
             pKingdom.data.set(KeyBillOption, pBill.option);
             if (pBill.player) pKingdom.data.set(KeyBillPlayer, true);
             else pKingdom.data.removeBool(KeyBillPlayer);
+            if (pBill.proposer >= 0) pKingdom.data.set(KeyBillProposer, pBill.proposer);
+            else pKingdom.data.removeLong(KeyBillProposer);
         }
 
         public static void ClearBill(Kingdom pKingdom)
@@ -275,6 +281,7 @@ namespace DiplomacyOverhaul
             pKingdom.data.removeString(KeyBillPolicy);
             pKingdom.data.removeInt(KeyBillOption);
             pKingdom.data.removeBool(KeyBillPlayer);
+            pKingdom.data.removeLong(KeyBillProposer);
         }
 
         // 下一次开议会的年份
@@ -315,7 +322,7 @@ namespace DiplomacyOverhaul
                         best.Clear();
                         bestDistance = d;
                     }
-                    best.Add(new Bill { policy = p, option = o });
+                    best.Add(new Bill { policy = p, option = o, proposer = proposer.clan.id });
                 }
             }
             return best.Count > 0 ? best[Randy.randomInt(0, best.Count)] : null;

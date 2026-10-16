@@ -28,8 +28,8 @@ namespace DiplomacyOverhaul
         static readonly Color Edge = Hex("#1a1a18");
         static readonly Color YesBar = Hex("#1e90d6");
         static readonly Color NoBar = Hex("#d5491b");
-        static readonly Color YesText = Hex("#5fb8f0");
-        static readonly Color NoText = Hex("#ff7a4a");
+        internal static readonly Color YesText = Hex("#5fb8f0");
+        internal static readonly Color NoText = Hex("#ff7a4a");
 
         static ScrollWindow _window;
         static RectTransform _root;
@@ -431,14 +431,14 @@ namespace DiplomacyOverhaul
             var bk = new System.Text.StringBuilder(clanKey);
             if (bill != null)
             {
-                bk.Append('b').Append(bill.policy.id).Append(bill.option).Append('|').Append(bill.policy.Get(_kingdom)).Append('|').Append(result.yes).Append(':').Append(result.no);
+                bk.Append('b').Append(bill.policy.id).Append(bill.option).Append(bill.player).Append(bill.proposer).Append('|').Append(bill.policy.Get(_kingdom)).Append('|').Append(result.yes).Append(':').Append(result.no);
                 foreach (ParliamentClan pc in clans) bk.Append(result.votes.TryGetValue(pc.clan, out bool v) && v ? 'y' : 'n');
             }
             if (Build(_bill, bk.ToString(), () => BuildBill(clans, bill, result))) built = true;
             // 离表决还有几年：跨年只改这一行字
             if (bill != null && _billWhen != null)
             {
-                string when = BillWhen(bill, result);
+                string when = BillWhen(bill);
                 if (_billWhen.text != when) _billWhen.text = when;
             }
 
@@ -603,8 +603,6 @@ namespace DiplomacyOverhaul
             }
             Text(area, LM.Get("vd_parliament_largest"), 0f, ah - 34f, aw, 10f, 6, Muted, TextAnchor.MiddleCenter);
             Text(area, LM.Get(FactionKey(top)) + " " + topSeats, 0f, ah - 24f, aw, 18f, 14, FactionColor(top), TextAnchor.MiddleCenter);
-            Text(area, LM.Get("vd_parliament_radical"), 0f, ah + 1f, 40f, 9f, 6, Muted, TextAnchor.MiddleLeft);
-            Text(area, LM.Get("vd_parliament_conservative"), aw - 40f, ah + 1f, 40f, 9f, 6, Muted, TextAnchor.MiddleRight);
         }
 
         // 点半圆里的议席，选中它所属的氏族：找离点击位置最近的议席
@@ -714,6 +712,8 @@ namespace DiplomacyOverhaul
             Rect(slot, 4f, cy - 0.5f, pW - 8f, 1f, Line);
             Text(slot, LM.Get("vd_parliament_central"), 0f, 1f, pW, 8f, 5, Muted, TextAnchor.MiddleCenter);
             Text(slot, LM.Get("vd_parliament_local"), 0f, pH - 9f, pW, 8f, 5, Muted, TextAnchor.MiddleCenter);
+            Text(slot, LM.Get("vd_parliament_radical"), 4f, cy - 9f, 30f, 8f, 5, Muted, TextAnchor.MiddleLeft);
+            Text(slot, LM.Get("vd_parliament_conservative"), pW - 34f, cy - 9f, 30f, 8f, 5, Muted, TextAnchor.MiddleRight);
             float rx = pW / 2f - 8f, ry = pH / 2f - 12f;
             foreach (ParliamentClan pc in pClans)
             {
@@ -771,7 +771,6 @@ namespace DiplomacyOverhaul
                         Refresh();
                     });
                 Text(tab, LM.Get("vd_policy_tab_" + t.ToString().ToLowerInvariant()), 0f, 0f, tw, 16f, 7, Color.white, TextAnchor.MiddleCenter);
-                if (bill != null && bill.policy.tab == t) Swatch(tab, tw - 12f, 4f, 5f, Hex("#ffd23a"), 1f);
             }
 
             // 政策列表
@@ -803,7 +802,6 @@ namespace DiplomacyOverhaul
                 RectTransform pill = Sliced(head, p.active ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray",
                     RightW - 30f - pillW, 4f, pillW, 14f);
                 Text(pill, currentName, 0f, 0f, pillW, 14f, 6, p.active ? Color.white : Muted, TextAnchor.MiddleCenter);
-                if (bill != null && bill.policy == p) Frame(pill, -1.5f);
                 if (p.active) Text(head, open ? "▲" : "▼", RightW - 24f, 0f, 12f, 22f, 6, Muted, TextAnchor.MiddleCenter);
                 if (open)
                 {
@@ -831,21 +829,38 @@ namespace DiplomacyOverhaul
             return key;
         }
 
-        // 点选项：选了现行选项就撤回议案，否则提出议案
+        // 点选项：提出议案，顶替原来的议案；点现行选项撤回这项政策上的议案
         static void Pick(Policy pPolicy, int pOption)
         {
             if (!pPolicy.CanPropose(_kingdom)) return;
-            if (pPolicy.Get(_kingdom) == pOption) Parliament.ClearBill(_kingdom);
-            else Parliament.SetBill(_kingdom, new Bill { policy = pPolicy, option = pOption, player = true });
+            Bill old = Parliament.GetBill(_kingdom);
+            if (pPolicy.Get(_kingdom) == pOption)
+            {
+                if (old != null && old.policy == pPolicy) Parliament.ClearBill(_kingdom);
+                Refresh();
+                return;
+            }
+            Parliament.SetBill(_kingdom, new Bill { policy = pPolicy, option = pOption, player = true });
+            Clan rival = old != null && !old.player ? ProposerClan(old) : null;
+            if (rival != null && (old.policy != pPolicy || old.option != pOption))
+                WorldTip.showNow(LM.Get("vd_parliament_replaced").Replace("$clan$", rival.name), false, "top");
             Refresh();
         }
 
-        static string BillWhen(Bill pBill, VoteResult pResult)
+        static Clan ProposerClan(Bill pBill)
         {
-            bool passes = Parliament.Passes(pBill, pResult);
+            if (pBill.proposer < 0) return null;
+            Clan clan = World.world.clans.get(pBill.proposer);
+            return clan != null && !clan.isRekt() ? clan : null;
+        }
+
+        // 标题右边：哪个氏族提的（玩家提的不写）、离表决还有几年
+        static string BillWhen(Bill pBill)
+        {
             int years = Mathf.Max(0, Parliament.NextSession(_kingdom) - Date.getCurrentYear());
-            string verdict = $"<color=#{ColorUtility.ToHtmlStringRGB(passes ? YesText : NoText)}>{LM.Get(passes ? "vd_parliament_will_pass" : "vd_parliament_will_fail")}</color>";
-            return LM.Get("vd_parliament_vote_in").Replace("$years$", years.ToString()) + " · " + verdict;
+            string when = LM.Get("vd_parliament_vote_in").Replace("$years$", years.ToString());
+            Clan proposer = pBill.player ? null : ProposerClan(pBill);
+            return proposer != null ? LM.Get("vd_parliament_proposed_by").Replace("$clan$", proposer.name) + " · " + when : when;
         }
 
         static void BuildBill(List<ParliamentClan> pClans, Bill pBill, VoteResult result)
@@ -863,7 +878,7 @@ namespace DiplomacyOverhaul
             string titleText = LM.Get(pBill.policy.id) + LM.Get("vd_parliament_colon") + LM.Get(pBill.policy.OptionName(_kingdom, pBill.policy.Get(_kingdom)))
                                + " → " + LM.Get(pBill.policy.OptionName(_kingdom, pBill.option));
             Text(title, titleText, 7f, 0f, RightW - 14f, 18f, 7, Ink, TextAnchor.MiddleLeft);
-            _billWhen = Text(title, BillWhen(pBill, result), 7f, 0f, RightW - 14f, 18f, 6, Muted, TextAnchor.MiddleRight).GetComponent<Text>();
+            _billWhen = Text(title, BillWhen(pBill), 7f, 0f, RightW - 14f, 18f, 6, Muted, TextAnchor.MiddleRight).GetComponent<Text>();
             y += 20f;
 
             RectTransform bar = Sliced(_parent, "ui/special/windowInnerSlicedRound", RightX, y, RightW, 16f);
@@ -1001,6 +1016,9 @@ namespace DiplomacyOverhaul
         // 正在悬停的政策选项和它的数字行，由 Patch_PolicyTip 加进原版提示
         internal static string TipName;
         internal static List<(string key, string value)> TipEffects;
+        // 提出这一档时议会的表决预测；现行选项没有
+        internal static Bill TipBill;
+        internal static VoteResult TipVote;
 
         // 政策选项的悬停提示：一句说明，下面是这一档的数字
         static void OptionTip(RectTransform pTarget, Policy pPolicy, int pOption)
@@ -1011,6 +1029,8 @@ namespace DiplomacyOverhaul
             {
                 TipName = pPolicy.OptionName(_kingdom, pOption);
                 TipEffects = Policies.Effects(_kingdom, pPolicy, pOption);
+                TipBill = pPolicy.Get(_kingdom) != pOption ? new Bill { policy = pPolicy, option = pOption } : null;
+                TipVote = TipBill != null ? Parliament.Vote(_kingdom, TipBill, Parliament.Clans(_kingdom)) : null;
                 Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = TipName, tip_description = DescriptionKey(pPolicy, pOption) });
             });
             trigger.triggers.Add(enter);
@@ -1085,8 +1105,16 @@ namespace DiplomacyOverhaul
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
             if (pData == null || pData.tip_name != ParliamentWindow.TipName || ParliamentWindow.TipEffects == null) return;
-            if (ParliamentWindow.TipEffects.Count == 0) return;
             foreach (var (key, value) in ParliamentWindow.TipEffects) pTooltip.addLineText(key, value);
+            VoteResult vote = ParliamentWindow.TipVote;
+            if (vote != null && vote.Total > 0)
+            {
+                bool passes = Parliament.Passes(ParliamentWindow.TipBill, vote);
+                pTooltip.addLineText("vd_tip_votes", vote.yes + " : " + vote.no);
+                pTooltip.addLineText("vd_tip_vote", LM.Get(passes ? "vd_parliament_will_pass" : "vd_parliament_will_fail"),
+                    "#" + ColorUtility.ToHtmlStringRGB(passes ? ParliamentWindow.YesText : ParliamentWindow.NoText));
+            }
+            else if (ParliamentWindow.TipEffects.Count == 0) return;
             pTooltip.showStatValues();
         }
     }
