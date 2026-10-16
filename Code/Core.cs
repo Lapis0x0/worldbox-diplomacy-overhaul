@@ -173,6 +173,10 @@ namespace DiplomacyOverhaul
 
         static void AddOpinion()
         {
+            // 原版「共同敌人」：同一场战争里站在同一边 +50。附庸是被拖进宗主的仗，不算；
+            // 只有附庸自己挨打（它是主守方）、宗主来救的那场才算
+            OpinionAsset sameWars = AssetManager.opinion_library.get("opinion_same_wars");
+            if (sameWars != null) sameWars.calc = SameWarsOpinion;
             Upsert(AssetManager.opinion_library, new OpinionAsset
             {
                 id = "opinion_vd_overlord",
@@ -232,6 +236,17 @@ namespace DiplomacyOverhaul
             // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉
             LoyaltyAsset conquest = AssetManager.loyalty_library.get("new_conquest");
             if (conquest != null) conquest.calc = _ => 0;
+        }
+
+        static int SameWarsOpinion(Kingdom pMain, Kingdom pTarget)
+        {
+            if (pMain.isEnemy(pTarget)) return 0;
+            if (Vassals.GetOverlord(pMain) != pTarget) return pMain.isInWarOnSameSide(pTarget) ? 50 : 0;
+            foreach (War war in pMain.getWars())
+            {
+                if (!war.hasEnded() && war.isMainDefender(pMain) && war.isDefender(pTarget)) return 50;
+            }
+            return 0;
         }
 
         static void SetLoyalty(string pId, LoyaltyDelegateCalc pCalc)
