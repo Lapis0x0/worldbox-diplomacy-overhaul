@@ -3,7 +3,7 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 中兴密谋：衰落中的国家，有作为的君主力图挽回国运。
-    // 要 5 级，所以中兴取决于王朝能不能出一位雄主；做完按管理和智力掷成败，成功回到鼎盛，失败什么也不发生
+    // 要 5 级，所以中兴取决于王朝能不能出一位雄主；做完按管理和智力掷成败，成功回到鼎盛，失败天命 -10
     public static class Restoration
     {
         const int MinLevel = 5;
@@ -43,6 +43,7 @@ namespace DiplomacyOverhaul
                     if (!InDecline(k)) return false;
                     bool success = Randy.randomChance(Chance(pActor) / 100f);
                     if (success) Cycle.Restore(k);
+                    else Cycle.RestoreFailed(k);
                     WorldLogs.Add(success ? WorldLogs.Restored : WorldLogs.RestoreFailed,
                         k.hasCapital() ? k.capital.last_city_center : Vector2.zero, pActor,
                         new[] { pActor.getName(), k.data.name }, new[] { k, k });
@@ -63,10 +64,10 @@ namespace DiplomacyOverhaul
             return Mathf.Clamp(Settings.RestorationChance + swing, 0, 100);
         }
 
-        // 动机：危机感 × 性格。衰落越久越想挽救，满 40 年到顶
+        // 动机：危机感 × 性格。天命 60 起越低越想挽救，跌到 20（大叛乱线）到顶
         static float Motive(Actor pActor)
         {
-            float urgency = Mathf.Min(Cycle.YearsInPhase(pActor.kingdom) / 20f, 2f);
+            float urgency = Mathf.Clamp((60f - Cycle.Mandate(pActor.kingdom)) / 20f, 0f, 2f);
             return urgency * Motives.Personality(pActor, Motives.Stat(pActor, Motives.Administration), false);
         }
     }

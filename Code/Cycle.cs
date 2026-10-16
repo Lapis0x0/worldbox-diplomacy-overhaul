@@ -51,7 +51,7 @@ namespace DiplomacyOverhaul
         const float DeclineBelow = 50f;
         const float StillbornBelow = 40f; // 新生期跌到这里就衰落；新生不限年数，没站稳也没垮就一直是新生
         const float RebellionBelow = 20f;
-        const float RestoreMandate = 15f, RestoreDecay = 40f, RestoreScar = 5f;
+        const float RestoreMandate = 15f, RestoreDecay = 40f, RestoreScar = 5f, RestoreFailedMandate = -10f;
         const float ScarPerRebellion = 10f;
         const float DeclineLoyalty = 8f;  // 衰落期天命每低于 50 一点，城市忠诚 -8
         const float DeclineOpinion = 10f, DeclineOpinionPer = 3f; // 衰落期附庸好感 -10，天命每低于 50 一点再 -3
@@ -102,8 +102,6 @@ namespace DiplomacyOverhaul
             return (CyclePhase)phase;
         }
 
-        public static int YearsInPhase(Kingdom pKingdom) => Years(pKingdom);
-
         // 中兴密谋成功：清掉一部分积弊和一点沉疴，天命回到鼎盛
         public static void Restore(Kingdom pKingdom)
         {
@@ -112,6 +110,9 @@ namespace DiplomacyOverhaul
             SetMandate(pKingdom, Mathf.Max(Mandate(pKingdom) + RestoreMandate, PrimeAt));
             Set(pKingdom, CyclePhase.Prime);
         }
+
+        // 中兴密谋失败：朝野更加失望，和打输一场仗一样
+        public static void RestoreFailed(Kingdom pKingdom) => AddMandate(pKingdom, RestoreFailedMandate);
 
         // ---------- 天命 ----------
 
