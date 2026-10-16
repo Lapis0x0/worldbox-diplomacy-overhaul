@@ -7,16 +7,16 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 政体随历史事件改变：
-    // 共和国从各城城主里推举执政，任期届满换人，优先换一个家族；
+    // 共和国由议会从现任执政和各城城主里选出执政，任期届满改选；
     // 王室绝嗣时君主国可能改制为共和国而不分裂；鼎盛的大共和国可能被强硬的执政改为帝国；
     // 崩溃中的国家可能被将领夺权，有野心的建立新王朝，否则成立军事共和国
     public static class Regime
     {
-        const string KeyLastClan = "vd_gov_last_clan";
         const string KeyTermStart = "vd_gov_term_start";
         const string KeyTermRuler = "vd_gov_term_ruler";
 
         const int TermYears = 12;
+        const int Candidates = 3;
         // 王室绝嗣时改制为共和国的概率；文化倾向共和的更高
         const float RepublicOnExtinction = 0.4f;
         const float RepublicOnExtinctionLeaning = 0.8f;
@@ -45,29 +45,116 @@ namespace DiplomacyOverhaul
 
         // ---------- 共和国执政 ----------
 
-        // 从城主里推举执政，排除上一任的家族；城主都出自同一家族时也只好让他们连任
-        public static Actor Elect(Kingdom pKingdom)
+        // 原版挑领袖看的能力：外交、武力、管理之和，父系、母系文化的男性、女性另加；不掷骰子，界面的预测和真正选举一致
+        public static int Ability(Actor pActor)
         {
-            pKingdom.data.get(KeyLastClan, out long lastClan, -1L);
-            Actor best = null, fallback = null;
-            int bestScore = 0, fallbackScore = 0;
+            int n = (int)(pActor.stats["diplomacy"] + pActor.stats["warfare"] + pActor.stats["stewardship"]);
+            if (pActor.hasCulture())
+            {
+                if (pActor.culture.hasTrait("patriarchy") && pActor.isSexMale()) n += 999;
+                if (pActor.culture.hasTrait("matriarchy") && pActor.isSexFemale()) n += 999;
+            }
+            return n;
+        }
+
+        // 按眼下的议会选一次：现任执政一定参选，其余是别家能力最高的城主，每个家族一位，共三位；
+        // 每个氏族把议席投给立场离自己最近的候选人，得票最多的当选。没有候选人时返回 null
+        public static Election Vote(Kingdom pKingdom)
+        {
+            var e = new Election { clans = Parliament.Clans(pKingdom) };
+            var byClan = new Dictionary<Clan, ParliamentClan>();
+            foreach (ParliamentClan pc in e.clans) byClan[pc.clan] = pc;
+            Actor incumbent = pKingdom.hasKing() && pKingdom.king.isAlive() ? pKingdom.king : null;
+            if (incumbent != null && incumbent.hasClan() && byClan.TryGetValue(incumbent.clan, out ParliamentClan own))
+                e.candidates.Add(new Candidate { actor = incumbent, clan = own, incumbent = true });
+
+            var best = new Dictionary<Clan, Actor>();
             foreach (City city in pKingdom.getCities())
             {
-                if (!city.hasLeader()) continue;
                 Actor a = city.leader;
-                if (!a.isUnitFitToRule()) continue;
-                int score = ActorTool.attributeDice(a);
-                if (a.hasClan() && a.clan.id == lastClan)
-                {
-                    if (fallback == null || score > fallbackScore) { fallback = a; fallbackScore = score; }
-                }
-                else if (best == null || score > bestScore)
-                {
-                    best = a;
-                    bestScore = score;
-                }
+                if (a == null || !a.isAlive() || a == incumbent || !a.hasClan() || !a.isUnitFitToRule()) continue;
+                if (!byClan.ContainsKey(a.clan) || e.candidates.Exists(c => c.clan.clan == a.clan)) continue;
+                if (!best.TryGetValue(a.clan, out Actor b) || Ability(a) > Ability(b)) best[a.clan] = a;
             }
-            return best ?? fallback;
+            var others = new List<Actor>(best.Values);
+            others.Sort((x, y) => Ability(y).CompareTo(Ability(x)));
+            for (int i = 0; i < others.Count && e.candidates.Count < Candidates; i++)
+                e.candidates.Add(new Candidate { actor = others[i], clan = byClan[others[i].clan] });
+            if (e.candidates.Count == 0) return null;
+
+            foreach (ParliamentClan pc in e.clans)
+            {
+                Candidate pick = null;
+                float near = float.MaxValue;
+                foreach (Candidate c in e.candidates)
+                {
+                    float dx = pc.x - c.clan.x, dy = pc.y - c.clan.y;
+                    float d = dx * dx + dy * dy;
+                    if (d < near) { near = d; pick = c; }
+                }
+                e.votes[pc] = pick;
+                pick.votes += pc.seats;
+            }
+            foreach (Candidate c in e.candidates)
+            {
+                if (e.winner == null || c.votes > e.winner.votes) e.winner = c;
+            }
+            return e;
+        }
+
+        // 没有能参选的人（城主都没有家族）时，照原版挑能力最高的城主
+        static Actor Fallback(Kingdom pKingdom)
+        {
+            Actor best = null;
+            foreach (City city in pKingdom.getCities())
+            {
+                Actor a = city.leader;
+                if (a == null || !a.isAlive() || !a.isUnitFitToRule()) continue;
+                if (best == null || Ability(a) > Ability(best)) best = a;
+            }
+            return best;
+        }
+
+        public static Actor Elect(Kingdom pKingdom) => Vote(pKingdom)?.winner.actor ?? Fallback(pKingdom);
+
+        // 离下一次改选还有几年
+        public static int YearsToElection(Kingdom pKingdom)
+        {
+            pKingdom.data.get(KeyTermStart, out int start, -1);
+            if (start < 0) return TermYears;
+            return Mathf.Max(0, TermYears - (Date.getCurrentYear() - start));
+        }
+
+        // 改选：现任当选就连任，重新算任期；否则换人
+        public static void Reelect(Kingdom pKingdom)
+        {
+            Election e = Vote(pKingdom);
+            if (e == null) return;
+            if (e.winner.incumbent)
+            {
+                StartTerm(pKingdom, e.winner.actor);
+                WorldLogs.Add(WorldLogs.Reelected, Location(pKingdom), e.winner.actor,
+                    new[] { e.winner.actor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+                return;
+            }
+            Appoint(pKingdom, e.winner.actor);
+        }
+
+        // 让某人接任执政，现任下台
+        public static void Appoint(Kingdom pKingdom, Actor pActor)
+        {
+            if (pActor == null || !pActor.isAlive()) return;
+            if (pKingdom.king == pActor)
+            {
+                StartTerm(pKingdom, pActor);
+                return;
+            }
+            if (pKingdom.hasKing()) pKingdom.removeKing();
+            pKingdom.data.timer_new_king = 0f;
+            pKingdom.clearKingData();
+            MakeRuler(pKingdom, pActor);
+            WorldLogs.Add(WorldLogs.Elected, Location(pKingdom), pActor,
+                new[] { pActor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
         }
 
         // 和原版立新王一样：离开城主之位、搬进首都
@@ -87,17 +174,15 @@ namespace DiplomacyOverhaul
         {
             pKingdom.data.set(KeyTermStart, Date.getCurrentYear());
             pKingdom.data.set(KeyTermRuler, pRuler.data.id);
-            pKingdom.data.set(KeyLastClan, pRuler.hasClan() ? pRuler.clan.id : -1L);
         }
 
         static void ClearTerm(Kingdom pKingdom)
         {
             pKingdom.data.removeInt(KeyTermStart);
             pKingdom.data.removeLong(KeyTermRuler);
-            pKingdom.data.removeLong(KeyLastClan);
         }
 
-        // 共和国没有执政时推举一位；返回 false 交给原版处理
+        // 共和国没有执政时选一位；返回 false 交给原版处理
         internal static bool TryElect(Kingdom pKingdom)
         {
             Actor ruler = Elect(pKingdom);
@@ -109,7 +194,7 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 王室绝嗣：原版会让各城城主各自建国。共和国照样推举；君主国按概率改制
+        // 王室绝嗣：原版会让各城城主各自建国。共和国照样选举；君主国按概率改制
         internal static bool TryRepublicOnExtinction(Kingdom pKingdom)
         {
             if (Government.IsRepublic(pKingdom)) return TryElect(pKingdom);
@@ -141,7 +226,7 @@ namespace DiplomacyOverhaul
             if (Settings.GovernmentAutoEnabled) Government.Update(pKingdom);
         }
 
-        // 议会改政体：改共和制时撤销王室，现任君主下台，下一次检查国王时推举执政；
+        // 议会改政体：改共和制时撤销王室，现任君主下台，下一次检查国王时选举执政；
         // 改君主制时现任执政的家族成为王室
         public static void Reform(Kingdom pKingdom, GovForm pForm)
         {
@@ -174,7 +259,7 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 任期届满就卸任，下一次检查国王时重新推举
+        // 任期届满就改选
         static void UpdateTerm(Kingdom pKingdom)
         {
             if (!pKingdom.hasKing() || !pKingdom.king.isAlive()) return;
@@ -182,15 +267,12 @@ namespace DiplomacyOverhaul
             pKingdom.data.get(KeyTermRuler, out long rulerId, -1L);
             if (start < 0 || rulerId != pKingdom.king.data.id)
             {
-                // 改制前就在位的，或者不是推举上来的：从现在开始算任期
+                // 改制前就在位的，或者不是选上来的：从现在开始算任期
                 StartTerm(pKingdom, pKingdom.king);
                 return;
             }
             if (Date.getCurrentYear() - start < TermYears) return;
-            // 找不到别的人选就连任
-            Actor next = Elect(pKingdom);
-            if (next == null) return;
-            pKingdom.removeKing();
+            Reelect(pKingdom);
         }
 
         // 称帝：鼎盛的大共和国，执政性格越强硬越可能
@@ -282,7 +364,23 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 共和国没有执政时由我们推举，不走原版的王室继承
+    public class Candidate
+    {
+        public Actor actor;
+        public ParliamentClan clan;
+        public bool incumbent;
+        public int votes;
+    }
+
+    public class Election
+    {
+        public List<ParliamentClan> clans;
+        public readonly List<Candidate> candidates = new List<Candidate>();
+        public readonly Dictionary<ParliamentClan, Candidate> votes = new Dictionary<ParliamentClan, Candidate>();
+        public Candidate winner;
+    }
+
+    // 共和国没有执政时由议会选举，不走原版的王室继承
     [HarmonyPatch(typeof(KingdomBehCheckKing), nameof(KingdomBehCheckKing.execute))]
     static class Patch_CheckKing
     {

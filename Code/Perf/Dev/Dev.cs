@@ -36,6 +36,8 @@ namespace DiplomacyOverhaul.Perf
     //   parl draft [数量]         有两个以上氏族的国家：各氏族离国家坐标的距离、政见修正、城市忠诚，和它当提案人时收益最高的几项
     //   parl sim <轮数>           每个国家连开几轮议会（立场不变，不写世界日志），统计议案通过率和政见距离，算完恢复原样
     //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy）
+    //   parl election [国家]       打开选举与任命窗口
+    //   parl vote [国家]           按眼下的议会选一次执政，只打印候选人和票数，不生效
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {

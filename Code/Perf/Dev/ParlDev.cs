@@ -2,7 +2,7 @@ using System.Linq;
 
 namespace DiplomacyOverhaul.Perf
 {
-    // 开发命令 parl：查看各国议会、让一个国家立即开一次议会、打开议会窗口
+    // 开发命令 parl：查看各国议会、让一个国家立即开一次议会、打开议会窗口和选举与任命窗口、预测执政选举
     static class ParlDev
     {
         public static void Run(string[] a)
@@ -14,6 +14,24 @@ namespace DiplomacyOverhaul.Perf
                 SelectedMetas.selected_kingdom = target;
                 if (a.Length > 3) ParliamentWindow.Open(target, (PolicyTab)System.Enum.Parse(typeof(PolicyTab), a[3], true));
                 else ParliamentWindow.Open(target);
+                return;
+            }
+            if (mode == "election")
+            {
+                Kingdom target = Find(a.Length > 2 ? a[2] : null);
+                SelectedMetas.selected_kingdom = target;
+                ElectionWindow.Open(target);
+                return;
+            }
+            if (mode == "vote")
+            {
+                // parl vote [国家]：按眼下的议会选一次执政，只打印不生效
+                Kingdom target = Find(a.Length > 2 ? a[2] : null);
+                Election e = target != null ? Regime.Vote(target) : null;
+                if (e == null) { Dev.Log("  ! no candidates"); return; }
+                Dev.Log($"  [{target.id}] {target.data.name} republic={Government.IsRepublic(target)} years={Regime.YearsToElection(target)}");
+                foreach (Candidate c in e.candidates)
+                    Dev.Log($"    {(c == e.winner ? "*" : " ")} {c.actor.getName()} ({c.clan.clan.name}) ability={Regime.Ability(c.actor)} incumbent={c.incumbent} votes={c.votes}");
                 return;
             }
             if (mode == "set")

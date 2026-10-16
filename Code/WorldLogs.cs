@@ -22,6 +22,7 @@ namespace DiplomacyOverhaul
         public const string Restored = "vd_log_restored";             // $ruler$ 中兴 $kingdom$
         public const string RestoreFailed = "vd_log_restore_failed";  // $ruler$ 中兴 $kingdom$ 失败，国势更衰
         public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
+        public const string Reelected = "vd_log_reelected";              // $ruler$ 连任 $kingdom$ 执政
         public const string RepublicFounded = "vd_log_republic_founded"; // $kingdom$ 王室绝嗣，$ruler$ 被推举执政，改制为共和国
         public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝
         public const string Usurped = "vd_log_usurped";                  // $ruler$ 篡夺 $kingdom$ 王位，建立新王朝
@@ -47,6 +48,7 @@ namespace DiplomacyOverhaul
             Register(Restored, "ui/Icons/vd_cycle_prime", Toolbox.color_log_good, "$ruler$", "$kingdom$");
             Register(RestoreFailed, "ui/Icons/vd_cycle_decline", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(Elected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(Reelected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(RepublicFounded, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$kingdom$", "$ruler$");
             Register(Crowned, "ui/Icons/iconKingdomList", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");

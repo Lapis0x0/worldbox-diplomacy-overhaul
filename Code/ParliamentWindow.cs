@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NeoModLoader.General;
 using UnityEngine;
 using UnityEngine.UI;
+using static DiplomacyOverhaul.UiKit;
 using Object = UnityEngine.Object;
 
 namespace DiplomacyOverhaul
@@ -12,27 +13,16 @@ namespace DiplomacyOverhaul
     public static class ParliamentWindow
     {
         const string WindowId = "vd_parliament";
-        const string ButtonName = "vd_parliament_button";
-        const string TabsName = "vd_parliament_tabs";
         const string SideName = "vd_parliament_side";
-        const string KingdomWindowId = "kingdom";
         public const string IconPath = "ui/Icons/vd_parliament";
-        const float W = 560f, H = 330f;
-        const float Margin = 6f, TitleSpace = 20f;
+        public const float W = 560f, H = 330f;
 
-        static readonly Color Ink = Hex("#f4f1e8");
-        static readonly Color Muted = Hex("#cfc8b4");
-        static readonly Color Gold = Hex("#ffb52e");
-        static readonly Color HeaderGold = Hex("#ffa827");
-        static readonly Color Line = Hex("#5d6253");
-        static readonly Color Edge = Hex("#1a1a18");
         static readonly Color YesBar = Hex("#1e90d6");
         static readonly Color NoBar = Hex("#d5491b");
         internal static readonly Color YesText = Hex("#5fb8f0");
         internal static readonly Color NoText = Hex("#ff7a4a");
 
-        static ScrollWindow _window;
-        static RectTransform _root;
+        static KingdomTabWindow _shell;
         static Kingdom _kingdom;
         static long _selected = -1;
         static PolicyTab _tab = PolicyTab.Domestic;
@@ -43,7 +33,6 @@ namespace DiplomacyOverhaul
         static RectTransform _parent;
         static long _appliedSelected = -2;
         static Text _billWhen;
-        static float _shift;
 
         // 窗口的一块：记着上次建它时的数据指纹，按氏族调淡的图形和选中框
         class Section
@@ -74,79 +63,16 @@ namespace DiplomacyOverhaul
             }
         }
 
-        static Color Hex(string pHex)
-        {
-            ColorUtility.TryParseHtmlString(pHex, out Color c);
-            return c;
-        }
-
         // 热重载：旧版本建的窗口和按钮引用着旧代码，全部拆掉，用到时重建
         public static void Init()
         {
-            if (ScrollWindow._all_windows.TryGetValue(WindowId, out ScrollWindow old) && old != null)
-            {
-                // 开着的窗口直接拆掉会让原版的窗口切换卡住，先关掉
-                if (old.gameObject.activeSelf) ScrollWindow.hideAllEvent(false);
-                Object.Destroy(old.gameObject);
-            }
-            ScrollWindow._all_windows.Remove(WindowId);
-            if (AssetManager.window_library.dict.TryGetValue(WindowId, out WindowAsset asset))
-            {
-                AssetManager.window_library.dict.Remove(WindowId);
-                AssetManager.window_library.list.Remove(asset);
-            }
-            foreach (Button b in Resources.FindObjectsOfTypeAll<Button>())
-            {
-                if (b != null && b.name == ButtonName) Object.DestroyImmediate(b.gameObject);
-            }
+            _shell = new KingdomTabWindow(WindowId, IconPath, 1, W, H, Open, Tick);
+            _shell.Init();
             foreach (RectTransform t in Resources.FindObjectsOfTypeAll<RectTransform>())
             {
                 if (t != null && t.name == SideName) Object.DestroyImmediate(t.gameObject);
             }
             _side = null;
-            _window = null;
-            _root = null;
-            // 按钮平时在王国窗口显示概览页时加上，重开窗口可能直接停在别的页签，这里马上加回去
-            if (ScrollWindow._all_windows.TryGetValue(KingdomWindowId, out ScrollWindow kingdomWindow) && kingdomWindow != null)
-            {
-                KingdomWindow tabs = kingdomWindow.GetComponent<KingdomWindow>();
-                if (tabs != null) EnsureButton(tabs);
-            }
-        }
-
-        // ---------- 王国窗口里的按钮 ----------
-
-        // 王国窗口左侧页签栏，排在第一个页签（概览）后面。照原版的页签复制一个，
-        // 去掉页签组件：别的页签在窗口里换内容，议会内容太宽，点了打开单独的窗口
-        public static void EnsureButton(KingdomWindow pWindow)
-        {
-            Transform tabs = pWindow.transform.Find("Background/Tabs");
-            if (tabs == null || tabs.Find(ButtonName) != null) return;
-            Transform template = tabs.Find("Villages");
-            if (template == null) return;
-            GameObject go = Object.Instantiate(template.gameObject, tabs);
-            go.name = ButtonName;
-            go.transform.SetSiblingIndex(1);
-            foreach (Component c in go.GetComponents<Component>())
-            {
-                if (c is WindowMetaTab || c is DragOrderElement || c is ScrollableButton || c is UnityEngine.EventSystems.EventTrigger) Object.DestroyImmediate(c);
-            }
-            go.GetComponent<Image>().sprite = SpriteTextureLoader.getSprite("ui/tab_button_vertical");
-            Image icon = go.transform.Find("Icon")?.GetComponent<Image>();
-            if (icon != null) icon.sprite = SpriteTextureLoader.getSprite(IconPath);
-            TipButton tip = go.GetComponent<TipButton>();
-            if (tip != null)
-            {
-                tip.textOnClick = "vd_parliament";
-                tip.textOnClickDescription = "vd_parliament_description";
-                tip.text_description_2 = "";
-            }
-            Button button = go.GetComponent<Button>();
-            button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(() => Open(SelectedMetas.selected_kingdom));
-            // 原版这一栏有两个挨着的空位，收掉一个，页签栏保持原来的长度
-            tabs.Find("space (2)")?.gameObject.SetActive(false);
-            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)tabs);
         }
 
         // ---------- 右下角的快捷按钮 ----------
@@ -244,158 +170,38 @@ namespace DiplomacyOverhaul
             if (pKingdom == null || !pKingdom.isAlive()) return;
             if (_kingdom != pKingdom) _selected = -1;
             _kingdom = pKingdom;
-            Create();
-            BuildTabs();
-            LM.AddToCurrentLocale("vd_parliament_window_title", _kingdom.data.name);
-            _window.titleText.GetComponent<LocalizedText>().setKeyAndUpdate("vd_parliament_window_title");
-            ScrollWindow.showWindow(WindowId);
-            Fit();
+            KingdomTabWindow.Current = pKingdom;
+            if (_shell.Create())
+            {
+                _sections = new[] { _frame = NewSection("frame"), _seats = NewSection("seats"), _clans = NewSection("clans"), _compass = NewSection("compass"),
+                    _detail = NewSection("detail"), _policies = NewSection("policies"), _bill = NewSection("bill") };
+            }
+            _shell.Show(pKingdom);
             Refresh();
-        }
-
-        // 窗口比原版的宽，屏幕窄时放不下：在左边原版工具栏和屏幕右边之间，整体缩小到能完整显示（连同左侧页签栏），
-        // 还挤的话往右挪。窗口自身的位置归原版的滑入动画管，挪的是窗口里的各个部件
-        static void Fit()
-        {
-            Canvas canvas = _window.GetComponentInParent<Canvas>();
-            Transform parent = _window.transform.parent;
-            if (canvas == null || parent == null) return;
-            var corners = new Vector3[4];
-            ((RectTransform)canvas.transform).GetWorldCorners(corners);
-            float left = parent.InverseTransformPoint(corners[0]).x;
-            float right = parent.InverseTransformPoint(corners[2]).x;
-            float height = parent.InverseTransformPoint(corners[2]).y - parent.InverseTransformPoint(corners[0]).y;
-            // 工具栏随窗口打开从屏幕外滑进来，按它滑到的位置算，不看动画走到哪了
-            RectTransform toolbar = canvas.transform.Find("WindowToolbarContainer/WindowToolbar") as RectTransform;
-            UiMover mover = toolbar != null && toolbar.gameObject.activeInHierarchy ? toolbar.GetComponent<UiMover>() : null;
-            if (mover != null && mover.visible)
-            {
-                Vector3 edge = toolbar.parent.TransformPoint(mover.initPos + new Vector3(toolbar.rect.xMax * toolbar.localScale.x, 0f));
-                left = Mathf.Max(left, parent.InverseTransformPoint(edge).x);
-            }
-            // 窗口居中，按伸得最远的一边算（页签栏伸在背景左边外面）
-            float side = W / 2f;
-            foreach (Transform c in _window.transform.Find("Background"))
-            {
-                if (!c.gameObject.activeSelf) continue;
-                Rect r = ((RectTransform)c).rect;
-                side = Mathf.Max(side, -(c.localPosition.x + r.xMin), c.localPosition.x + r.xMax);
-            }
-            side += Margin;
-            float s = Mathf.Min(1f, (right - left) / (2f * side), height / (H + 2f * (TitleSpace + Margin)));
-            float shift = Mathf.Max(0f, left - (-s * side)) / s;
-            _window.transform.localScale = new Vector3(s, s, 1f);
-            foreach (Transform c in _window.transform) c.localPosition += new Vector3(shift - _shift, 0f, 0f);
-            _shift = shift;
-        }
-
-        static void Create()
-        {
-            if (_window != null) return;
-            _shift = 0f;
-            _window = WindowCreator.CreateEmptyWindow(WindowId, WindowId);
-            // 新建的窗口会先播一段收起动画，动画没完原版不接受打开窗口，直接放完
-            ScrollWindow.finishAnimations();
-            Transform background = _window.transform.Find("Background");
-            background.Find("Scroll View")?.gameObject.SetActive(false);
-            RectTransform bg = background.GetComponent<RectTransform>();
-            bg.sizeDelta = new Vector2(W, H);
-            Image bgImage = background.GetComponent<Image>();
-            bgImage.type = Image.Type.Sliced;
-            Transform close = _window.transform.Find("CloseBackground");
-            if (close != null) close.localPosition = new Vector3(W / 2f - 18f, H / 2f + 4f);
-            _window.titleText.transform.localPosition = new Vector3(0f, H / 2f - 2f);
-
-            var root = new GameObject("vd_parliament_root", typeof(RectTransform));
-            _root = root.GetComponent<RectTransform>();
-            _root.SetParent(background, false);
-            _root.anchorMin = _root.anchorMax = new Vector2(0.5f, 0.5f);
-            _root.pivot = new Vector2(0.5f, 0.5f);
-            _root.sizeDelta = new Vector2(W, H);
-            _root.anchoredPosition = Vector2.zero;
-            _sections = new[] { _frame = NewSection("frame"), _seats = NewSection("seats"), _clans = NewSection("clans"), _compass = NewSection("compass"),
-                _detail = NewSection("detail"), _policies = NewSection("policies"), _bill = NewSection("bill") };
-            _window.gameObject.AddComponent<ParliamentWindowTicker>();
-        }
-
-        // 左侧页签栏：照王国窗口的页签栏复制一份，议会那格选中，点别的格回到王国窗口的那一页。
-        // 每次打开都重新复制，跟着王国窗口当前显示哪些页签
-        static void BuildTabs()
-        {
-            Transform background = _window.transform.Find("Background");
-            Transform old = background.Find(TabsName);
-            if (old != null) Object.DestroyImmediate(old.gameObject);
-            if (!ScrollWindow._all_windows.TryGetValue(KingdomWindowId, out ScrollWindow kingdomWindow) || kingdomWindow == null) return;
-            // 热重载后王国窗口还没重新打开过，议会按钮还没加回去
-            KingdomWindow kingdomTabs = kingdomWindow.GetComponent<KingdomWindow>();
-            if (kingdomTabs != null) EnsureButton(kingdomTabs);
-            RectTransform source = kingdomWindow.transform.Find("Background/Tabs") as RectTransform;
-            if (source == null) return;
-
-            // 先复制到一个没激活的节点下，原版页签组件不会初始化，拆掉后再挂到窗口上
-            var holder = new GameObject("vd_parliament_tabs_holder");
-            holder.SetActive(false);
-            GameObject go = Object.Instantiate(source.gameObject, holder.transform);
-            go.name = TabsName;
-            foreach (Component c in go.GetComponentsInChildren<Component>(true))
-            {
-                if (c is PlatformRemover) Object.DestroyImmediate(c);
-            }
-            foreach (Component c in go.GetComponentsInChildren<Component>(true))
-            {
-                if (c is WindowMetaTab || c is WindowMetaTabButtonsContainer || c is DragOrderElement || c is ScrollableButton || c is UnityEngine.EventSystems.EventTrigger) Object.DestroyImmediate(c);
-            }
-            foreach (Transform t in go.transform)
-            {
-                Button button = t.GetComponent<Button>();
-                if (button == null) continue;
-                bool self = t.name == ButtonName;
-                t.GetComponent<Image>().sprite = SpriteTextureLoader.getSprite(self ? "ui/tab_button_vertical_selected" : "ui/tab_button_vertical");
-                button.onClick = new Button.ButtonClickedEvent();
-                string tab = t.name;
-                if (!self) button.onClick.AddListener(() => OpenKingdomTab(tab));
-            }
-
-            // 和王国窗口里一样，贴着窗口左上角
-            RectTransform from = (RectTransform)source.parent;
-            RectTransform to = (RectTransform)background;
-            go.transform.SetParent(background, false);
-            Vector3 offset = source.localPosition - new Vector3(from.rect.xMin, from.rect.yMax);
-            go.transform.localPosition = new Vector3(to.rect.xMin, to.rect.yMax) + offset;
-            Object.Destroy(holder);
-        }
-
-        static void OpenKingdomTab(string pTab)
-        {
-            if (_kingdom == null || !_kingdom.isAlive()) return;
-            SelectedMetas.selected_kingdom = _kingdom;
-            ScrollWindow.showWindow(KingdomWindowId);
-            if (ScrollWindow._all_windows.TryGetValue(KingdomWindowId, out ScrollWindow kingdomWindow) && kingdomWindow != null)
-                kingdomWindow.tabs.showTab(pTab);
         }
 
         static Section NewSection(string pName)
         {
-            RectTransform rt = Box(_root, 0f, 0f, W, H, "vd_section_" + pName);
+            RectTransform rt = Box(_shell.root, 0f, 0f, W, H, "vd_section_" + pName);
             return new Section { root = rt };
         }
 
         internal static void Tick()
         {
-            if (_window == null || !_window.gameObject.activeInHierarchy) return;
+            if (!_shell.IsOpen) return;
             if (_kingdom == null || !_kingdom.isAlive())
             {
-                _window.clickHide();
+                _shell.window.clickHide();
                 return;
             }
-            Fit();
+            _shell.Fit();
             Refresh();
         }
 
         // 每块算一个数据指纹，和上次不同才重建那一块
         static void Refresh()
         {
-            if (_root == null || _kingdom == null) return;
+            if (_shell.root == null || _kingdom == null) return;
             List<ParliamentClan> clans = Parliament.Clans(_kingdom);
             if (_selected >= 0 && clans.Find(c => c.clan.id == _selected) == null) _selected = -1;
             bool republic = Government.IsRepublic(_kingdom);
@@ -645,64 +451,6 @@ namespace DiplomacyOverhaul
             Text(area, text, 0f, 72f, LeftW, 20f, 12, Ink, TextAnchor.MiddleCenter);
         }
 
-        // 半圆的排法：试 1–16 排，挑方块沿弧和沿半径的间距最接近的那种；每排的席位数和半径成正比
-        static List<Vector3> SeatLayout(int pCount, float pW, float pH, out float pSize)
-        {
-            var result = new List<Vector3>();
-            pSize = 6f;
-            if (pCount <= 0) return result;
-            float cx = pW / 2f, cy = pH - 3f, rOut = pW / 2f - 4f, rIn = rOut * 0.465f;
-            float[] bestRadii = null;
-            float bestScore = float.MaxValue;
-            for (int rows = 1; rows <= 16; rows++)
-            {
-                var radii = new float[rows];
-                float sum = 0f;
-                for (int i = 0; i < rows; i++)
-                {
-                    radii[i] = rows == 1 ? rOut - 5f : rIn + (rOut - rIn) * i / (rows - 1);
-                    sum += radii[i];
-                }
-                float along = Mathf.PI * sum / pCount;
-                float radial = rows == 1 ? rOut - rIn : (rOut - rIn) / (rows - 1);
-                float score = Mathf.Abs(Mathf.Log(radial / along));
-                if (score < bestScore)
-                {
-                    bestScore = score;
-                    bestRadii = radii;
-                    pSize = Mathf.Clamp(Mathf.Min(along, radial) * 0.74f, 3.5f, 9f);
-                }
-            }
-            float total = 0f;
-            foreach (float r in bestRadii) total += r;
-            var counts = new int[bestRadii.Length];
-            var rest = new List<KeyValuePair<float, int>>();
-            int left = pCount;
-            for (int i = 0; i < bestRadii.Length; i++)
-            {
-                float raw = pCount * bestRadii[i] / total;
-                counts[i] = Mathf.FloorToInt(raw);
-                left -= counts[i];
-                rest.Add(new KeyValuePair<float, int>(raw - counts[i], i));
-            }
-            rest.Sort((a, b) => b.Key.CompareTo(a.Key));
-            for (int i = 0; i < rest.Count && left > 0; i++, left--) counts[rest[i].Value]++;
-            var pos = new List<(float t, float r, Vector3 p)>();
-            for (int ri = 0; ri < bestRadii.Length; ri++)
-            {
-                int k = counts[ri];
-                float r = bestRadii[ri];
-                for (int j = 0; j < k; j++)
-                {
-                    float t = k == 1 ? Mathf.PI / 2f : Mathf.PI * (1f - (float)j / (k - 1));
-                    pos.Add((t, r, new Vector3(cx + r * Mathf.Cos(t), cy - r * Mathf.Sin(t))));
-                }
-            }
-            pos.Sort((a, b) => a.t != b.t ? b.t.CompareTo(a.t) : a.r.CompareTo(b.r));
-            foreach (var p in pos) result.Add(p.p);
-            return result;
-        }
-
         // 立场坐标图：横轴激进（左）到保守（右），纵轴集权（上）到分权（下），王室的点戴皇冠
         static void Compass(List<ParliamentClan> pClans, float pX, float pY, float pW, float pH)
         {
@@ -932,86 +680,10 @@ namespace DiplomacyOverhaul
             Text(withdraw, LM.Get("vd_parliament_withdraw"), 0f, 0f, 50f, 18f, 7, Color.white, TextAnchor.MiddleCenter);
         }
 
-        // ---------- 拼界面的小工具：坐标都从父节点左上角算，y 向下 ----------
+        static void Header(float pX, float pY, float pW, string pText, string pIcon) => UiKit.Header(_parent, pX, pY, pW, pText, pIcon);
 
-        static RectTransform Box(Transform pParent, float pX, float pY, float pW, float pH, string pName = "box")
-        {
-            var go = new GameObject(pName, typeof(RectTransform));
-            var rt = go.GetComponent<RectTransform>();
-            rt.SetParent(pParent, false);
-            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
-            rt.pivot = new Vector2(0f, 1f);
-            rt.anchoredPosition = new Vector2(pX, -pY);
-            rt.sizeDelta = new Vector2(pW, pH);
-            return rt;
-        }
-
-        static RectTransform Sliced(Transform pParent, string pSprite, float pX, float pY, float pW, float pH)
-        {
-            RectTransform rt = Box(pParent, pX, pY, pW, pH, "slot");
-            Image img = rt.gameObject.AddComponent<Image>();
-            img.sprite = SpriteTextureLoader.getSprite(pSprite);
-            img.type = Image.Type.Sliced;
-            img.raycastTarget = false;
-            return rt;
-        }
-
-        static RectTransform Rect(Transform pParent, float pX, float pY, float pW, float pH, Color pColor)
-        {
-            RectTransform rt = Box(pParent, pX, pY, pW, pH, "rect");
-            Image img = rt.gameObject.AddComponent<Image>();
-            img.color = pColor;
-            img.raycastTarget = false;
-            return rt;
-        }
-
-        // 带深色描边的色块：议席、氏族的派系色
-        static RectTransform Swatch(Transform pParent, float pX, float pY, float pSize, Color pColor, float pAlpha)
-        {
-            RectTransform rt = Rect(pParent, pX, pY, pSize, pSize, new Color(pColor.r, pColor.g, pColor.b, pAlpha));
-            var outline = rt.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(Edge.r, Edge.g, Edge.b, pAlpha);
-            outline.effectDistance = new Vector2(0.5f, -0.5f);
-            return rt;
-        }
-
-        static RectTransform Icon(Transform pParent, string pSprite, float pX, float pY, float pSize)
-        {
-            RectTransform rt = Box(pParent, pX, pY, pSize, pSize, "icon");
-            Image img = rt.gameObject.AddComponent<Image>();
-            img.sprite = SpriteTextureLoader.getSprite(pSprite);
-            img.preserveAspect = true;
-            img.raycastTarget = false;
-            return rt;
-        }
-
-        // 选中的黄框
-        static RectTransform Frame(RectTransform pTarget, float pInset)
-        {
-            RectTransform rt = Sliced(pTarget, "ui/special/buttonSelected", 0f, 0f, 0f, 0f);
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = new Vector2(pInset, pInset);
-            rt.offsetMax = new Vector2(-pInset, -pInset);
-            rt.GetComponent<Image>().fillCenter = false;
-            return rt;
-        }
-
-        static RectTransform Button(Transform pParent, float pX, float pY, float pW, float pH, string pSprite, Action pClick)
-        {
-            RectTransform rt = Box(pParent, pX, pY, pW, pH, "button");
-            Image img = rt.gameObject.AddComponent<Image>();
-            if (pSprite != null)
-            {
-                img.sprite = SpriteTextureLoader.getSprite(pSprite);
-                img.type = Image.Type.Sliced;
-            }
-            else img.color = new Color(0f, 0f, 0f, 0f);
-            var button = rt.gameObject.AddComponent<UnityEngine.UI.Button>();
-            button.targetGraphic = img;
-            button.onClick.AddListener(() => pClick());
-            return rt;
-        }
+        static RectTransform Scroll(string pName, float pX, float pY, float pW, float pH, float pContentH) =>
+            UiKit.Scroll(_parent, pName, pX, pY, pW, pH, pContentH);
 
         // 正在悬停的政策选项和它的数字行，由 Patch_PolicyTip 加进原版提示
         internal static string TipName;
@@ -1038,64 +710,6 @@ namespace DiplomacyOverhaul
             exit.callback.AddListener(_ => Tooltip.hideTooltip());
             trigger.triggers.Add(exit);
         }
-
-        static RectTransform Text(Transform pParent, string pText, float pX, float pY, float pW, float pH, int pSize, Color pColor, TextAnchor pAlign)
-        {
-            RectTransform rt = Box(pParent, pX, pY, pW, pH, "text");
-            Text t = rt.gameObject.AddComponent<Text>();
-            t.font = LocalizedTextManager.current_font;
-            t.fontSize = pSize;
-            t.color = pColor;
-            t.alignment = pAlign;
-            t.supportRichText = true;
-            t.horizontalOverflow = HorizontalWrapMode.Overflow;
-            t.verticalOverflow = VerticalWrapMode.Overflow;
-            t.raycastTarget = false;
-            t.text = pText;
-            var shadow = rt.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = Hex("#151515");
-            shadow.effectDistance = new Vector2(0.6f, -0.6f);
-            return rt;
-        }
-
-        static float Measure(string pText, int pSize)
-        {
-            Font font = LocalizedTextManager.current_font;
-            font.RequestCharactersInTexture(pText, pSize);
-            float w = 0f;
-            foreach (char c in pText)
-            {
-                if (font.GetCharacterInfo(c, out CharacterInfo info, pSize)) w += info.advance;
-                else w += pSize;
-            }
-            return w;
-        }
-
-        // 分区标题条：原版的标签页底图，两端各一个图标
-        static void Header(float pX, float pY, float pW, string pText, string pIcon)
-        {
-            RectTransform bar = Sliced(_parent, "ui/special/background_tab_content", pX, pY, pW, 20f);
-            Icon(bar, pIcon, 6f, 3f, 14f);
-            Icon(bar, pIcon, pW - 20f, 3f, 14f);
-            Text(bar, pText, 0f, 0f, pW, 18f, 9, HeaderGold, TextAnchor.MiddleCenter);
-        }
-
-        // 能滚动的列表，返回内容节点
-        static RectTransform Scroll(string pName, float pX, float pY, float pW, float pH, float pContentH)
-        {
-            RectTransform view = Box(_parent, pX, pY, pW, pH, pName);
-            view.gameObject.AddComponent<RectMask2D>();
-            Image hit = view.gameObject.AddComponent<Image>();
-            hit.color = new Color(0f, 0f, 0f, 0f);
-            RectTransform content = Box(view, 0f, 0f, pW, Mathf.Max(pH, pContentH), "content");
-            var scroll = view.gameObject.AddComponent<ScrollRect>();
-            scroll.content = content;
-            scroll.horizontal = false;
-            scroll.vertical = pContentH > pH;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 8f;
-            return content;
-        }
     }
 
     // 政策选项的提示：在原版属性栏里列出这一档的数字
@@ -1116,20 +730,6 @@ namespace DiplomacyOverhaul
             }
             else if (ParliamentWindow.TipEffects.Count == 0) return;
             pTooltip.showStatValues();
-        }
-    }
-
-    // 每帧检查内容有没有变化
-    public class ParliamentWindowTicker : MonoBehaviour
-    {
-        float _timer;
-
-        void Update()
-        {
-            _timer -= Time.unscaledDeltaTime;
-            if (_timer > 0f) return;
-            _timer = 0.5f;
-            ParliamentWindow.Tick();
         }
     }
 }
