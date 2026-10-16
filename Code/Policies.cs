@@ -47,6 +47,9 @@ namespace DiplomacyOverhaul
         {
             if (write != null) write(pKingdom, pOption);
             else pKingdom.data.set(id, pOption);
+            // 海军方针改了陆上单位的伤害，让全国单位重算属性
+            if (id == Policies.Navy)
+                foreach (Actor a in pKingdom.units) a.setStatsDirty();
         }
 
         public bool CanPropose(Kingdom pKingdom) => active && shown(pKingdom) && (proposable == null || proposable(pKingdom));
@@ -231,10 +234,13 @@ namespace DiplomacyOverhaul
 
         public static float ForeignLoyaltyFactor(Kingdom pKingdom) => ForeignLoyaltyFactors[Value(pKingdom, Customs)];
 
-        // 海军方针：每个港口运输船的上限。中间一档是原版的 1 艘
+        // 海军方针：每个港口运输船的上限，陆上单位的伤害倍数
         public const string TransportBoat = "boat_type_transport";
-        static readonly int[] TransportLimit = { 0, 1, 3 };
-        public static readonly int MaxTransports = 3;
+        static readonly int[] TransportLimit = { 1, 2, 4 };
+        public static readonly int MaxTransports = 4;
+        static readonly float[] LandDamageFactors = { 1.15f, 1f, 0.85f };
+
+        public static float LandDamageFactor(Kingdom pKingdom) => LandDamageFactors[Value(pKingdom, Navy)];
 
         public static int TransportCap(Docks pDocks)
         {
@@ -288,6 +294,7 @@ namespace DiplomacyOverhaul
                     break;
                 case Navy:
                     rows.Add(("vd_eff_transports", TransportLimit[pOption].ToString()));
+                    if (LandDamageFactors[pOption] != 1f) rows.Add(("vd_eff_land_damage", Change(LandDamageFactors[pOption])));
                     break;
                 case War:
                     if (pOption == Balance) break;
@@ -335,6 +342,19 @@ namespace DiplomacyOverhaul
         {
             __result = Policies.TributeRate(__instance);
             return false;
+        }
+    }
+
+    // 海军方针：陆上单位的伤害按倍数算，船不算
+    [HarmonyPatch(typeof(Actor), "updateStats")]
+    static class Patch_LandDamage
+    {
+        static void Postfix(Actor __instance)
+        {
+            Kingdom k = __instance.kingdom;
+            if (k == null || !k.isCiv() || __instance.asset.is_boat) return;
+            float factor = Policies.LandDamageFactor(k);
+            if (factor != 1f) __instance.stats["damage"] *= factor;
         }
     }
 

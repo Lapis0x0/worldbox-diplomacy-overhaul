@@ -32,7 +32,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl [list [数量]]        列出城市最多的几个国家的议会：议席、氏族立场、政策、议案
     //   parl stats               各项政策每个选项有多少国家在用
     //   parl set <国家> <政策 id> <选项>   直接改一个国家的政策
-    //   parl boats [数量]         城市最多的几个国家每个港口的运输船数
+    //   parl boats [数量]         城市最多的几个国家每个港口的运输船数、陆上单位的平均伤害
     //   parl draft [数量]         有两个以上氏族的国家：各氏族离国家坐标的距离、政见修正、城市忠诚，和它当提案人时收益最高的几项
     //   parl sim <轮数>           每个国家连开几轮议会（立场不变，不写世界日志），统计议案通过率和政见距离，算完恢复原样
     //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy）

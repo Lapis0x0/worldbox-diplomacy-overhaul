@@ -330,6 +330,7 @@
   "vd_eff_appanage": "Royal Appanages",
   "vd_eff_reclaim": "Reclaiming Provinces",
   "vd_eff_transports": "Transports per Port",
+  "vd_eff_land_damage": "Land Damage",
   "vd_eff_war_timeout": "Truce Length",
   "vd_eff_war_strength": "Rival Strength Dared",
   "vd_eff_vassal_opinion": "Vassal Opinion",

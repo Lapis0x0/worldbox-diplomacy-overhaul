@@ -36,7 +36,9 @@ namespace DiplomacyOverhaul.Perf
                     foreach (City city in k.getCities())
                     foreach (Building b in city.buildings)
                         if (b.component_docks != null && !b.isRekt()) counts.Add(b.component_docks.countBoatTypes(Policies.TransportBoat));
-                    Dev.Log($"  {k.data.name} navy={Policies.Value(k, Policies.Navy)} docks={counts.Count} transports=[{string.Join(",", counts)}]");
+                    var land = k.units.Where(u => u.isAlive() && !u.asset.is_boat).ToList();
+                    float damage = land.Count > 0 ? land.Average(u => u.stats["damage"]) : 0f;
+                    Dev.Log($"  {k.data.name} navy={Policies.Value(k, Policies.Navy)} docks={counts.Count} transports=[{string.Join(",", counts)}] landUnits={land.Count} avgDamage={damage:F1}");
                 }
                 return;
             }
@@ -117,7 +119,11 @@ namespace DiplomacyOverhaul.Perf
                     {
                         float dist = UnityEngine.Mathf.Sqrt((pc.x - c.x) * (pc.x - c.x) + (pc.y - c.y) * (pc.y - c.y));
                         var opts = Parliament.Options(k, clans, pc).OrderByDescending(o => o.gain).Where(o => o.gain > 0f).Take(5);
-                        Dev.Log($"  {pc.clan.name} seats={pc.seats} ruling={pc.ruling} pos=({pc.x:F2},{pc.y:F2}) dist={dist:F2} dissent={Parliament.DissentLoyalty(dist)} cities={pc.cities.Count} loyalty=[{string.Join(",", pc.cities.Select(x => (x.isCapitalCity() ? "cap" : "") + x.getCachedLoyalty() + "/" + Parliament.CityLoyalty(x)))}]");
+                        Actor chief = pc.clan.getChief();
+                        string chiefInfo = chief != null && chief.isAlive()
+                            ? $"chief[{Parliament.Personality(chief)} {string.Join("/", new[] { "ambitious", "hotheaded", "deceitful", "content", "honest", "paranoid", "greedy" }.Where(chief.hasTrait))} age={chief.getAge()} x={Parliament.ChiefRadical(chief):F2} y={Parliament.ChiefCentral(chief, pc.ruling):F2}]"
+                            : "chief[none]";
+                        Dev.Log($"  {pc.clan.name} {chiefInfo} seats={pc.seats} ruling={pc.ruling} pos=({pc.x:F2},{pc.y:F2}) dist={dist:F2} dissent={Parliament.DissentLoyalty(dist)} cities={pc.cities.Count} loyalty=[{string.Join(",", pc.cities.Select(x => (x.isCapitalCity() ? "cap" : "") + x.getCachedLoyalty() + "/" + Parliament.CityLoyalty(x)))}]");
                         foreach (var o in opts) Dev.Log($"      {o.bill.policy.id}->{o.bill.option} gain={o.gain:F2} margin={o.margin:F2}");
                     }
                 }
@@ -155,6 +161,8 @@ namespace DiplomacyOverhaul.Perf
             var clans = Parliament.Clans(k);
             var c = Policies.Coordinate(k);
             Dev.Log($"  [{k.id}] {k.data.name} cities={k.countCities()} seats={Parliament.TotalSeats(clans)} next={Parliament.NextSession(k)} year={Date.getCurrentYear()} coord=({c.x:0.00},{c.y:0.00}) tribute={k.getTaxRateTribute():0.00}");
+            k.data.get("vd_gov_auto", out string auto, null);
+            Dev.Log($"    gov={Government.Current(k)?.id} auto={auto} form={Government.Form(k)} locked={Government.IsLocked(k)} king={(k.hasKing() ? k.king.getName() : "-")} royal={k.data.royal_clan_id}");
             foreach (Policy p in Policies.All)
             {
                 if (!p.shown(k)) continue;
