@@ -82,6 +82,7 @@ namespace DiplomacyOverhaul
         public const string War = "vd_pol_war";
         public const string Vassals = "vd_pol_vassals";
         public const string Overlord = "vd_pol_overlord";
+        public const string VassalTax = "vd_pol_vassal_tax";
 
         // 税收体制：包税制、分成制、国库集中制
         public const int TaxFarming = 0, TaxShared = 1, TaxCentral = 2;
@@ -147,6 +148,11 @@ namespace DiplomacyOverhaul
             Add(new Policy
             {
                 id = Vassals, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, icon = "ui/Icons/iconKingdomList",
+                shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0
+            });
+            Add(new Policy
+            {
+                id = VassalTax, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconMoney",
                 shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0
             });
             Add(new Policy
@@ -271,6 +277,16 @@ namespace DiplomacyOverhaul
 
         public static float IndependenceFactor(Kingdom pVassal) => IndependenceFactors[Value(pVassal, Overlord)];
 
+        // 附庸贡赋（宗主的）：附庸国库的进账交给宗主的比例，和附庸对宗主的好感
+        static readonly float[] VassalTaxRates = { 0f, 0.25f, 0.5f, 0.75f };
+        static readonly int[] VassalTaxOpinions = { 15, 0, -30, -50 };
+
+        public static float VassalTaxRate(Kingdom pLord) => VassalTaxRates[Value(pLord, VassalTax)];
+
+        public static int VassalTaxOpinion(Kingdom pLord) => VassalTaxOpinions[Value(pLord, VassalTax)];
+
+        public static int VassalTaxOpinionOf(int pOption) => VassalTaxOpinions[pOption];
+
         // 选项悬停提示里的数字行：偏离照常的项才列，上缴比例和运输船上限每档都列
         public static List<(string key, string value)> Effects(Kingdom pKingdom, Policy pPolicy, int pOption)
         {
@@ -313,6 +329,10 @@ namespace DiplomacyOverhaul
                         rows.Add(("vd_eff_assimilation", Percent(DiplomacyOverhaul.Assimilation.VassalYearlyShare)));
                         rows.Add(("vd_eff_vassal_resent", Signed(DiplomacyOverhaul.Assimilation.ResentOpinion)));
                     }
+                    break;
+                case VassalTax:
+                    rows.Add(("vd_eff_vassal_tax", Percent(VassalTaxRates[pOption])));
+                    if (VassalTaxOpinions[pOption] != 0) rows.Add(("vd_eff_vassal_opinion", Signed(VassalTaxOpinions[pOption])));
                     break;
                 case Overlord:
                     if (pOption == Obligation) break;

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 国库：城主上缴的钱进国库，国王只分一份；国王发起密谋花国库的钱。
+    // 国库：城主上缴的钱进国库，国王只分一份；附庸的进账按附庸贡赋交一份给宗主；国王发起密谋花国库的钱。
     // 城市养自己的兵：每年从本城仓库扣军饷，欠饷先停征兵，再逐渐解甲；仓库的金子超过上限的上缴国库
     public static class Treasury
     {
@@ -29,6 +29,73 @@ namespace DiplomacyOverhaul
         {
             if (pAmount == 0 || pKingdom == null) return;
             pKingdom.data.set(Key, Mathf.Max(0, Get(pKingdom) + pAmount));
+        }
+
+        // 国库的进账（上缴、城市溢出）：附庸按宗主的附庸贡赋交一份给宗主。
+        // 每笔进账很小，交的份额按概率取整，长期看比例是准的
+        public static void Income(Kingdom pKingdom, int pAmount)
+        {
+            if (pAmount <= 0 || pKingdom == null) return;
+            Kingdom lord = Vassals.GetOverlord(pKingdom);
+            if (lord != null)
+            {
+                float exact = pAmount * Policies.VassalTaxRate(lord);
+                int share = Mathf.FloorToInt(exact);
+                if (Randy.randomChance(exact - share)) share++;
+                Add(lord, share);
+                pAmount -= share;
+            }
+            Add(pKingdom, pAmount);
+        }
+
+        // 议会表决附庸贡赋时的切身利益（正数是吃亏）：每多收一档是一份好处，多大看这一家拿主意的人的心性
+        // （王室、执政家族看君主本人，其他家族看族长）；
+        // 风险看附庸按新的贡赋还剩多少好感：低于「铁杆」线的部分，乘上它的实力占宗主实力的比例，各附庸加起来。
+        // 附庸好感高、实力弱时放心多收；附庸强、或者宗主衰落让好感下滑时，议会不敢加
+        const float TributeGain = 0.1f;
+        const float TributeRiskWeight = 1f;
+        const int LoyalOpinion = 50;
+        static OpinionAsset _taxOpinion;
+
+        public static float TributeInterest(Kingdom pLord, int pOption, Actor pVoice)
+        {
+            int current = Policies.Value(pLord, Policies.VassalTax);
+            return -TributeGainOf(pVoice) * (pOption - current) + TributeRisk(pLord, pOption) - TributeRisk(pLord, current);
+        }
+
+        // 贪婪的多要，邪恶的不在乎附庸死活，诚实、温和、知足、和平主义的觉得盘剥附庸不地道
+        static float TributeGainOf(Actor pVoice)
+        {
+            float gain = TributeGain;
+            if (pVoice == null || !pVoice.isAlive()) return gain;
+            if (pVoice.hasTrait("greedy")) gain += 0.1f;
+            if (pVoice.hasTrait("evil") || pVoice.hasTrait("psychopath")) gain += 0.05f;
+            foreach (string t in new[] { "honest", "peaceful", "content", "pacifist" })
+                if (pVoice.hasTrait(t)) gain -= 0.1f;
+            return gain;
+        }
+
+        static float TributeRisk(Kingdom pLord, int pOption)
+        {
+            float resentful = 0f;
+            foreach (Kingdom v in Vassals.GetVassals(pLord))
+            {
+                KingdomOpinion opinion = World.world.diplomacy.getOpinion(v, pLord);
+                int others = opinion.total - (opinion.results.TryGetValue(_taxOpinion, out int tax) ? tax : 0);
+                int shortfall = LoyalOpinion - (others + Policies.VassalTaxOpinionOf(pOption));
+                if (shortfall > 0) resentful += shortfall / 100f * Vassals.Power(v);
+            }
+            return TributeRiskWeight * resentful / Vassals.Power(pLord);
+        }
+
+        public static void Init()
+        {
+            _taxOpinion = Core.Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_vassal_tax",
+                translation_key = "opinion_vd_vassal_tax",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Policies.VassalTaxOpinion(pTarget) : 0
+            });
         }
 
         // 取走最多 pAmount，返回实际取走的
@@ -60,7 +127,7 @@ namespace DiplomacyOverhaul
                     int excess = gold - Cap(city);
                     if (excess <= 0) continue;
                     city.takeResource("gold", excess);
-                    Add(k, excess);
+                    Income(k, excess);
                 }
             }
         }
@@ -111,7 +178,7 @@ namespace DiplomacyOverhaul
             pActor.addMoney(rest - toCity);
             int toKing = (int)(tribute * Treasury.KingShare);
             pKing.addLoot(toKing);
-            Treasury.Add(pActor.kingdom, tribute - toKing);
+            Treasury.Income(pActor.kingdom, tribute - toKing);
             pActor.paidTax(pTaxRate, "fx_money_paid_tribute");
             return false;
         }

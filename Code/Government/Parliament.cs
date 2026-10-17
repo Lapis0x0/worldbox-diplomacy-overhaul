@@ -264,12 +264,15 @@ namespace DiplomacyOverhaul
 
         // ---------- 表决 ----------
 
-        // 改政体时各家族的切身利益，加在议案通过后的距离上（正数是吃亏）：
+        // 切身利益，加在议案通过后的距离上（正数是吃亏）。附庸贡赋见 Treasury.TributeInterest。
+        // 改政体时各家族的切身利益：
         // 改君主制，执政家族会成为王室，其他家族要受人统治；改共和制，王室失去王位，其他家族有机会轮流执政
         const float FormInterest = 0.25f;
 
         static float Interest(Kingdom pKingdom, ParliamentClan pClan, Policy pPolicy, int pOption)
         {
+            if (pPolicy.id == Policies.VassalTax)
+                return Treasury.TributeInterest(pKingdom, pOption, pClan.ruling && pKingdom.hasKing() ? pKingdom.king : pClan.clan.getChief());
             if (pPolicy.id != Policies.Form) return 0f;
             bool toMonarchy = pOption == (int)GovForm.Monarchy;
             return pClan.ruling == toMonarchy ? -FormInterest : FormInterest;

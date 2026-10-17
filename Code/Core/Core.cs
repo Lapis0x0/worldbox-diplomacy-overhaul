@@ -31,6 +31,7 @@ namespace DiplomacyOverhaul
             Policies.Init();
             Cycle.Init();
             Assimilation.Init();
+            Treasury.Init();
             Parliament.Init();
             Restoration.Init();
             PeaceTalks.Init();
