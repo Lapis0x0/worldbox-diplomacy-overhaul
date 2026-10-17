@@ -290,7 +290,7 @@ namespace DiplomacyOverhaul
                     break;
                 case Customs:
                     if (pOption == NaturalCourse) break;
-                    if (pOption == Uniformity) rows.Add(("vd_eff_uniformity", Percent(DiplomacyOverhaul.Assimilation.YearlyShare)));
+                    if (pOption == Uniformity) rows.Add(("vd_eff_uniformity", Percent(DiplomacyOverhaul.Assimilation.DomesticYearlyShare)));
                     rows.Add(("vd_eff_foreign_loyalty", Change(ForeignLoyaltyFactors[pOption])));
                     break;
                 case Navy:
@@ -310,7 +310,7 @@ namespace DiplomacyOverhaul
                     }
                     else if (pOption == Assimilation)
                     {
-                        rows.Add(("vd_eff_assimilation", Percent(DiplomacyOverhaul.Assimilation.YearlyShare)));
+                        rows.Add(("vd_eff_assimilation", Percent(DiplomacyOverhaul.Assimilation.VassalYearlyShare)));
                         rows.Add(("vd_eff_vassal_resent", Signed(DiplomacyOverhaul.Assimilation.ResentOpinion)));
                     }
                     break;

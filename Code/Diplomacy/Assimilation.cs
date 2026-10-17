@@ -9,9 +9,10 @@ namespace DiplomacyOverhaul
     public static class Assimilation
     {
         public const int AutonomyOpinion = 15;
-        public const int ResentOpinion = -20;
-        // 每年转化的比例：每座城里文化、宗教（国内同化还有语言）不一样的居民
-        public const float YearlyShare = 0.1f;
+        public const int ResentOpinion = -30;
+        // 每年转化的比例：每座城里文化、宗教（国内同化还有语言）不一样的居民；插手附庸内政比国内同化慢
+        public const float VassalYearlyShare = 0.05f;
+        public const float DomesticYearlyShare = 0.1f;
 
         public static void Init()
         {
@@ -54,18 +55,18 @@ namespace DiplomacyOverhaul
             {
                 if (!lord.isAlive() || !lord.isCiv() || Vassals.IsVassal(lord)) continue;
                 if (Policies.Value(lord, Policies.Vassals) != Policies.Assimilation) continue;
-                foreach (Kingdom v in Vassals.GetVassals(lord)) Convert(v, lord.culture, lord.religion, null);
+                foreach (Kingdom v in Vassals.GetVassals(lord)) Convert(v, lord.culture, lord.religion, null, VassalYearlyShare);
             }
             // 同文同教：国内各城的居民改用国家的文化、宗教和语言
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 if (Policies.Value(k, Policies.Customs) != Policies.Uniformity) continue;
-                Convert(k, k.culture, k.religion, k.language);
+                Convert(k, k.culture, k.religion, k.language, DomesticYearlyShare);
             }
         }
 
-        static void Convert(Kingdom pTarget, Culture pCulture, Religion pReligion, Language pLanguage)
+        static void Convert(Kingdom pTarget, Culture pCulture, Religion pReligion, Language pLanguage, float pShare)
         {
             if (pCulture == null && pReligion == null && pLanguage == null) return;
             var pending = new List<Actor>();
@@ -78,7 +79,7 @@ namespace DiplomacyOverhaul
                     if ((pCulture != null && a.culture != pCulture) || (pReligion != null && a.religion != pReligion)
                         || (pLanguage != null && a.language != pLanguage)) pending.Add(a);
                 }
-                int count = Mathf.CeilToInt(pending.Count * YearlyShare);
+                int count = Mathf.CeilToInt(pending.Count * pShare);
                 for (int i = 0; i < count; i++)
                 {
                     int j = Randy.randomInt(i, pending.Count);
