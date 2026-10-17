@@ -2,6 +2,38 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.9.0
+
+### 中文
+
+1. 新增「中央禁军」机制，由地方向中央供给兵员并由国家统一指挥
+2. 优化经济系统，新增国库与军饷机制
+3. 优化新机制下的战争 ai，分化中央禁军和地方军的决策逻辑
+4. 引入「附庸贡赋」议案，附庸国可能会向宗主国上缴收入
+5. 新增宗室继位：王室无人继承时，附庸里的宗室将会继承王位，封国并入宗主
+6. 新增各政体领袖的称呼，如帝国的皇帝、公国的公爵、军事共和国的护国公
+7. 优化宗主和附庸的领土划分机制，减少版图里的飞地和犬牙交错
+8. 优化氏族机制，提高家族传承几率
+9. 削弱强制同化政策的效果
+10. 议会窗口现在对于所有国家都会显示议席半圆，取消原本对于城市数量的限制
+11. 选举与任命窗口里的头像现在可以点击以查看人物详情
+12. 修复强大国家无视联盟，直接威逼联盟成员称臣的问题
+
+### English
+
+1. New Central Guard mechanic: cities send troops up to the capital, and the kingdom commands them directly
+2. Improved the economy with a new treasury and army pay system
+3. Improved war AI under the new mechanics, with separate decision logic for the central guard and local armies
+4. New Vassal Tribute bill: vassals may hand part of their income to their overlord
+5. New royal-kin succession: when the royal line has no heir, royal kin in a vassal inherit the throne and their realm merges into the overlord
+6. New titles for rulers of each government, such as Emperor for empires, Duke for duchies and Lord Protector for military republics
+7. Improved how land is divided between overlords and vassals, reducing enclaves and tangled borders
+8. Improved clans, making family lines more likely to carry on
+9. Weakened the Forced Assimilation policy
+10. The parliament window now shows the seat arc for every kingdom, no longer limited by city count
+11. Portraits in the Elections & Offices window can now be clicked to view the person's details
+12. Fixed strong kingdoms ignoring alliances and forcing alliance members to submit
+
 ## 0.8.0
 
 ### 中文

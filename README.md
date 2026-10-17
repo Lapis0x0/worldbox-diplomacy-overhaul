@@ -4,7 +4,7 @@ English | [中文](README.zh-CN.md)
 
 <img src="preview.png" alt="Diplomacy Overhaul" width="320">
 
-Deeper diplomacy and warfare for WorldBox: vassals, independence and peace talks, parliaments and elections, governments and how they change, dynastic cycles and great rebellions, plus a set of powers for directing diplomacy and armies yourself.
+Deeper diplomacy and warfare for WorldBox: vassals, independence and peace talks, parliaments and elections, governments and how they change, dynastic cycles and great rebellions, treasuries and a central guard, plus a set of powers for directing diplomacy and armies yourself.
 
 - Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
 - Requires: [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
@@ -14,10 +14,11 @@ Deeper diplomacy and warfare for WorldBox: vassals, independence and peace talks
 
 - Vassals: overlords and vassals fight side by side. Large kingdoms grant rebel cities and lands they can't govern to vassals or royal relatives, and send envoys to pressure weak neighbors into submission. Vassals have integration: loyal ones become Provinces, royal fiefs become Hereditary Provinces, overlords absorb Provinces once they can govern them, and restless vassals plot for independence
 - Parliament and policies: families win seats from the cities they hold, vote on bills by their stance, and enact domestic, military and diplomatic policies. Republics elect their leader in parliament; the Elections & Offices window shows candidates, the line of succession and each family's lands
-- Governments: monarchies as Kingdoms or Empires; Republics, Merchant Republics and Military Republics; vassals are Duchies or Dominions. New nations pick a government from their culture, and each government has its own leanings in war and rule
+- Governments: monarchies as Kingdoms or Empires; Republics, Merchant Republics and Military Republics; vassals are Duchies or Dominions. Rulers are titled by government: King, Emperor, Consul, Duke and more. New nations pick a government from their culture, and each government has its own leanings in war and rule
 - Changing governments: republican leaders are elected and stand again when their term ends; a monarchy whose royal line dies out may become a republic instead of splitting; an ambitious leader of a great republic at its prime may proclaim an empire; generals may seize power when a dynasty collapses
 - Dynastic cycles: a great power's Mandate of Heaven rises and falls with its cities, ruler, vassals and wars, and affects how well its armies fight. Problems pile up, and putting down a great rebellion leaves old wounds. Dynasties go through Renewal, Prime, Decline and Collapse; in decline vassals drift away and cities grow unstable, and a strong ruler can plot a Restoration
 - Great Rebellion: uprisings break out across the realm at once and vassals declare independence; triggered when the capital falls or the Mandate runs out
+- Treasury and central guard: city governors send taxes to the national treasury, and cities pay for their own troops from their own gold. Troops from the capital and those sent up by other cities form a central guard, paid by the treasury and commanded by the kingdom, while local armies hold the borders. Unpaid armies fight worse, and long arrears lead to layoffs
 - War: when a war has gone far enough, both sides hold peace talks and settle by the results with peace, reparations, ceding vassals or submission. Besieging armies hunt down defenders and can storm a city outright with overwhelming numbers
 - Army command: box-select armies and right-click to attack foreign cities, garrison your own or friendly cities, or camp in the field; boats are arranged automatically across the sea
 - City management: transfer cities, annex kingdoms
