@@ -74,12 +74,18 @@ namespace DiplomacyOverhaul
                 {
                     for (int i = 0; i < pKeys.Length; i++)
                     {
-                        string value = pMessage.getSpecial(i + 1);
-                        if (pKeys[i] == "$title$") value = LM.Get(string.IsNullOrEmpty(value) ? "vd_ruler_consul" : value);
+                        // getSpecial 会套上颜色标签，语言 key 要读原始的值
+                        string value = pKeys[i] == "$title$" ? LM.Get(Raw(pMessage, i + 1) ?? "vd_ruler_consul") : pMessage.getSpecial(i + 1);
                         pText = pText.Replace(pKeys[i], value);
                     }
                 }
             });
+        }
+
+        static string Raw(WorldLogMessage pMessage, int pIndex)
+        {
+            string value = pIndex == 1 ? pMessage.special1 : pIndex == 2 ? pMessage.special2 : pMessage.special3;
+            return string.IsNullOrEmpty(value) ? null : value;
         }
 
         // pTexts 与 pColors 一一对应，名字按所属国家的颜色显示；pUnit 存活时点消息镜头跟着它
