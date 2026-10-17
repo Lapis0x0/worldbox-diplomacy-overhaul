@@ -91,6 +91,8 @@
   "vd_gov_name_enabled Description": "For example, Duchy of Coimbra",
   "vd_log_elected": "$ruler$ is elected to lead $kingdom$",
   "vd_log_reelected": "$ruler$ is re-elected to lead $kingdom$",
+  "vd_log_inherited": "$ruler$ inherits the throne of $kingdom$, and $vassal$ is merged into $kingdom$",
+  "vd_log_inherited_empire": "$ruler$ inherits the imperial throne of $kingdom$, and $vassal$ is merged into $kingdom$",
   "vd_log_republic_founded": "The royal line of $kingdom$ dies out; the cities choose $ruler$ to lead a new republic",
   "vd_log_crowned": "$ruler$ crowns themselves emperor of $kingdom$",
   "vd_log_usurped": "$ruler$ seizes the throne of $kingdom$ and founds a new dynasty",

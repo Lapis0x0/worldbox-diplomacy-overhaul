@@ -91,6 +91,8 @@
   "vd_gov_name_enabled Description": "例如「科英布拉公国」",
   "vd_log_elected": "$ruler$ 当选 $kingdom$ 执政",
   "vd_log_reelected": "$ruler$ 连任 $kingdom$ 执政",
+  "vd_log_inherited": "$ruler$ 继承 $kingdom$ 的王位，$vassal$ 并入 $kingdom$",
+  "vd_log_inherited_empire": "$ruler$ 继承 $kingdom$ 的皇位，$vassal$ 并入 $kingdom$",
   "vd_log_republic_founded": "$kingdom$ 王室绝嗣，诸城推举 $ruler$ 执政，改制为共和国",
   "vd_log_crowned": "$ruler$ 在 $kingdom$ 称帝",
   "vd_log_usurped": "$ruler$ 篡夺 $kingdom$ 王位，建立新王朝",

@@ -246,7 +246,7 @@ namespace DiplomacyOverhaul
 
         // ---------- 君主国：王位继承 ----------
 
-        // 原版挑继承人的同一套：王室里能继位的人，按年龄和文化的继承特质排
+        // 原版挑继承人的同一套：王室里能继位的人，按年龄和文化的继承特质排；之后是附庸里出身王室的国王，见 Succession
         static List<Actor> Heirs(Kingdom pKingdom)
         {
             var result = new List<Actor>();
@@ -263,6 +263,7 @@ namespace DiplomacyOverhaul
                 else pool.Sort(ListSorters.sortUnitByAgeOldFirst);
                 foreach (Actor u in pool) result.Add(u);
             }
+            result.AddRange(Succession.VassalHeirs(pKingdom));
             return result;
         }
 
@@ -317,7 +318,8 @@ namespace DiplomacyOverhaul
                 Avatar(row, a, 58f, 3f, 16f);
                 Text(row, Fit(a.getName(), 7, 110f), 80f, 0f, 112f, rowH, 7, Color.white, TextAnchor.MiddleLeft);
                 string sex = LM.Get(a.isSexMale() ? "vd_election_male" : "vd_election_female");
-                Text(row, sex + " · " + Age(a), 0f, 0f, LeftW - 14f, rowH, 6, Muted, TextAnchor.MiddleRight);
+                string fief = a.kingdom != _kingdom ? a.kingdom.data.name + " · " : "";
+                Text(row, fief + sex + " · " + Age(a), 0f, 0f, LeftW - 14f, rowH, 6, Muted, TextAnchor.MiddleRight);
                 if (i == 0) Frame(row, -1f);
                 ry += rowH + 2f;
             }

@@ -1,0 +1,75 @@
+using System.Collections.Generic;
+using ai.behaviours;
+using HarmonyLib;
+using UnityEngine;
+using UnityPools;
+
+namespace DiplomacyOverhaul
+{
+    // 入继大统：国王死后本国王室里没人能继位时，附庸里出身王室的国王也能继承，
+    // 挑法照原版（按年龄和文化的继承特质）；继位的人回宗主首都当国王，他的附庸国整个并入宗主
+    public static class Succession
+    {
+        internal static Actor TryInherit(Kingdom pKingdom)
+        {
+            Actor heir = PickHeir(pKingdom);
+            if (heir == null) return null;
+            Kingdom fief = heir.kingdom;
+            bool empire = Government.Current(pKingdom)?.id == Government.Empire;
+            WorldLogs.Add(empire ? WorldLogs.InheritedEmpire : WorldLogs.Inherited, fief.hasCapital() ? fief.capital.last_city_center : Vector2.zero, heir,
+                new[] { heir.getName(), pKingdom.data.name, fief.data.name }, new[] { pKingdom, pKingdom, fief });
+
+            fief.removeKing();
+            if (CityActions.Annex(pKingdom, fief) != null) return null;
+            if (heir.hasCity())
+            {
+                heir.stopBeingWarrior();
+                if (heir.isCityLeader()) heir.city.removeLeader();
+            }
+            if (pKingdom.hasCapital() && heir.city != pKingdom.capital) heir.joinCity(pKingdom.capital);
+            pKingdom.setKing(heir);
+            return heir;
+        }
+
+        static Actor PickHeir(Kingdom pKingdom)
+        {
+            List<Actor> heirs = VassalHeirs(pKingdom);
+            return heirs.Count > 0 ? heirs[0] : null;
+        }
+
+        // 附庸里出身王室的国王，按原版挑继承人的方式排好
+        public static List<Actor> VassalHeirs(Kingdom pKingdom)
+        {
+            var result = new List<Actor>();
+            long royal = pKingdom.data.royal_clan_id;
+            if (!royal.hasValue()) return result;
+            using (var pool = new ListPool<Actor>())
+            {
+                foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+                {
+                    if (!v.hasKing()) continue;
+                    Actor king = v.king;
+                    if (king.isUnitFitToRule() && king.hasClan() && king.clan.id == royal) pool.Add(king);
+                }
+                if (pKingdom.hasCulture()) ListSorters.sortUnitsSortedByAgeAndTraits(pool, pKingdom.culture);
+                else pool.Sort(ListSorters.sortUnitByAgeOldFirst);
+                foreach (Actor u in pool) result.Add(u);
+            }
+            return result;
+        }
+    }
+
+    // 本国王室没人能继位时先看附庸里的宗室，再轮到原版的城主继位、绝嗣分裂
+    [HarmonyPatch(typeof(KingdomBehCheckKing), "findKingFromRoyalClan")]
+    static class Patch_FindKingFromRoyalClan
+    {
+        static bool Prefix(Kingdom pKingdom, ref Actor __result)
+        {
+            if (SuccessionTool.getKingFromRoyalClan(pKingdom) != null) return true;
+            Actor heir = Succession.TryInherit(pKingdom);
+            if (heir == null) return true;
+            __result = heir;
+            return false;
+        }
+    }
+}
