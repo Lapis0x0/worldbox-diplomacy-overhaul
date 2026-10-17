@@ -308,7 +308,7 @@ namespace DiplomacyOverhaul
             return care;
         }
 
-        static float Distance(float pX, float pY, (float x, float y) pPoint)
+        public static float Distance(float pX, float pY, (float x, float y) pPoint)
         {
             float dx = pX - pPoint.x, dy = pY - pPoint.y;
             return Mathf.Sqrt(dx * dx + dy * dy);
@@ -322,12 +322,50 @@ namespace DiplomacyOverhaul
             var after = Policies.Coordinate(pKingdom, pBill.policy, pBill.option);
             foreach (ParliamentClan pc in pClans)
             {
-                bool yes = Distance(pc.x, pc.y, after) + pBill.policy.Interest(pKingdom, pc, pBill.option) < Distance(pc.x, pc.y, before);
+                bool yes = Distance(pc.x, pc.y, after) + Concern(pKingdom, pClans, pc, pBill.policy, pBill.option) < Distance(pc.x, pc.y, before);
                 result.votes[pc.clan] = yes;
                 if (yes) result.yes += pc.seats;
                 else result.no += pc.seats;
             }
             return result;
+        }
+
+        // 立场之外，氏族对一份议案的考量（正数是吃亏）：切身利益，掌权家族再加上地方会不会被逼反
+        public static float Concern(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pClan, Policy pPolicy, int pOption)
+        {
+            float concern = pPolicy.Interest(pKingdom, pClan, pOption);
+            if (pClan.ruling) concern += UnrestRisk(pKingdom, pClans, pPolicy, pOption);
+            return concern;
+        }
+
+        // 掌权家族预判议案对地方的影响：按现在的忠诚换上议案通过后的政见不合和削藩，估出每座地方城市的忠诚，
+        // 低于安全线的部分（每 100 点）乘上这座城的议席占全国的比例，各城加起来，和现状比多了多少。
+        // 不看是哪项政策，只看忠诚：哪个方向会激怒地方，掌权家族都会顾忌
+        const int SafeLoyalty = 50;
+        const float UnrestWeight = 5f;
+
+        static float UnrestRisk(Kingdom pKingdom, List<ParliamentClan> pClans, Policy pPolicy, int pOption)
+        {
+            int total = TotalSeats(pClans);
+            if (total <= 0) return 0f;
+            var after = Policies.Coordinate(pKingdom, pPolicy, pOption);
+            float before = 0f, risk = 0f;
+            foreach (ParliamentClan pc in pClans)
+            {
+                if (pc.ruling) continue;
+                int dissent = DissentLoyalty(Distance(pc.x, pc.y, after));
+                int grievance = GrievanceLoyaltyOf(Grievance(pKingdom, pc, pPolicy, pOption));
+                foreach (City c in pc.cities)
+                {
+                    if (c.isCapitalCity()) continue;
+                    var now = CityModifiers(c);
+                    int loyalty = c.getCachedLoyalty();
+                    int seats = CitySeats(c);
+                    before += Mathf.Max(0, SafeLoyalty - loyalty) * seats;
+                    risk += Mathf.Max(0, SafeLoyalty - (loyalty - now.dissent - now.grievance + dissent + grievance)) * seats;
+                }
+            }
+            return UnrestWeight * (risk - before) / 100f / total;
         }
 
         public static bool Passes(Bill pBill, VoteResult pResult) =>
@@ -417,7 +455,7 @@ namespace DiplomacyOverhaul
                 {
                     if (o == current) continue;
                     var bill = new Bill { policy = p, option = o, proposer = pProposer.clan.id };
-                    float d = Distance(pProposer.x, pProposer.y, Policies.Coordinate(pKingdom, p, o)) + p.Interest(pKingdom, pProposer, o);
+                    float d = Distance(pProposer.x, pProposer.y, Policies.Coordinate(pKingdom, p, o)) + Concern(pKingdom, pClans, pProposer, p, o);
                     VoteResult vote = Vote(pKingdom, bill, pClans);
                     list.Add(new Option { bill = bill, gain = now - d, margin = total > 0 ? (float)vote.yes / total - p.threshold : 0f });
                 }
@@ -502,14 +540,15 @@ namespace DiplomacyOverhaul
 
         // 氏族在各项政策上吃的亏（得失表里现行一档低于 0 的部分），乘上分量和在不在意，各项加起来；
         // 得利不抵消别处的亏，也不加忠诚。王室不算
-        public static float Grievance(Kingdom pKingdom, ParliamentClan pClan)
+        // pChanged、pOption：假设这项政策改成这一档时的值
+        public static float Grievance(Kingdom pKingdom, ParliamentClan pClan, Policy pChanged = null, int pOption = -1)
         {
             if (pClan.ruling) return 0f;
             float loss = 0f;
             foreach (Policy p in Policies.All)
             {
                 if (p.stake == null || !p.active || !p.shown(pKingdom)) continue;
-                loss += Mathf.Max(0f, -p.stake.local[p.Get(pKingdom)]);
+                loss += Mathf.Max(0f, -p.stake.local[p == pChanged ? pOption : p.Get(pKingdom)]);
             }
             return loss * pClan.weight * Care(Voice(pKingdom, pClan));
         }

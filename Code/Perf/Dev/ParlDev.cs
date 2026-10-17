@@ -45,7 +45,7 @@ namespace DiplomacyOverhaul.Perf
                 VoteResult r = Parliament.Vote(target, bill, clans);
                 Dev.Log($"  {target.data.name} {policy.id} {policy.Get(target)} -> {bill.option} yes={r.yes} no={r.no} passes={Parliament.Passes(bill, r)}");
                 foreach (ParliamentClan pc in clans)
-                    Dev.Log($"    {(r.votes[pc.clan] ? "yes" : "no ")} {pc.clan.name}{(pc.ruling ? "*" : "")} seats={pc.seats} interest={policy.Interest(target, pc, bill.option):0.00}");
+                    Dev.Log($"    {(r.votes[pc.clan] ? "yes" : "no ")} {pc.clan.name}{(pc.ruling ? "*" : "")} seats={pc.seats} interest={policy.Interest(target, pc, bill.option):0.00} concern={Parliament.Concern(target, clans, pc, policy, bill.option):0.00}");
                 return;
             }
             if (mode == "grievance")
@@ -83,6 +83,43 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"@loyalty {tag} year={Date.getCurrentYear()} kingdoms={kingdoms} cities={cities} local={localCities} negative={negative} negativeLocal={negativeLocal}"
                     + $" grievance={grievance / UnityEngine.Mathf.Max(1, localCities):F1} dissent={dissent / UnityEngine.Mathf.Max(1, localCities):F1}"
                     + $" army={string.Join("/", dist[Policies.Army])} tax={string.Join("/", dist[Policies.Tax])}");
+                return;
+            }
+            if (mode == "risk")
+            {
+                // parl risk：导出有地方氏族的国家里，兵制、税收每一档下各地方城市的忠诚预估和王室的投票依据，供推演用
+                foreach (Kingdom k in World.world.kingdoms)
+                {
+                    if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
+                    var clans = Parliament.Clans(k);
+                    if (!clans.Any(pc => !pc.ruling) || !clans.Any(pc => pc.ruling)) continue;
+                    var ruler = clans.First(pc => pc.ruling);
+                    int total = Parliament.TotalSeats(clans);
+                    var now = Policies.Coordinate(k);
+                    Dev.Log($"@k {k.id}|{k.data.name}|{Cycle.Get(k)}|{total}|{ruler.seats}|{clans.Count(pc => !pc.ruling)}");
+                    foreach (string id in new[] { Policies.Army, Policies.Tax })
+                    {
+                        Policy p = Policies.Get(id);
+                        int cur = p.Get(k);
+                        for (int o = 0; o < p.count; o++)
+                        {
+                            var after = Policies.Coordinate(k, p, o);
+                            float rulerD = Parliament.Distance(ruler.x, ruler.y, after) + p.Interest(k, ruler, o) - Parliament.Distance(ruler.x, ruler.y, now);
+                            Dev.Log($"@o {k.id}|{id}|{cur}|{o}|{rulerD:F3}");
+                            foreach (ParliamentClan pc in clans)
+                            {
+                                if (pc.ruling) continue;
+                                int dNow = Parliament.DissentLoyalty(Parliament.Distance(pc.x, pc.y, now));
+                                int gNow = Parliament.GrievanceLoyaltyOf(Parliament.Grievance(k, pc));
+                                int dNew = Parliament.DissentLoyalty(Parliament.Distance(pc.x, pc.y, after));
+                                int gNew = Parliament.GrievanceLoyaltyOf(Parliament.Grievance(k, pc, p, o));
+                                foreach (City c in pc.cities)
+                                    if (!c.isCapitalCity())
+                                        Dev.Log($"@c {k.id}|{id}|{o}|{c.id}|{pc.clan.name}|{Parliament.CitySeats(c)}|{c.getCachedLoyalty()}|{dNow}|{gNow}|{dNew}|{gNew}");
+                            }
+                        }
+                    }
+                }
                 return;
             }
             if (mode == "set")
