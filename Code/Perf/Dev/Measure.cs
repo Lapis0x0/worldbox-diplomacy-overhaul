@@ -32,6 +32,7 @@ namespace DiplomacyOverhaul.Perf
         static long _frame_alloc;
         static int _gc_frames;
         static readonly List<string> _spikes = new List<string>();
+        static double _world_time_start;
         static int _saved_vsync;
         static int _saved_target_fps;
 
@@ -55,6 +56,7 @@ namespace DiplomacyOverhaul.Perf
             _frame_alloc = 0;
             _gc_frames = 0;
             _spikes.Clear();
+            _world_time_start = World.world.getCurWorldTime();
             // 垂直同步和帧率上限会把帧耗时取整到刷新间隔，测量时去掉
             _saved_vsync = QualitySettings.vSyncCount;
             _saved_target_fps = Application.targetFrameRate;
@@ -183,6 +185,8 @@ namespace DiplomacyOverhaul.Perf
             var sb = new StringBuilder();
             sb.Append($"@result {_label} frames={n} fps={n / total:F1} avg={total / n * 1000:F1}ms p50={P(0.5f):F1} p95={P(0.95f):F1} p99={P(0.99f):F1} max={sorted[n - 1] * 1000:F0}");
             sb.Append($" alloc={_frame_alloc / 1024.0 / Math.Max(1, n - _gc_frames):F0}KB/frame");
+            sb.Append($" game_vsync={_saved_vsync} game_fps_cap={_saved_target_fps} refresh={Screen.currentResolution.refreshRateRatio.value:F0}");
+            sb.Append($" world={(World.world.getCurWorldTime() - _world_time_start) / total:F2}/s");
             sb.Append($" gc={System.GC.CollectionCount(0) - _gc_start} speed={Config.time_scale_asset?.id} paused={Config.paused}");
             sb.Append($" units={w.units.Count} buildings={w.buildings.Count} zoom={MoveCamera.instance.main_camera.orthographicSize:F0}");
             sb.Append($" heap={UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1048576}MB");
