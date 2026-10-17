@@ -86,6 +86,14 @@ namespace DiplomacyOverhaul
         // 与原版 DiplomacyManager 计算 kingdom.power 的公式一致
         public static int Power(Kingdom k) => k.countTotalWarriors() * 2 + k.countCities() * 5 + 1;
 
+        // 宗主和它所有附庸的实力之和
+        public static int BlocPower(Kingdom pLord)
+        {
+            int n = Power(pLord);
+            foreach (Kingdom v in GetVassals(pLord)) n += Power(v);
+            return n;
+        }
+
         // 只清数据，不刷新战争和地图
         public static void Clear(Kingdom pKingdom)
         {

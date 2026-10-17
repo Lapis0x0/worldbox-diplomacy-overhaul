@@ -32,6 +32,8 @@ namespace DiplomacyOverhaul
 
         public static int Population(NanoObject pCamp) => Sum(pCamp, k => k.getPopulationPeople());
 
+        public static int Power(NanoObject pCamp) => Sum(pCamp, Vassals.Power);
+
         static int Sum(NanoObject pCamp, System.Func<Kingdom, int> pValue)
         {
             int n = 0;

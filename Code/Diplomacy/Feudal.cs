@@ -256,12 +256,13 @@ namespace DiplomacyOverhaul
         static int RequiredRatio(Kingdom pLord) =>
             Government.Current(pLord)?.id == Government.Empire ? TributePowerRatioEmpire : TributePowerRatio;
 
+        // 实力比：强国这边算它和它的附庸，对方算整个阵营，盟友撑腰的国家不容易被吓住；同一联盟的国家不会互相逼迫称臣
         static bool WillSubmit(Kingdom pTarget, Kingdom pLord)
         {
             if (!pTarget.isAlive() || !pTarget.isCiv() || pTarget.countCities() == 0) return false;
             if (Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
             if (pTarget.isInWarWith(pLord)) return false;
-            if (Vassals.Power(pLord) < Vassals.Power(pTarget) * RequiredRatio(pLord)) return false;
+            if (Vassals.BlocPower(pLord) < Camp.Power(Camp.Of(pTarget)) * RequiredRatio(pLord)) return false;
             return World.world.diplomacy.getOpinion(pTarget, pLord).total >= 0;
         }
 
@@ -271,7 +272,7 @@ namespace DiplomacyOverhaul
             Kingdom lord = pActor.kingdom;
             Kingdom target = FindTarget(lord);
             if (target == null) return 0f;
-            float margin = Vassals.Power(lord) / (float)(Vassals.Power(target) * RequiredRatio(lord));
+            float margin = Vassals.BlocPower(lord) / (float)(Camp.Power(Camp.Of(target)) * RequiredRatio(lord));
             float situation = Mathf.Min(0.3f + (margin - 1f), 2f);
             float stat = (Motives.Stat(pActor, Motives.Aggression) + Motives.Stat(pActor, Motives.Diplomacy)) / 2f;
             return situation * Motives.Personality(pActor, stat, true);
