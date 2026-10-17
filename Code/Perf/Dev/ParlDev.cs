@@ -34,6 +34,20 @@ namespace DiplomacyOverhaul.Perf
                     Dev.Log($"    {(c == e.winner ? "*" : " ")} {c.actor.getName()} ({c.clan.clan.name}) ability={Regime.Ability(c.actor)} incumbent={c.incumbent} votes={c.votes}");
                 return;
             }
+            if (mode == "bill")
+            {
+                // parl bill <国家> <政策 id> <选项>：按眼下的议会表决这份议案，只打印不生效
+                Kingdom target = Find(a[2]);
+                Policy policy = Policies.Get(a[3]);
+                if (target == null || policy == null) { Dev.Log("  ! kingdom or policy not found"); return; }
+                var bill = new Bill { policy = policy, option = int.Parse(a[4]) };
+                var clans = Parliament.Clans(target);
+                VoteResult r = Parliament.Vote(target, bill, clans);
+                Dev.Log($"  {target.data.name} {policy.id} {policy.Get(target)} -> {bill.option} yes={r.yes} no={r.no} passes={Parliament.Passes(bill, r)}");
+                foreach (ParliamentClan pc in clans)
+                    Dev.Log($"    {(r.votes[pc.clan] ? "yes" : "no ")} {pc.clan.name}{(pc.ruling ? "*" : "")} seats={pc.seats} interest={policy.Interest(target, pc, bill.option):0.00}");
+                return;
+            }
             if (mode == "set")
             {
                 // parl set <国家> <政策 id> <选项>

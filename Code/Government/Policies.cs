@@ -35,6 +35,12 @@ namespace DiplomacyOverhaul
         public Func<Kingdom, bool> proposable;
         public Func<Kingdom, int> read;
         public Action<Kingdom, int> write;
+        // 切身利益：立场之外的得失，加在议案通过后的距离上（正数是吃亏）。
+        // 常见的一种用 crownStake：选项往集权挪，掌权家族（王室或执政家族）多得、其他家族交出的那一份，
+        // 按选项在轴上挪的距离算，档数不同的政策挪一档时和国家坐标的变化同比例。
+        // 别的算法写 interest，两个都没有就只看立场
+        public float crownStake;
+        public Func<Kingdom, ParliamentClan, int, float> interest;
 
         public int Get(Kingdom pKingdom)
         {
@@ -50,6 +56,14 @@ namespace DiplomacyOverhaul
             // 海军方针改了陆上单位的伤害，让全国单位重算属性
             if (id == Policies.Navy)
                 foreach (Actor a in pKingdom.units) a.setStatsDirty();
+        }
+
+        public float Interest(Kingdom pKingdom, ParliamentClan pClan, int pOption)
+        {
+            if (interest != null) return interest(pKingdom, pClan, pOption);
+            if (crownStake == 0f) return 0f;
+            float shift = Position(pOption) - Position(Get(pKingdom));
+            return (pClan.ruling ? -crownStake : crownStake) * shift;
         }
 
         public bool CanPropose(Kingdom pKingdom) => active && shown(pKingdom) && (proposable == null || proposable(pKingdom));
@@ -101,6 +115,12 @@ namespace DiplomacyOverhaul
         // 对宗主方针：争取自治、履行契约、忠诚臣属
         public const int SeekAutonomy = 0, Obligation = 1, Loyal = 2;
 
+        // 兵和钱收归中央时，掌权家族多得、其他家族交出的切身利益：选项在轴上每挪 1（三档政策的一档）算这么多
+        const float CrownStake = 0.2f;
+        // 改政体时各家族的切身利益：
+        // 改君主制，执政家族会成为王室，其他家族要受人统治；改共和制，王室失去王位，其他家族有机会轮流执政
+        const float FormInterest = 0.25f;
+
         // 原版的贡赋特质：上缴比例改由税收体制决定
         const string TributeLow = "tax_rate_tribute_low";
         const string TributeHigh = "tax_rate_tribute_high";
@@ -125,7 +145,8 @@ namespace DiplomacyOverhaul
                 threshold = 0.75f,
                 proposable = k => !Integration.IsProvince(k),
                 read = k => (int)Government.Form(k),
-                write = (k, v) => Regime.Reform(k, (GovForm)v)
+                write = (k, v) => Regime.Reform(k, (GovForm)v),
+                interest = (k, pc, v) => pc.ruling == (v == (int)GovForm.Monarchy) ? -FormInterest : FormInterest
             });
             Add(new Policy { id = Office, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, icon = "ui/Icons/iconLeaders" });
             Add(new Policy
@@ -134,9 +155,9 @@ namespace DiplomacyOverhaul
                 // 附庸不分封，这一项对它没有意义
                 shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
             });
-            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney" });
+            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney", crownStake = CrownStake });
             Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
-            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy" });
+            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", crownStake = CrownStake });
             Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
             Add(new Policy
             {
@@ -152,7 +173,8 @@ namespace DiplomacyOverhaul
             Add(new Policy
             {
                 id = VassalTax, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconMoney",
-                shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0
+                shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0,
+                interest = (k, pc, v) => Treasury.TributeInterest(k, v, Parliament.Voice(k, pc))
             });
             Add(new Policy
             {

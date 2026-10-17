@@ -38,6 +38,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy）
     //   parl election [国家]       打开选举与任命窗口
     //   parl vote [国家]           按眼下的议会选一次执政，只打印候选人和票数，不生效
+    //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {

@@ -264,19 +264,9 @@ namespace DiplomacyOverhaul
 
         // ---------- 表决 ----------
 
-        // 切身利益，加在议案通过后的距离上（正数是吃亏）。附庸贡赋见 Treasury.TributeInterest。
-        // 改政体时各家族的切身利益：
-        // 改君主制，执政家族会成为王室，其他家族要受人统治；改共和制，王室失去王位，其他家族有机会轮流执政
-        const float FormInterest = 0.25f;
-
-        static float Interest(Kingdom pKingdom, ParliamentClan pClan, Policy pPolicy, int pOption)
-        {
-            if (pPolicy.id == Policies.VassalTax)
-                return Treasury.TributeInterest(pKingdom, pOption, pClan.ruling && pKingdom.hasKing() ? pKingdom.king : pClan.clan.getChief());
-            if (pPolicy.id != Policies.Form) return 0f;
-            bool toMonarchy = pOption == (int)GovForm.Monarchy;
-            return pClan.ruling == toMonarchy ? -FormInterest : FormInterest;
-        }
+        // 替一个家族拿主意的人：王室（共和国是执政家族）看君主本人，其他家族看族长
+        public static Actor Voice(Kingdom pKingdom, ParliamentClan pClan) =>
+            pClan.ruling && pKingdom.hasKing() ? pKingdom.king : pClan.clan.getChief();
 
         static float Distance(float pX, float pY, (float x, float y) pPoint)
         {
@@ -292,7 +282,7 @@ namespace DiplomacyOverhaul
             var after = Policies.Coordinate(pKingdom, pBill.policy, pBill.option);
             foreach (ParliamentClan pc in pClans)
             {
-                bool yes = Distance(pc.x, pc.y, after) + Interest(pKingdom, pc, pBill.policy, pBill.option) < Distance(pc.x, pc.y, before);
+                bool yes = Distance(pc.x, pc.y, after) + pBill.policy.Interest(pKingdom, pc, pBill.option) < Distance(pc.x, pc.y, before);
                 result.votes[pc.clan] = yes;
                 if (yes) result.yes += pc.seats;
                 else result.no += pc.seats;
@@ -387,7 +377,7 @@ namespace DiplomacyOverhaul
                 {
                     if (o == current) continue;
                     var bill = new Bill { policy = p, option = o, proposer = pProposer.clan.id };
-                    float d = Distance(pProposer.x, pProposer.y, Policies.Coordinate(pKingdom, p, o)) + Interest(pKingdom, pProposer, p, o);
+                    float d = Distance(pProposer.x, pProposer.y, Policies.Coordinate(pKingdom, p, o)) + p.Interest(pKingdom, pProposer, o);
                     VoteResult vote = Vote(pKingdom, bill, pClans);
                     list.Add(new Option { bill = bill, gain = now - d, margin = total > 0 ? (float)vote.yes / total - p.threshold : 0f });
                 }
