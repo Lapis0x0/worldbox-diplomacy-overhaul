@@ -147,6 +147,26 @@ namespace DiplomacyOverhaul
             return customKey;
         }
 
+        // 领袖的称呼按显示的政体取；还没判定政体的按大类
+        public static string RulerKey(Kingdom pKingdom)
+        {
+            switch (Current(pKingdom)?.id)
+            {
+                case Kingdom: return "vd_ruler_king";
+                case Empire: return "vd_ruler_emperor";
+                case MilitaryRepublic: return "vd_ruler_protector";
+                case Duchy: return "vd_ruler_duke";
+                case HereditaryProvince: return "vd_ruler_prince";
+                case Province: return "vd_ruler_governor";
+                case Republic:
+                case MerchantRepublic:
+                case Dominion: return "vd_ruler_consul";
+                default: return IsRepublic(pKingdom) ? "vd_ruler_consul" : "vd_ruler_king";
+            }
+        }
+
+        public static string RulerTitle(Kingdom pKingdom) => LM.Get(RulerKey(pKingdom));
+
         public static GovForm Form(Kingdom pKingdom)
         {
             EnsureForm(pKingdom);

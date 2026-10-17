@@ -134,7 +134,7 @@ namespace DiplomacyOverhaul
             {
                 StartTerm(pKingdom, e.winner.actor);
                 WorldLogs.Add(WorldLogs.Reelected, Location(pKingdom), e.winner.actor,
-                    new[] { e.winner.actor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+                    new[] { e.winner.actor.getName(), pKingdom.data.name, Government.RulerKey(pKingdom) }, new[] { pKingdom, pKingdom });
                 return;
             }
             Appoint(pKingdom, e.winner.actor);
@@ -154,7 +154,7 @@ namespace DiplomacyOverhaul
             pKingdom.clearKingData();
             MakeRuler(pKingdom, pActor);
             WorldLogs.Add(WorldLogs.Elected, Location(pKingdom), pActor,
-                new[] { pActor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+                new[] { pActor.getName(), pKingdom.data.name, Government.RulerKey(pKingdom) }, new[] { pKingdom, pKingdom });
         }
 
         // 和原版立新王一样：离开城主之位、搬进首都
@@ -190,7 +190,7 @@ namespace DiplomacyOverhaul
             pKingdom.clearKingData();
             MakeRuler(pKingdom, ruler);
             WorldLogs.Add(WorldLogs.Elected, Location(pKingdom), ruler,
-                new[] { ruler.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+                new[] { ruler.getName(), pKingdom.data.name, Government.RulerKey(pKingdom) }, new[] { pKingdom, pKingdom });
             return true;
         }
 

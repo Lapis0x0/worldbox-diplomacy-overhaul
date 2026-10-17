@@ -135,15 +135,15 @@ namespace DiplomacyOverhaul
 
         static void BuildRepublic(Election e)
         {
-            Header(_left, LeftX, Top, LeftW, LM.Get("vd_election_republic"), "ui/Icons/iconKings");
+            Header(_left, LeftX, Top, LeftW, LM.Get("vd_election_republic").Replace("$title$", Government.RulerTitle(_kingdom)), "ui/Icons/iconKings");
 
             // 执政和离改选还有几年
             float y = Top + 23f;
             RectTransform status = Sliced(_left, Slot, LeftX, y, LeftW, 18f);
             Actor king = _kingdom.king;
             string exec = king != null && king.isAlive()
-                ? LM.Get("vd_parliament_ruling") + " <color=" + Tag(ClanText(king.clan)) + ">" + king.getName() + "</color>"
-                : LM.Get("vd_election_vacant");
+                ? Government.RulerTitle(_kingdom) + " <color=" + Tag(ClanText(king.clan)) + ">" + king.getName() + "</color>"
+                : LM.Get("vd_election_vacant").Replace("$title$", Government.RulerTitle(_kingdom));
             Text(status, exec, 7f, 0f, LeftW - 14f, 18f, 7, Ink, TextAnchor.MiddleLeft);
             if (king != null && king.isAlive())
                 Text(status, LM.Get("vd_election_in").Replace("$years$", Regime.YearsToElection(_kingdom).ToString()), 7f, 0f, LeftW - 14f, 18f, 6, Muted, TextAnchor.MiddleRight);
@@ -241,7 +241,7 @@ namespace DiplomacyOverhaul
                 _pick = -1;
                 Refresh();
             });
-            Text(appoint, LM.Get("vd_election_appoint"), 0f, 0f, bw, 18f, 7, Color.white, TextAnchor.MiddleCenter);
+            Text(appoint, LM.Get("vd_election_appoint").Replace("$title$", Government.RulerTitle(_kingdom)), 0f, 0f, bw, 18f, 7, Color.white, TextAnchor.MiddleCenter);
         }
 
         // ---------- 君主国：王位继承 ----------
@@ -279,7 +279,7 @@ namespace DiplomacyOverhaul
 
         static void BuildMonarchy(List<Actor> pHeirs)
         {
-            string title = LM.Get("vd_election_monarch");
+            string title = Government.RulerTitle(_kingdom);
             Header(_left, LeftX, Top, LeftW, title, "ui/Icons/iconKings");
             float y = Top + 23f;
             Actor king = _kingdom.king;
@@ -573,7 +573,7 @@ namespace DiplomacyOverhaul
             Text(slot, Fit(string.Join(" · ", parts), 6, tw), tx, 5f, tw, 10f, 6, Muted, TextAnchor.MiddleLeft);
             if (o == null) return;
             Avatar(slot, o, 7f, 5f, 26f);
-            string role = o == _kingdom.king ? (Government.IsRepublic(_kingdom) ? LM.Get("vd_parliament_ruling") : LM.Get("vd_election_monarch")) : LM.Get("vd_election_leader");
+            string role = o == _kingdom.king ? Government.RulerTitle(_kingdom) : LM.Get("vd_election_leader");
             Text(slot, Fit(role + " " + o.getName() + " · " + Age(o), 8, tw), tx, 16f, tw, 13f, 8, Color.white, TextAnchor.MiddleLeft);
 
             Rect(slot, 6f, 36f, RightW - 12f, 1f, Line);

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 王国在界面上的样子：王国窗口、悬停提示、地图名牌上的称号，地图上附庸的边界颜色。
+    // 王国在界面上的样子：王国窗口、悬停提示、地图名牌上的称号，领袖的称呼，地图上附庸的边界颜色。
     // 王国窗口和悬停提示是原版两处不同的代码，改称号两处都要改
 
     // 王国窗口：标题下方的"王国"换成政体名（附庸接上宗主名），并显示宗主 / 附庸
@@ -119,8 +119,13 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(TooltipLibrary), "showCity", typeof(string), typeof(Tooltip), typeof(TooltipData))]
     static class Patch_CityTooltipUnpaid
     {
+        internal static City Current;
+
+        static void Prefix(TooltipData pData) => Current = pData?.city;
+
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
+            Current = null;
             City c = pData?.city;
             if (c == null) return;
             float penalty = Treasury.Penalty(c);
@@ -170,17 +175,62 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 王国、城市提示：「国王」一行按政体换成领袖的称呼。
     // 王国提示：「领袖财富」后面接一行国库，插在原版的城市数一行前面
     [HarmonyPatch(typeof(Tooltip), nameof(Tooltip.addLineText))]
     static class Patch_KingdomTooltipTreasury
     {
-        static void Prefix(Tooltip __instance, string pID)
+        static void Prefix(Tooltip __instance, ref string pID)
         {
             Kingdom k = Patch_KingdomTooltip.Current;
+            if (pID == "village_statistics_king")
+            {
+                Kingdom owner = k ?? Patch_CityTooltipUnpaid.Current?.kingdom;
+                if (owner != null && !owner.isNeutral()) pID = Government.RulerKey(owner);
+                return;
+            }
             if (k == null || pID != "villages") return;
             __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
             float penalty = Guard.Penalty(k);
             if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
+        }
+    }
+
+    // 王国窗口、城市窗口的「国王」一栏按政体换成领袖的称呼
+    [HarmonyPatch(typeof(StatsWindow), "tryToShowActor")]
+    static class Patch_RulerRow
+    {
+        static void Prefix(StatsWindow __instance, ref string pTitle)
+        {
+            if (pTitle != "king") return;
+            Kingdom k = __instance is KingdomWindow ? SelectedMetas.selected_kingdom
+                : __instance is CityWindow ? SelectedMetas.selected_city?.kingdom : null;
+            if (k != null && !k.isNeutral()) pTitle = Government.RulerKey(k);
+        }
+    }
+
+    // 单位提示：领袖的副标题「国王」按政体换成领袖的称呼
+    [HarmonyPatch(typeof(TooltipLibrary), "showActor")]
+    static class Patch_RulerTooltip
+    {
+        static void Prefix(ref string pSubTitle, TooltipData pData)
+        {
+            Kingdom k = pData?.actor?.kingdom;
+            if (pSubTitle == "village_statistics_king" && k != null && !k.isNeutral()) pSubTitle = Government.RulerKey(k);
+        }
+    }
+
+    // 底部信息栏选中王国时，领袖一栏原版用「国王 $unit$」，按政体换成领袖的称呼
+    [HarmonyPatch(typeof(SelectedMetaUnitElement), nameof(SelectedMetaUnitElement.show))]
+    static class Patch_RulerSelected
+    {
+        static void Prefix(Actor pActor, ref string pLocaleKey)
+        {
+            Kingdom k = pActor?.kingdom;
+            if (pLocaleKey != "titled_king" || k == null || k.isNeutral()) return;
+            string key = Government.RulerKey(k);
+            pLocaleKey = "vd_titled_" + key;
+            LM.AddToCurrentLocale(pLocaleKey, LM.Get("vd_titled").Replace("$title$", LM.Get(key)));
         }
     }
 

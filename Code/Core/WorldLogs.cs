@@ -1,3 +1,4 @@
+using NeoModLoader.General;
 using UnityEngine;
 
 namespace DiplomacyOverhaul
@@ -21,8 +22,8 @@ namespace DiplomacyOverhaul
         public const string DirectRulePart = "vd_log_direct_rule_part";   // $lord$ 将 $vassal$ 的 $count$ 座城收归直辖
         public const string Restored = "vd_log_restored";             // $ruler$ 中兴 $kingdom$
         public const string RestoreFailed = "vd_log_restore_failed";  // $ruler$ 中兴 $kingdom$ 失败，国势更衰
-        public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ 执政
-        public const string Reelected = "vd_log_reelected";              // $ruler$ 连任 $kingdom$ 执政
+        public const string Elected = "vd_log_elected";                  // $ruler$ 当选 $kingdom$ $title$
+        public const string Reelected = "vd_log_reelected";              // $ruler$ 连任 $kingdom$ $title$
         public const string Inherited = "vd_log_inherited";              // $ruler$ 继承 $kingdom$ 的王位，$vassal$ 并入 $kingdom$
         public const string InheritedEmpire = "vd_log_inherited_empire"; // $ruler$ 继承 $kingdom$ 的皇位，$vassal$ 并入 $kingdom$
         public const string RepublicFounded = "vd_log_republic_founded"; // $kingdom$ 王室绝嗣，$ruler$ 被推举执政，改制为共和国
@@ -49,8 +50,8 @@ namespace DiplomacyOverhaul
             Register(DirectRulePart, "ui/Icons/vd_power_annex", Toolbox.color_log_neutral, "$lord$", "$vassal$", "$count$");
             Register(Restored, "ui/Icons/vd_cycle_prime", Toolbox.color_log_good, "$ruler$", "$kingdom$");
             Register(RestoreFailed, "ui/Icons/vd_cycle_decline", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
-            Register(Elected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
-            Register(Reelected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(Elected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$", "$title$");
+            Register(Reelected, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$ruler$", "$kingdom$", "$title$");
             Register(Inherited, "ui/Icons/iconKings", Toolbox.color_log_neutral, "$ruler$", "$kingdom$", "$vassal$");
             Register(InheritedEmpire, "ui/Icons/iconKings", Toolbox.color_log_neutral, "$ruler$", "$kingdom$", "$vassal$");
             Register(RepublicFounded, "ui/Icons/vd_gov_republic", Toolbox.color_log_neutral, "$kingdom$", "$ruler$");
@@ -60,7 +61,7 @@ namespace DiplomacyOverhaul
             Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
         }
 
-        // 文案里的占位符依次对应消息的 special1~3
+        // 文案里的占位符依次对应消息的 special1~3。$title$ 存的是领袖称呼的语言 key，显示时再翻译
         static void Register(string pId, string pIcon, Color pColor, params string[] pKeys)
         {
             Core.Upsert(AssetManager.world_log_library, new WorldLogAsset
@@ -71,7 +72,12 @@ namespace DiplomacyOverhaul
                 color = pColor,
                 text_replacer = (WorldLogMessage pMessage, ref string pText) =>
                 {
-                    for (int i = 0; i < pKeys.Length; i++) pText = pText.Replace(pKeys[i], pMessage.getSpecial(i + 1));
+                    for (int i = 0; i < pKeys.Length; i++)
+                    {
+                        string value = pMessage.getSpecial(i + 1);
+                        if (pKeys[i] == "$title$") value = LM.Get(string.IsNullOrEmpty(value) ? "vd_ruler_consul" : value);
+                        pText = pText.Replace(pKeys[i], value);
+                    }
                 }
             });
         }
