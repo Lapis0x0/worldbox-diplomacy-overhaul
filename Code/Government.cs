@@ -160,12 +160,6 @@ namespace DiplomacyOverhaul
             return military;
         }
 
-        public static bool IsLocked(Kingdom pKingdom)
-        {
-            pKingdom.data.get(KeyLocked, out bool locked, false);
-            return locked;
-        }
-
         // 共和国没有王室：家族轮流执政
         public static void SetForm(Kingdom pKingdom, GovForm pForm, bool pMilitary = false)
         {
@@ -266,28 +260,12 @@ namespace DiplomacyOverhaul
             RemoveLegacy(pKingdom);
             string current = Current(pKingdom)?.id;
             data.get(KeyAuto, out string last, null);
-            data.get(KeyLocked, out bool locked, false);
+            // 清掉旧存档里的锁定标记
+            data.removeBool(KeyLocked);
 
-            if (locked)
-            {
-                // 锁定后玩家又换了一次
-                if (current != null && current != last)
-                {
-                    ApplyManual(pKingdom, current);
-                    return;
-                }
-                // 锁定的特质和大类对得上就不动；对不上（旧存档补掷大类时会出现）以大类为准。
-                // 玩家把政体删掉也一样：交还给自动判定
-                if (current != null && FormOf(current) == Form(pKingdom)) return;
-                data.removeBool(KeyLocked);
-            }
-            else if (last != null && current != null && current != last && last != LegacyCityState)
-            {
-                // 玩家在特质编辑器里改过政体：锁定
-                data.set(KeyLocked, true);
+            // 玩家在特质编辑器里改过政体：改的是背后的大类和行省状态，称号仍按规则判定
+            if (last != null && current != null && current != last && last != LegacyCityState)
                 ApplyManual(pKingdom, current);
-                return;
-            }
 
             string desired = Desired(pKingdom);
             if (desired == null || desired == current) return;
@@ -299,8 +277,8 @@ namespace DiplomacyOverhaul
         static void ApplyManual(Kingdom pKingdom, string pGov)
         {
             pKingdom.data.set(KeyAuto, pGov);
-            if (RepublicIds.Contains(pGov)) SetForm(pKingdom, GovForm.Republic, pGov == MilitaryRepublic);
-            else if (pGov == Kingdom || pGov == Empire) SetForm(pKingdom, GovForm.Monarchy);
+            GovForm? form = FormOf(pGov);
+            if (form != null) SetForm(pKingdom, form.Value, pGov == MilitaryRepublic);
             Integration.ApplyTitle(pKingdom, pGov);
         }
 

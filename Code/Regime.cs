@@ -198,7 +198,7 @@ namespace DiplomacyOverhaul
         internal static bool TryRepublicOnExtinction(Kingdom pKingdom)
         {
             if (Government.IsRepublic(pKingdom)) return TryElect(pKingdom);
-            if (!Enabled || Government.IsLocked(pKingdom)) return false;
+            if (!Enabled) return false;
             Culture culture = pKingdom.culture;
             bool leaning = Has(culture, "diplomatic_ascension") || Has(culture, "golden_rule");
             if (!Randy.randomChance(leaning ? RepublicOnExtinctionLeaning : RepublicOnExtinction)) return false;
@@ -253,7 +253,7 @@ namespace DiplomacyOverhaul
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 if (Government.IsRepublic(k)) UpdateTerm(k);
-                if (!Enabled || Government.IsLocked(k)) continue;
+                if (!Enabled) continue;
                 if (TryCoup(k)) continue;
                 TryCrown(k);
             }

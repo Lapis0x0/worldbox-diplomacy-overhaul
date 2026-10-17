@@ -145,11 +145,8 @@ namespace DiplomacyOverhaul
                 Kingdom lord = pLord ?? Vassals.GetOverlord(pVassal);
                 bool hereditary = lord != null && SameHouse(pVassal, lord);
                 if (hereditary) pVassal.data.set(KeyHereditary, true);
-                if (!Government.IsLocked(pVassal))
-                {
-                    Government.SetForm(pVassal, hereditary ? GovForm.Monarchy : GovForm.Republic);
-                    if (hereditary) pVassal.trySetRoyalClan();
-                }
+                Government.SetForm(pVassal, hereditary ? GovForm.Monarchy : GovForm.Republic);
+                if (hereditary) pVassal.trySetRoyalClan();
                 Log(hereditary ? WorldLogs.HereditaryProvince : WorldLogs.Province, pVassal, pLord);
             }
             else if (province && value < ProvinceUntil)
@@ -228,7 +225,7 @@ namespace DiplomacyOverhaul
             if (!IsHereditary(pVassal)) return;
             if (!pVassal.hasKing() || !pLord.hasKing() || SameHouse(pVassal, pLord)) return;
             pVassal.data.removeBool(KeyHereditary);
-            if (!Government.IsLocked(pVassal)) Government.SetForm(pVassal, GovForm.Republic);
+            Government.SetForm(pVassal, GovForm.Republic);
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
             Log(WorldLogs.HereditaryLost, pVassal, pLord);
         }

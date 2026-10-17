@@ -122,7 +122,7 @@ namespace DiplomacyOverhaul
             {
                 id = Form, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, count = 2, icon = "ui/Icons/iconKings",
                 threshold = 0.75f,
-                proposable = k => !Government.IsLocked(k) && !Integration.IsProvince(k),
+                proposable = k => !Integration.IsProvince(k),
                 read = k => (int)Government.Form(k),
                 write = (k, v) => Regime.Reform(k, (GovForm)v)
             });

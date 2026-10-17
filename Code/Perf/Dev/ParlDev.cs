@@ -180,7 +180,7 @@ namespace DiplomacyOverhaul.Perf
             var c = Policies.Coordinate(k);
             Dev.Log($"  [{k.id}] {k.data.name} cities={k.countCities()} seats={Parliament.TotalSeats(clans)} next={Parliament.NextSession(k)} year={Date.getCurrentYear()} coord=({c.x:0.00},{c.y:0.00}) tribute={k.getTaxRateTribute():0.00}");
             k.data.get("vd_gov_auto", out string auto, null);
-            Dev.Log($"    gov={Government.Current(k)?.id} auto={auto} form={Government.Form(k)} locked={Government.IsLocked(k)} king={(k.hasKing() ? k.king.getName() : "-")} royal={k.data.royal_clan_id}");
+            Dev.Log($"    gov={Government.Current(k)?.id} auto={auto} form={Government.Form(k)} king={(k.hasKing() ? k.king.getName() : "-")} royal={k.data.royal_clan_id}");
             foreach (Policy p in Policies.All)
             {
                 if (!p.shown(k)) continue;
