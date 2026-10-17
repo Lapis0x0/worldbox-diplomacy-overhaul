@@ -47,7 +47,7 @@ To update, delete the old `DiplomacyOverhaul` folder before extracting the new o
   - Changes to `Core/Main.cs`, `Core/DevReload.cs`, `mod.json` and `default_config.json` still need a restart
   - `Core.Start` must be safe to run repeatedly: register assets with `Core.Upsert`; tab buttons are cleared and rebuilt
 - Release: bump the version in `mod.json`, write this version's Chinese and English notes in `CHANGELOG.md` and commit, then run `tools/release.sh`. The script checks the working tree, version, locale files and build, then tags and pushes; GitHub Actions creates the Release with the package attached (`tools/package.sh` can also package on its own)
-- Upload to the Workshop: in the NML mod list, click the cover 8 times and wait 3 seconds to open the upload window. When updating, enter the Workshop item ID at the top; leaving it empty creates a new item
+- Upload to the Workshop: run `tools/workshop.sh`, which uses SteamCMD to upload the files in the release package along with this version's change notes, leaving the title and description alone. It needs `brew install --cask steamcmd`, your Steam account name in `bin/steam_user`, and a one-time login in a terminal with `steamcmd +login <account> +quit`. The NML upload window (click the cover 8 times in the mod list and wait 3 seconds) also works, but its change-note box has a length limit and truncates long notes
 
 ## License
 
