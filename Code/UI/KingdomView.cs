@@ -61,6 +61,26 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 选中王国时底部的信息栏：金币格原版是全国所有人身上的钱之和，换成国库
+    [HarmonyPatch(typeof(SelectedKingdom), "showStatsGeneral")]
+    static class Patch_SelectedKingdomTreasury
+    {
+        static void Postfix(SelectedKingdom __instance, Kingdom pKingdom)
+        {
+            foreach (StatsIconContainer c in __instance.stats_icons)
+            {
+                StatsIcon icon = c.getIconViaId("i_money");
+                if (icon == null) continue;
+                c.setIconValue("i_money", Treasury.Get(pKingdom));
+                if (icon.TryGetComponent(out TipButton tip))
+                {
+                    tip.textOnClick = "vd_treasury";
+                    tip.textOnClickDescription = "vd_treasury_info";
+                }
+            }
+        }
+    }
+
     // 王国窗口：「领袖财富」后面接一行国库。原版接着显示上缴比例，在它前面插进去
     [HarmonyPatch(typeof(StatsWindow), "showStatRow", typeof(string), typeof(object), typeof(string), typeof(MetaType), typeof(long), typeof(bool), typeof(string), typeof(string), typeof(TooltipDataGetter), typeof(bool))]
     static class Patch_KingdomTreasuryRow

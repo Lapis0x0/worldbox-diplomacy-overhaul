@@ -19,6 +19,7 @@
   "vd_tip_vassal_has_vassals": "This kingdom has vassals and cannot become a vassal",
   "vd_tip_not_vassal": "This kingdom is not a vassal",
   "vd_treasury": "Treasury",
+  "vd_treasury_info": "To make war, you need three things: money, money, and more money. — Trivulzio",
   "vd_row_overlord": "Overlord",
   "vd_row_vassals": "Vassals",
   "opinion_vd_overlord": "Loyal to overlord",

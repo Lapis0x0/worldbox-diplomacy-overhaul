@@ -31,7 +31,7 @@
 
 ## 界面
 
-王国窗口和王国的悬停提示里，「领袖财富」（国王个人的钱）下面一行是国库余额。
+选中王国时底部信息栏的金币格显示国库（原版这一格是全国所有人身上的钱之和）。王国窗口和王国的悬停提示里，「领袖财富」（国王个人的钱）下面一行也是国库余额。
 
 ## 实现
 
@@ -46,4 +46,5 @@
 - `BehActorGiveTax.payTributeToKing`：城主上缴时分给国王和国库。
 - `City.tryToMakeWarrior`：欠饷的城市不征兵。
 - `PlotAsset.checkIsPossible`、`PlotManager.newPlot`、`Actor.hasEnoughMoney`、`Actor.spendMoney`：国王发起密谋时看国库、花国库。
+- `SelectedKingdom.showStatsGeneral`：底部信息栏的金币格换成国库。
 - `StatsWindow.showStatRow`（王国窗口的上缴比例一行之前）、`Tooltip.addLineText`（王国提示的城市数一行之前）：显示国库。
