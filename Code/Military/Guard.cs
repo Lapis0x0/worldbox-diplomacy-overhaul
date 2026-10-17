@@ -13,7 +13,8 @@ namespace DiplomacyOverhaul
         const string FlagGuard = "vd_guard";           // army.data：禁军编队
         const string FlagMember = "vd_guard_member";   // actor.data：上调禁军的兵
         const string KeyTarget = "vd_guard_target";    // army.data：编队的进攻目标城市
-        const string KeyUnpaid = "vd_guard_unpaid";    // kingdom.data：禁军连续欠饷的年数
+        const string KeyUnpaid = "vd_guard_unpaid";            // kingdom.data：禁军这一年欠饷
+        const string KeyPenalty = "vd_guard_unpaid_penalty";   // kingdom.data：禁军欠饷累积的伤害减益
         public const int GroupCap = 100;
 
         static readonly float[] Rates = { 0f, 0.25f, 0.5f, 0.75f };
@@ -47,24 +48,57 @@ namespace DiplomacyOverhaul
 
         public static bool Unpaid(Kingdom pKingdom)
         {
-            pKingdom.data.get(KeyUnpaid, out int years, 0);
-            return years > 0;
+            pKingdom.data.get(KeyUnpaid, out bool unpaid, false);
+            return unpaid;
         }
 
-        // 征兵时这个兵进禁军还是地方军：禁军名额没满、国库没欠饷就进禁军
-        static bool WantsMember(City pCity) =>
-            pCity.kingdom != null && !Unpaid(pCity.kingdom) && CountMembers(pCity) < Quota(pCity);
-
-        // 这座城还能不能征兵：禁军、地方军哪边有空额又发得出饷
-        public static bool CanRecruit(City pCity)
+        public static float Penalty(Kingdom pKingdom)
         {
-            if (WantsMember(pCity)) return true;
-            return !Treasury.Unpaid(pCity) && CountLocal(pCity) < pCity.getMaxWarriors() - Quota(pCity);
+            if (pKingdom?.data == null) return 0f;
+            pKingdom.data.get(KeyPenalty, out float v, 0f);
+            return v;
         }
+
+        // 全国的禁军人数，征兵时要看国库养不养得起。每次征兵都数一遍太慢，约一秒数一次
+        static readonly Dictionary<long, (int frame, int count)> _members = new Dictionary<long, (int, int)>();
+
+        static int KingdomMembers(Kingdom pKingdom)
+        {
+            int frame = Time.frameCount;
+            if (_members.TryGetValue(pKingdom.id, out var c) && frame - c.frame < 60 && frame >= c.frame) return c.count;
+            int n = 0;
+            foreach (City city in pKingdom.getCities()) n += CountMembers(city);
+            _members[pKingdom.id] = (frame, n);
+            return n;
+        }
+
+        // 征兵时这个兵进禁军还是地方军：禁军名额没满、国库没欠饷、还够全体禁军（连他在内）一年的饷，就进禁军
+        internal static bool WantsMember(City pCity)
+        {
+            Kingdom k = pCity.kingdom;
+            if (k == null || Unpaid(k) || CountMembers(pCity) >= Quota(pCity)) return false;
+            return Treasury.Get(k) >= (KingdomMembers(k) + 1) * Treasury.PayPerWarrior;
+        }
+
+        // 地方兵：名额没满、本城没欠饷、仓库够全体地方兵（连他在内）一年的饷
+        static bool WantsLocal(City pCity)
+        {
+            if (Treasury.Unpaid(pCity)) return false;
+            int local = CountLocal(pCity);
+            if (local >= pCity.getMaxWarriors() - Quota(pCity)) return false;
+            return pCity.getResourcesAmount("gold") >= (local + 1) * Treasury.PayPerWarrior;
+        }
+
+        // 这座城还能不能征兵：禁军、地方军哪边有空额又养得起
+        public static bool CanRecruit(City pCity) => WantsMember(pCity) || WantsLocal(pCity);
 
         internal static void OnMadeWarrior(City pCity, Actor pActor)
         {
-            if (WantsMember(pCity)) pActor.data.addFlag(FlagMember);
+            if (WantsMember(pCity))
+            {
+                pActor.data.addFlag(FlagMember);
+                _members.Remove(pCity.kingdom.id);
+            }
             else pActor.data.removeFlag(FlagMember);
         }
 
@@ -236,7 +270,7 @@ namespace DiplomacyOverhaul
                 else
                 {
                     City target = Target(army);
-                    if (target != null && (target.kingdom == null || !target.kingdom.isEnemy(kingdom))) SetTarget(army, null, null);
+                    if (target != null && (target.kingdom == null || !target.kingdom.isAlive() || !target.kingdom.isEnemy(kingdom))) SetTarget(army, null, null);
                     else if (target != null && TargetEntry(army).zone == null) SetTarget(army, target, PickZone(target));
                 }
                 Orders.CheckForced(army);
@@ -309,8 +343,7 @@ namespace DiplomacyOverhaul
 
         // ---------- 军饷 ----------
 
-        // 每年：禁军的饷从国库出，单价和地方兵一样。国库不够时禁军欠饷，不再上调新兵；
-        // 连续欠饷到第二年起，每年有欠饷禁军的四分之一解甲归田（队长不解甲）
+        // 每年：禁军的饷从国库出，单价和地方兵一样。欠饷的处理同地方兵（见 Treasury.Settle），按国家算
         internal static void Pay(Kingdom pKingdom)
         {
             var members = new List<Actor>();
@@ -323,24 +356,17 @@ namespace DiplomacyOverhaul
             }
             int cost = Mathf.RoundToInt(members.Count * Treasury.PayPerWarrior);
             int paid = Treasury.Take(pKingdom, cost);
-            if (paid >= cost)
-            {
-                pKingdom.data.removeInt(KeyUnpaid);
-                return;
-            }
-            pKingdom.data.get(KeyUnpaid, out int years, 0);
-            years++;
-            pKingdom.data.set(KeyUnpaid, years);
-            if (years < Treasury.DisbandYears) return;
-            int unpaid = Mathf.CeilToInt((cost - paid) / Treasury.PayPerWarrior);
-            int disband = Mathf.Min(members.Count, Mathf.CeilToInt(unpaid * Treasury.DisbandShare));
+            int disband = Treasury.Settle(pKingdom.data, KeyUnpaid, KeyPenalty, cost, paid, out bool changed);
             foreach (Actor a in members)
             {
-                if (disband <= 0) break;
-                if (!a.isAlive() || a.is_army_captain) continue;
-                a.data.removeFlag(FlagMember);
-                a.stopBeingWarrior();
-                disband--;
+                if (!a.isAlive()) continue;
+                if (disband > 0 && !a.is_army_captain)
+                {
+                    a.data.removeFlag(FlagMember);
+                    a.stopBeingWarrior();
+                    disband--;
+                }
+                else if (changed) a.setStatsDirty();
             }
         }
     }
@@ -459,6 +485,19 @@ namespace DiplomacyOverhaul
                     if (!Guard.IsMember(a)) locals.Add(a);
             if (locals.Count > 0) World.world.armies.newArmy(locals.GetRandom(), pCity);
             return false;
+        }
+    }
+
+    // 原版征兵要求城市仓库的金子超过 10。禁军的饷由国库出，补禁军名额时不看城市仓库：
+    // 仓库不到 10 金子、禁军又要人时，照原版其余条件征兵
+    [HarmonyPatch(typeof(City), nameof(City.setCitizenJob))]
+    static class Patch_GuardRecruit
+    {
+        static bool Prefix(City __instance, Actor pActor)
+        {
+            if (__instance.getResourcesAmount("gold") > 10 || __instance.isGettingCaptured() || __instance._timer_warrior > 0f) return true;
+            if (!pActor.isProfession(UnitProfession.Unit) || !__instance.hasEnoughFoodForArmy() || !Guard.WantsMember(__instance)) return true;
+            return !__instance.tryToMakeWarrior(pActor);
         }
     }
 

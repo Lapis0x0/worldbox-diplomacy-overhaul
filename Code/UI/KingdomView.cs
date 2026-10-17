@@ -81,16 +81,50 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 王国窗口：「领袖财富」后面接一行国库。原版接着显示上缴比例，在它前面插进去
+    // 王国窗口：「领袖财富」后面接一行国库，禁军欠饷时再接一行。原版接着显示上缴比例，在它前面插进去。
+    // 城市窗口：上缴比例前面，地方兵欠饷时加一行
     [HarmonyPatch(typeof(StatsWindow), "showStatRow", typeof(string), typeof(object), typeof(string), typeof(MetaType), typeof(long), typeof(bool), typeof(string), typeof(string), typeof(TooltipDataGetter), typeof(bool))]
     static class Patch_KingdomTreasuryRow
     {
         static void Prefix(StatsWindow __instance, string pId)
         {
-            if (pId != "tribute" || !(__instance is KingdomWindow)) return;
-            Kingdom k = SelectedMetas.selected_kingdom;
-            if (k == null) return;
-            __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
+            if (pId != "tribute") return;
+            if (__instance is KingdomWindow)
+            {
+                Kingdom k = SelectedMetas.selected_kingdom;
+                if (k == null) return;
+                __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
+                float penalty = Guard.Penalty(k);
+                if (penalty > 0f) __instance.showStatRow("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
+            }
+            else if (__instance is CityWindow)
+            {
+                City c = SelectedMetas.selected_city;
+                if (c == null) return;
+                float penalty = Treasury.Penalty(c);
+                if (penalty > 0f) __instance.showStatRow("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
+            }
+        }
+    }
+
+    // 欠饷减掉的伤害，如「-15%」
+    static class UnpaidText
+    {
+        internal const string Color = "#FF8F7A";
+
+        internal static string Of(float pPenalty) => "-" + Mathf.RoundToInt(pPenalty * 100f) + "%";
+    }
+
+    // 城市提示：地方兵欠饷时，最后加一行
+    [HarmonyPatch(typeof(TooltipLibrary), "showCity", typeof(string), typeof(Tooltip), typeof(TooltipData))]
+    static class Patch_CityTooltipUnpaid
+    {
+        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        {
+            City c = pData?.city;
+            if (c == null) return;
+            float penalty = Treasury.Penalty(c);
+            if (penalty > 0f) pTooltip.addLineText("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
         }
     }
 
@@ -145,6 +179,8 @@ namespace DiplomacyOverhaul
             Kingdom k = Patch_KingdomTooltip.Current;
             if (k == null || pID != "villages") return;
             __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
+            float penalty = Guard.Penalty(k);
+            if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
         }
     }
 

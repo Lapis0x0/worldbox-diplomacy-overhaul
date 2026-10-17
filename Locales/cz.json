@@ -363,6 +363,8 @@
   "vd_pol_army_3": "中央军团",
   "vd_pol_army_3_info": "各城大半兵员编入禁军，地方只留守备",
   "vd_eff_guard_share": "各城兵员编入禁军",
+  "vd_unpaid": "欠饷",
+  "vd_guard_unpaid": "禁军欠饷",
   "vd_guard_army": "$kingdom$禁军 $num$",
   "vd_pol_navy": "海军方针",
   "vd_pol_navy_0": "陆权优先",

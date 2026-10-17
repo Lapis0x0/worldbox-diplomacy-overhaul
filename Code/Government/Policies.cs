@@ -368,7 +368,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 单位伤害的倍数：海军方针只管陆上单位，天命（王朝周期）管全国单位，两者相乘
+    // 单位伤害的倍数：海军方针只管陆上单位，天命（王朝周期）管全国单位，欠饷管士兵，几项相乘
     [HarmonyPatch(typeof(Actor), "updateStats")]
     static class Patch_LandDamage
     {
@@ -378,6 +378,7 @@ namespace DiplomacyOverhaul
             if (k == null || !k.isCiv()) return;
             float factor = __instance.asset.is_boat ? 1f : Policies.LandDamageFactor(k);
             factor *= 1f + Cycle.DamagePercent(k) / 100f;
+            factor *= 1f - Treasury.Penalty(__instance);
             if (factor != 1f) __instance.stats["damage"] *= factor;
         }
     }

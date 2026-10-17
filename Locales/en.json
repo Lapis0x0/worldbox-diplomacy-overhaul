@@ -363,6 +363,8 @@
   "vd_pol_army_3": "Central Legions",
   "vd_pol_army_3_info": "Most troops serve in the Guard, leaving cities only a garrison",
   "vd_eff_guard_share": "City troops sent to the Guard",
+  "vd_unpaid": "Unpaid Troops",
+  "vd_guard_unpaid": "Unpaid Guard",
   "vd_guard_army": "$kingdom$ Guard $num$",
   "vd_pol_navy": "Naval Doctrine",
   "vd_pol_navy_0": "Land Power",

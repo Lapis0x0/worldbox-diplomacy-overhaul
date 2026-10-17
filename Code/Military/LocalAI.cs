@@ -106,7 +106,7 @@ namespace DiplomacyOverhaul
                 WorldTile from = station.getTile();
                 foreach (City n in station.neighbours_cities)
                 {
-                    if (n.isRekt() || n.kingdom == null || !n.kingdom.isEnemy(pKingdom) || from == null) continue;
+                    if (n.isRekt() || n.kingdom == null || !n.kingdom.isAlive() || !n.kingdom.isEnemy(pKingdom) || from == null) continue;
                     if (strength < GuardAI.Defenders(n) * GuardAI.StrikeRatio) continue;
                     float score = GuardAI.Score(n, from);
                     if (score <= best) continue;
@@ -133,7 +133,7 @@ namespace DiplomacyOverhaul
             var list = new List<City>();
             foreach (City c in pKingdom.getCities())
                 foreach (City n in c.neighbours_cities)
-                    if (n.kingdom != null && n.kingdom.isEnemy(pKingdom))
+                    if (n.kingdom != null && n.kingdom.isAlive() && n.kingdom.isEnemy(pKingdom))
                     {
                         list.Add(c);
                         break;

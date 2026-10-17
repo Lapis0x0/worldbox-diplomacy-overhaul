@@ -6,19 +6,24 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 国库：城主上缴的钱进国库，国王只分一份；附庸的进账按附庸贡赋交一份给宗主；国王发起密谋花国库的钱。
-    // 城市养自己的地方兵：每年从本城仓库扣军饷，欠饷先停征兵，再逐渐解甲；仓库的金子超过上限的上缴国库。
+    // 城市养自己的地方兵：仓库够全体地方兵一年的饷才征兵；每年从本城仓库扣军饷，欠饷时停征兵、逐年解甲，
+    // 留下的士兵伤害逐年下降；
+    // 仓库的金子超过上限的上缴国库。
     // 禁军由国库养，见 Guard
     public static class Treasury
     {
         const string Key = "vd_treasury";
-        const string KeyUnpaid = "vd_unpaid_years";
+        const string KeyUnpaid = "vd_unpaid";              // city.data：本城地方兵这一年欠饷
+        const string KeyPenalty = "vd_unpaid_penalty";     // city.data：本城地方兵欠饷累积的伤害减益
 
         public const float KingShare = 0.2f;      // 上缴里归国王的份
         public const float PayPerWarrior = 0.5f;  // 每个兵每年的军饷
         const int CapPerPerson = 2;               // 城市仓库每人能留多少金子
         const int CapMin = 200;                   // 上限的保底：够存一栋最贵的建筑（100 金子）再加几年军饷
-        public const int DisbandYears = 2;        // 连续欠饷几年开始解甲
-        public const float DisbandShare = 0.25f;  // 每年解甲欠饷士兵的几分之一
+        const float PenaltyStep = 0.1f;           // 全欠一年伤害减多少，欠一部分按比例
+        const float PenaltyCap = 0.25f;           // 减益的上限
+        const float PenaltyRecover = 0.1f;        // 付清后每年恢复多少
+        const float DisbandShare = 0.25f;         // 每年解甲欠饷士兵的几分之一
 
         public static int Get(Kingdom pKingdom)
         {
@@ -109,8 +114,43 @@ namespace DiplomacyOverhaul
 
         public static bool Unpaid(City pCity)
         {
-            pCity.data.get(KeyUnpaid, out int years, 0);
-            return years > 0;
+            pCity.data.get(KeyUnpaid, out bool unpaid, false);
+            return unpaid;
+        }
+
+        public static float Penalty(City pCity)
+        {
+            pCity.data.get(KeyPenalty, out float v, 0f);
+            return v;
+        }
+
+        // 士兵因欠饷减掉的伤害：禁军看国家，地方兵看本城
+        public static float Penalty(Actor pActor)
+        {
+            if (!pActor.isWarrior() || pActor.city == null) return 0f;
+            return Guard.IsMember(pActor) ? Guard.Penalty(pActor.kingdom) : Penalty(pActor.city);
+        }
+
+        // 结算一年的军饷：欠饷当年就解甲欠饷士兵的四分之一，留下的士兵军心涣散，伤害减益按欠的比例逐年累积；
+        // 付清后减益逐年恢复。
+        // 返回要解甲的人数，pChanged 表示减益变了（士兵要重算属性）
+        internal static int Settle(BaseSystemData pData, string pKeyUnpaid, string pKeyPenalty, int pCost, int pPaid, out bool pChanged)
+        {
+            float shortShare = pCost > 0 ? (pCost - pPaid) / (float)pCost : 0f;
+            pData.get(pKeyPenalty, out float before, 0f);
+            float after = shortShare > 0f
+                ? Mathf.Min(PenaltyCap, before + PenaltyStep * shortShare)
+                : Mathf.Max(0f, before - PenaltyRecover);
+            pChanged = !Mathf.Approximately(before, after);
+            if (after > 0f) pData.set(pKeyPenalty, after);
+            else pData.removeFloat(pKeyPenalty);
+            if (shortShare <= 0f)
+            {
+                pData.removeBool(pKeyUnpaid);
+                return 0;
+            }
+            pData.set(pKeyUnpaid, true);
+            return Mathf.CeilToInt(Mathf.CeilToInt((pCost - pPaid) / PayPerWarrior) * DisbandShare);
         }
 
         public static int Cap(City pCity) => Mathf.Max(CapMin, pCity.getPopulationPeople() * CapPerPerson);
@@ -139,26 +179,18 @@ namespace DiplomacyOverhaul
         {
             int warriors = Guard.CountLocal(pCity);
             int cost = Mathf.RoundToInt(warriors * PayPerWarrior);
-            int gold = pCity.getResourcesAmount("gold");
-            if (gold >= cost)
-            {
-                if (cost > 0) pCity.takeResource("gold", cost);
-                pCity.data.removeInt(KeyUnpaid);
-                return;
-            }
-            if (gold > 0) pCity.takeResource("gold", gold);
-            pCity.data.get(KeyUnpaid, out int years, 0);
-            years++;
-            pCity.data.set(KeyUnpaid, years);
-            if (years < DisbandYears) return;
-            int unpaid = Mathf.CeilToInt((cost - gold) / PayPerWarrior);
-            int disband = Mathf.Min(warriors, Mathf.CeilToInt(unpaid * DisbandShare));
+            int paid = Mathf.Min(cost, pCity.getResourcesAmount("gold"));
+            if (paid > 0) pCity.takeResource("gold", paid);
+            int disband = Settle(pCity.data, KeyUnpaid, KeyPenalty, cost, paid, out bool changed);
             foreach (Actor a in new List<Actor>(pCity.getUnits()))
             {
-                if (disband <= 0) break;
-                if (!a.isAlive() || !a.isWarrior() || a.is_army_captain || Guard.IsMember(a)) continue;
-                a.stopBeingWarrior();
-                disband--;
+                if (!a.isAlive() || !a.isWarrior() || Guard.IsMember(a)) continue;
+                if (disband > 0 && !a.is_army_captain)
+                {
+                    a.stopBeingWarrior();
+                    disband--;
+                }
+                else if (changed) a.setStatsDirty();
             }
         }
 

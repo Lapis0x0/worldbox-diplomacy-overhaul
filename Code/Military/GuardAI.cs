@@ -101,11 +101,12 @@ namespace DiplomacyOverhaul
         internal static int Pressure(City pCity, List<Army> pAll)
         {
             Kingdom owner = pCity.kingdom;
+            if (owner == null || !owner.isAlive()) return 0;
             int sum = 0;
             foreach (Army a in pAll)
             {
                 Kingdom k = a.getKingdom();
-                if (k == null || !k.isEnemy(owner)) continue;
+                if (k == null || !k.isAlive() || !k.isEnemy(owner)) continue;
                 Actor lead = a.getCaptain();
                 if (lead == null || lead.isRekt() || lead.isInsideSomething()) continue;
                 TileZone zone = lead.current_tile?.zone;
@@ -223,7 +224,7 @@ namespace DiplomacyOverhaul
                     if (!Own(pKingdom, city.kingdom))
                     {
                         // 途中城丢了：去夺回来
-                        if (city.kingdom == null || !pKingdom.isEnemy(city.kingdom)) return false;
+                        if (city.kingdom == null || !city.kingdom.isAlive() || !pKingdom.isEnemy(city.kingdom)) return false;
                         Orders.Order(g, city);
                         SetTask(g, TaskAttack, city);
                         return true;
