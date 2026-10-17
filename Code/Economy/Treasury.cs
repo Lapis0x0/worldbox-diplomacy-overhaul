@@ -69,14 +69,14 @@ namespace DiplomacyOverhaul
             return -TributeGainOf(pVoice) * (pOption - current) + TributeRisk(pLord, pOption) - TributeRisk(pLord, current);
         }
 
-        // 贪婪的多要，邪恶的不在乎附庸死活，诚实、温和、知足、和平主义的觉得盘剥附庸不地道
+        // 多在意这份钱照 Parliament.Care（贪婪的加倍，知足的减半）；
+        // 邪恶的不在乎附庸死活，诚实、温和、和平主义的觉得盘剥附庸不地道
         static float TributeGainOf(Actor pVoice)
         {
-            float gain = TributeGain;
+            float gain = TributeGain * Parliament.Care(pVoice);
             if (pVoice == null || !pVoice.isAlive()) return gain;
-            if (pVoice.hasTrait("greedy")) gain += 0.1f;
             if (pVoice.hasTrait("evil") || pVoice.hasTrait("psychopath")) gain += 0.05f;
-            foreach (string t in new[] { "honest", "peaceful", "content", "pacifist" })
+            foreach (string t in new[] { "honest", "peaceful", "pacifist" })
                 if (pVoice.hasTrait(t)) gain -= 0.1f;
             return gain;
         }

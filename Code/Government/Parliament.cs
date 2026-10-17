@@ -18,6 +18,8 @@ namespace DiplomacyOverhaul
         public Clan clan;
         public int seats;
         public bool ruling;
+        // 物质得失的分量：地方家族按议席和其他地方家族的平均比，家大业大的交出去的多；掌权家族是 1
+        public float weight = 1f;
         public readonly List<City> cities = new List<City>();
         public float x, y;
         public Faction faction;
@@ -68,6 +70,13 @@ namespace DiplomacyOverhaul
                 translation_key_negative = "loyalty_vd_dissent",
                 calc = CityLoyalty
             });
+            Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_grievance",
+                translation_key = "loyalty_vd_grievance",
+                translation_key_negative = "loyalty_vd_grievance",
+                calc = GrievanceLoyalty
+            });
         }
 
         // ---------- 议席 ----------
@@ -95,6 +104,7 @@ namespace DiplomacyOverhaul
                 pc.cities.Add(city);
             }
             var list = new List<ParliamentClan>(map.Values);
+            Weigh(list);
             var context = new StanceContext(pKingdom, list);
             foreach (ParliamentClan pc in list) Stance(pKingdom, pc, context);
             list.Sort((a, b) =>
@@ -103,6 +113,23 @@ namespace DiplomacyOverhaul
                 return fa != fb ? fa.CompareTo(fb) : b.seats.CompareTo(a.seats);
             });
             return list;
+        }
+
+        const float MinWeight = 0.25f, MaxWeight = 3f;
+
+        static void Weigh(List<ParliamentClan> pClans)
+        {
+            int seats = 0, n = 0;
+            foreach (ParliamentClan pc in pClans)
+            {
+                if (pc.ruling) continue;
+                seats += pc.seats;
+                n++;
+            }
+            if (n == 0) return;
+            float mean = (float)seats / n;
+            foreach (ParliamentClan pc in pClans)
+                pc.weight = pc.ruling ? 1f : Mathf.Clamp(pc.seats / mean, MinWeight, MaxWeight);
         }
 
         // 半圆从左到右：维新、共和、贵族、保王
@@ -157,7 +184,7 @@ namespace DiplomacyOverhaul
 
         // 保守-激进：门第，比议会里的平均老 4 倍 -0.3、新 4 倍 +0.3；君主国的王室再 -0.2；
         // 族长的心性和年龄（见 ChiefRadical），族人的心性按平均值算四分之一。
-        // 集权-分权：离首都的远近，占的城平均离首都越近越集权，最近 +0.3、和最远的城一样远 -0.3；王室再 +0.2；
+        // 集权-分权：离首都的远近，占的城平均离首都越近越集权，最近 +0.3、和最远的城一样远 -0.3，王室（共和国是执政家族）按首都算；
         // 城主是按唯才是举任命的城，按占的城里的比例最多再 +0.2；族长的性格和心性（见 ChiefCentral）。
         // 每个氏族再有一点自己的家风
         static void Stance(Kingdom pKingdom, ParliamentClan pClan, StanceContext pContext)
@@ -180,16 +207,20 @@ namespace DiplomacyOverhaul
             float lineage = -0.3f * Mathf.Clamp((LogAge(clan) - pContext.meanLogAge) / Mathf.Log(4f), -1f, 1f);
             float x = lineage + (royal ? -0.2f : 0f) + (hasChief ? ChiefRadical(chief) : 0f) + MembersWeight * membersX + HouseStyle(clan.id, 1);
 
+            // 王室（共和国是执政家族）住在首都，按首都算，外地的城不把它拉成地方大族
             float distance = 0f;
-            foreach (City city in pClan.cities) distance += Vector2.Distance(city.last_city_center, pContext.capital);
-            distance /= Mathf.Max(1, pClan.cities.Count);
+            if (!pClan.ruling)
+            {
+                foreach (City city in pClan.cities) distance += Vector2.Distance(city.last_city_center, pContext.capital);
+                distance /= Mathf.Max(1, pClan.cities.Count);
+            }
             float near = pContext.farthest > 0f ? 0.3f - 0.6f * Mathf.Clamp01(distance / pContext.farthest) : 0f;
             // 靠唯才是举当上城主的家族，城是朝廷给的，偏向集权
             int merit = 0;
             foreach (City city in pClan.cities)
                 if (Offices.IsMeritAppointee(city)) merit++;
             float promoted = MeritCentral * merit / Mathf.Max(1, pClan.cities.Count);
-            float y = near + (pClan.ruling ? 0.2f : 0f) + promoted + (hasChief ? ChiefCentral(chief, pClan.ruling) : 0f) + HouseStyle(clan.id, 2);
+            float y = near + promoted + (hasChief ? ChiefCentral(chief, pClan.ruling) : 0f) + HouseStyle(clan.id, 2);
 
             pClan.x = Mathf.Clamp(x, -1f, 1f);
             pClan.y = Mathf.Clamp(y, -1f, 1f);
@@ -219,7 +250,7 @@ namespace DiplomacyOverhaul
             return t - Mathf.Clamp((pChief.getAge() - 35) / 40f, -0.5f, 1f) * 0.2f;
         }
 
-        // 族长：要朝廷管还是自己管。治国 +0.2、尚武 +0.1、外交 -0.1；贪婪 -0.2（收入不想上缴），多疑 +0.15（什么都要抓在手上）；
+        // 族长：要朝廷管还是自己管。治国 +0.2、尚武 +0.1、外交 -0.1；多疑 +0.15（什么都要抓在手上）；
         // 野心勃勃的王室想大权独揽 +0.2，别的家族想自立门户 -0.2
         internal static float ChiefCentral(Actor pChief, bool pRoyal)
         {
@@ -230,7 +261,6 @@ namespace DiplomacyOverhaul
                 case "militarist": c += 0.1f; break;
                 case "diplomat": c -= 0.1f; break;
             }
-            if (pChief.hasTrait("greedy")) c -= 0.2f;
             if (pChief.hasTrait("paranoid")) c += 0.15f;
             if (pChief.hasTrait("ambitious")) c += pRoyal ? 0.2f : -0.2f;
             return c;
@@ -267,6 +297,16 @@ namespace DiplomacyOverhaul
         // 替一个家族拿主意的人：王室（共和国是执政家族）看君主本人，其他家族看族长
         public static Actor Voice(Kingdom pKingdom, ParliamentClan pClan) =>
             pClan.ruling && pKingdom.hasKing() ? pKingdom.king : pClan.clan.getChief();
+
+        // 拿主意的人有多在意物质得失：贪婪的加倍，知足的减半
+        public static float Care(Actor pVoice)
+        {
+            if (pVoice == null || !pVoice.isAlive()) return 1f;
+            float care = 1f;
+            if (pVoice.hasTrait("greedy")) care += 1f;
+            if (pVoice.hasTrait("content")) care -= 0.5f;
+            return care;
+        }
 
         static float Distance(float pX, float pY, (float x, float y) pPoint)
         {
@@ -452,32 +492,57 @@ namespace DiplomacyOverhaul
         const int ContentLoyalty = 10;
         const int WorstLoyalty = -100;
 
-        // 每个国家按年算一次各城的修正，有议案生效时重算
-        static readonly Dictionary<long, (int year, Dictionary<long, int> cities)> _dissent = new Dictionary<long, (int, Dictionary<long, int>)>();
+        // 削藩：兵和钱被收归中央，地方氏族的城忠诚下降。按氏族在各项政策上吃了多少亏算（见 Grievance），
+        // 每 1 扣这么多（开发命令 parl grievance 可以改，做对照实验用）
+        internal static float GrievancePerUnit = 50f;
+
+        // 每个国家按年算一次各城的修正（政见不合、削藩），有议案生效时重算
+        static readonly Dictionary<long, (int year, Dictionary<long, (int dissent, int grievance)> cities)> _dissent =
+            new Dictionary<long, (int, Dictionary<long, (int, int)>)>();
+
+        // 氏族在各项政策上吃的亏（得失表里现行一档低于 0 的部分），乘上分量和在不在意，各项加起来；
+        // 得利不抵消别处的亏，也不加忠诚。王室不算
+        public static float Grievance(Kingdom pKingdom, ParliamentClan pClan)
+        {
+            if (pClan.ruling) return 0f;
+            float loss = 0f;
+            foreach (Policy p in Policies.All)
+            {
+                if (p.stake == null || !p.active || !p.shown(pKingdom)) continue;
+                loss += Mathf.Max(0f, -p.stake.local[p.Get(pKingdom)]);
+            }
+            return loss * pClan.weight * Care(Voice(pKingdom, pClan));
+        }
+
+        public static int GrievanceLoyaltyOf(float pGrievance) => -Mathf.RoundToInt(GrievancePerUnit * pGrievance);
 
         public static int DissentLoyalty(float pDistance) =>
             Mathf.RoundToInt(Mathf.Lerp(ContentLoyalty, WorstLoyalty, Mathf.Clamp01((pDistance - ContentDistance) / (WorstDistance - ContentDistance))));
 
-        public static int CityLoyalty(City pCity)
+        public static int CityLoyalty(City pCity) => CityModifiers(pCity).dissent;
+
+        static int GrievanceLoyalty(City pCity) => CityModifiers(pCity).grievance;
+
+        static (int dissent, int grievance) CityModifiers(City pCity)
         {
             Kingdom k = pCity.kingdom;
-            if (k == null || !k.isCiv() || pCity.isCapitalCity()) return 0;
+            if (k == null || !k.isCiv() || pCity.isCapitalCity()) return (0, 0);
             int year = Date.getCurrentYear();
             if (!_dissent.TryGetValue(k.id, out var entry) || entry.year != year)
             {
-                var cities = new Dictionary<long, int>();
+                var cities = new Dictionary<long, (int, int)>();
                 var coordinate = Policies.Coordinate(k);
                 foreach (ParliamentClan pc in Clans(k))
                 {
                     // 王室（共和国是执政家族）自己当政，不因政见不合离心
                     if (pc.ruling) continue;
-                    int loyalty = DissentLoyalty(Distance(pc.x, pc.y, coordinate));
-                    foreach (City c in pc.cities) cities[c.id] = loyalty;
+                    var value = (DissentLoyalty(Distance(pc.x, pc.y, coordinate)), GrievanceLoyaltyOf(Grievance(k, pc)));
+                    foreach (City c in pc.cities) cities[c.id] = value;
                 }
                 entry = (year, cities);
                 _dissent[k.id] = entry;
             }
-            return entry.cities.TryGetValue(pCity.id, out int value) ? value : 0;
+            return entry.cities.TryGetValue(pCity.id, out var result) ? result : (0, 0);
         }
 
         // 议案生效。不管是表决通过还是直接通过，世界日志都记一条

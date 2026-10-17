@@ -48,6 +48,43 @@ namespace DiplomacyOverhaul.Perf
                     Dev.Log($"    {(r.votes[pc.clan] ? "yes" : "no ")} {pc.clan.name}{(pc.ruling ? "*" : "")} seats={pc.seats} interest={policy.Interest(target, pc, bill.option):0.00}");
                 return;
             }
+            if (mode == "grievance")
+            {
+                // parl grievance <每 1 扣多少忠诚>：改削藩的系数，0 是关掉
+                Parliament.GrievancePerUnit = float.Parse(a[2]);
+                Dev.Log($"  grievance per unit = {Parliament.GrievancePerUnit}");
+                return;
+            }
+            if (mode == "loyalty")
+            {
+                // parl loyalty [标签]：全世界的议会政策分布、地方城市的削藩和政见不合、忠诚为负的城
+                int kingdoms = 0, cities = 0, localCities = 0, negative = 0, negativeLocal = 0;
+                float grievance = 0f, dissent = 0f;
+                var dist = Policies.All.ToDictionary(p => p.id, p => new int[p.count]);
+                foreach (Kingdom k in World.world.kingdoms)
+                {
+                    if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
+                    kingdoms++;
+                    foreach (Policy p in Policies.All) if (p.active && p.shown(k)) dist[p.id][p.Get(k)]++;
+                    var ruling = Parliament.RulingClan(k);
+                    foreach (City c in k.getCities())
+                    {
+                        cities++;
+                        bool neg = c.getCachedLoyalty() < 0;
+                        if (neg) negative++;
+                        if (c.isCapitalCity() || !c.hasLeader() || !c.leader.hasClan() || c.leader.clan == ruling) continue;
+                        localCities++;
+                        if (neg) negativeLocal++;
+                        grievance += AssetManager.loyalty_library.get("loyalty_vd_grievance").calc(c);
+                        dissent += Parliament.CityLoyalty(c);
+                    }
+                }
+                string tag = a.Length > 2 ? a[2] : "";
+                Dev.Log($"@loyalty {tag} year={Date.getCurrentYear()} kingdoms={kingdoms} cities={cities} local={localCities} negative={negative} negativeLocal={negativeLocal}"
+                    + $" grievance={grievance / UnityEngine.Mathf.Max(1, localCities):F1} dissent={dissent / UnityEngine.Mathf.Max(1, localCities):F1}"
+                    + $" army={string.Join("/", dist[Policies.Army])} tax={string.Join("/", dist[Policies.Tax])}");
+                return;
+            }
             if (mode == "set")
             {
                 // parl set <国家> <政策 id> <选项>
@@ -101,6 +138,12 @@ namespace DiplomacyOverhaul.Perf
                 var dists = new System.Collections.Generic.List<float>();
                 var seatDist = new System.Collections.Generic.List<(float d, int s)>();
                 var moves = new System.Collections.Generic.Dictionary<string, int>();
+                // 模拟结束时各项政策停在哪一档、各派系占多少议席
+                var final = Policies.All.ToDictionary(p => p.id, p => new int[p.count]);
+                var factionSeats = new System.Collections.Generic.Dictionary<Faction, int>();
+                int rulingYes = 0, rulingBills = 0;
+                // 模拟结束时地方氏族城市的两项忠诚修正：(削藩, 政见不合, 议席)
+                var local = new System.Collections.Generic.List<(int grievance, int dissent, int seats)>();
                 foreach (Kingdom k in World.world.kingdoms)
                 {
                     if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
@@ -112,13 +155,23 @@ namespace DiplomacyOverhaul.Perf
                         Bill bill = Parliament.Draft(k, clans);
                         if (bill == null) { none++; continue; }
                         bills++;
-                        if (Parliament.Passes(bill, Parliament.Vote(k, bill, clans)))
+                        VoteResult vr = Parliament.Vote(k, bill, clans);
+                        foreach (ParliamentClan pc in clans)
+                            if (pc.ruling) { rulingBills++; if (vr.votes[pc.clan]) rulingYes++; }
+                        if (Parliament.Passes(bill, vr))
                         {
                             passed++;
                             bill.policy.Set(k, bill.option);
                             if (r >= rounds / 2) { string key = bill.policy.id; moves[key] = moves.TryGetValue(key, out int m) ? m + 1 : 1; }
                         }
                     }
+                    foreach (Policy p in Policies.All) if (p.active && p.shown(k)) final[p.id][p.Get(k)]++;
+                    foreach (ParliamentClan pc in clans) factionSeats[pc.faction] = (factionSeats.TryGetValue(pc.faction, out int fs) ? fs : 0) + pc.seats;
+                    var end = Policies.Coordinate(k);
+                    foreach (ParliamentClan pc in clans)
+                        if (!pc.ruling)
+                            local.Add((Parliament.GrievanceLoyaltyOf(Parliament.Grievance(k, pc)),
+                                Parliament.DissentLoyalty(UnityEngine.Mathf.Sqrt((pc.x - end.x) * (pc.x - end.x) + (pc.y - end.y) * (pc.y - end.y))), pc.seats));
                     var c = Policies.Coordinate(k);
                     foreach (ParliamentClan pc in clans)
                     {
@@ -135,6 +188,16 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"  bills={bills} passed={passed} none={none} passRate={(float)passed / UnityEngine.Mathf.Max(1, bills):F2}");
                 Dev.Log($"  dist p10={dists[n / 10]:F2} p25={dists[n / 4]:F2} p50={dists[n / 2]:F2} p75={dists[n * 3 / 4]:F2} p90={dists[n * 9 / 10]:F2} max={dists[n - 1]:F2} seatWeighted={wsum / ssum:F2}");
                 Dev.Log("  late moves: " + string.Join(" ", moves.Select(m => m.Key + "=" + m.Value)));
+                Dev.Log($"  ruling votes yes={rulingYes}/{rulingBills}");
+                Dev.Log("  factions: " + string.Join(" ", factionSeats.Select(f => f.Key + "=" + f.Value)));
+                foreach (var f in final) if (f.Value.Sum() > 0) Dev.Log($"    {f.Key}: {string.Join(" / ", f.Value)}");
+                if (local.Count > 0)
+                {
+                    var g = local.Select(l => l.grievance).OrderBy(v => v).ToList();
+                    int ls = local.Sum(l => l.seats);
+                    Dev.Log($"  local clans={local.Count} grievance min={g[0]} p25={g[g.Count / 4]} p50={g[g.Count / 2]} max={g[g.Count - 1]} seatAvg={local.Sum(l => l.grievance * l.seats) / (float)ls:F1}"
+                        + $" dissent seatAvg={local.Sum(l => l.dissent * l.seats) / (float)ls:F1} combined<=-50: {local.Count(l => l.grievance + l.dissent <= -50)}");
+                }
                 return;
             }
             if (mode == "draft")

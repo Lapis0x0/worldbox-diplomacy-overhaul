@@ -18,6 +18,28 @@ namespace DiplomacyOverhaul
         Diplomacy
     }
 
+    // 一项政策的物质得失：每个选项给掌权家族（王室或执政家族）、地方家族各带来多少好处，距离单位，越大越好，
+    // 0 是不偏不倚，负数是吃亏（地方家族吃亏时城市忠诚下降，见 Parliament.Grievance）。
+    // 地方家族的那份按它的分量放大缩小，两边都按拿主意的人在不在意放大缩小，见 Parliament.Weight、Parliament.Care
+    public class Stake
+    {
+        public float[] ruler, local;
+
+        // 收归中央：越集权掌权家族越得利、地方家族越吃亏，按选项在轴上的位置算，
+        // 档数不同的政策挪一档时和国家坐标的变化同比例
+        public static Stake Crown(int pCount, float pPerUnit)
+        {
+            var stake = new Stake { ruler = new float[pCount], local = new float[pCount] };
+            for (int i = 0; i < pCount; i++)
+            {
+                float position = -1f + 2f * i / (pCount - 1);
+                stake.ruler[i] = pPerUnit * position;
+                stake.local[i] = -pPerUnit * position;
+            }
+            return stake;
+        }
+    }
+
     // 一项国家政策：几个选项依次排在一条轴上。现行选项存在 kingdom.data 里，
     // 国家政体例外，直接读写政体大类
     public class Policy
@@ -36,10 +58,8 @@ namespace DiplomacyOverhaul
         public Func<Kingdom, int> read;
         public Action<Kingdom, int> write;
         // 切身利益：立场之外的得失，加在议案通过后的距离上（正数是吃亏）。
-        // 常见的一种用 crownStake：选项往集权挪，掌权家族（王室或执政家族）多得、其他家族交出的那一份，
-        // 按选项在轴上挪的距离算，档数不同的政策挪一档时和国家坐标的变化同比例。
-        // 别的算法写 interest，两个都没有就只看立场
-        public float crownStake;
+        // 一般写 stake（每个选项的得失），算法特殊的写 interest，两个都没有就只看立场
+        public Stake stake;
         public Func<Kingdom, ParliamentClan, int, float> interest;
 
         public int Get(Kingdom pKingdom)
@@ -61,9 +81,10 @@ namespace DiplomacyOverhaul
         public float Interest(Kingdom pKingdom, ParliamentClan pClan, int pOption)
         {
             if (interest != null) return interest(pKingdom, pClan, pOption);
-            if (crownStake == 0f) return 0f;
-            float shift = Position(pOption) - Position(Get(pKingdom));
-            return (pClan.ruling ? -crownStake : crownStake) * shift;
+            if (stake == null) return 0f;
+            float[] gain = pClan.ruling ? stake.ruler : stake.local;
+            float change = gain[pOption] - gain[Get(pKingdom)];
+            return -change * pClan.weight * Parliament.Care(Parliament.Voice(pKingdom, pClan));
         }
 
         public bool CanPropose(Kingdom pKingdom) => active && shown(pKingdom) && (proposable == null || proposable(pKingdom));
@@ -115,7 +136,7 @@ namespace DiplomacyOverhaul
         // 对宗主方针：争取自治、履行契约、忠诚臣属
         public const int SeekAutonomy = 0, Obligation = 1, Loyal = 2;
 
-        // 兵和钱收归中央时，掌权家族多得、其他家族交出的切身利益：选项在轴上每挪 1（三档政策的一档）算这么多
+        // 兵和钱收归中央时，掌权家族多得、地方家族交出的切身利益：选项在轴上每挪 1（三档政策的一档）算这么多
         const float CrownStake = 0.2f;
         // 改政体时各家族的切身利益：
         // 改君主制，执政家族会成为王室，其他家族要受人统治；改共和制，王室失去王位，其他家族有机会轮流执政
@@ -155,9 +176,9 @@ namespace DiplomacyOverhaul
                 // 附庸不分封，这一项对它没有意义
                 shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
             });
-            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney", crownStake = CrownStake });
+            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney", stake = Stake.Crown(3, CrownStake) });
             Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
-            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", crownStake = CrownStake });
+            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", stake = Stake.Crown(4, CrownStake) });
             Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
             Add(new Policy
             {
