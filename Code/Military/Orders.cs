@@ -156,6 +156,8 @@ namespace DiplomacyOverhaul
 
         public static bool HasStation(Army pArmy) => GetGarrison(pArmy) != null || GetHold(pArmy) != null;
 
+        internal static void ClearStation(Army pArmy) => SetStation(pArmy, null, null);
+
         // 驻扎：城里有敌人就去最近的敌人那里，没有就在城中心附近挑；扎营：在那块地附近挑
         static WorldTile StationTile(Army pArmy, WorldTile pFrom)
         {
@@ -578,14 +580,20 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 玩家命令的军队、禁军编队跳过"兵力达到上限 70% 才出兵"的限制
+    // 出兵门槛：玩家命令的军队、禁军编队跳过"兵力达到上限 70% 才出兵"的限制；
+    // 保守的地方军只在 LocalAI 派了出征时出兵（见 LocalAI）
     [HarmonyPatch(typeof(City), nameof(City.isOkToSendArmy))]
     static class Patch_OkToSendArmy
     {
         static bool Prefix(City __instance, ref bool __result)
         {
-            if (Guard.Acting == null && (!__instance.hasArmy() || !Orders.IsForced(__instance.army))) return true;
-            __result = true;
+            if (Guard.Acting != null || (__instance.hasArmy() && Orders.IsForced(__instance.army)))
+            {
+                __result = true;
+                return false;
+            }
+            if (!__instance.hasArmy() || !LocalAI.Conservative(__instance.kingdom)) return true;
+            __result = LocalAI.Sends(__instance);
             return false;
         }
     }

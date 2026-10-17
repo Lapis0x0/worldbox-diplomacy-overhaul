@@ -207,19 +207,13 @@ namespace DiplomacyOverhaul
 
         // ---------- 玩家命令 ----------
 
-        // 编队的任务（GuardAI 维护）：玩家亲手下过命令的，国家 AI 不碰
-        internal const string KeyTask = "vd_guard_task";
+        // 军队的任务（禁军由 GuardAI、保守的地方军由 LocalAI 维护）：玩家亲手下过命令的，AI 不碰
+        internal const string KeyTask = "vd_army_task";
         internal const int TaskNone = 0, TaskPlayer = 5;
 
-        public static void OnPlayerOrder(Army pArmy)
-        {
-            if (Is(pArmy)) pArmy.data.set(KeyTask, TaskPlayer);
-        }
+        public static void OnPlayerOrder(Army pArmy) => pArmy?.data?.set(KeyTask, TaskPlayer);
 
-        public static void OnPlayerRelease(Army pArmy)
-        {
-            if (Is(pArmy)) pArmy.data.set(KeyTask, TaskNone);
-        }
+        public static void OnPlayerRelease(Army pArmy) => pArmy?.data?.set(KeyTask, TaskNone);
 
         // ---------- 定时维护 ----------
 

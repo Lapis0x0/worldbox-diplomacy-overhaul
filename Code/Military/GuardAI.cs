@@ -13,11 +13,12 @@ namespace DiplomacyOverhaul
     public static class GuardAI
     {
         const int TaskAttack = 1, TaskRescue = 2, TaskRest = 3, TaskStandby = 4;
-        const string KeyTaskCity = "vd_guard_task_city";
-        const string KeyStart = "vd_guard_start";   // 接任务时的人数
-        const string KeySince = "vd_guard_since";   // 休整开始、或救援的城最后一次告急的时间
+        const string KeyTaskCity = "vd_army_task_city";
+        const string KeyStart = "vd_army_start";   // 接任务时的人数
+        const string KeySince = "vd_army_since";   // 休整开始、或救援的城最后一次告急的时间
 
-        const float StrikeRatio = 1.5f;     // 兵力到守军（救援时是敌军）的几倍才出发
+        internal const float StrikeRatio = 1f;    // 兵力不比守军少才出征
+        const float RescueRatio = 1.5f;           // 救援派到守军加援军达到敌军的几倍为止
         const float BrokenShare = 0.5f;     // 人数掉到出发时的几成算打残
         const float RestedShare = 0.8f;     // 补到出发时的几成休整结束
         const int RestMonths = 6;           // 休整最多几个月（兵制调低后可能补不回去）
@@ -57,14 +58,14 @@ namespace DiplomacyOverhaul
             return World.world.getCurWorldTime() - t;
         }
 
-        static Vector2 Position(Army a)
+        internal static Vector2 Position(Army a)
         {
             Actor lead = a.getCaptain();
             if (lead == null || lead.isRekt()) lead = a.units[0];
             return lead.current_position;
         }
 
-        static WorldTile Tile(Army a)
+        internal static WorldTile Tile(Army a)
         {
             Actor lead = a.getCaptain();
             if (lead == null || lead.isRekt()) lead = a.units[0];
@@ -76,7 +77,7 @@ namespace DiplomacyOverhaul
         // 守军：此刻站在城里、属于城主国家的士兵、城主和国王，户籍、编队不论。按国家缓存一个月
         static readonly Dictionary<Kingdom, Dictionary<City, int>> _defenders = new Dictionary<Kingdom, Dictionary<City, int>>();
 
-        static int Defenders(City pCity)
+        internal static int Defenders(City pCity)
         {
             Kingdom k = pCity.kingdom;
             if (k == null) return 0;
@@ -97,7 +98,7 @@ namespace DiplomacyOverhaul
         }
 
         // 敌军压城：交战国的军队，队长站在这座城里、或在紧挨着的区块里
-        static int Pressure(City pCity, List<Army> pAll)
+        internal static int Pressure(City pCity, List<Army> pAll)
         {
             Kingdom owner = pCity.kingdom;
             int sum = 0;
@@ -143,6 +144,7 @@ namespace DiplomacyOverhaul
             try
             {
                 foreach (var kv in byKingdom) Update(kv.Key, kv.Value, all);
+                LocalAI.UpdateAll(all);
             }
             finally
             {
@@ -177,7 +179,7 @@ namespace DiplomacyOverhaul
                 int have = Defenders(city);
                 foreach (Army g in pGroups)
                     if (Task(g) == TaskRescue && TaskCity(g) == city && Tile(g).zone_city != city) have += g.countUnits();
-                float need = enemy * StrikeRatio;
+                float need = enemy * RescueRatio;
                 // 都城告急：出征的编队也拉回来
                 List<Army> pool = idle;
                 if (city == pKingdom.capital && have + Sum(idle) < need)
@@ -261,7 +263,7 @@ namespace DiplomacyOverhaul
         }
 
         // 挑进攻目标：交战国走得到的城，按 价值 ÷（守军 + 1）÷ 距离 打分；价值看人口，敌国都城加倍。
-        // 编队一支一支挑：已有编队去打、但兵力还没凑够的城先补齐；兵力到守军 1.5 倍才出发，
+        // 编队一支一支挑：已有编队去打、但兵力还没凑够的城先补齐；兵力不比守军少才出发，
         // 前面的编队已经凑够的城就挑别的。一座都打不动就在离最好的目标最近的本国城市待命
         static void Attack(Kingdom pKingdom, List<Army> pGroups, List<Army> pIdle)
         {
@@ -333,7 +335,7 @@ namespace DiplomacyOverhaul
             }
         }
 
-        static float Score(City c, WorldTile pFrom)
+        internal static float Score(City c, WorldTile pFrom)
         {
             float value = c.getPopulationPeople() + 1f;
             if (c.isCapitalCity()) value *= 2f;
@@ -479,7 +481,7 @@ namespace DiplomacyOverhaul
         }
 
         // 离某个位置最近的城：优先和编队同一块大陆的
-        static City NearestCity(IEnumerable<City> pCities, Vector2 pTo, WorldTile pFrom)
+        internal static City NearestCity(IEnumerable<City> pCities, Vector2 pTo, WorldTile pFrom)
         {
             City best = null;
             float bestDist = float.MaxValue;
