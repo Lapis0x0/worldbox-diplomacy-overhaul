@@ -59,6 +59,25 @@ namespace DiplomacyOverhaul
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
             Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
+            Retitle("king_new", "$kingdom$", "$king$");
+            Retitle("king_left", "$kingdom$", "$king$");
+            Retitle("king_dead", "$kingdom$", "$king$");
+            Retitle("king_killed", "$kingdom$", "$king$", "$name$");
+        }
+
+        // 原版新君即位、出走、逝世、被杀的日志写死了「国王」：换成模组的文案，$title$ 按日志所属国家的领袖称呼。
+        // 占位符照原版的顺序对应 special1~3；重复执行时整个替换，不会层层包起来
+        static void Retitle(string pId, params string[] pKeys)
+        {
+            WorldLogAsset asset = AssetManager.world_log_library.get(pId);
+            if (asset == null) return;
+            asset.locale_id = "vd_log_" + pId;
+            asset.text_replacer = (WorldLogMessage pMessage, ref string pText) =>
+            {
+                for (int i = 0; i < pKeys.Length; i++) pText = pText.Replace(pKeys[i], pMessage.getSpecial(i + 1));
+                Kingdom k = pMessage.kingdom;
+                pText = pText.Replace("$title$", k != null && k.isAlive() && !k.isNeutral() ? Government.RulerTitle(k) : LM.Get("vd_ruler_king"));
+            };
         }
 
         // 文案里的占位符依次对应消息的 special1~3。$title$ 存的是领袖称呼的语言 key，显示时再翻译

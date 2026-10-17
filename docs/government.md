@@ -34,7 +34,7 @@
 | 世袭行省 | 亲王 |
 | 行省 | 总督 |
 
-王国窗口、城市窗口的领袖一栏，王国、城市、单位的悬停提示，底部信息栏，选举与任命窗口，当选、连任的世界日志都用这个称呼。
+王国窗口、城市窗口的领袖一栏，王国、城市、单位的悬停提示，底部信息栏，选举与任命窗口都用这个称呼。原版写着「国王」的地方也换掉了：王国窗口的「在位(年)」「历代」两行和查看领袖的按钮，城市忠诚明细的「领导能力」「统治」，外交好感明细的「情绪」，以及新君即位、出走、逝世、被杀和当选、连任的世界日志。
 
 ### 手动设置
 
@@ -172,6 +172,6 @@
 - `KingdomBehCheckKing.checkKingdomChaos`：原版绝嗣分裂的入口，在这里改制或重新选举。
 - `Kingdom.trySetRoyalClan`：共和国跳过，不立王室。
 - `TooltipLibrary.showKingdom`、`KingdomWindow.showStatsRows`、`NameplateText`：国名和副标题。
-- `StatsWindow.tryToShowActor`、`Tooltip.addLineText`、`TooltipLibrary.showActor`、`SelectedMetaUnitElement.show`：原版写死的「国王」换成领袖的称呼。
+- `StatsWindow.tryToShowActor`、`StatsRowsContainer.showStatRow`、`Tooltip.addLineText`、`TooltipLibrary.showActor`、`SelectedMetaUnitElement.show`、`LoyaltyAsset.getTranslationKey`、`OpinionAsset.getTranslationKey`：原版写死的「国王」换成领袖的称呼。原版的国王日志（`king_new`、`king_left`、`king_dead`、`king_killed`）换成模组的文案，见 `WorldLogs.Retitle`。
 
 旧版的「城邦」已经取消，存档里的城邦特质在下一次判定时换掉。

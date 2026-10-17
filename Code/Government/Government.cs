@@ -167,6 +167,16 @@ namespace DiplomacyOverhaul
 
         public static string RulerTitle(Kingdom pKingdom) => LM.Get(RulerKey(pKingdom));
 
+        // 含 $title$ 的文案模板按国家的领袖称呼注册成一个 key（「$title$在位(年)」→「皇帝在位(年)」）。
+        // 原版界面按 key 显示文字，拼出来的文字要先注册才不会被冲掉
+        public static string TitledKey(Kingdom pKingdom, string pTemplate)
+        {
+            string ruler = RulerKey(pKingdom);
+            string key = pTemplate + "_" + ruler;
+            LM.AddToCurrentLocale(key, LM.Get(pTemplate).Replace("$title$", LM.Get(ruler)));
+            return key;
+        }
+
         public static GovForm Form(Kingdom pKingdom)
         {
             EnsureForm(pKingdom);

@@ -38,11 +38,34 @@ namespace DiplomacyOverhaul
             title.setKeyAndUpdate(Government.TitleKey(pKingdom));
         }
 
+        // 「查看王国的国王」按钮的提示按政体换成领袖的称呼
+        static readonly Dictionary<KingdomWindow, TipButton> _rulerButtons = new Dictionary<KingdomWindow, TipButton>();
+
+        static void UpdateRulerButton(KingdomWindow pWindow, Kingdom pKingdom)
+        {
+            if (!_rulerButtons.TryGetValue(pWindow, out TipButton button) || button == null)
+            {
+                foreach (TipButton b in pWindow.GetComponentsInChildren<TipButton>(true))
+                {
+                    if (b.textOnClick == "button_button_king" || (b.textOnClick?.StartsWith("vd_title_button_") ?? false))
+                    {
+                        button = b;
+                        break;
+                    }
+                }
+                _rulerButtons[pWindow] = button;
+            }
+            if (button == null) return;
+            button.textOnClick = Government.TitledKey(pKingdom, "vd_title_button");
+            button.textOnClickDescription = Government.TitledKey(pKingdom, "vd_title_button_info");
+        }
+
         static void Postfix(KingdomWindow __instance)
         {
             Kingdom k = SelectedMetas.selected_kingdom;
             if (k == null) return;
             UpdateTitle(__instance, k);
+            UpdateRulerButton(__instance, k);
             KingdomTabWindow.EnsureButtons(__instance);
 
             Kingdom lord = Vassals.GetOverlord(k);
@@ -228,9 +251,67 @@ namespace DiplomacyOverhaul
         {
             Kingdom k = pActor?.kingdom;
             if (pLocaleKey != "titled_king" || k == null || k.isNeutral()) return;
-            string key = Government.RulerKey(k);
-            pLocaleKey = "vd_titled_" + key;
-            LM.AddToCurrentLocale(pLocaleKey, LM.Get("vd_titled").Replace("$title$", LM.Get(key)));
+            pLocaleKey = Government.TitledKey(k, "vd_titled");
+        }
+    }
+
+    // 王国窗口的「国王在位(年)」「历代国王」两行按政体换成领袖的称呼。这两行走的是 StatsWindow 较短的重载，
+    // 直接调行容器，所以挂在行容器上
+    [HarmonyPatch(typeof(StatsRowsContainer), "showStatRow")]
+    static class Patch_RulerStatRows
+    {
+        static void Prefix(StatsRowsContainer __instance, ref string pId)
+        {
+            string template = pId == "kingdom_statistics_king_ruled" ? "vd_title_ruled" : pId == "past_kings" ? "vd_title_past" : null;
+            if (template == null || __instance.GetComponentInParent<KingdomWindow>() == null) return;
+            Kingdom k = SelectedMetas.selected_kingdom;
+            if (k != null && !k.isNeutral()) pId = Government.TitledKey(k, template);
+        }
+    }
+
+    // 城市忠诚明细的「国王领导能力」「国王统治」，外交好感明细的「国王情绪」按政体换成领袖的称呼。
+    // 明细逐项取 asset 的翻译 key，asset 不知道是哪个国家，由外层的提示记下
+    [HarmonyPatch(typeof(TooltipLibrary), "showLoyalty")]
+    static class Patch_RulerLoyaltyTip
+    {
+        internal static Kingdom Current;
+
+        static void Prefix(TooltipData pData) => Current = pData?.city?.kingdom;
+
+        static void Postfix() => Current = null;
+    }
+
+    [HarmonyPatch(typeof(LoyaltyAsset), nameof(LoyaltyAsset.getTranslationKey))]
+    static class Patch_RulerLoyaltyKey
+    {
+        static void Postfix(ref string __result)
+        {
+            Kingdom k = Patch_RulerLoyaltyTip.Current;
+            if (k == null || k.isNeutral()) return;
+            if (__result == "loyalty_king") __result = Government.TitledKey(k, "vd_title_leadership");
+            else if (__result == "loyalty_king_ruled") __result = Government.TitledKey(k, "vd_title_rule");
+        }
+    }
+
+    // 外交好感明细：显示的是选中国家对这个国家的看法，「国王情绪」是选中国家的君主
+    [HarmonyPatch(typeof(TooltipLibrary), "showKingdomOpinion")]
+    static class Patch_RulerOpinionTip
+    {
+        internal static bool Active;
+
+        static void Prefix() => Active = true;
+
+        static void Postfix() => Active = false;
+    }
+
+    [HarmonyPatch(typeof(OpinionAsset), nameof(OpinionAsset.getTranslationKey))]
+    static class Patch_RulerOpinionKey
+    {
+        static void Postfix(ref string __result)
+        {
+            Kingdom k = SelectedMetas.selected_kingdom;
+            if (!Patch_RulerOpinionTip.Active || __result != "opinion_kings_mood" || k == null || k.isNeutral()) return;
+            __result = Government.TitledKey(k, "vd_title_mood");
         }
     }
 
