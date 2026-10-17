@@ -11,8 +11,8 @@ namespace DiplomacyOverhaul
         static readonly Color ColorRally = new Color(0.3f, 1f, 0.4f, 0.3f);
 
         // 选好出兵方后：本国和友方的城市是驻扎目的地（绿），其他是进攻目标（红）
-        static Color TargetColor(City pSource, City pTarget) =>
-            pSource != null && Orders.Friendly(pTarget.kingdom, pSource.kingdom) ? ColorRally : ColorTarget;
+        static Color TargetColor(Kingdom pSource, City pTarget) =>
+            pSource != null && Orders.Friendly(pTarget.kingdom, pSource) ? ColorRally : ColorTarget;
 
         public static void Init()
         {
@@ -131,10 +131,7 @@ namespace DiplomacyOverhaul
             }
             else if (Selected(Powers.OrderKingdomAttack) && source != null)
             {
-                foreach (City city in source.kingdom.getCities())
-                {
-                    if (city.hasArmy() && city.army.countUnits() > 0) Arrow(pAsset, city, mouse);
-                }
+                foreach (Army army in Orders.ArmiesOf(source.kingdom)) ArmyArrow(pAsset, army, mouse);
             }
             else if (Selected(Powers.MakeVassal) && Alive(Powers._lord) != null)
             {
@@ -176,7 +173,7 @@ namespace DiplomacyOverhaul
                 List<Army> armies = BoxCommand.SelectedArmies();
                 if (armies.Count > 0 && hovered != null)
                     Zones(pAsset, hovered.zones, BoxCommand.AllStationedAt(armies, World.world.getMouseTilePosCachedFrame())
-                        ? ColorSource : TargetColor(armies[0].getCity(), hovered));
+                        ? ColorSource : TargetColor(armies[0].getKingdom(), hovered));
                 return;
             }
             if (!AnyOwnPowerSelected()) return;
@@ -186,10 +183,10 @@ namespace DiplomacyOverhaul
             if (Selected(Powers.CommandArmy))
             {
                 // 选好军队后：鼠标下的城市按进攻（红）/驻扎（绿）着色
-                City home = Powers.AliveArmy(Powers._army) ? Alive(Powers._army.getCity()) : null;
+                Army army = Powers.AliveArmy(Powers._army) ? Powers._army : null;
                 // 已经驻扎在这座城：白色，点了是解除驻扎
-                if (home != null && hovered != null && Powers.ArmyUnderCursor() != Powers._army)
-                    Zones(pAsset, hovered.zones, hovered == Orders.GetGarrison(home) ? ColorSource : TargetColor(home, hovered));
+                if (army != null && hovered != null && Powers.ArmyUnderCursor() != army)
+                    Zones(pAsset, hovered.zones, hovered == Orders.GetGarrison(army) ? ColorSource : TargetColor(army.getKingdom(), hovered));
             }
             else if (Selected(Powers.OrderKingdomAttack))
             {
@@ -197,7 +194,7 @@ namespace DiplomacyOverhaul
                 if (hovered != null)
                 {
                     if (source == null) Kingdom(pAsset, hovered.kingdom, ColorSource);
-                    else Zones(pAsset, hovered.zones, TargetColor(source, hovered));
+                    else Zones(pAsset, hovered.zones, TargetColor(source.kingdom, hovered));
                 }
             }
             else if (Selected(Powers.MakeVassal))

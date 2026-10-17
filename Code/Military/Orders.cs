@@ -5,13 +5,14 @@ using tools;
 
 namespace DiplomacyOverhaul
 {
-    // 玩家下达的进攻命令：直接改写城市的进攻目标，跨海时调度运输船
+    // 军队的命令：进攻、驻扎、扎营。命令记在军队上：地方军的进攻目标就是所属城市的（原版字段），
+    // 禁军编队不挂城，进攻目标记在编队上（见 Guard）
     public static class Orders
     {
-        // 城市 id → 玩家指定的目标城市 id；目标失效后由原版 AI 接管
+        // 军队 id → 玩家指定的目标城市 id；目标失效后由原版 AI（禁军是国家 AI）接管
         static readonly Dictionary<long, long> _forced = new Dictionary<long, long>();
 
-        public static bool IsForced(City pCity) => pCity != null && _forced.ContainsKey(pCity.id);
+        public static bool IsForced(Army pArmy) => pArmy != null && _forced.ContainsKey(pArmy.id);
 
         // 原版士兵只在城市有进攻目标时才跟随队长；驻扎、扎营清掉了进攻目标，士兵会留在原地各干各的，
         // 只有队长一个人过去。把"跟随队长"决策的启动条件换成：有进攻目标或者在驻扎、扎营。
@@ -22,19 +23,42 @@ namespace DiplomacyOverhaul
             if (follow != null) follow.action_check_launch = FollowLeader;
         }
 
-        // 除最后一条外照抄原版
+        // 除最后一条外照抄原版。禁军编队的士兵执行 AI 时，户籍城的进攻目标临时换成编队的（见 Guard）
         static bool FollowLeader(Actor pActor)
         {
             if (!pActor.hasCity() || !pActor.isArmyGroupWarrior() || !pActor.army.hasCaptain()) return false;
             if (!pActor.current_tile.isSameIsland(pActor.army.getCaptain().current_tile)) return false;
-            return pActor.city.hasAttackZoneOrder() || HasStation(pActor.city);
+            return pActor.city.hasAttackZoneOrder() || HasStation(pActor.army);
         }
 
-        public static void CheckForced(City pCity)
+        public static void CheckForced(Army pArmy)
         {
-            if (!_forced.TryGetValue(pCity.id, out long targetId)) return;
-            if (pCity.target_attack_city == null || pCity.target_attack_city.id != targetId) _forced.Remove(pCity.id);
+            if (pArmy == null || !_forced.TryGetValue(pArmy.id, out long targetId)) return;
+            City target = AttackTarget(pArmy);
+            if (target == null || target.id != targetId) _forced.Remove(pArmy.id);
         }
+
+        // 军队的进攻目标
+        public static City AttackTarget(Army pArmy) =>
+            Guard.Is(pArmy) ? Guard.Target(pArmy) : pArmy?.getCity()?.target_attack_city;
+
+        public static bool HasAttack(Army pArmy) => AttackTarget(pArmy) != null;
+
+        static void SetAttack(Army pArmy, City pTarget, TileZone pZone)
+        {
+            if (Guard.Is(pArmy))
+            {
+                Guard.SetTarget(pArmy, pTarget, pZone);
+                return;
+            }
+            City city = pArmy.getCity();
+            if (city == null) return;
+            city.target_attack_city = pTarget;
+            city.target_attack_zone = pZone;
+        }
+
+        static TileZone AttackZone(Army pArmy) =>
+            Guard.Is(pArmy) ? Guard.Zone(pArmy) : pArmy?.getCity()?.target_attack_zone;
 
         // 确保两国处于交战状态；返回 null 表示成功，否则返回失败原因的本地化 key
         public static string EnsureWar(Kingdom pAttacker, Kingdom pTarget)
@@ -47,7 +71,18 @@ namespace DiplomacyOverhaul
             return null;
         }
 
-        static bool HasArmy(City pCity) => pCity.hasArmy() && pCity.army.countUnits() > 0;
+        public static bool HasUnits(Army pArmy) => pArmy != null && !pArmy.isRekt() && pArmy.countUnits() > 0;
+
+        // 一个国家所有有兵的军队：各城的地方军和禁军编队
+        public static List<Army> ArmiesOf(Kingdom pKingdom)
+        {
+            var list = new List<Army>();
+            foreach (Army army in World.world.armies)
+            {
+                if (HasUnits(army) && army.getKingdom() == pKingdom) list.Add(army);
+            }
+            return list;
+        }
 
         // 本国和同阵营（见 Camp）：点它们的城市是去驻扎守城，不是宣战
         public static bool Friendly(Kingdom a, Kingdom b)
@@ -58,38 +93,51 @@ namespace DiplomacyOverhaul
             return Camp.Same(a, b);
         }
 
-        // 驻扎：军队所属城市 → 驻扎的城市 id，存在城市数据里，读档后照样守着。可以驻扎在附庸、宗主、盟友的城里。
-        // 驻扎期间原版 AI 不给这支军队挑进攻目标：平时队长在城中心附近走动，敌军进城就去打最近的那个；
+        // 驻扎：军队 → 驻扎的城市 id，存在军队数据里，读档后照样守着。可以驻扎在附庸、宗主、盟友的城里。
+        // 驻扎期间不挑进攻目标：平时队长在城中心附近走动，敌军进城就去打最近的那个；
         // 下进攻命令或再点一次驻扎城解除
         const string KeyGarrison = "vd_garrison";
 
-        public static City GetGarrison(City pCity)
+        public static City GetGarrison(Army pArmy)
         {
-            if (pCity?.data == null) return null;
-            pCity.data.get(KeyGarrison, out long id, -1L);
+            if (pArmy?.data == null) return null;
+            Migrate(pArmy, KeyGarrison);
+            pArmy.data.get(KeyGarrison, out long id, -1L);
             if (id < 0) return null;
             City target = World.world.cities.get(id);
-            if (target != null && !target.isRekt() && Friendly(target.kingdom, pCity.kingdom)) return target;
+            if (target != null && !target.isRekt() && Friendly(target.kingdom, pArmy.getKingdom())) return target;
             // 驻扎城丢了，或者那个国家不再是友方
-            pCity.data.removeLong(KeyGarrison);
+            pArmy.data.removeLong(KeyGarrison);
             return null;
         }
 
-        // 扎营：军队所属城市 → 扎营的地块 id。玩家让军队停在城外的空地上，和驻扎一样不挑进攻目标，
+        // 扎营：军队 → 扎营的地块 id。军队停在城外的空地上，和驻扎一样不挑进攻目标，
         // 队长只在那块地附近走动
         const string KeyHold = "vd_hold";
         const int HoldRadius = 4;
 
-        public static WorldTile GetHold(City pCity)
+        public static WorldTile GetHold(Army pArmy)
         {
-            if (pCity?.data == null) return null;
-            pCity.data.get(KeyHold, out long id, -1L);
+            if (pArmy?.data == null) return null;
+            Migrate(pArmy, KeyHold);
+            pArmy.data.get(KeyHold, out long id, -1L);
             if (id < 0) return null;
             WorldTile[] tiles = World.world.tiles_list;
             if (id < tiles.Length && CanHold(tiles[id])) return tiles[id];
             // 地块变成了水或山
-            pCity.data.removeLong(KeyHold);
+            pArmy.data.removeLong(KeyHold);
             return null;
+        }
+
+        // 旧存档的命令记在军队所属城市上，搬到军队上
+        static void Migrate(Army pArmy, string pKey)
+        {
+            City city = pArmy.getCity();
+            if (city?.data == null) return;
+            city.data.get(pKey, out long id, -1L);
+            if (id < 0) return;
+            city.data.removeLong(pKey);
+            pArmy.data.set(pKey, id);
         }
 
         public static bool CanHold(WorldTile pTile) => pTile != null && !pTile.Type.liquid && !pTile.Type.block;
@@ -98,29 +146,29 @@ namespace DiplomacyOverhaul
             System.Math.Abs(pTile.x - pHold.x) <= HoldRadius && System.Math.Abs(pTile.y - pHold.y) <= HoldRadius;
 
         // 驻扎城市和扎营地块二选一，都为 null 时交还原版 AI
-        static void SetStation(City pCity, City pGarrison, WorldTile pHold)
+        static void SetStation(Army pArmy, City pGarrison, WorldTile pHold)
         {
-            if (pGarrison == null) pCity.data.removeLong(KeyGarrison);
-            else pCity.data.set(KeyGarrison, pGarrison.id);
-            if (pHold == null) pCity.data.removeLong(KeyHold);
-            else pCity.data.set(KeyHold, (long)pHold.tile_id);
+            if (pGarrison == null) pArmy.data.removeLong(KeyGarrison);
+            else pArmy.data.set(KeyGarrison, pGarrison.id);
+            if (pHold == null) pArmy.data.removeLong(KeyHold);
+            else pArmy.data.set(KeyHold, (long)pHold.tile_id);
         }
 
-        public static bool HasStation(City pCity) => GetGarrison(pCity) != null || GetHold(pCity) != null;
+        public static bool HasStation(Army pArmy) => GetGarrison(pArmy) != null || GetHold(pArmy) != null;
 
         // 驻扎：城里有敌人就去最近的敌人那里，没有就在城中心附近挑；扎营：在那块地附近挑
-        static WorldTile StationTile(City pCity, WorldTile pFrom)
+        static WorldTile StationTile(Army pArmy, WorldTile pFrom)
         {
-            City garrison = GetGarrison(pCity);
+            City garrison = GetGarrison(pArmy);
             if (garrison != null)
             {
-                WorldTile enemy = Siege.NearestIntruder(pFrom, garrison, pCity.kingdom);
+                WorldTile enemy = Siege.NearestIntruder(pFrom, garrison, pArmy.getKingdom());
                 if (enemy != null) return enemy;
                 WorldTile center = garrison.getTile();
                 if (center != null) return Around(center);
                 return garrison.zones.Count > 0 ? garrison.zones.GetRandom().tiles.GetRandom() : null;
             }
-            WorldTile hold = GetHold(pCity);
+            WorldTile hold = GetHold(pArmy);
             return hold != null ? Around(hold) : null;
         }
 
@@ -136,7 +184,7 @@ namespace DiplomacyOverhaul
         {
             pTile = null;
             if (!pActor.isArmyGroupLeader()) return false;
-            WorldTile tile = StationTile(pActor.city, pActor.current_tile);
+            WorldTile tile = StationTile(pActor.army, pActor.current_tile);
             if (tile == null || !pActor.current_tile.isSameIsland(tile)) return false;
             pTile = tile;
             return true;
@@ -144,41 +192,42 @@ namespace DiplomacyOverhaul
 
         // 原版队长每做完一件事就随机挑下一件（闲逛、等士兵、社交……），"往驻地走"只是其中之一，
         // 路远时几乎不动。队长还没到驻地、也没在打仗或坐船时，强制它继续赶路
-        public static void PushToStation(City pCity)
+        public static void PushToStation(Army pArmy)
         {
-            Actor captain = pCity.army?.getCaptain();
+            Actor captain = pArmy?.getCaptain();
             if (captain == null || captain.isRekt() || captain.is_inside_boat || captain.isFighting()) return;
-            City garrison = GetGarrison(pCity);
+            City garrison = GetGarrison(pArmy);
             if (garrison != null)
             {
                 // 敌军进城：不管队长在走还是在等，重新出发去打最近的那个（敌人会动，每次都重新挑）
-                if (Siege.NearestIntruder(captain.current_tile, garrison, pCity.kingdom) != null)
+                if (Siege.NearestIntruder(captain.current_tile, garrison, pArmy.getKingdom()) != null)
                 {
                     captain.setTask("warrior_army_leader_move_random", true, false, true);
                     return;
                 }
                 if (captain.current_tile.zone.city == garrison) return;
             }
-            WorldTile hold = GetHold(pCity);
+            WorldTile hold = GetHold(pArmy);
             if (hold != null && NearHold(captain.current_tile, hold)) return;
             if (captain.ai?.task?.id == "warrior_army_leader_move_random") return;
             captain.setTask("warrior_army_leader_move_random", true, false, true);
         }
 
         // 点的正是这支军队驻扎的城、或扎营的地方附近
-        public static bool IsStationedAt(City pFrom, WorldTile pTile)
+        public static bool IsStationedAt(Army pArmy, WorldTile pTile)
         {
-            City garrison = GetGarrison(pFrom);
+            City garrison = GetGarrison(pArmy);
             if (garrison != null) return pTile.zone.city == garrison;
-            WorldTile hold = GetHold(pFrom);
+            WorldTile hold = GetHold(pArmy);
             return hold != null && TargetCity(pTile) == null && NearHold(pTile, hold);
         }
 
-        // 选中的军队已经驻扎在这座城、或扎营在这附近：解除，交还原版 AI
-        public static bool Release(City pFrom, WorldTile pTile)
+        // 选中的军队已经驻扎在这座城、或扎营在这附近：解除，交还原版 AI（禁军交还国家 AI）
+        public static bool Release(Army pArmy, WorldTile pTile)
         {
-            if (!IsStationedAt(pFrom, pTile)) return false;
-            SetStation(pFrom, null, null);
+            if (!IsStationedAt(pArmy, pTile)) return false;
+            SetStation(pArmy, null, null);
+            Guard.OnPlayerRelease(pArmy);
             return true;
         }
 
@@ -193,57 +242,56 @@ namespace DiplomacyOverhaul
         }
 
         // 点的是本国或友方的城市：军队前往那座城并驻扎
-        public static string Recall(City pFrom, City pDest)
+        public static string Recall(Army pArmy, City pDest)
         {
-            if (pFrom == null || pDest == null || !Friendly(pFrom.kingdom, pDest.kingdom)) return "vd_tip_invalid";
-            if (!HasArmy(pFrom)) return "vd_tip_no_army";
-            MoveArmy(pFrom, pDest);
+            if (!HasUnits(pArmy)) return "vd_tip_no_army";
+            if (pDest == null || !Friendly(pArmy.getKingdom(), pDest.kingdom)) return "vd_tip_invalid";
+            MoveArmy(pArmy, pDest);
             return null;
         }
 
         public static int RecallKingdom(Kingdom pKingdom, City pDest)
         {
-            int count = 0;
-            foreach (City city in new List<City>(pKingdom.getCities()))
+            List<Army> armies = ArmiesOf(pKingdom);
+            foreach (Army army in armies)
             {
-                if (!HasArmy(city)) continue;
-                MoveArmy(city, pDest);
-                count++;
+                MoveArmy(army, pDest);
+                Guard.OnPlayerOrder(army);
             }
-            return count;
+            return armies.Count;
         }
 
         // 点的是城外的空地：军队前往那里扎营
-        public static string Hold(City pFrom, WorldTile pTile)
+        public static string Hold(Army pArmy, WorldTile pTile)
         {
-            if (pFrom == null || !CanHold(pTile)) return "vd_tip_cannot_hold";
-            if (!HasArmy(pFrom)) return "vd_tip_no_army";
-            MoveArmy(pFrom, null, pTile);
+            if (!CanHold(pTile)) return "vd_tip_cannot_hold";
+            if (!HasUnits(pArmy)) return "vd_tip_no_army";
+            MoveArmy(pArmy, null, pTile);
             return null;
         }
 
-        static void MoveArmy(City pFrom, City pDest, WorldTile pHold = null)
+        // 驻扎或扎营；国家 AI 给禁军编队下令也走这里
+        internal static void MoveArmy(Army pArmy, City pDest, WorldTile pHold = null)
         {
-            pFrom.target_attack_city = null;
-            pFrom.target_attack_zone = null;
-            _forced.Remove(pFrom.id);
-            SetStation(pFrom, pDest, pHold);
+            SetAttack(pArmy, null, null);
+            _forced.Remove(pArmy.id);
+            SetStation(pArmy, pDest, pHold);
 
-            Actor captain = pFrom.army.getCaptain();
-            WorldTile from = (captain ?? pFrom.army.units[0]).current_tile;
+            Actor captain = pArmy.getCaptain();
+            WorldTile from = (captain ?? pArmy.units[0]).current_tile;
             // 扎营就走到点的那块地，驻扎就走到城中心附近（城里有敌人就直接去打）
-            WorldTile tile = pHold ?? StationTile(pFrom, from);
+            WorldTile tile = pHold ?? StationTile(pArmy, from);
             if (tile == null) return;
             if (from.isSameIsland(tile))
             {
                 if (captain == null) return;
                 _rally[captain] = tile;
                 captain.setTask("warrior_army_leader_move_random", true, false, true);
-                RallySoldiers(pFrom.army, captain);
+                RallySoldiers(pArmy, captain);
             }
             else
             {
-                Transport.Dispatch(pFrom, tile);
+                Transport.Dispatch(pArmy, tile);
             }
         }
 
@@ -267,66 +315,75 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 指挥一支军队：点别国城市就进攻，点本国或友方城市就前往那里驻扎，点空地就前往那里扎营
+        // 玩家指挥一支军队：点别国城市就进攻，点本国或友方城市就前往那里驻扎，点空地就前往那里扎营
         public static string CommandArmy(Army pArmy, WorldTile pTile)
         {
-            City from = pArmy?.getCity();
-            if (from == null) return "vd_tip_army_no_city";
+            if (!HasUnits(pArmy) || pArmy.getKingdom() == null) return "vd_tip_no_army";
             City target = TargetCity(pTile);
-            if (target == null) return Hold(from, pTile);
-            return Friendly(target.kingdom, from.kingdom) ? Recall(from, target) : Attack(from, target);
+            string error = target == null ? Hold(pArmy, pTile)
+                : Friendly(target.kingdom, pArmy.getKingdom()) ? Recall(pArmy, target) : Attack(pArmy, target);
+            if (error == null) Guard.OnPlayerOrder(pArmy);
+            return error;
         }
 
         // 返回 null 表示成功，否则返回失败原因的本地化 key
-        public static string Attack(City pFrom, City pTarget)
+        public static string Attack(Army pArmy, City pTarget)
         {
-            if (pFrom == null || pTarget == null || pFrom == pTarget) return "vd_tip_invalid";
-            if (!HasArmy(pFrom)) return "vd_tip_no_army";
-            string error = EnsureWar(pFrom.kingdom, pTarget.kingdom);
+            if (!HasUnits(pArmy)) return "vd_tip_no_army";
+            if (pTarget == null || pTarget == pArmy.getCity()) return "vd_tip_invalid";
+            string error = EnsureWar(pArmy.getKingdom(), pTarget.kingdom);
             if (error != null) return error;
-            Order(pFrom, pTarget);
+            Order(pArmy, pTarget);
+            _forced[pArmy.id] = pTarget.id;
             return null;
         }
 
-        // 举国进攻：所有有军队的城市都打同一个目标；返回参与的城市数
+        // 举国进攻：所有军队都打同一个目标；返回参与的军队数
         public static int AttackWithKingdom(Kingdom pKingdom, City pTarget, out string pError)
         {
             pError = EnsureWar(pKingdom, pTarget?.kingdom);
             if (pError != null) return 0;
-            int count = 0;
-            foreach (City city in new List<City>(pKingdom.getCities()))
+            List<Army> armies = ArmiesOf(pKingdom);
+            foreach (Army army in armies)
             {
-                if (!HasArmy(city)) continue;
-                Order(city, pTarget);
-                count++;
+                Order(army, pTarget);
+                _forced[army.id] = pTarget.id;
+                Guard.OnPlayerOrder(army);
             }
-            if (count == 0) pError = "vd_tip_no_army";
-            return count;
+            if (armies.Count == 0) pError = "vd_tip_no_army";
+            return armies.Count;
         }
 
-        static void Order(City pFrom, City pTarget)
+        // 进攻；国家 AI 给禁军编队下令也走这里（不算玩家命令）
+        internal static void Order(Army pArmy, City pTarget)
         {
-            SetStation(pFrom, null, null);
-            pFrom.target_attack_city = pTarget;
+            SetStation(pArmy, null, null);
             // 原版在目标城市没有建筑时会把落点设成自己的城市，这里直接从目标城市的地块里选
-            pFrom.target_attack_zone = pTarget.buildings.Count > 0
+            TileZone zone = pTarget.buildings.Count > 0
                 ? pTarget.buildings.GetRandom().current_tile.zone
                 : pTarget.zones.GetRandom();
-            _forced[pFrom.id] = pTarget.id;
+            SetAttack(pArmy, pTarget, zone);
 
-            Actor captain = pFrom.army.getCaptain();
-            WorldTile from = (captain ?? pFrom.army.units[0]).current_tile;
-            WorldTile to = pFrom.target_attack_zone.centerTile;
+            Actor captain = pArmy.getCaptain();
+            WorldTile from = (captain ?? pArmy.units[0]).current_tile;
+            WorldTile to = zone.centerTile;
             if (from.isSameIsland(to))
             {
                 if (captain == null) return;
                 captain.setTask("warrior_army_leader_move_to_attack_target", true, false, true);
-                RallySoldiers(pFrom.army, captain);
+                RallySoldiers(pArmy, captain);
             }
             else
             {
-                Transport.Dispatch(pFrom, to);
+                Transport.Dispatch(pArmy, to);
             }
+        }
+
+        // 驻扎、扎营的军队不挑进攻目标，并把队长拉回驻地。地方军在所属城市挑进攻目标时调用，禁军在 Guard 里定时调用
+        public static void KeepStation(Army pArmy)
+        {
+            PushToStation(pArmy);
+            SetAttack(pArmy, null, null);
         }
     }
 
@@ -334,10 +391,14 @@ namespace DiplomacyOverhaul
     // 不用原版的拼单：原版会把同岛出发的军队并成一单，只在第一个人那里接人。
     public static class Transport
     {
-        public static void Dispatch(City pCity, WorldTile pTarget)
+        // 国家 AI 调兵时不弹"没有运输船"的提示
+        internal static bool Quiet;
+
+        public static void Dispatch(Army pArmy, WorldTile pTarget)
         {
+            Kingdom kingdom = pArmy.getKingdom();
             var units = new List<Actor>();
-            foreach (Actor unit in pCity.army.units)
+            foreach (Actor unit in pArmy.units)
             {
                 if (!unit.isRekt() && !unit.is_inside_boat) units.Add(unit);
             }
@@ -352,16 +413,16 @@ namespace DiplomacyOverhaul
                 if (old.countActors() == 0 && old.isState(TaxiRequestState.Pending)) TaxiManager.cancelRequest(old);
             }
 
-            Actor lead = pCity.army.getCaptain();
+            Actor lead = pArmy.getCaptain();
             if (lead == null || lead.isRekt() || lead.is_inside_boat) lead = units[0];
-            var request = new TaxiRequest(lead, pCity.kingdom, lead.current_tile, pTarget);
+            var request = new TaxiRequest(lead, kingdom, lead.current_tile, pTarget);
             foreach (Actor unit in units) request.addActor(unit);
             TaxiManager.list.Add(request);
 
-            Boat boat = PickBoat(pCity.kingdom, lead.current_tile, pTarget);
+            Boat boat = PickBoat(kingdom, lead.current_tile, pTarget);
             if (boat == null)
             {
-                WorldTip.showNow("vd_tip_no_boat", true, "top");
+                if (!Quiet) WorldTip.showNow("vd_tip_no_boat", true, "top");
                 return;
             }
             boat.taxi_request = request;
@@ -496,7 +557,7 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor pActor, ai.behaviours.BehResult __result)
         {
-            if (__result != ai.behaviours.BehResult.Continue || pActor.hasArmy() || !pActor.city.hasArmy()) return;
+            if (__result != ai.behaviours.BehResult.Continue || pActor.hasArmy() || !pActor.city.hasArmy() || Guard.IsMember(pActor)) return;
             Army army = pActor.city.army;
             Actor captain = army.getCaptain();
             if (captain == null || captain.isRekt() || captain.isInsideSomething()) return;
@@ -513,17 +574,17 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor __instance, ref bool __result)
         {
-            if (__result && __instance.isWarrior() && __instance.hasCity() && Orders.HasStation(__instance.city)) __result = false;
+            if (__result && __instance.isWarrior() && __instance.hasArmy() && Orders.HasStation(__instance.army)) __result = false;
         }
     }
 
-    // 玩家命令的城市跳过"兵力达到上限 70% 才出兵"的限制
+    // 玩家命令的军队、禁军编队跳过"兵力达到上限 70% 才出兵"的限制
     [HarmonyPatch(typeof(City), nameof(City.isOkToSendArmy))]
     static class Patch_OkToSendArmy
     {
         static bool Prefix(City __instance, ref bool __result)
         {
-            if (!Orders.IsForced(__instance) || !__instance.hasArmy()) return true;
+            if (Guard.Acting == null && (!__instance.hasArmy() || !Orders.IsForced(__instance.army))) return true;
             __result = true;
             return false;
         }
@@ -535,14 +596,15 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
         {
-            if (!Orders.HasStation(pCity)) return true;
-            Orders.PushToStation(pCity);
-            pCity.target_attack_city = null;
-            pCity.target_attack_zone = null;
+            if (!pCity.hasArmy() || !Orders.HasStation(pCity.army)) return true;
+            Orders.KeepStation(pCity.army);
             __result = ai.behaviours.BehResult.Continue;
             return false;
         }
 
-        static void Postfix(City pCity) => Orders.CheckForced(pCity);
+        static void Postfix(City pCity)
+        {
+            if (pCity.hasArmy()) Orders.CheckForced(pCity.army);
+        }
     }
 }

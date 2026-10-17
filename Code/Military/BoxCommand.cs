@@ -47,12 +47,12 @@ namespace DiplomacyOverhaul
             var byKingdom = new Dictionary<Kingdom, List<Army>>();
             foreach (Army army in World.world.armies)
             {
-                if (!Powers.AliveArmy(army) || army.getCity() == null) continue;
+                if (!Powers.AliveArmy(army) || army.getKingdom() == null) continue;
                 Actor lead = army.getCaptain();
                 if (lead == null || lead.isRekt()) continue;
                 Vector2 pos = lead.current_position;
                 if (pos.x < minX || pos.x > maxX || pos.y < minY || pos.y > maxY) continue;
-                Kingdom k = army.getCity().kingdom;
+                Kingdom k = army.getKingdom();
                 if (!byKingdom.TryGetValue(k, out List<Army> list)) byKingdom[k] = list = new List<Army>();
                 list.Add(army);
             }
@@ -81,10 +81,10 @@ namespace DiplomacyOverhaul
             var result = new List<Army>();
             foreach (Army army in _armies)
             {
-                if (Powers.AliveArmy(army) && army.getCity() != null) result.Add(army);
+                if (Powers.AliveArmy(army) && army.getKingdom() != null) result.Add(army);
             }
             if (result.Count > 0) return result;
-            if (SelectedObjects.getSelectedNanoObject() is Army picked && Powers.AliveArmy(picked) && picked.getCity() != null)
+            if (SelectedObjects.getSelectedNanoObject() is Army picked && Powers.AliveArmy(picked) && picked.getKingdom() != null)
             {
                 result.Add(picked);
                 return result;
@@ -93,7 +93,7 @@ namespace DiplomacyOverhaul
             foreach (Actor unit in SelectedUnit.getAllSelected())
             {
                 Army army = unit?.army;
-                if (Powers.AliveArmy(army) && army.getCity() != null && !result.Contains(army)) result.Add(army);
+                if (Powers.AliveArmy(army) && army.getKingdom() != null && !result.Contains(army)) result.Add(army);
             }
             return result;
         }
@@ -104,7 +104,7 @@ namespace DiplomacyOverhaul
             if (pTile == null || pArmies.Count == 0) return false;
             foreach (Army army in pArmies)
             {
-                if (!Orders.IsStationedAt(army.getCity(), pTile)) return false;
+                if (!Orders.IsStationedAt(army, pTile)) return false;
             }
             return true;
         }
@@ -119,7 +119,7 @@ namespace DiplomacyOverhaul
 
             if (AllStationedAt(armies, pTile))
             {
-                foreach (Army army in armies) Orders.Release(army.getCity(), pTile);
+                foreach (Army army in armies) Orders.Release(army, pTile);
                 WorldTip.showNow(LM.Get("vd_tip_box_released").Replace("$count$", armies.Count.ToString()), false, "top");
                 if (fromBox) _armies.Clear();
                 return true;
@@ -131,7 +131,7 @@ namespace DiplomacyOverhaul
             bool friendly = false;
             foreach (Army army in armies)
             {
-                friendly = city != null && Orders.Friendly(city.kingdom, army.getCity().kingdom);
+                friendly = city != null && Orders.Friendly(city.kingdom, army.getKingdom());
                 string e = Orders.CommandArmy(army, pTile);
                 if (e == null) done++;
                 else error = error ?? e;

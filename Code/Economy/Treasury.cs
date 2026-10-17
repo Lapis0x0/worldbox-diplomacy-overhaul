@@ -6,7 +6,8 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 国库：城主上缴的钱进国库，国王只分一份；附庸的进账按附庸贡赋交一份给宗主；国王发起密谋花国库的钱。
-    // 城市养自己的兵：每年从本城仓库扣军饷，欠饷先停征兵，再逐渐解甲；仓库的金子超过上限的上缴国库
+    // 城市养自己的地方兵：每年从本城仓库扣军饷，欠饷先停征兵，再逐渐解甲；仓库的金子超过上限的上缴国库。
+    // 禁军由国库养，见 Guard
     public static class Treasury
     {
         const string Key = "vd_treasury";
@@ -16,8 +17,8 @@ namespace DiplomacyOverhaul
         public const float PayPerWarrior = 0.5f;  // 每个兵每年的军饷
         const int CapPerPerson = 2;               // 城市仓库每人能留多少金子
         const int CapMin = 200;                   // 上限的保底：够存一栋最贵的建筑（100 金子）再加几年军饷
-        const int DisbandYears = 2;               // 连续欠饷几年开始解甲
-        const float DisbandShare = 0.25f;         // 每年解甲欠饷士兵的几分之一
+        public const int DisbandYears = 2;        // 连续欠饷几年开始解甲
+        public const float DisbandShare = 0.25f;  // 每年解甲欠饷士兵的几分之一
 
         public static int Get(Kingdom pKingdom)
         {
@@ -129,12 +130,14 @@ namespace DiplomacyOverhaul
                     city.takeResource("gold", excess);
                     Income(k, excess);
                 }
+                Guard.Pay(k);
             }
         }
 
+        // 地方兵的饷：禁军的兵户籍也在城里，饷由国库发（见 Guard.Pay）
         static void Pay(City pCity)
         {
-            int warriors = pCity.countWarriors();
+            int warriors = Guard.CountLocal(pCity);
             int cost = Mathf.RoundToInt(warriors * PayPerWarrior);
             int gold = pCity.getResourcesAmount("gold");
             if (gold >= cost)
@@ -153,7 +156,7 @@ namespace DiplomacyOverhaul
             foreach (Actor a in new List<Actor>(pCity.getUnits()))
             {
                 if (disband <= 0) break;
-                if (!a.isAlive() || !a.isWarrior() || a.is_army_captain) continue;
+                if (!a.isAlive() || !a.isWarrior() || a.is_army_captain || Guard.IsMember(a)) continue;
                 a.stopBeingWarrior();
                 disband--;
             }
@@ -184,13 +187,13 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 欠饷的城市不征新兵
+    // 征兵：禁军和地方军都没有发得出饷的空额时不征
     [HarmonyPatch(typeof(City), "tryToMakeWarrior")]
     static class Patch_TryToMakeWarrior
     {
         static bool Prefix(City __instance, ref bool __result)
         {
-            if (!Treasury.Unpaid(__instance)) return true;
+            if (Guard.CanRecruit(__instance)) return true;
             __result = false;
             return false;
         }

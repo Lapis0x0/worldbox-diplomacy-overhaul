@@ -33,6 +33,8 @@ namespace DiplomacyOverhaul
         {
             // 兜底：把所有附庸的战争状态和宗主同步一次
             Vassals.SyncAllWars();
+            Guard.Rebalance();
+            GuardAI.UpdateAll();
         }
 
         [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.update))]

@@ -18,9 +18,10 @@ namespace DiplomacyOverhaul
             return !Feudal.TryConquest(__instance, ref pNewSetKingdom);
         }
 
-        static void Postfix(City __instance, (Kingdom from, bool capital) __state)
+        static void Postfix(City __instance, bool pCaptured, (Kingdom from, bool capital) __state)
         {
             Cycle.OnCityChanged(__state.from, __instance.kingdom, __state.capital);
+            Guard.OnCityChanged(__instance, pCaptured);
         }
     }
 

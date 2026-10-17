@@ -136,8 +136,7 @@ namespace DiplomacyOverhaul
             });
             Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney" });
             Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
-            // 兵制要等中央军（WORLD-26），先摆出来
-            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, icon = "ui/Icons/iconArmy", active = false });
+            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy" });
             Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
             Add(new Policy
             {
@@ -329,6 +328,9 @@ namespace DiplomacyOverhaul
                         rows.Add(("vd_eff_assimilation", Percent(DiplomacyOverhaul.Assimilation.VassalYearlyShare)));
                         rows.Add(("vd_eff_vassal_resent", Signed(DiplomacyOverhaul.Assimilation.ResentOpinion)));
                     }
+                    break;
+                case Army:
+                    rows.Add(("vd_eff_guard_share", Percent(Guard.RateOf(pOption))));
                     break;
                 case VassalTax:
                     rows.Add(("vd_eff_vassal_tax", Percent(VassalTaxRates[pOption])));

@@ -237,7 +237,7 @@ namespace DiplomacyOverhaul
                     WorldTip.showNow("vd_tip_pick_army", true, "top");
                     return false;
                 }
-                if (hovered.getCity() == null)
+                if (hovered.getKingdom() == null)
                 {
                     WorldTip.showNow("vd_tip_army_no_city", true, "top");
                     return false;
@@ -256,8 +256,8 @@ namespace DiplomacyOverhaul
             if (pTile == null) return false;
             City city = Orders.TargetCity(pTile);
             Army army = _army;
-            bool friendly = city != null && Orders.Friendly(city.kingdom, army.getCity()?.kingdom);
-            if (Orders.Release(army.getCity(), pTile))
+            bool friendly = city != null && Orders.Friendly(city.kingdom, army.getKingdom());
+            if (Orders.Release(army, pTile))
             {
                 Tip(LM.Get("vd_tip_army_released").Replace("$army$", army.name));
                 SetArmy(null);
