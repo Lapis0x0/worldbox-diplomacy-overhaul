@@ -368,49 +368,19 @@ namespace DiplomacyOverhaul
             return false;
         }
 
-        // 败方每座城的仓库按比例交出金币和各种资源，运到胜方的城里：先放首都，放不下依次放别的城，都放不下的丢掉。
-        // 返回交出的明细
+        // 败方的国库和每座城仓库里的金子按比例交出，全部进胜方国库。返回交出的明细
         static string Reparations(Kingdom pLoser, Kingdom pWinner, int pRate)
         {
-            var paid = new Dictionary<string, int>();
-            foreach (City city in new List<City>(pLoser.getCities()))
+            int paid = Treasury.Take(pLoser, Treasury.Get(pLoser) * pRate / 100);
+            foreach (City city in pLoser.getCities())
             {
-                foreach (ResourceAsset res in AssetManager.resources.list)
-                {
-                    int take = city.getResourcesAmount(res.id) * pRate / 100;
-                    if (take <= 0) continue;
-                    city.takeResource(res.id, take);
-                    paid.TryGetValue(res.id, out int sum);
-                    paid[res.id] = sum + take;
-                }
+                int take = city.getResourcesAmount("gold") * pRate / 100;
+                if (take <= 0) continue;
+                city.takeResource("gold", take);
+                paid += take;
             }
-
-            var cities = new List<City>(pWinner.getCities());
-            if (pWinner.hasCapital())
-            {
-                cities.Remove(pWinner.capital);
-                cities.Insert(0, pWinner.capital);
-            }
-            var sb = new StringBuilder();
-            foreach (KeyValuePair<string, int> pair in paid)
-            {
-                int left = pair.Value;
-                foreach (City city in cities)
-                {
-                    foreach (Building b in city.stockpiles)
-                    {
-                        if (left <= 0) break;
-                        if (!b.isUsable()) continue;
-                        int before = b.getResourcesAmount(pair.Key);
-                        left -= Mathf.Max(0, b.addResources(pair.Key, left) - before);
-                    }
-                    if (left <= 0) break;
-                    city._storage_version++;
-                }
-                if (sb.Length > 0) sb.Append(';');
-                sb.Append(pair.Key).Append(':').Append(pair.Value);
-            }
-            return sb.ToString();
+            Treasury.Add(pWinner, paid);
+            return "gold:" + paid;
         }
 
         // ---------- 战败之耻 ----------

@@ -18,6 +18,7 @@
   "vd_tip_lord_is_vassal": "宗主国本身是附庸国，不能再拥有附庸",
   "vd_tip_vassal_has_vassals": "该国还有自己的附庸，不能成为附庸",
   "vd_tip_not_vassal": "这个国家不是附庸国",
+  "vd_treasury": "国库",
   "vd_row_overlord": "宗主",
   "vd_row_vassals": "附庸",
   "opinion_vd_overlord": "效忠宗主",

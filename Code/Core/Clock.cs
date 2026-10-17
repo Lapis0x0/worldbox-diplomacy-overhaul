@@ -25,6 +25,7 @@ namespace DiplomacyOverhaul
             Integration.UpdateAll();
             Territory.UpdateAll();
             Assimilation.UpdateAll();
+            Treasury.UpdateAll();
             Parliament.UpdateAll();
         }
 

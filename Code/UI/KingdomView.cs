@@ -61,6 +61,19 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 王国窗口：「领袖财富」后面接一行国库。原版接着显示上缴比例，在它前面插进去
+    [HarmonyPatch(typeof(StatsWindow), "showStatRow", typeof(string), typeof(object), typeof(string), typeof(MetaType), typeof(long), typeof(bool), typeof(string), typeof(string), typeof(TooltipDataGetter), typeof(bool))]
+    static class Patch_KingdomTreasuryRow
+    {
+        static void Prefix(StatsWindow __instance, string pId)
+        {
+            if (pId != "tribute" || !(__instance is KingdomWindow)) return;
+            Kingdom k = SelectedMetas.selected_kingdom;
+            if (k == null) return;
+            __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
+        }
+    }
+
     // 地图：附庸国的边界线使用宗主国的颜色；行省连填充也用宗主国的颜色，看上去是宗主版图的一部分，
     // 和宗主之间仍留一条边界线。只换颜色、保留原来的透明度，选中别国时的淡出照常
     [HarmonyPatch(typeof(ZoneCalculator), "applyMetaColorsToZone")]
@@ -89,12 +102,29 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(TooltipLibrary), "showKingdom")]
     static class Patch_KingdomTooltip
     {
+        internal static Kingdom Current;
+
+        static void Prefix(TooltipData pData) => Current = pData?.kingdom;
+
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
+            Current = null;
             Kingdom k = pData?.kingdom;
             if (k == null) return;
             if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
             pTooltip.setTitle(Government.DisplayName(k), Government.TitleKey(k), k.getColor().color_text);
+        }
+    }
+
+    // 王国提示：「领袖财富」后面接一行国库，插在原版的城市数一行前面
+    [HarmonyPatch(typeof(Tooltip), nameof(Tooltip.addLineText))]
+    static class Patch_KingdomTooltipTreasury
+    {
+        static void Prefix(Tooltip __instance, string pID)
+        {
+            Kingdom k = Patch_KingdomTooltip.Current;
+            if (k == null || pID != "villages") return;
+            __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
         }
     }
 
