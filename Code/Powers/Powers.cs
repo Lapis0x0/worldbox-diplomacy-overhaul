@@ -422,7 +422,7 @@ namespace DiplomacyOverhaul
                 WorldTip.showNow("vd_tip_not_vassal", true, "top");
                 return false;
             }
-            if (Core.StartIndependenceWar(k, lord) == null)
+            if (Independence.StartWar(k, lord) == null)
             {
                 WorldTip.showNow("vd_tip_war_failed", true, "top");
                 return false;

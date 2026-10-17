@@ -25,7 +25,7 @@ namespace DiplomacyOverhaul
                 money_cost = MoneyCost,
                 can_be_done_by_king = true,
                 check_target_kingdom = true,
-                check_is_possible = pActor => CanStart(pActor) && !Core.IsPlotRunning(plot_appanage, pActor.kingdom),
+                check_is_possible = pActor => CanStart(pActor) && !Motives.IsPlotRunning(plot_appanage, pActor.kingdom),
                 check_can_be_forced = CanStart,
                 try_to_start_advanced = (pActor, pAsset, pForced) =>
                 {

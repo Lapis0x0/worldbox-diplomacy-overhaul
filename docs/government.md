@@ -129,7 +129,8 @@
 
 | 文件 | 内容 |
 |---|---|
-| `Government.cs` | 政体特质组、掷大类、称号判定、手动设置、国名和标题显示、政体倾向的数值 |
+| `Government.cs` | 政体特质组、掷大类、称号判定、手动设置、政体倾向的数值 |
+| `KingdomView.cs` | 王国窗口、悬停提示、地图名牌上的国名和称号 |
 | `Regime.cs` | 共和国选举和任期、王室绝嗣、称帝、夺权 |
 | `ElectionWindow.cs` | 选举与任命窗口 |
 
@@ -144,7 +145,7 @@
 
 原版挂点：
 
-- `DiplomacyHelpers.isWarNeeded`、`DiplomacyHelpers.getWarTarget`：停战期和敢挑的对手按政体取值（`Patches.cs`）。
+- `DiplomacyHelpers.isWarNeeded`、`DiplomacyHelpers.getWarTarget`：停战期和敢挑的对手按政体取值（`AiTargets.cs`）。
 - `KingdomBehCheckKing.execute`：共和国没有执政时由模组选举，不走原版的王室继承。
 - `KingdomBehCheckKing.checkKingdomChaos`：原版绝嗣分裂的入口，在这里改制或重新选举。
 - `Kingdom.trySetRoyalClan`：共和国跳过，不立王室。

@@ -13,6 +13,33 @@ namespace DiplomacyOverhaul
         // 每年转化的比例：每座城里文化、宗教（国内同化还有语言）不一样的居民
         public const float YearlyShare = 0.1f;
 
+        public static void Init()
+        {
+            Core.Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_autonomy",
+                translation_key = "opinion_vd_autonomy",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget
+                                           && Policies.Value(pTarget, Policies.Vassals) == Policies.Autonomy ? AutonomyOpinion : 0
+            });
+            Core.Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_assimilation",
+                translation_key = "opinion_vd_assimilation",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget && Resents(pMain, pTarget) ? ResentOpinion : 0
+            });
+            // 原版的文化、语言、宗教：扣的部分按教化政策变
+            SetLoyalty("culture", CultureLoyalty);
+            SetLoyalty("language", LanguageLoyalty);
+            SetLoyalty("religion", ReligionLoyalty);
+        }
+
+        static void SetLoyalty(string pId, LoyaltyDelegateCalc pCalc)
+        {
+            LoyaltyAsset asset = AssetManager.loyalty_library.get(pId);
+            if (asset != null) asset.calc = pCalc;
+        }
+
         // 宗主在强制同化，附庸的文化或宗教还和宗主不同
         public static bool Resents(Kingdom pVassal, Kingdom pLord) =>
             Policies.Value(pLord, Policies.Vassals) == Policies.Assimilation && Differs(pVassal, pLord);

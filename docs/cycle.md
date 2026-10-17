@@ -134,9 +134,9 @@
 |---|---|
 | `Cycle.cs` | 天命、阶段推进、城市易手和战争胜负、好感和忠诚修正、天命神力、提示 |
 | `Restoration.cs` | 中兴密谋 |
-| `GreatRebellion.cs` | 大叛乱，以及城市易手的检测 |
+| `GreatRebellion.cs` | 大叛乱 |
+| `Hooks.cs` | 城市易手、战争结束时通知周期 |
 | `tools/sim/small_lord.py` | 小宗主的附庸多久散去 |
-| `Core.cs` | 好感、忠诚修正的注册 |
 | `Policies.cs` | `Actor.updateStats` 补丁：单位伤害乘天命和海军方针的倍数 |
 
 `kingdom.data` 里的 `vd_cycle_phase` 存阶段，`vd_cycle_since` 存进入这个阶段的年份，`vd_mandate` 存天命，`vd_decay` 存积弊，`vd_scar` 存沉疴，`vd_mandate_damage` 存已经应用到单位属性上的伤害百分比（变了一档才让全国单位重算属性）；特质只是显示用的镜像。之前版本就有周期的国家，第一次判定时按所在阶段补上天命和积弊，规则同手动设置。

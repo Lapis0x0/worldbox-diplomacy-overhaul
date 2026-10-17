@@ -59,6 +59,17 @@ namespace DiplomacyOverhaul
 
         static Vector2 Location(Kingdom pKingdom) => pKingdom.hasCapital() ? pKingdom.capital.last_city_center : Vector2.zero;
 
+        public static void Init()
+        {
+            Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_dissent",
+                translation_key = "loyalty_vd_dissent_content",
+                translation_key_negative = "loyalty_vd_dissent",
+                calc = CityLoyalty
+            });
+        }
+
         // ---------- 议席 ----------
 
         public static int CitySeats(City pCity) => Mathf.RoundToInt(2f * Mathf.Sqrt(pCity.getPopulationPeople()));

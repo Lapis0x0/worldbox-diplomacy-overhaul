@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HarmonyLib;
 using NeoModLoader.General;
 using UnityEngine;
 using UnityEngine.UI;
@@ -731,5 +732,12 @@ namespace DiplomacyOverhaul
             else if (ParliamentWindow.TipEffects.Count == 0) return;
             pTooltip.showStatValues();
         }
+    }
+
+    // 左下角的王国取消按钮显示或收起时，右下角的议会按钮跟着
+    [HarmonyPatch(typeof(PowerButtonSelector), "updateSelectedUnitCancelButton")]
+    static class Patch_SelectedCancelButton
+    {
+        static void Postfix() => ParliamentWindow.UpdateSide();
     }
 }

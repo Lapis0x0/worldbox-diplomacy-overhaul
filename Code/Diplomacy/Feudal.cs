@@ -195,7 +195,7 @@ namespace DiplomacyOverhaul
                 check_target_kingdom = true,
                 requires_diplomacy = true,
                 check_is_possible = pActor => CanDemand(pActor.kingdom)
-                                              && !Core.IsPlotRunning(plot_tribute, pActor.kingdom)
+                                              && !Motives.IsPlotRunning(plot_tribute, pActor.kingdom)
                                               && FindTarget(pActor.kingdom) != null,
                 check_can_be_forced = pActor => CanDemand(pActor.kingdom) && FindTarget(pActor.kingdom) != null,
                 try_to_start_advanced = (pActor, pAsset, pForced) =>
@@ -313,17 +313,5 @@ namespace DiplomacyOverhaul
     static class Patch_FeudalRebellion
     {
         static bool Prefix(Actor pActor, Plot pPlot) => !Feudal.TryRebellion(pActor, pPlot);
-    }
-
-    // 排在 Patch_CapitalCaptured 之后，让它先记下这座城是不是首都
-    [HarmonyPatch(typeof(City), nameof(City.joinAnotherKingdom))]
-    [HarmonyPriority(Priority.Low)]
-    static class Patch_FeudalConquest
-    {
-        static bool Prefix(City __instance, ref Kingdom pNewSetKingdom, bool pCaptured)
-        {
-            if (!pCaptured) return true;
-            return !Feudal.TryConquest(__instance, ref pNewSetKingdom);
-        }
     }
 }

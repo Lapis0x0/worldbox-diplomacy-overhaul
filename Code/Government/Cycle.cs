@@ -70,6 +70,28 @@ namespace DiplomacyOverhaul
             Government.AddTraitGroup(GroupId, "#FFB347",
                 new[] { TraitIds[1], TraitIds[2], TraitIds[3], TraitIds[4] },
                 new[] { "ui/Icons/vd_cycle_renewal", "ui/Icons/vd_cycle_prime", "ui/Icons/vd_cycle_decline", "ui/Icons/vd_cycle_collapse" });
+            Core.Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_cycle",
+                translation_key = "opinion_vd_cycle",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? VassalOpinion(pTarget) : 0
+            });
+            Core.Upsert(AssetManager.opinion_library, new OpinionAsset
+            {
+                id = "opinion_vd_weak_lord",
+                translation_key = "opinion_vd_weak_lord",
+                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? WeakLordOpinion(pTarget) : 0
+            });
+            Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_cycle",
+                translation_key = "loyalty_vd_cycle_prime",
+                translation_key_negative = "loyalty_vd_cycle_decline",
+                calc = CityLoyalty
+            });
+            // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉
+            LoyaltyAsset conquest = AssetManager.loyalty_library.get("new_conquest");
+            if (conquest != null) conquest.calc = _ => 0;
         }
 
         static CyclePhase TraitPhase(Kingdom pKingdom)
@@ -532,10 +554,9 @@ namespace DiplomacyOverhaul
     }
 
     // 周期特质的提示：在原版属性栏里显示天命、治理各项、老化和军队伤害，只在打开的王国正是这一阶段时
-    [HarmonyPatch(typeof(TooltipLibrary), "showKingdomTrait")]
-    static class Patch_MandateTooltip
+    static class MandateTooltip
     {
-        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        internal static void Show(Tooltip pTooltip, TooltipData pData)
         {
             Kingdom k = SelectedMetas.selected_kingdom;
             KingdomTrait trait = pData?.kingdom_trait;
@@ -561,17 +582,6 @@ namespace DiplomacyOverhaul
         {
             int v = Mathf.RoundToInt(pValue);
             pTooltip.addLineText(pKey, v > 0 ? "+" + v : v.ToString(), v > 0 ? "#8FE07A" : v < 0 ? "#FF8F7A" : null);
-        }
-    }
-
-    // 在原版结算胜负之前记下：结束后双方名单还在
-    [HarmonyPatch(typeof(WarManager), nameof(WarManager.endWar))]
-    static class Patch_EndWarMandate
-    {
-        static void Prefix(War pWar, WarWinner pWinner)
-        {
-            if (pWar == null || !pWar.isAlive() || pWar.hasEnded() || pWar.isTotalWar()) return;
-            Cycle.OnWarEnded(pWar, pWinner);
         }
     }
 

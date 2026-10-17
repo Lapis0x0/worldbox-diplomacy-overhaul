@@ -308,10 +308,9 @@ namespace DiplomacyOverhaul
     }
 
     // 整合度特质的提示：在原版属性栏里显示具体数字，只在打开的王国正是这一档时
-    [HarmonyPatch(typeof(TooltipLibrary), "showKingdomTrait")]
-    static class Patch_IntegrationTooltip
+    static class IntegrationTooltip
     {
-        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        internal static void Show(Tooltip pTooltip, TooltipData pData)
         {
             Kingdom k = SelectedMetas.selected_kingdom;
             KingdomTrait trait = pData?.kingdom_trait;
@@ -319,17 +318,6 @@ namespace DiplomacyOverhaul
             if (!k.hasTrait(trait) || !Vassals.IsVassal(k)) return;
             pTooltip.addLineText("trait_group_" + Integration.GroupId, Mathf.FloorToInt(Integration.Get(k)).ToString());
             pTooltip.showStatValues();
-        }
-    }
-
-    // 在原版结算胜负之前记下：结束后双方名单还在，但独立战争的结局补丁可能已经改了附庸关系
-    [HarmonyPatch(typeof(WarManager), nameof(WarManager.endWar))]
-    static class Patch_EndWarIntegration
-    {
-        static void Prefix(War pWar, WarWinner pWinner)
-        {
-            if (pWar == null || !pWar.isAlive() || pWar.hasEnded() || pWar.isTotalWar()) return;
-            Integration.OnWarEnded(pWar, pWinner);
         }
     }
 }

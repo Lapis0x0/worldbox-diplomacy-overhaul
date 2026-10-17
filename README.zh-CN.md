@@ -42,7 +42,7 @@
 - 把仓库放进（或软链接到）`worldbox/Mods/DiplomacyOverhaul`，NML 启动时会编译 `Code/` 下的源码；`bin/`、`obj/` 和以 `.` 开头的文件不会被编译或上传
 - 本地编译检查：`dotnet build`（需要 .NET SDK，引用游戏目录里的程序集）
 - 热重载：游戏开着时运行 `tools/hot-reload.sh`，改动会在一两秒内生效，不用重启游戏
-  - 改 `Main.cs`、`DevReload.cs`、`mod.json`、`default_config.json` 仍需重启
+  - 改 `Core/Main.cs`、`Core/DevReload.cs`、`mod.json`、`default_config.json` 仍需重启
   - `Core.Start` 必须能重复执行：资源用 `Core.Upsert` 注册，Tab 按钮会被清掉重建
 - 发版：改 `mod.json` 的版本号，在 `CHANGELOG.md` 写好这个版本的中英文说明并提交，然后运行 `tools/release.sh`。脚本检查工作区、版本号、语言文件和编译后打 tag 推送，GitHub Actions 自动建 Release 并附上发布包（`tools/package.sh` 也可以单独打包）
 - 上传创意工坊：在 NML 模组列表里连点封面 8 次后等 3 秒打开上传窗口；更新时在顶部填创意工坊物品 ID，空着会新建物品

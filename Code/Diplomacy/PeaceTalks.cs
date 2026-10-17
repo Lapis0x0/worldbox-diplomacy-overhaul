@@ -31,7 +31,6 @@ namespace DiplomacyOverhaul
         const string KeyTreatyPaid = "vd_treaty_paid";       // 赔款明细 "gold:120;wood:30"
         const string KeyShame = "vd_shame_", KeyShameTime = "vd_shame_t_";
 
-        public const double YearLength = 60.0; // 一个游戏年（Date 里一个月 = 5）
 
         // 战果
         const float CityWeight = 80f, CapitalWeight = 20f, PowerWeight = 10f;
@@ -231,6 +230,13 @@ namespace DiplomacyOverhaul
             return war == null ? 0f : WarMotive(war, pActor.kingdom, pActor);
         }
 
+        // 原版的攻方停战（无条件和平）由和谈取代：不再放进国王的密谋池。神力「友谊」不受影响
+        public static void RemoveVanillaStopWar(ListPool<PlotAsset> pPool)
+        {
+            if (!Settings.PeaceEnabled) return;
+            pPool.RemoveAll(p => p.id == "attacker_stop_war");
+        }
+
         // 兜底：原版国王很少轮到发起密谋，想谈的国王可能好几年都发起不了。
         // 每场战争每年检查一次，没人在谈时，双方主国的国王各按动机的概率直接发起和谈密谋
         public static void YearlyCheck(War pWar)
@@ -238,7 +244,7 @@ namespace DiplomacyOverhaul
             if (!Settings.PeaceEnabled || !Eligible(pWar) || !pWar.getAsset().can_end_with_plot) return;
             double now = World.world.getCurWorldTime();
             pWar.data.get(KeyLastCheck, out float last, -1f);
-            if (last >= 0 && now - last < YearLength) return;
+            if (last >= 0 && now - last < Clock.YearLength) return;
             pWar.data.set(KeyLastCheck, (float)now);
             if (pWar.getAge() < Settings.PeaceMinYears || Running(pWar)) return;
 
@@ -422,7 +428,7 @@ namespace DiplomacyOverhaul
             rel.data.get(KeyShame + pMain.id, out int amount, 0);
             if (amount <= 0) return 0;
             rel.data.get(KeyShameTime + pMain.id, out float since, 0f);
-            float years = (float)((World.world.getCurWorldTime() - since) / YearLength);
+            float years = (float)((World.world.getCurWorldTime() - since) / Clock.YearLength);
             if (years >= ShameYears)
             {
                 rel.data.removeInt(KeyShame + pMain.id);
@@ -516,17 +522,6 @@ namespace DiplomacyOverhaul
     static class Patch_WarUpdate
     {
         static void Postfix(War __instance) => PeaceTalks.YearlyCheck(__instance);
-    }
-
-    // 原版的攻方停战（无条件和平）由和谈取代：不再放进国王的密谋池。神力「友谊」不受影响
-    [HarmonyPatch(typeof(BehTryNewPlot), "fillRandomPlots")]
-    static class Patch_NoVanillaStopWar
-    {
-        static void Postfix(ListPool<PlotAsset> pPotPlots)
-        {
-            if (!Settings.PeaceEnabled) return;
-            pPotPlots.RemoveAll(p => p.id == "attacker_stop_war");
-        }
     }
 
     [HarmonyPatch(typeof(WarWindow), nameof(WarWindow.showStatsRows))]

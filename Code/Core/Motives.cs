@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HarmonyLib;
 using UnityPools;
 
 namespace DiplomacyOverhaul
@@ -40,6 +39,16 @@ namespace DiplomacyOverhaul
             return Randy.randomChance(m / (m + 1f));
         }
 
+        // 这个国家是否已经有人在进行这种密谋。原版的 isPlotTypeAlreadyRunning 查的是全世界
+        public static bool IsPlotRunning(PlotAsset pAsset, Kingdom pKingdom)
+        {
+            foreach (Plot plot in World.world.plots)
+            {
+                if (plot.isActive() && plot.isSameType(pAsset) && plot.getAuthor()?.kingdom == pKingdom) return true;
+            }
+            return false;
+        }
+
         internal static void Filter(Actor pActor, ListPool<PlotAsset> pPool)
         {
             foreach (KeyValuePair<string, Func<Actor, float>> pair in _motives)
@@ -49,12 +58,5 @@ namespace DiplomacyOverhaul
                 if (!Wants(pActor, pair.Value)) pPool.RemoveAll(p => p == asset);
             }
         }
-    }
-
-    // fillRandomPlots 每次考虑只调用一次（fillPlotsToTry 会分别为普通密谋和宗教仪式各调用一次）
-    [HarmonyPatch(typeof(BehTryNewPlot), "fillRandomPlots")]
-    static class Patch_PlotMotives
-    {
-        static void Postfix(Actor pActor, ListPool<PlotAsset> pPotPlots) => Motives.Filter(pActor, pPotPlots);
     }
 }

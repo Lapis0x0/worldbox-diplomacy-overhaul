@@ -82,7 +82,7 @@
 |---|---|
 | `PeaceTalks.cs` | 战果、期望、和谈密谋、和约执行、战败之耻、战争窗口和提示 |
 | `Cycle.cs` | 和约档次对天命的影响 |
-| `Patches.cs` | 签了和约的独立战争不再走原来的胜负结局 |
+| `Independence.cs` | 签了和约的独立战争不再走原来的胜负结局 |
 
 和约记在 `war.data`（`vd_treaty` 档次、`vd_treaty_ceded` 让出的附庸数、`vd_treaty_paid` 赔款明细），开战时的城数和首都记在 `vd_att_*`、`vd_def_*`。战败之耻记在两国外交关系的自定义数据里。
 

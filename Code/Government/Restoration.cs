@@ -28,7 +28,7 @@ namespace DiplomacyOverhaul
                 progress_needed = Progress,
                 can_be_done_by_king = true,
                 check_target_kingdom = true,
-                check_is_possible = pActor => InDecline(pActor.kingdom) && !Core.IsPlotRunning(plot_restoration, pActor.kingdom),
+                check_is_possible = pActor => InDecline(pActor.kingdom) && !Motives.IsPlotRunning(plot_restoration, pActor.kingdom),
                 check_can_be_forced = pActor => InDecline(pActor.kingdom),
                 try_to_start_advanced = (pActor, pAsset, pForced) =>
                 {

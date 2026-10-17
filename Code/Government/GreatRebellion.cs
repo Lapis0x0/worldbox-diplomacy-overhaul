@@ -30,7 +30,7 @@ namespace DiplomacyOverhaul
             {
                 // 整合度越低越可能反：刚投降的 90%，行省 10% 上下
                 float chance = Mathf.Clamp(90f - Integration.Get(vassal), 10f, 90f) / 100f;
-                if (Randy.randomChance(chance) && Core.StartIndependenceWar(vassal, pKingdom) != null) count++;
+                if (Randy.randomChance(chance) && Independence.StartWar(vassal, pKingdom) != null) count++;
             }
 
             if (count > 0)
@@ -147,21 +147,6 @@ namespace DiplomacyOverhaul
             }
             if (war == null) World.world.diplomacy.startWar(pOld, rebel, WarTypeLibrary.rebellion);
             return rebel;
-        }
-    }
-
-    // 城市易手时记下原主和是不是被攻占的首都，易手后交给王朝周期处理
-    [HarmonyPatch(typeof(City), nameof(City.joinAnotherKingdom))]
-    static class Patch_CityChanged
-    {
-        static void Prefix(City __instance, bool pCaptured, out KeyValuePair<Kingdom, bool> __state)
-        {
-            __state = new KeyValuePair<Kingdom, bool>(__instance.kingdom, pCaptured && __instance.isCapitalCity());
-        }
-
-        static void Postfix(City __instance, KeyValuePair<Kingdom, bool> __state)
-        {
-            Cycle.OnCityChanged(__state.Key, __instance.kingdom, __state.Value);
         }
     }
 }

@@ -57,6 +57,13 @@ namespace DiplomacyOverhaul
                 new[] { "ui/Icons/iconKingdom", "ui/Icons/iconKingdomList", "ui/Icons/vd_gov_republic", "ui/Icons/vd_gov_merchant_republic",
                         "ui/Icons/vd_gov_military_republic", "ui/Icons/vd_gov_duchy", "ui/Icons/vd_gov_dominion", "ui/Icons/vd_gov_province",
                         "ui/Icons/vd_gov_province" });
+            Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
+            {
+                id = "loyalty_vd_republic",
+                translation_key = "loyalty_vd_republic",
+                translation_key_negative = "loyalty_vd_republic",
+                calc = CityLoyalty
+            });
         }
 
         // 一组互斥的王国特质（政体、王朝周期）；组名的 key 是 trait_group_<组 id>
@@ -301,64 +308,6 @@ namespace DiplomacyOverhaul
                 if (Settings.GovernmentAutoEnabled) Update(k);
                 else EnsureForm(k);
             }
-        }
-    }
-
-    // 和投降检查一样，每个游戏年判定一次
-    [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.update))]
-    static class Patch_YearlyTick
-    {
-        static double _lastCheck = -1;
-
-        static void Postfix()
-        {
-            double now = World.world.getCurWorldTime();
-            // 读档或换世界后时间可能倒退
-            if (_lastCheck >= 0 && now >= _lastCheck && now - _lastCheck < PeaceTalks.YearLength) return;
-            _lastCheck = now;
-            Regime.UpdateAll();
-            Government.UpdateAll();
-            Cycle.UpdateAll();
-            Integration.UpdateAll();
-            Territory.UpdateAll();
-            Assimilation.UpdateAll();
-            Parliament.UpdateAll();
-        }
-    }
-}
-
-namespace DiplomacyOverhaul
-{
-    // 鼠标悬停在疆域上的王国提示：副标题"王国"换成政体名，附庸再接上宗主名
-    [HarmonyPatch(typeof(TooltipLibrary), "showKingdom")]
-    static class Patch_KingdomTooltip
-    {
-        static void Postfix(Tooltip pTooltip, TooltipData pData)
-        {
-            Kingdom k = pData?.kingdom;
-            if (k == null) return;
-            if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
-            pTooltip.setTitle(Government.DisplayName(k), Government.TitleKey(k), k.getColor().color_text);
-        }
-    }
-
-    // 地图上的国家名牌：showTextKingdom 里用 kingdom.name 拼名牌文字，这里换成带政体的显示名
-    [HarmonyPatch(typeof(NameplateText), nameof(NameplateText.showTextKingdom))]
-    static class Patch_KingdomNameplate
-    {
-        internal static Kingdom Current;
-
-        static void Prefix(Kingdom pMetaObject) => Current = pMetaObject;
-
-        static void Postfix() => Current = null;
-    }
-
-    [HarmonyPatch(typeof(NameplateText), "getStringForNameplate")]
-    static class Patch_KingdomNameplateText
-    {
-        static void Prefix(ref string pName)
-        {
-            if (Patch_KingdomNameplate.Current != null) pName = Government.DisplayName(Patch_KingdomNameplate.Current);
         }
     }
 }
