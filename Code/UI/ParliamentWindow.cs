@@ -214,10 +214,9 @@ namespace DiplomacyOverhaul
             string clanKey = ck.ToString();
 
             bool built = Build(_frame, "frame", BuildFrame);
-            built |= Build(_seats, clanKey + (_kingdom.countCities() >= 3), () =>
+            built |= Build(_seats, clanKey, () =>
             {
-                if (_kingdom.countCities() >= 3 && clans.Count > 0) Hemicycle(clans, LeftX, Top + 24f);
-                else Banner(clans, LeftX, Top + 24f);
+                if (clans.Count > 0) Hemicycle(clans, LeftX, Top + 24f);
             });
             built |= Build(_clans, clanKey + republic, () => ClanList(clans));
 
@@ -434,22 +433,6 @@ namespace DiplomacyOverhaul
                 if (best >= 0) Select(pOwners[best]);
             });
             trigger.triggers.Add(click);
-        }
-
-        // 一、两座城的国家不画半圆：「某某家独掌朝政」「某某家主导朝政」
-        static void Banner(List<ParliamentClan> pClans, float pX, float pY)
-        {
-            RectTransform area = Box(_parent, pX, pY, LeftW, 132f);
-            Icon(area, "ui/Icons/iconKings", (LeftW - 28f) / 2f, 36f, 28f);
-            ParliamentClan top = null;
-            foreach (ParliamentClan pc in pClans)
-            {
-                if (top == null || pc.seats > top.seats) top = pc;
-            }
-            if (top == null) return;
-            string key = pClans.Count == 1 ? "vd_parliament_sole" : "vd_parliament_dominant";
-            string text = LM.Get(key).Replace("$clan$", $"<color=#{ColorUtility.ToHtmlStringRGB(FactionColor(top.faction))}>{top.clan.name}</color>");
-            Text(area, text, 0f, 72f, LeftW, 20f, 12, Ink, TextAnchor.MiddleCenter);
         }
 
         // 立场坐标图：横轴激进（左）到保守（右），纵轴集权（上）到分权（下），王室的点戴皇冠
