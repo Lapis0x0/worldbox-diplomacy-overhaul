@@ -4,7 +4,7 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 收归直辖：宗主的城市还没到原版治理上限时，国王把行省的城市收回来直接统治，和分封宗室相反。
-    // 空几座收几座，最多 3 座；先收挨着自己的城，行省的首都最后收，收完行省就没了
+    // 空几座收几座，最多 3 座；先收行省的飞地，再收挨着自己、收了不会切断行省的城，行省的首都最后收，收完行省就没了
     public static class DirectRule
     {
         const int MinLevel = 4;
@@ -90,20 +90,31 @@ namespace DiplomacyOverhaul
             return false;
         }
 
-        // 行省里先收的城：挨着宗主的在前，其次离宗主首都近的；行省首都最后
-        static List<City> Order(Kingdom pProvince, Kingdom pLord)
+        // 下一座要收的城，收完行省和宗主的版图都尽量连成片：
+        // 先收和行省首都不相连的飞地，再收挨着宗主、收了不会把行省切断的城，同档里离宗主首都近的优先；行省首都不收
+        static City Next(Kingdom pProvince, Kingdom pLord)
         {
             Vector2 center = pLord.hasCapital() ? pLord.capital.last_city_center : Vector2.zero;
-            var cities = new List<City>(pProvince.getCities());
-            cities.Sort((a, b) =>
+            HashSet<City> mainland = Territory.Mainland(pProvince);
+            City best = null;
+            int bestRank = int.MaxValue;
+            float bestDistance = float.MaxValue;
+            foreach (City c in pProvince.getCities())
             {
-                int byCapital = a.isCapitalCity().CompareTo(b.isCapitalCity());
-                if (byCapital != 0) return byCapital;
-                int byBorder = TouchesLord(b, pLord).CompareTo(TouchesLord(a, pLord));
-                if (byBorder != 0) return byBorder;
-                return Vector2.Distance(a.last_city_center, center).CompareTo(Vector2.Distance(b.last_city_center, center));
-            });
-            return cities;
+                if (c.isCapitalCity()) continue;
+                int rank;
+                if (!mainland.Contains(c)) rank = 0;
+                else if (Territory.CutsMainland(c, mainland)) rank = 3;
+                else rank = Territory.Touches(c, pLord) ? 1 : 2;
+                float distance = Vector2.Distance(c.last_city_center, center);
+                if (rank < bestRank || rank == bestRank && distance < bestDistance)
+                {
+                    best = c;
+                    bestRank = rank;
+                    bestDistance = distance;
+                }
+            }
+            return best;
         }
 
         static bool Execute(Actor pKing)
@@ -123,10 +134,18 @@ namespace DiplomacyOverhaul
                 return true;
             }
 
-            List<City> cities = Order(province, lord);
-            for (int i = 0; i < count; i++) CityActions.TransferCity(cities[i], lord);
-            WorldLogs.Add(WorldLogs.DirectRulePart, cities[0].last_city_center, pKing,
-                new[] { lord.data.name, name, count.ToString() }, new[] { lord, province, lord });
+            City first = null;
+            int taken = 0;
+            for (int i = 0; i < count; i++)
+            {
+                City city = Next(province, lord);
+                if (city == null || CityActions.TransferCity(city, lord) != null) break;
+                if (first == null) first = city;
+                taken++;
+            }
+            if (taken == 0) return false;
+            WorldLogs.Add(WorldLogs.DirectRulePart, first.last_city_center, pKing,
+                new[] { lord.data.name, name, taken.ToString() }, new[] { lord, province, lord });
             return true;
         }
 

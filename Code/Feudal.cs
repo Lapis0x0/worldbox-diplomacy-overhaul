@@ -6,7 +6,7 @@ namespace DiplomacyOverhaul
 {
     // AI 分封：大国不是只会吞并和镇压，也会把城市分出去做附庸。
     // 1. 偏远城市密谋叛乱成功时，宗主有概率把它分封出去，换来附庸而不是敌人
-    // 2. 已到治理上限还在打仗，攻下的城市大概率分封出去，附近已有不大的附庸就并给那个附庸
+    // 2. 已到治理上限还在打仗，攻下的城市大概率分封出去，有接壤的小附庸就并给那个附庸
     // 3. 威逼称臣：强国国王发起密谋，实力悬殊、对强国不怀恨的邻国不打仗直接称臣
     // 宗主自己是附庸时不分封（不允许附庸链）
     public static class Feudal
@@ -56,16 +56,38 @@ namespace DiplomacyOverhaul
             if (!CanGrant(lord) || NearCapital(city)) return false;
             if (!Randy.randomChance(RebellionChance(lord) * Policies.FeudalChance(lord))) return false;
 
+            List<City> joined = JoinedCities(city, pPlot, lord);
             Kingdom vassal = Grant(city, pActor, lord, Integration.Feudal);
             if (vassal == null) return false;
-            // 同原版叛乱：参与密谋的其他城市一起归入新国家
+            foreach (City other in joined) other.joinAnotherKingdom(vassal);
+            Log(lord, city, vassal);
+            return true;
+        }
+
+        // 同原版叛乱，参与密谋的其他城市一起归入新国家，但只带走和起事城一座接一座连着的，免得新附庸一出来就是几块飞地
+        static List<City> JoinedCities(City pCity, Plot pPlot, Kingdom pLord)
+        {
+            var plotters = new HashSet<City>();
             foreach (Actor unit in pPlot.units)
             {
                 City other = unit.city;
-                if (other != null && other.kingdom == lord && !other.isCapitalCity()) other.joinAnotherKingdom(vassal);
+                if (other != null && other != pCity && other.kingdom == pLord && !other.isCapitalCity()) plotters.Add(other);
             }
-            Log(lord, city, vassal);
-            return true;
+            var joined = new List<City>();
+            var queue = new Queue<City>();
+            queue.Enqueue(pCity);
+            while (queue.Count > 0)
+            {
+                City c = queue.Dequeue();
+                c.recalculateNeighbourCities();
+                foreach (City n in c.neighbours_cities)
+                {
+                    if (!plotters.Remove(n)) continue;
+                    joined.Add(n);
+                    queue.Enqueue(n);
+                }
+            }
+            return joined;
         }
 
         // 原版攻下城市、正要并入 pConqueror。返回 true 表示已分封给新附庸，原版不必再并入；
@@ -106,17 +128,26 @@ namespace DiplomacyOverhaul
             return Redistribute(pCity, ref pConqueror, pLord);
         }
 
-        // 宗主不收的城：附近已有小附庸（挨着它的首都或首都旁的城）就并给它，免得连打几座城冒出一串一城小国；
+        // 宗主不收的城：有接壤的小附庸就并给接壤城市最多的那个，免得连打几座城冒出一串一城小国、版图犬牙交错；
         // 没有就从城里挑一个居民另封新附庸；空城没人可封，归宗主
         static bool Redistribute(City pCity, ref Kingdom pConqueror, Kingdom pLord)
         {
+            Kingdom nearest = null;
+            int bestCount = 0;
             foreach (Kingdom v in Vassals.GetVassals(pLord))
             {
-                if (v.countCities() < VassalMaxCities && NearCapital(pCity, v))
+                if (!v.isAlive() || v.countCities() >= VassalMaxCities) continue;
+                int count = Territory.CountNeighbours(pCity, v);
+                if (count > bestCount)
                 {
-                    pConqueror = v;
-                    return false;
+                    nearest = v;
+                    bestCount = count;
                 }
+            }
+            if (nearest != null)
+            {
+                pConqueror = nearest;
+                return false;
             }
 
             Actor ruler = null;
@@ -146,29 +177,7 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        static bool Touches(City pCity, Kingdom pKingdom)
-        {
-            pCity.recalculateNeighbourCities();
-            foreach (City n in pCity.neighbours_cities)
-            {
-                if (n.kingdom == pKingdom) return true;
-            }
-            return false;
-        }
-
-        // pCity 挨着 pVassal 的首都，或挨着一座挨着首都的 pVassal 城市
-        static bool NearCapital(City pCity, Kingdom pVassal)
-        {
-            City capital = pVassal.capital;
-            if (capital == null || !pVassal.isAlive()) return false;
-            pCity.recalculateNeighbourCities();
-            capital.recalculateNeighbourCities();
-            foreach (City n in pCity.neighbours_cities)
-            {
-                if (n == capital || (n.kingdom == pVassal && capital.neighbours_cities.Contains(n))) return true;
-            }
-            return false;
-        }
+        static bool Touches(City pCity, Kingdom pKingdom) => Territory.Touches(pCity, pKingdom);
 
         // 威逼称臣密谋：强国国王遣使威逼最近的一个弱小邻国。衰落、崩溃中的国家没人怕
         public static void Init()

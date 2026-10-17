@@ -342,6 +342,7 @@ namespace DiplomacyOverhaul
             Government.UpdateAll();
             Cycle.UpdateAll();
             Integration.UpdateAll();
+            Territory.UpdateAll();
             Assimilation.UpdateAll();
             Parliament.UpdateAll();
         }
