@@ -77,7 +77,7 @@ namespace DiplomacyOverhaul
             return rt;
         }
 
-        // 单位头像：原版界面里头像用的同一张贴图，深色底框
+        // 单位头像：原版界面里头像用的同一张贴图，深色底框；点一下打开这个人的单位窗口
         public static RectTransform Avatar(Transform pParent, Actor pActor, float pX, float pY, float pSize)
         {
             RectTransform frame = Rect(pParent, pX, pY, pSize, pSize, Hex("#2c2f29"));
@@ -86,6 +86,14 @@ namespace DiplomacyOverhaul
             outline.effectDistance = new Vector2(0.8f, -0.8f);
             Sprite sprite = AvatarSprite(pActor);
             if (sprite != null) Picture(frame, sprite, pSize * 0.1f, pSize * 0.1f, pSize * 0.8f, pSize * 0.8f);
+            if (pActor != null && pActor.isAlive())
+            {
+                Image bg = frame.GetComponent<Image>();
+                bg.raycastTarget = true;
+                var button = frame.gameObject.AddComponent<UnityEngine.UI.Button>();
+                button.targetGraphic = bg;
+                button.onClick.AddListener(() => { if (pActor.isAlive()) ActionLibrary.openUnitWindow(pActor); });
+            }
             return frame;
         }
 
