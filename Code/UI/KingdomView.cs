@@ -105,7 +105,7 @@ namespace DiplomacyOverhaul
     }
 
     // 王国窗口：「领袖财富」后面接一行国库，国家置办军械时接一行禁军的制式，禁军欠饷时再接一行。原版接着显示上缴比例，在它前面插进去。
-    // 城市窗口：上缴比例前面，地方兵欠饷时加一行
+    // 城市窗口：上缴比例前面，有地方兵时加一行地方军的制式，地方兵欠饷时再加一行
     [HarmonyPatch(typeof(StatsWindow), "showStatRow", typeof(string), typeof(object), typeof(string), typeof(MetaType), typeof(long), typeof(bool), typeof(string), typeof(string), typeof(TooltipDataGetter), typeof(bool))]
     static class Patch_KingdomTreasuryRow
     {
@@ -125,6 +125,7 @@ namespace DiplomacyOverhaul
             {
                 City c = SelectedMetas.selected_city;
                 if (c == null) return;
+                if (Guard.CountLocal(c) > 0) __instance.showStatRow("vd_arms_local_standard", LM.Get(Armory.TierKey(c)), null, MetaType.None, -1L, false, "iconReforge");
                 float penalty = Treasury.Penalty(c);
                 if (penalty > 0f) __instance.showStatRow("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
             }

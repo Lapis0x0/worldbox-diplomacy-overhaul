@@ -7,9 +7,8 @@ namespace DiplomacyOverhaul
 {
     // 国库：城主上缴的钱进国库，国王只分一份；附庸的进账按附庸贡赋交一份给宗主；国王发起密谋花国库的钱。
     // 城市养自己的地方兵：仓库够全体地方兵一年的饷才征兵；每年从本城仓库扣军饷，欠饷时停征兵、逐年解甲，
-    // 留下的士兵伤害逐年下降；
-    // 仓库的金子超过上限的上缴国库。
-    // 禁军由国库养，见 Guard
+    // 留下的士兵伤害逐年下降。
+    // 禁军由国库养，见 Guard；城市仓库余下的金子归城市，用来盖房、给地方军置办军械（见 Armory）
     public static class Treasury
     {
         const string Key = "vd_treasury";
@@ -18,8 +17,6 @@ namespace DiplomacyOverhaul
 
         public const float KingShare = 0.2f;      // 上缴里归国王的份
         public const float PayPerWarrior = 0.5f;  // 每个兵每年的军饷
-        const int CapPerPerson = 2;               // 城市仓库每人能留多少金子
-        const int CapMin = 200;                   // 上限的保底：够存一栋最贵的建筑（100 金子）再加几年军饷
         const float PenaltyStep = 0.1f;           // 全欠一年伤害减多少，欠一部分按比例
         const float PenaltyCap = 0.25f;           // 减益的上限
         const float PenaltyRecover = 0.1f;        // 付清后每年恢复多少
@@ -37,7 +34,7 @@ namespace DiplomacyOverhaul
             pKingdom.data.set(Key, Mathf.Max(0, Get(pKingdom) + pAmount));
         }
 
-        // 国库的进账（上缴、城市溢出）：附庸按宗主的附庸贡赋交一份给宗主。
+        // 国库的进账（城主上缴）：附庸按宗主的附庸贡赋交一份给宗主。
         // 每笔进账很小，交的份额按概率取整，长期看比例是准的
         public static void Income(Kingdom pKingdom, int pAmount)
         {
@@ -153,23 +150,13 @@ namespace DiplomacyOverhaul
             return Mathf.CeilToInt(Mathf.CeilToInt((pCost - pPaid) / PayPerWarrior) * DisbandShare);
         }
 
-        public static int Cap(City pCity) => Mathf.Max(CapMin, pCity.getPopulationPeople() * CapPerPerson);
-
-        // 每年：先发军饷，再把超出上限的金子上缴国库
+        // 每年：各城给地方兵发饷，国库给禁军发饷
         public static void UpdateAll()
         {
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
-                foreach (City city in new List<City>(k.getCities()))
-                {
-                    Pay(city);
-                    int gold = city.getResourcesAmount("gold");
-                    int excess = gold - Cap(city);
-                    if (excess <= 0) continue;
-                    city.takeResource("gold", excess);
-                    Income(k, excess);
-                }
+                foreach (City city in new List<City>(k.getCities())) Pay(city);
                 Guard.Pay(k);
             }
         }

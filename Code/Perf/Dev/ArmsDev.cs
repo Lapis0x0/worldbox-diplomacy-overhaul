@@ -11,6 +11,24 @@ namespace DiplomacyOverhaul.Perf
 
         public static void Run(string[] a)
         {
+            if (a.Length > 1 && a[1] == "storage")
+            {
+                // arms storage <国家>：这个国家每座城的禁军、地方兵人数和仓库里各类装备的件数
+                Kingdom target = World.world.kingdoms.FirstOrDefault(k => k.isAlive() && k.name == a[2]);
+                if (target == null) { Dev.Log("  ! kingdom not found"); return; }
+                foreach (City c in target.getCities())
+                {
+                    int guard = c.getUnits().Count(u => u.isWarrior() && Guard.IsMember(u));
+                    int local = c.getUnits().Count(u => u.isWarrior() && !Guard.IsMember(u));
+                    string items = string.Join(" ", Slots.Select(t => t + "=" + c.data.equipment.getEquipmentList(t).Count));
+                    var locals = Armory.LocalMembers(c);
+                    int score = locals.Sum(u => Slots.Sum(t => u.equipment.getSlot(t).getItem()?.getAsset().equipment_value ?? 0));
+                    int cityMade = locals.Sum(u => Slots.Count(t => Armory.IsLocal(u.equipment.getSlot(t).getItem())));
+                    Dev.Log($"  {c.name}{(c.isCapitalCity() ? "*" : "")} gold={c.getResourcesAmount("gold")} tier={Armory.TierOf(c)} guard={guard} local={local}"
+                        + $" local_gear_avg={(locals.Count > 0 ? (float)score / locals.Count : 0):F1} city_made={cityMade} {items}");
+                }
+                return;
+            }
             bool run = a.Length > 1 && a[1] == "run";
             int count = a.Length > 1 && !run ? int.Parse(a[1]) : 5;
             var kingdoms = World.world.kingdoms.Where(k => k.isAlive() && k.isCiv()).OrderByDescending(k => k.countCities()).Take(count).ToList();

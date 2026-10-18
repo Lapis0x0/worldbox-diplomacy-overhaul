@@ -5,27 +5,34 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 军械：国库按「军械拨款」给禁军置办制式装备（一种近战武器或弓，加同一材质的头盔、胸甲、靴子）。
-    // 每年发完军饷后结算：国库留出两年禁军军饷，余下的按议案的比例拿来置办。材料先按官价收购各城仓库的存货，
-    // 钱进卖方城市的仓库；普通金属不够的向商队买，价钱更高，秘银、精金只能靠本国。
-    // 装备最差的士兵先换：先从本国各城的仓库里挑比身上好的（不比制式差的直接用，差的先凑合），再花钱买。
-    // 换下的旧装备交回户籍城的仓库。
-    // 九成禁军达到现行制式后，第二年才升一档（新兵年年有，不等全军）；士兵自己有更好的装备就留着。
-    // 禁军身上的官造装备由国家修：每年按损耗收修理费，原版的免费修理不管它们
+    // 军械：国家给禁军、各城给本城的地方兵置办制式装备（一种近战武器或弓，加同一材质的头盔、胸甲、靴子）。
+    // 每年发完军饷后结算，先国家后城市。国家留出两年禁军军饷，余下的按「军械拨款」的比例置办；
+    // 城市留出两年地方兵军饷和一栋建筑的钱，余下的拿一半置办。
+    // 材料：国家先按官价收购各城仓库的存货，钱进卖方城市的仓库；城市只用自己仓库的。普通金属不够的向商队买，
+    // 秘银、精金只能靠本国（本城）。
+    // 装备最差的士兵先换：先从仓库里挑比身上好的（不比制式差的直接用，差的先凑合），再花钱买。
+    // 换下的自家造的装备回炉，按材料官价退一半；士兵自己的旧装备还给户籍城的仓库。
+    // 九成士兵达到现行制式后，第二年才升一档（新兵年年有，不等全军）；士兵自己有更好的装备就留着。
+    // 自家造的装备由出钱的一方修：每年按损耗收修理费，原版的免费修理不管它们
     public static class Armory
     {
-        const string KeyTier = "vd_arms_tier";            // kingdom.data：现行制式的档次
+        const string KeyTier = "vd_arms_tier";            // kingdom.data / city.data：现行制式的档次
         internal const string KeyRole = "vd_arms_role";   // actor.data：兵种，第一次领制式时定下
-        const string FlagOfficial = "vd_arms_official";   // item.data：官造装备
+        const string FlagOfficial = "vd_arms_official";   // item.data：国家造的装备
+        const string FlagLocal = "vd_arms_local";         // item.data：城市造的装备
         const int RoleMelee = 1, RoleArcher = 2;
 
-        const int ReserveYears = 2;          // 国库先留出几年的禁军军饷
-        const int OfficialTries = 3;         // 官造装备抽几次词条（原版民间打造是 1 次）
+        const int ReserveYears = 2;          // 先留出几年的军饷
+        const int CityBuildReserve = 100;    // 城市再留一栋最贵的建筑的钱（原版要 100 金子）
+        const float CityBudgetRate = 0.5f;   // 城市拿储备以外的几成置办
+        const int OfficialTries = 3;         // 国家造的装备抽几次词条（原版民间打造是 1 次）
+        const int LocalTries = 2;            // 城市造的
         const int CityReserve = 10;          // 每座城留底的材料，原版打造装备要仓库里有 10 份以上
         const float RepairShare = 0.5f;      // 修满一件全坏的装备花它价钱的几成，同原版修理费的系数
-        const float ArcherShare = 0.25f;     // 禁军里弓手的比例
+        const float MeltShare = 0.5f;        // 回炉退回材料官价的几成
+        const float ArcherShare = 0.25f;     // 弓手的比例
         const float ArcherShareBowLovers = 0.5f;
-        const float UpgradeShare = 0.9f;     // 多少禁军达到现行制式才升档
+        const float UpgradeShare = 0.9f;     // 多少士兵达到现行制式才升档
 
         static readonly float[] BudgetRates = { 0f, 0.25f, 0.5f, 1f };
         const int Replacements = 1;          // 补缺换损：只补发，不升级制式
@@ -51,23 +58,66 @@ namespace DiplomacyOverhaul
 
         static readonly EquipmentType[] Slots = { EquipmentType.Weapon, EquipmentType.Helmet, EquipmentType.Armor, EquipmentType.Boots };
 
+        // 出钱置办军械的一方：国家（city 为空）给禁军，城市给本城的地方兵
+        class Arsenal
+        {
+            public Kingdom kingdom;
+            public City city;
+            public List<Actor> members;
+            public int reserve;
+            public float rate;
+            public bool upgrades;
+
+            public BaseSystemData Data => city != null ? (BaseSystemData)city.data : kingdom.data;
+            public string Flag => city != null ? FlagLocal : FlagOfficial;
+            public int Tries => city != null ? LocalTries : OfficialTries;
+            public Culture Culture => city != null ? city.getCulture() : kingdom.getCulture();
+            public int Gold => city != null ? city.getResourcesAmount("gold") : Treasury.Get(kingdom);
+
+            // 材料和回收的来源：国家是本国各城，城市只有自己
+            public IEnumerable<City> Stores => city != null ? new[] { city } : kingdom.getCities();
+
+            // 本国（本城）的存货每份多少钱：城市用自己的不花钱
+            public int DomesticPrice(Tier pTier) => city != null ? 0 : pTier.price;
+
+            public void Spend(int pAmount)
+            {
+                if (pAmount <= 0) return;
+                if (city != null) city.takeResource("gold", Mathf.Min(pAmount, Gold));
+                else Treasury.Take(kingdom, pAmount);
+            }
+
+            public void Refund(int pAmount)
+            {
+                if (pAmount <= 0) return;
+                if (city != null) city.addResourcesToRandomStockpile("gold", pAmount);
+                else Treasury.Add(kingdom, pAmount);
+            }
+        }
+
         public static float BudgetRate(int pOption) => BudgetRates[pOption];
 
-        public static int TierOf(Kingdom pKingdom)
+        static int TierOf(BaseSystemData pData)
         {
-            pKingdom.data.get(KeyTier, out int v, 0);
+            pData.get(KeyTier, out int v, 0);
             return Mathf.Clamp(v, 0, Tiers.Length - 1);
         }
 
+        public static int TierOf(Kingdom pKingdom) => TierOf(pKingdom.data);
+
+        public static int TierOf(City pCity) => TierOf(pCity.data);
+
         public static string TierKey(Kingdom pKingdom) => "vd_arms_tier_" + TierOf(pKingdom);
 
-        // 一件装备的价钱：本国存货按官价，不够的按商队的价钱，加上工钱（按档次）。材料凑不齐返回 -1
-        static int Cost(Kingdom pKingdom, Tier pTier)
+        public static string TierKey(City pCity) => "vd_arms_tier_" + TierOf(pCity);
+
+        // 一件装备的价钱：本国（本城）存货按官价，不够的按商队的价钱，加上工钱（按档次）。材料凑不齐返回 -1
+        static int Cost(Arsenal pArsenal, Tier pTier)
         {
-            int domestic = Mathf.Min(pTier.amount, Stock(pKingdom, pTier.resource));
+            int domestic = Mathf.Min(pTier.amount, Stock(pArsenal.Stores, pTier.resource));
             int rest = pTier.amount - domestic;
             if (rest > 0 && pTier.import == 0) return -1;
-            return domestic * pTier.price + rest * pTier.import + Mathf.CeilToInt(pTier.value / 10f);
+            return domestic * pArsenal.DomesticPrice(pTier) + rest * pTier.import + Mathf.CeilToInt(pTier.value / 10f);
         }
 
         // 一件装备按商队价算的价钱（秘银、精金按官价），修理费照这个算
@@ -76,37 +126,58 @@ namespace DiplomacyOverhaul
 
         public static bool IsOfficial(Item pItem) => pItem?.data != null && pItem.data.hasFlag(FlagOfficial);
 
-        // 升到这一档要材料够全军换装：商队卖的总买得到，秘银、精金看本国的存货
-        static bool Available(Kingdom pKingdom, Tier pTier, int pMembers) =>
-            pTier.import > 0 || Stock(pKingdom, pTier.resource) >= pMembers * Slots.Length * pTier.amount;
+        public static bool IsLocal(Item pItem) => pItem?.data != null && pItem.data.hasFlag(FlagLocal);
+
+        // 升到这一档要材料够全军换装：商队卖的总买得到，秘银、精金看本国（本城）的存货
+        static bool Available(Arsenal pArsenal, Tier pTier) =>
+            pTier.import > 0 || Stock(pArsenal.Stores, pTier.resource) >= pArsenal.members.Count * Slots.Length * pTier.amount;
 
         public static void UpdateAll()
         {
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
-                if (k.isAlive() && k.isCiv()) Update(k);
+            {
+                if (!k.isAlive() || !k.isCiv()) continue;
+                int option = Policies.Value(k, Policies.Arms);
+                if (option > 0)
+                    Update(new Arsenal
+                    {
+                        kingdom = k,
+                        members = Members(k),
+                        reserve = Mathf.CeilToInt(Guard.KingdomMembers(k) * Treasury.PayPerWarrior * ReserveYears),
+                        rate = BudgetRates[option],
+                        upgrades = option > Replacements
+                    });
+                foreach (City city in new List<City>(k.getCities()))
+                    Update(new Arsenal
+                    {
+                        kingdom = k,
+                        city = city,
+                        members = LocalMembers(city),
+                        reserve = Mathf.CeilToInt(Guard.CountLocal(city) * Treasury.PayPerWarrior * ReserveYears) + CityBuildReserve,
+                        rate = CityBudgetRate,
+                        upgrades = true
+                    });
+            }
         }
 
-        static void Update(Kingdom pKingdom)
+        static void Update(Arsenal pArsenal)
         {
-            int option = Policies.Value(pKingdom, Policies.Arms);
-            if (option == 0) return;
-            List<Actor> members = Members(pKingdom);
+            List<Actor> members = pArsenal.members;
             if (members.Count == 0) return;
 
-            string melee = MeleeWeapon(pKingdom);
-            int tier = TierOf(pKingdom);
-            if (option > Replacements && tier < Tiers.Length - 1
+            string melee = MeleeWeapon(pArsenal.Culture);
+            int tier = TierOf(pArsenal.Data);
+            if (pArsenal.upgrades && tier < Tiers.Length - 1
                 && members.FindAll(a => Short(a, melee, tier)).Count <= members.Count * (1f - UpgradeShare)
-                && Available(pKingdom, Tiers[tier + 1], members.Count))
+                && Available(pArsenal, Tiers[tier + 1]))
             {
                 tier++;
-                pKingdom.data.set(KeyTier, tier);
+                pArsenal.Data.set(KeyTier, tier);
             }
 
-            int reserve = Mathf.CeilToInt(Guard.KingdomMembers(pKingdom) * Treasury.PayPerWarrior * ReserveYears);
-            Repair(pKingdom, members, Treasury.Get(pKingdom) - reserve);
+            Repair(pArsenal, pArsenal.Gold - pArsenal.reserve);
 
-            float archers = ArcherShareOf(pKingdom);
+            float archers = ArcherShareOf(pArsenal.Culture);
             int archerCount = 0, assigned = 0;
             foreach (Actor a in members)
             {
@@ -118,9 +189,9 @@ namespace DiplomacyOverhaul
             members.Sort((x, y) => Score(x).CompareTo(Score(y)));
             foreach (Actor a in members) Role(a, archers, ref archerCount, ref assigned);
 
-            Reclaim(pKingdom, members, melee, tier);
+            Reclaim(pArsenal, melee, tier);
 
-            int budget = Mathf.FloorToInt((Treasury.Get(pKingdom) - reserve) * BudgetRates[option]);
+            int budget = Mathf.FloorToInt((pArsenal.Gold - pArsenal.reserve) * pArsenal.rate);
             if (budget <= 0) return;
             int spent = 0;
             bool broke = false;
@@ -131,26 +202,26 @@ namespace DiplomacyOverhaul
                 {
                     string subtype = slot == EquipmentType.Weapon ? (role == RoleArcher ? "bow" : melee) : SlotName(slot);
                     if (!Needs(a, slot, subtype, tier)) continue;
-                    broke = !Issue(pKingdom, a, slot, subtype, tier, budget - spent, ref spent);
+                    broke = !Issue(pArsenal, a, slot, subtype, tier, budget - spent, ref spent);
                     if (broke) break;
                 }
                 if (broke) break;
             }
-            Treasury.Take(pKingdom, spent);
+            pArsenal.Spend(spent);
         }
 
-        // 修禁军身上的官造装备：先于置办新装备，用储备以外的钱，不按议案的比例。修理费按损耗的比例算，钱不够就停
-        static void Repair(Kingdom pKingdom, List<Actor> pMembers, int pBudget)
+        // 修自家造的装备：先于置办新装备，用储备以外的钱，不按比例。修理费按损耗的比例算，钱不够就停
+        static void Repair(Arsenal pArsenal, int pBudget)
         {
             float spent = 0f;
             bool broke = false;
-            foreach (Actor a in pMembers)
+            foreach (Actor a in pArsenal.members)
             {
                 bool repaired = false;
                 foreach (ActorEquipmentSlot slot in a.equipment)
                 {
                     Item item = slot.getItem();
-                    if (!IsOfficial(item) || !item.needRepair()) continue;
+                    if (!item.data.hasFlag(pArsenal.Flag) || !item.needRepair()) continue;
                     int t = System.Array.FindIndex(Tiers, x => x.material == item.getAsset().material);
                     if (t < 0) continue;
                     float fee = ListPrice(Tiers[t]) * RepairShare * (1f - item.getDurabilityCurrent() / (float)item.getDurabilityMax());
@@ -163,14 +234,14 @@ namespace DiplomacyOverhaul
                 if (repaired) a.setStatsDirty();
                 if (broke) break;
             }
-            Treasury.Take(pKingdom, Mathf.CeilToInt(spent));
+            pArsenal.Spend(Mathf.CeilToInt(spent));
         }
 
-        // 回收：本国各城仓库里的装备，挑比身上好的发给不到制式的禁军，每次拿最好的一件。
+        // 回收：仓库里的装备，挑比身上好的发给不到制式的士兵，每次拿最好的一件。
         // 武器要合兵种：弓手只拿弓，近战兵只拿近战武器
-        static void Reclaim(Kingdom pKingdom, List<Actor> pMembers, string pMelee, int pTier)
+        static void Reclaim(Arsenal pArsenal, string pMelee, int pTier)
         {
-            foreach (Actor a in pMembers)
+            foreach (Actor a in pArsenal.members)
             {
                 a.data.get(KeyRole, out int role, RoleMelee);
                 foreach (EquipmentType type in Slots)
@@ -181,7 +252,7 @@ namespace DiplomacyOverhaul
                     int current = slot.getItem()?.getAsset().equipment_value ?? 0;
                     City from = null;
                     Item best = null;
-                    foreach (City city in pKingdom.getCities())
+                    foreach (City city in pArsenal.Stores)
                         foreach (long id in city.data.equipment.getEquipmentList(type))
                         {
                             Item item = World.world.items.get(id);
@@ -195,41 +266,51 @@ namespace DiplomacyOverhaul
                     if (best == null) continue;
                     from.data.equipment.getEquipmentList(type).Remove(best.id);
                     from._storage_version++;
-                    Item old = slot.getItem();
-                    if (old != null)
-                    {
-                        slot.takeAwayItem();
-                        a.city?.tryToPutItem(old);
-                    }
+                    Retire(pArsenal, a, slot);
                     slot.setItem(best, a);
                 }
             }
         }
 
+        static List<Actor> Warriors(City pCity) =>
+            pCity._professions_dict.TryGetValue(UnitProfession.Warrior, out List<Actor> list) ? list : null;
+
+        // 禁军
         internal static List<Actor> Members(Kingdom pKingdom)
         {
             var list = new List<Actor>();
             foreach (City city in pKingdom.getCities())
             {
-                if (!city._professions_dict.TryGetValue(UnitProfession.Warrior, out List<Actor> warriors)) continue;
+                List<Actor> warriors = Warriors(city);
+                if (warriors == null) continue;
                 foreach (Actor a in warriors)
                     if (a.isAlive() && Guard.IsMember(a) && a.understandsHowToUseItems()) list.Add(a);
             }
             return list;
         }
 
-        // 文化偏好的近战武器，没有就用剑
-        static string MeleeWeapon(Kingdom pKingdom)
+        // 本城的地方兵
+        internal static List<Actor> LocalMembers(City pCity)
         {
-            Culture culture = pKingdom.getCulture();
-            if (culture != null)
-                foreach (string s in culture._preferred_weapons_craft_subtypes)
+            var list = new List<Actor>();
+            List<Actor> warriors = Warriors(pCity);
+            if (warriors == null) return list;
+            foreach (Actor a in warriors)
+                if (a.isAlive() && !Guard.IsMember(a) && a.understandsHowToUseItems()) list.Add(a);
+            return list;
+        }
+
+        // 文化偏好的近战武器，没有就用剑
+        static string MeleeWeapon(Culture pCulture)
+        {
+            if (pCulture != null)
+                foreach (string s in pCulture._preferred_weapons_craft_subtypes)
                     if (s != "bow" && AssetManager.items.get(s + "_" + Tiers[0].material) != null) return s;
             return "sword";
         }
 
-        static float ArcherShareOf(Kingdom pKingdom) =>
-            pKingdom.getCulture() != null && pKingdom.getCulture().hasTrait("bow_lovers") ? ArcherShareBowLovers : ArcherShare;
+        static float ArcherShareOf(Culture pCulture) =>
+            pCulture != null && pCulture.hasTrait("bow_lovers") ? ArcherShareBowLovers : ArcherShare;
 
         // 兵种第一次领制式时定下：手里拿着弓的当弓手，其余按比例补足弓手
         static int Role(Actor pActor, float pShare, ref int pArchers, ref int pAssigned)
@@ -283,29 +364,24 @@ namespace DiplomacyOverhaul
 
         // 发一件：从制式往下挑材料买得到的一档（不比手上的差）。钱不够返回 false，今年不再置办。
         // 普通金属商队总有，凑不齐材料的只会是秘银、精金，这时退到钢
-        static bool Issue(Kingdom pKingdom, Actor pActor, EquipmentType pSlot, string pSubtype, int pTier, int pBudget, ref int pSpent)
+        static bool Issue(Arsenal pArsenal, Actor pActor, EquipmentType pSlot, string pSubtype, int pTier, int pBudget, ref int pSpent)
         {
             ActorEquipmentSlot slot = pActor.equipment.getSlot(pSlot);
-            Item old = slot.getItem();
-            int current = old?.getAsset().equipment_value ?? 0;
+            int current = slot.getItem()?.getAsset().equipment_value ?? 0;
             for (int t = pTier; t >= 0; t--)
             {
                 Tier tier = Tiers[t];
                 if (tier.value < current) break;
                 EquipmentAsset asset = AssetManager.items.get(pSubtype + "_" + tier.material) as EquipmentAsset;
                 if (asset == null) continue;
-                int cost = Cost(pKingdom, tier);
+                int cost = Cost(pArsenal, tier);
                 if (cost < 0) continue;
                 if (cost > pBudget) return false;
-                Buy(pKingdom, tier.resource, tier.amount, tier.price);
+                Buy(pArsenal, tier.resource, tier.amount, pArsenal.DomesticPrice(tier));
                 pSpent += cost;
-                Item item = World.world.items.generateItem(asset, pKingdom, pKingdom.name, OfficialTries, pActor);
-                item.data.addFlag(FlagOfficial);
-                if (old != null)
-                {
-                    slot.takeAwayItem();
-                    pActor.city?.tryToPutItem(old);
-                }
+                Item item = World.world.items.generateItem(asset, pActor.kingdom, pArsenal.city?.name ?? pArsenal.kingdom.name, pArsenal.Tries, pActor);
+                item.data.addFlag(pArsenal.Flag);
+                Retire(pArsenal, pActor, slot);
                 slot.setItem(item, pActor);
                 pActor.setStatsDirty();
                 return true;
@@ -313,23 +389,41 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 各城仓库里能卖给国家的材料：每座城留底，多出的才卖
-        internal static int Stock(Kingdom pKingdom, string pResource)
+        // 换下这件旧装备：自家造的回炉，退钱（玩家收藏的、永恒的不能销毁，照私物处理）；
+        // 别处来的、士兵自己的还给户籍城的仓库
+        static void Retire(Arsenal pArsenal, Actor pActor, ActorEquipmentSlot pSlot)
+        {
+            Item old = pSlot.getItem();
+            if (old == null) return;
+            pSlot.takeAwayItem();
+            int t = System.Array.FindIndex(Tiers, x => x.material == old.getAsset().material);
+            if (old.data.hasFlag(pArsenal.Flag) && old.isDestroyable() && t >= 0)
+            {
+                pArsenal.Refund(Mathf.FloorToInt(Tiers[t].amount * Tiers[t].price * MeltShare));
+                return;
+            }
+            pActor.city?.tryToPutItem(old);
+        }
+
+        // 仓库里能拿来打装备的材料：每座城留底，多出的才用
+        static int Stock(IEnumerable<City> pCities, string pResource)
         {
             int sum = 0;
-            foreach (City city in pKingdom.getCities())
+            foreach (City city in pCities)
                 sum += Mathf.Max(0, city.getResourcesAmount(pResource) - CityReserve);
             return sum;
         }
 
-        // 按官价收购本国的存货：存货多的城先卖，钱进卖方城市的仓库。不够的部分是向商队买的，钱流出本国
-        static void Buy(Kingdom pKingdom, string pResource, int pAmount, int pPrice)
+        internal static int Stock(Kingdom pKingdom, string pResource) => Stock(pKingdom.getCities(), pResource);
+
+        // 用仓库里的存货：存货多的城先出，按官价付钱给它（城市用自己的不付钱）。不够的部分是向商队买的，钱流出本国
+        static void Buy(Arsenal pArsenal, string pResource, int pAmount, int pPrice)
         {
             while (pAmount > 0)
             {
                 City seller = null;
                 int best = 0;
-                foreach (City city in pKingdom.getCities())
+                foreach (City city in pArsenal.Stores)
                 {
                     int surplus = city.getResourcesAmount(pResource) - CityReserve;
                     if (surplus <= best) continue;
@@ -339,14 +433,14 @@ namespace DiplomacyOverhaul
                 if (seller == null) return;
                 int n = Mathf.Min(best, pAmount);
                 seller.takeResource(pResource, n);
-                seller.addResourcesToRandomStockpile("gold", n * pPrice);
+                if (pPrice > 0) seller.addResourcesToRandomStockpile("gold", n * pPrice);
                 pAmount -= n;
             }
         }
     }
 
-    // 原版士兵在有兵营的城里免费修装备。禁军身上的官造装备由国家修（见 Armory.Repair），这里跳过；
-    // 其余照抄原版
+    // 原版士兵在有兵营的城里免费修装备。禁军身上的国家造装备、地方兵身上的城市造装备由出钱的一方修
+    // （见 Armory.Repair），这里跳过；其余照抄原版
     [HarmonyPatch(typeof(BehCheckCanRepairEquipment), nameof(BehCheckCanRepairEquipment.execute))]
     static class Patch_CheckRepair
     {
@@ -357,7 +451,7 @@ namespace DiplomacyOverhaul
             foreach (ActorEquipmentSlot slot in pActor.equipment)
             {
                 Item item = slot.getItem();
-                if (!item.needRepair() || Patch_Repair.StateRepaired(pActor, item)) continue;
+                if (!item.needRepair() || Patch_Repair.Maintained(pActor, item)) continue;
                 int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
                 if (pActor.money >= cost) __result = BehResult.Continue;
             }
@@ -368,7 +462,8 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(BehRepairEquipment), nameof(BehRepairEquipment.execute))]
     static class Patch_Repair
     {
-        internal static bool StateRepaired(Actor pActor, Item pItem) => Guard.IsMember(pActor) && Armory.IsOfficial(pItem);
+        internal static bool Maintained(Actor pActor, Item pItem) =>
+            Guard.IsMember(pActor) ? Armory.IsOfficial(pItem) : Armory.IsLocal(pItem);
 
         static bool Prefix(Actor pActor, ref BehResult __result)
         {
@@ -377,7 +472,7 @@ namespace DiplomacyOverhaul
             foreach (ActorEquipmentSlot slot in pActor.equipment)
             {
                 Item item = slot.getItem();
-                if (!item.needRepair() || StateRepaired(pActor, item)) continue;
+                if (!item.needRepair() || Maintained(pActor, item)) continue;
                 int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
                 if (!pActor.hasEnoughMoney(cost)) continue;
                 pActor.spendMoney(cost);

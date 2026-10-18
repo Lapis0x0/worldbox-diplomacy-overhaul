@@ -414,6 +414,7 @@
   "vd_pol_arms_3_info": "Spare treasury funds go to arming the Guard",
   "vd_eff_arms_budget": "Spare Funds Spent on Arms per Year",
   "vd_arms_standard": "Guard Equipment",
+  "vd_arms_local_standard": "Local Army Equipment",
   "vd_arms_tier_0": "Copper",
   "vd_arms_tier_1": "Bronze",
   "vd_arms_tier_2": "Iron",
