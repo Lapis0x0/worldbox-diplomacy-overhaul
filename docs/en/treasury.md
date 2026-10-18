@@ -1,0 +1,34 @@
+# Treasury and Pay
+
+In vanilla, money that reaches a city lord or king only ever comes in and never goes out. Now every kingdom has a treasury, cities pay for their own troops with their own money, and money has uses at both the city level and the central level.
+
+## How Money Flows
+
+- **Residents → city lord**: As in vanilla, residents give part of their income to the city lord.
+- **City lord → kingdom**: City lords send money up according to parliament's [Taxation](parliament.md#domestic) policy: Tax Farming 20%, Shared Revenue 50%, Central Collection 70%. A small part of what is sent goes to the king personally, and the rest goes into the treasury. Half of what the city lord keeps goes into the city stockpile.
+- **Vassal → overlord**: Part of the vassal treasury's income goes to the overlord, according to the overlord's [Vassal Tribute](parliament.md#diplomacy).
+
+The treasury holds only gold. Wood, stone, and food stay in the city stockpiles.
+
+With a kingdom selected, the gold slot in the bottom info bar shows the treasury. In the kingdom window and its tooltip, the line under the leader's wealth is also the treasury.
+
+## Paying the Troops
+
+Local troops are paid by their city from its stockpile. The [Guard](armies.md) is paid by the treasury, at 0.5 gold per soldier per year.
+
+- **Recruiting depends on money first**: A city recruits local troops only if its stockpile can feed all its local troops for a year. The treasury refills the Guard only if it can pay the whole Guard for a year. So army size follows income. Under Central Collection, cities keep little money and cannot fill their local armies, and troops and money are concentrated at the center.
+- **Unpaid troops**: Whatever cannot be paid at the yearly pay is counted as unpaid. While pay is owed, no new recruits are taken. Each year a quarter of the unpaid soldiers are discharged, and the ones who stay lose morale. Their damage drops year by year, by up to a quarter.
+- **Back pay**: Once pay is cleared, damage recovers year by year.
+
+Unpaid local troops are shown in the city window and city tooltip. Unpaid Guard is shown in the kingdom window and kingdom tooltip.
+
+## Where Money Goes
+
+| Whose money | What it is spent on |
+|---|---|
+| City stockpile | Building houses and upgrading buildings (vanilla), local troops' pay and [armament](armies.md#armament) |
+| Treasury | The Guard's pay and armament, plots started by the king, reparations after a lost war |
+| King's personal wealth | His or her own equipment (vanilla) |
+
+- **Plots**: When a king starts a plot, the money comes from the treasury. Whether the plot is affordable also depends on the treasury.
+- **Reparations**: After a lost war, the treasury and every city stockpile hand over gold at the same ratio. It goes to the winner's treasury. See [War and Peace Talks](war.md#treaties).

@@ -26,7 +26,7 @@ Deeper diplomacy and warfare for WorldBox: vassals, independence and peace talks
 
 Everything lives in the Diplomacy Overhaul tab at the bottom, and values can be tuned from the settings button in that tab. Data is stored in vanilla saves, so it works with existing worlds.
 
-Detailed rules for each system are in [docs/](docs/README.md) (Chinese).
+See the [player guide](docs/en/README.md) for how each system works. Full rules and implementation notes are in the [developer docs](docs/dev/README.md) (Chinese).
 
 ## Manual installation
 
