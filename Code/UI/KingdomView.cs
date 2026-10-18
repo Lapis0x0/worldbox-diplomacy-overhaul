@@ -104,7 +104,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 王国窗口：「领袖财富」后面接一行国库，禁军欠饷时再接一行。原版接着显示上缴比例，在它前面插进去。
+    // 王国窗口：「领袖财富」后面接一行国库，国家置办军械时接一行禁军的制式，禁军欠饷时再接一行。原版接着显示上缴比例，在它前面插进去。
     // 城市窗口：上缴比例前面，地方兵欠饷时加一行
     [HarmonyPatch(typeof(StatsWindow), "showStatRow", typeof(string), typeof(object), typeof(string), typeof(MetaType), typeof(long), typeof(bool), typeof(string), typeof(string), typeof(TooltipDataGetter), typeof(bool))]
     static class Patch_KingdomTreasuryRow
@@ -117,6 +117,7 @@ namespace DiplomacyOverhaul
                 Kingdom k = SelectedMetas.selected_kingdom;
                 if (k == null) return;
                 __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
+                if (Policies.Value(k, Policies.Arms) > 0) __instance.showStatRow("vd_arms_standard", LM.Get(Armory.TierKey(k)), null, MetaType.None, -1L, false, "iconReforge");
                 float penalty = Guard.Penalty(k);
                 if (penalty > 0f) __instance.showStatRow("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
             }
@@ -214,6 +215,7 @@ namespace DiplomacyOverhaul
             }
             if (k == null || pID != "villages") return;
             __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
+            if (Policies.Value(k, Policies.Arms) > 0) __instance.addLineText("vd_arms_standard", LM.Get(Armory.TierKey(k)));
             float penalty = Guard.Penalty(k);
             if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
         }

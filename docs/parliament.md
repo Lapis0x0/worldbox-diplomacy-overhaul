@@ -121,6 +121,15 @@
 
 造船照原版花资源。政策改小时已有的船不会被拆，坏了不再补。玩家指挥军队渡海时临时调的船不受这个上限限制，见[战争与军队](military.md#跨海)。
 
+**军械拨款**（保守 → 激进）：国库每年拿多少余钱给禁军置办制式装备。余钱是国库里两年禁军军饷以外的部分，储备不动，所以不会因为买装备欠饷。怎么换装见[军械](military.md#军械)。
+
+| 选项 | 每年花掉的余钱 | 制式 |
+|---|---|---|
+| 自备军械 | 0 | 不发，禁军照原版自己打造 |
+| 补缺换损 | 25% | 补发到现行制式，不升档 |
+| 按例拨款 | 50% | 补发，九成禁军达标后升档 |
+| 优先军备 | 100% | 同上 |
+
 ### 外交
 
 **外交路线**（保守 → 激进）：乘在[政体倾向](government.md#政体倾向)的数值上。
@@ -227,7 +236,7 @@
 
 | 键 | 含义 |
 |---|---|
-| `vd_pol_tax`、`vd_pol_territory`、`vd_pol_office`、`vd_pol_customs`、`vd_pol_army`、`vd_pol_navy`、`vd_pol_war`、`vd_pol_vassals`、`vd_pol_overlord` | 各项政策的现行选项，没有记录时是中间那档；国家政体直接读写 `vd_gov_form` |
+| `vd_pol_tax`、`vd_pol_territory`、`vd_pol_office`、`vd_pol_customs`、`vd_pol_army`、`vd_pol_navy`、`vd_pol_arms`、`vd_pol_war`、`vd_pol_vassals`、`vd_pol_overlord` | 各项政策的现行选项，没有记录时是第二档；国家政体直接读写 `vd_gov_form` |
 | `vd_parl_next` | 下一次开议会的年份 |
 | `vd_bill_policy`、`vd_bill_option`、`vd_bill_player`、`vd_bill_proposer` | 当前议案：哪项政策、改成哪个选项、是不是玩家提的、起草它的氏族 |
 | `vd_bill_rejected` | 近 15 年被否决的议案和年份，`政策=选项@年份` 用分号隔开 |

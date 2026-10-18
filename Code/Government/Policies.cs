@@ -114,6 +114,7 @@ namespace DiplomacyOverhaul
         public const string Customs = "vd_pol_customs";
         public const string Army = "vd_pol_army";
         public const string Navy = "vd_pol_navy";
+        public const string Arms = "vd_pol_arms";
         public const string War = "vd_pol_war";
         public const string Vassals = "vd_pol_vassals";
         public const string Overlord = "vd_pol_overlord";
@@ -180,6 +181,7 @@ namespace DiplomacyOverhaul
             Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
             Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", stake = Stake.Crown(4, CrownStake) });
             Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
+            Add(new Policy { id = Arms, tab = PolicyTab.Military, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge" });
             Add(new Policy
             {
                 id = War, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Radical, icon = "ui/Icons/iconWar",
@@ -374,6 +376,9 @@ namespace DiplomacyOverhaul
                     break;
                 case Army:
                     rows.Add(("vd_eff_guard_share", Percent(Guard.RateOf(pOption))));
+                    break;
+                case Arms:
+                    rows.Add(("vd_eff_arms_budget", Percent(Armory.BudgetRate(pOption))));
                     break;
                 case VassalTax:
                     rows.Add(("vd_eff_vassal_tax", Percent(VassalTaxRates[pOption])));

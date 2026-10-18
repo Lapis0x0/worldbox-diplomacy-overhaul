@@ -39,6 +39,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl election [国家]       打开选举与任命窗口
     //   parl vote [国家]           按眼下的议会选一次执政，只打印候选人和票数，不生效
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
+    //   arms [数量] | arms run   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {
@@ -195,6 +196,7 @@ namespace DiplomacyOverhaul.Perf
                 case "heap": HeapWalk.Run(a[1], a.Length > 2 ? int.Parse(a[2]) : 40); break;
                 case "fav": Fav(a[1], int.Parse(a[2])); break;
                 case "parl": ParlDev.Run(a); break;
+                case "arms": ArmsDev.Run(a); break;
                 case "end": Log("@done " + (a.Length > 1 ? a[1] : "")); break;
                 default: Log("! unknown command"); break;
             }
