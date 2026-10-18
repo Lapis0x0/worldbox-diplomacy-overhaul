@@ -1,0 +1,9 @@
+The first image shows pixel-art god-power icons from the game WorldBox (28x28 sprites scaled up 16x): the "command army" and "whole kingdom attacks" powers and the original army icons. The second image shows more original WorldBox icons (kingdom, crown, kingdom list) for style.
+
+Draw a 2x2 sheet of 4 alternative god-power button icons for "hand back command": the god lets go of a kingdom's armies and the kingdom leads them on its own again. No helmets. One icon per cell:
+1. A wooden puppet control bar (marionette cross) seen at a slight angle, with four strings hanging from it, each string cut in the middle, the cut ends dangling loose (the god stops pulling the strings).
+2. A sword sliding back into its scabbard, the blade half inside: brown leather scabbard with gold trim, silver blade, gold crossguard, held diagonally (the troops are called off).
+3. A bronze tiger tally (ancient Chinese military command token shaped like a crouching tiger), its two halves joined back together, with a thin seam down the middle (military authority returned).
+4. A small red war banner on a wooden pole planted upright in an orange-gold crown, the crown in the original WorldBox style with flame-like points (the army's banner goes back to the crown).
+
+Match the original WorldBox look: slight 3/4 view, orange-brown shading, dark brown outline on the shadow side, hand-made slightly playful feel, chunky square pixels on a strict grid, limited palette, no anti-aliasing, no gradients, no text. Draw every icon SMALL with big chunky pixels, about the detail of an original 28x28 icon: each icon about 40% of its cell width, centered in its cell. Background flat uniform medium grey (#808080), no labels.

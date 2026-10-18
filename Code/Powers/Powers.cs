@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NeoModLoader.General;
 
 namespace DiplomacyOverhaul
@@ -11,6 +12,7 @@ namespace DiplomacyOverhaul
         public const string ReleaseCity = "vd_release_city";
         public const string CommandArmy = "vd_command_army";
         public const string OrderKingdomAttack = "vd_order_kingdom_attack";
+        public const string ReleaseArmy = "vd_release_army";
         public const string TransferCity = "vd_transfer_city";
         public const string Annex = "vd_annex";
 
@@ -206,6 +208,35 @@ namespace DiplomacyOverhaul
                 },
                 click_special_action = (pTile, _) => ClickKingdomOrder(pTile)
             });
+            Core.Upsert(AssetManager.powers, new GodPower
+            {
+                id = ReleaseArmy,
+                name = ReleaseArmy,
+                force_map_mode = MetaType.Kingdom,
+                can_drag_map = true,
+                select_button_action = _ =>
+                {
+                    WorldTip.showNow("vd_tip_pick_release", true, "top");
+                    return false;
+                },
+                click_special_action = (pTile, _) => ClickRelease(pTile)
+            });
+        }
+
+        // 交还指挥：点一个国家，它所有听玩家命令的军队交还 AI
+        static bool ClickRelease(WorldTile pTile)
+        {
+            Kingdom k = KingdomAt(pTile);
+            if (k == null) return false;
+            List<Army> armies = Orders.CommandedOf(k);
+            if (armies.Count == 0)
+            {
+                WorldTip.showNow("vd_tip_no_commanded_army", true, "top");
+                return false;
+            }
+            foreach (Army a in armies) Orders.ReleaseCommand(a);
+            Tip(LM.Get("vd_tip_kingdom_handed_back").Replace("$kingdom$", k.data.name).Replace("$count$", armies.Count.ToString()));
+            return true;
         }
 
         // 先在军队视图里点军队，选中后切到城市视图点目标；原版每帧按神力的 force_map_mode 决定视图

@@ -41,12 +41,17 @@ namespace DiplomacyOverhaul
 
         static readonly Sprite FlagSprite = SpriteTextureLoader.getSprite("civ/icons/minimap_flag");
 
+        // 玩家下过令的军队，旗帜上的人数按命令着色：进攻红，驻扎、扎营绿
+        static readonly Color CountAttack = new Color(1f, 0.45f, 0.4f);
+        static readonly Color CountStation = new Color(0.5f, 1f, 0.55f);
+
         // 样式和原版打开「军队旁显示人数」时相同
-        static void ShowCount(QuantumSpriteWithText pSprite, string pText)
+        static void ShowCount(QuantumSpriteWithText pSprite, string pText, Color pColor)
         {
             TextMesh text = pSprite.text;
             text.gameObject.SetActive(true);
             text.text = pText;
+            text.color = pColor;
             Renderer renderer = text.GetComponent<Renderer>();
             renderer.sortingLayerID = pSprite.sprite_renderer.sortingLayerID;
             renderer.sortingOrder = pSprite.sprite_renderer.sortingOrder;
@@ -61,7 +66,7 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 照抄原版 QuantumSpriteLibrary.drawArmies，只改人数：选中的军队显示；打开了原版「军队旁显示人数」选项则全部显示
+        // 照抄原版 QuantumSpriteLibrary.drawArmies，只改人数：选中的军队、玩家下过令的军队显示；打开了原版「军队旁显示人数」选项则全部显示
         static void DrawArmyFlags(QuantumSpriteAsset pAsset)
         {
             if (!PlayerConfig.optionBoolEnabled("marks_armies")) return;
@@ -78,7 +83,10 @@ namespace DiplomacyOverhaul
                 if (captain.isInMagnet() || !captain.current_zone.visible || !captain.isKingdomCiv()) continue;
                 Kingdom kingdom = captain.kingdom;
                 var sprite = (QuantumSpriteWithText)QuantumSpriteLibrary.drawQuantumSprite(pAsset, captain.current_position, null, kingdom, captain.city);
-                if (show_all || selected.Contains(army)) ShowCount(sprite, army.countUnits().ToString());
+                bool commanded = Orders.IsCommanded(army);
+                if (show_all || commanded || selected.Contains(army))
+                    ShowCount(sprite, army.countUnits().ToString(),
+                        !commanded ? Color.white : Orders.IsForced(army) ? CountAttack : CountStation);
                 else sprite.text.gameObject.SetActive(false);
                 if (!pAsset.group_system.is_within_active_index) num++;
                 sprite.setSprite(DynamicSprites.getIcon(FlagSprite, kingdom.getColor()));
@@ -102,7 +110,7 @@ namespace DiplomacyOverhaul
 
         static bool AnyOwnPowerSelected() =>
             Selected(Powers.MakeVassal) || Selected(Powers.InciteIndependence) || Selected(Powers.GreatRebellion) || Selected(Powers.Mandate) || Selected(Powers.ReleaseCity)
-            || Selected(Powers.CommandArmy) || Selected(Powers.OrderKingdomAttack)
+            || Selected(Powers.CommandArmy) || Selected(Powers.OrderKingdomAttack) || Selected(Powers.ReleaseArmy)
             || Selected(Powers.TransferCity) || Selected(Powers.Annex);
 
         static Kingdom Alive(Kingdom k) => k != null && !k.isRekt() && !k.isNeutral() ? k : null;
@@ -133,6 +141,13 @@ namespace DiplomacyOverhaul
             {
                 foreach (Army army in Orders.ArmiesOf(source.kingdom)) ArmyArrow(pAsset, army, mouse);
             }
+            else if (Selected(Powers.ReleaseArmy))
+            {
+                // 指着一个国家就画它听命令的军队到目的地，否则画所有国家的
+                Kingdom kingdom = HoveredCity()?.kingdom;
+                foreach (Army army in World.world.armies)
+                    if ((kingdom == null || army.getKingdom() == kingdom) && Orders.IsCommanded(army)) DestinationArrow(pAsset, army);
+            }
             else if (Selected(Powers.MakeVassal) && Alive(Powers._lord) != null)
             {
                 foreach (City city in Powers._lord.getCities()) Arrow(pAsset, city, mouse);
@@ -153,6 +168,12 @@ namespace DiplomacyOverhaul
             if (lead == null || lead.isRekt()) lead = pArmy.units[0];
             Color color = pArmy.getColor().getColorMainSecond();
             QuantumSpriteLibrary.drawArrowQuantumSprite(pAsset, lead.current_position, pTo, ref color);
+        }
+
+        static void DestinationArrow(QuantumSpriteAsset pAsset, Army pArmy)
+        {
+            WorldTile to = Orders.Destination(pArmy);
+            if (to != null) ArmyArrow(pAsset, pArmy, to.posV);
         }
 
         static void Arrow(QuantumSpriteAsset pAsset, City pFrom, Vector2 pTo)
@@ -224,6 +245,12 @@ namespace DiplomacyOverhaul
                 Kingdom annexer = Alive(Powers._annexer);
                 if (annexer != null) Kingdom(pAsset, annexer, ColorSource);
                 if (hovered != null && hovered.kingdom != annexer) Kingdom(pAsset, hovered.kingdom, annexer != null ? ColorTarget : ColorSource);
+            }
+            else if (Selected(Powers.ReleaseArmy))
+            {
+                // 这个国家有听玩家命令的军队：整个国家白色，点了全部交还
+                if (hovered != null && Orders.CommandedOf(hovered.kingdom).Count > 0)
+                    Kingdom(pAsset, hovered.kingdom, ColorSource);
             }
             else if (Selected(Powers.ReleaseCity))
             {

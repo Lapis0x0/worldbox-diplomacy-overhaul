@@ -233,6 +233,44 @@ namespace DiplomacyOverhaul
             return true;
         }
 
+        // 玩家亲手下的命令还在执行：进攻（只在内存里），或者玩家下的驻扎、扎营（国家 AI 安排的驻扎不算）
+        public static bool IsCommanded(Army pArmy)
+        {
+            if (!HasUnits(pArmy)) return false;
+            if (IsForced(pArmy)) return true;
+            pArmy.data.get(Guard.KeyTask, out int task, Guard.TaskNone);
+            return task == Guard.TaskPlayer && HasStation(pArmy);
+        }
+
+        // 命令的目的地：进攻的城、驻扎的城中心、扎营的地块
+        public static WorldTile Destination(Army pArmy)
+        {
+            if (IsForced(pArmy)) return AttackTarget(pArmy)?.getTile();
+            return GetGarrison(pArmy)?.getTile() ?? GetHold(pArmy);
+        }
+
+        // 交还指挥：清掉玩家的命令，地方军交还原版 AI，禁军交还国家
+        public static bool ReleaseCommand(Army pArmy)
+        {
+            if (!IsCommanded(pArmy)) return false;
+            if (IsForced(pArmy))
+            {
+                SetAttack(pArmy, null, null);
+                _forced.Remove(pArmy.id);
+            }
+            SetStation(pArmy, null, null);
+            Guard.OnPlayerRelease(pArmy);
+            return true;
+        }
+
+        public static List<Army> CommandedOf(Kingdom pKingdom)
+        {
+            var list = new List<Army>();
+            foreach (Army army in ArmiesOf(pKingdom))
+                if (IsCommanded(army)) list.Add(army);
+            return list;
+        }
+
         // 召回：队长 → 召回城市里的目标地块，由 Patch_RallyTile 在原版"随机走动"任务里取用
         static readonly Dictionary<Actor, WorldTile> _rally = new Dictionary<Actor, WorldTile>();
 
