@@ -2,6 +2,20 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.9.1
+
+### 中文
+
+1. 优化央地博弈机制，提高集权状态下地方对于中央的不满
+2. 各处界面和日志里的领袖称呼现在会随政体变化，并修复当选日志的乱码问题
+3. 修复禁军机制可能导致游戏画面卡住、无法操作的问题
+
+### English
+
+1. Improved the struggle between the crown and local regions: heavy centralization now breeds more local discontent
+2. Ruler titles across the UI and logs now change with the government type, and fixed garbled text in election logs
+3. Fixed the central guard sometimes freezing the game screen and making it unresponsive
+
 ## 0.9.0
 
 ### 中文
