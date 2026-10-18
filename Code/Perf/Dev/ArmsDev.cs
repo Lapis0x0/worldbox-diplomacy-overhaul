@@ -27,13 +27,13 @@ namespace DiplomacyOverhaul.Perf
             foreach (Kingdom k in pKingdoms)
             {
                 List<Actor> members = Armory.Members(k);
-                Dev.Log($"  {k.data.name} arms={Policies.Value(k, Policies.Arms)} tier={Armory.TierOf(k)} treasury={Treasury.Get(k)} guard={members.Count}"
+                Dev.Log($"  {k.data.name} arms={Policies.Value(k, Policies.Arms)} tier={Armory.TierOf(k)} treasury={Treasury.Get(k)} guard={members.Count} storage={k.getCities().Sum(c => c.data.equipment.countItems())}"
                     + $" metals={Armory.Stock(k, "common_metals")} mythril={Armory.Stock(k, "mythril")} adamantine={Armory.Stock(k, "adamantine")}");
                 var raw = new List<string>();
                 foreach (ResourceAsset r in AssetManager.resources.strategic_resource_assets)
                     raw.Add(r.id + "=" + k.getCities().Sum(c => c.getResourcesAmount(r.id)));
                 Dev.Log("    stock " + string.Join(" ", raw));
-                int archers = 0, official = 0, mods = 0, civil = 0, civilMods = 0;
+                int archers = 0, official = 0, mods = 0, civil = 0, civilMods = 0, damaged = 0;
                 var slots = new List<string>();
                 foreach (EquipmentType slot in Slots)
                 {
@@ -44,7 +44,7 @@ namespace DiplomacyOverhaul.Perf
                         int v = item?.getAsset().equipment_value ?? 0;
                         dist[v] = dist.TryGetValue(v, out int n) ? n + 1 : 1;
                         if (item == null) continue;
-                        if (item.data.by == k.name) { official++; mods += item.data.modifiers.Count; }
+                        if (Armory.IsOfficial(item)) { official++; mods += item.data.modifiers.Count; if (item.needRepair()) damaged++; }
                         else { civil++; civilMods += item.data.modifiers.Count; }
                     }
                     slots.Add(slot + "{" + string.Join(" ", dist.Select(p => p.Key + ":" + p.Value)) + "}");
@@ -54,7 +54,7 @@ namespace DiplomacyOverhaul.Perf
                     m.data.get(Armory.KeyRole, out int role, 0);
                     if (role == 2) archers++;
                 }
-                Dev.Log($"    {string.Join(" ", slots)} archers={archers} official_items={official} mods/official={(official > 0 ? (float)mods / official : 0):F2} mods/other={(civil > 0 ? (float)civilMods / civil : 0):F2}");
+                Dev.Log($"    {string.Join(" ", slots)} archers={archers} official_items={official} damaged={damaged} mods/official={(official > 0 ? (float)mods / official : 0):F2} mods/other={(civil > 0 ? (float)civilMods / civil : 0):F2}");
             }
         }
     }

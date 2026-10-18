@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using ai.behaviours;
+using HarmonyLib;
 using UnityEngine;
 
 namespace DiplomacyOverhaul
@@ -6,18 +8,21 @@ namespace DiplomacyOverhaul
     // 军械：国库按「军械拨款」给禁军置办制式装备（一种近战武器或弓，加同一材质的头盔、胸甲、靴子）。
     // 每年发完军饷后结算：国库留出两年禁军军饷，余下的按议案的比例拿来置办。材料先按官价收购各城仓库的存货，
     // 钱进卖方城市的仓库；普通金属不够的向商队买，价钱更高，秘银、精金只能靠本国。
-    // 装备最差的士兵先换，旧装备交回户籍城的仓库。
-    // 九成禁军达到现行制式后，第二年才升一档（新兵年年有，不等全军）；士兵自己有更好的装备就留着
+    // 装备最差的士兵先换：先从本国各城的仓库里挑比身上好的（不比制式差的直接用，差的先凑合），再花钱买。
+    // 换下的旧装备交回户籍城的仓库。
+    // 九成禁军达到现行制式后，第二年才升一档（新兵年年有，不等全军）；士兵自己有更好的装备就留着。
+    // 禁军身上的官造装备由国家修：每年按损耗收修理费，原版的免费修理不管它们
     public static class Armory
     {
         const string KeyTier = "vd_arms_tier";            // kingdom.data：现行制式的档次
         internal const string KeyRole = "vd_arms_role";   // actor.data：兵种，第一次领制式时定下
+        const string FlagOfficial = "vd_arms_official";   // item.data：官造装备
         const int RoleMelee = 1, RoleArcher = 2;
 
         const int ReserveYears = 2;          // 国库先留出几年的禁军军饷
         const int OfficialTries = 3;         // 官造装备抽几次词条（原版民间打造是 1 次）
         const int CityReserve = 10;          // 每座城留底的材料，原版打造装备要仓库里有 10 份以上
-        const float WornShare = 0.3f;        // 耐久低于这个比例算坏了，要换
+        const float RepairShare = 0.5f;      // 修满一件全坏的装备花它价钱的几成，同原版修理费的系数
         const float ArcherShare = 0.25f;     // 禁军里弓手的比例
         const float ArcherShareBowLovers = 0.5f;
         const float UpgradeShare = 0.9f;     // 多少禁军达到现行制式才升档
@@ -65,6 +70,12 @@ namespace DiplomacyOverhaul
             return domestic * pTier.price + rest * pTier.import + Mathf.CeilToInt(pTier.value / 10f);
         }
 
+        // 一件装备按商队价算的价钱（秘银、精金按官价），修理费照这个算
+        static int ListPrice(Tier pTier) =>
+            pTier.amount * (pTier.import > 0 ? pTier.import : pTier.price) + Mathf.CeilToInt(pTier.value / 10f);
+
+        public static bool IsOfficial(Item pItem) => pItem?.data != null && pItem.data.hasFlag(FlagOfficial);
+
         // 升到这一档要材料够全军换装：商队卖的总买得到，秘银、精金看本国的存货
         static bool Available(Kingdom pKingdom, Tier pTier, int pMembers) =>
             pTier.import > 0 || Stock(pKingdom, pTier.resource) >= pMembers * Slots.Length * pTier.amount;
@@ -93,8 +104,7 @@ namespace DiplomacyOverhaul
             }
 
             int reserve = Mathf.CeilToInt(members.Count * Treasury.PayPerWarrior * ReserveYears);
-            int budget = Mathf.FloorToInt((Treasury.Get(pKingdom) - reserve) * BudgetRates[option]);
-            if (budget <= 0) return;
+            Repair(pKingdom, members, Treasury.Get(pKingdom) - reserve);
 
             float archers = ArcherShareOf(pKingdom);
             int archerCount = 0, assigned = 0;
@@ -105,13 +115,18 @@ namespace DiplomacyOverhaul
                 assigned++;
                 if (role == RoleArcher) archerCount++;
             }
-
             members.Sort((x, y) => Score(x).CompareTo(Score(y)));
+            foreach (Actor a in members) Role(a, archers, ref archerCount, ref assigned);
+
+            Reclaim(pKingdom, members, melee, tier);
+
+            int budget = Mathf.FloorToInt((Treasury.Get(pKingdom) - reserve) * BudgetRates[option]);
+            if (budget <= 0) return;
             int spent = 0;
             bool broke = false;
             foreach (Actor a in members)
             {
-                int role = Role(a, archers, ref archerCount, ref assigned);
+                a.data.get(KeyRole, out int role, RoleMelee);
                 foreach (EquipmentType slot in Slots)
                 {
                     string subtype = slot == EquipmentType.Weapon ? (role == RoleArcher ? "bow" : melee) : SlotName(slot);
@@ -122,6 +137,73 @@ namespace DiplomacyOverhaul
                 if (broke) break;
             }
             Treasury.Take(pKingdom, spent);
+        }
+
+        // 修禁军身上的官造装备：先于置办新装备，用储备以外的钱，不按议案的比例。修理费按损耗的比例算，钱不够就停
+        static void Repair(Kingdom pKingdom, List<Actor> pMembers, int pBudget)
+        {
+            float spent = 0f;
+            bool broke = false;
+            foreach (Actor a in pMembers)
+            {
+                bool repaired = false;
+                foreach (ActorEquipmentSlot slot in a.equipment)
+                {
+                    Item item = slot.getItem();
+                    if (!IsOfficial(item) || !item.needRepair()) continue;
+                    int t = System.Array.FindIndex(Tiers, x => x.material == item.getAsset().material);
+                    if (t < 0) continue;
+                    float fee = ListPrice(Tiers[t]) * RepairShare * (1f - item.getDurabilityCurrent() / (float)item.getDurabilityMax());
+                    broke = spent + fee > pBudget;
+                    if (broke) break;
+                    spent += fee;
+                    item.data.durability = item.getDurabilityMax();
+                    repaired = true;
+                }
+                if (repaired) a.setStatsDirty();
+                if (broke) break;
+            }
+            Treasury.Take(pKingdom, Mathf.CeilToInt(spent));
+        }
+
+        // 回收：本国各城仓库里的装备，挑比身上好的发给不到制式的禁军，每次拿最好的一件。
+        // 武器要合兵种：弓手只拿弓，近战兵只拿近战武器
+        static void Reclaim(Kingdom pKingdom, List<Actor> pMembers, string pMelee, int pTier)
+        {
+            foreach (Actor a in pMembers)
+            {
+                a.data.get(KeyRole, out int role, RoleMelee);
+                foreach (EquipmentType type in Slots)
+                {
+                    string subtype = type == EquipmentType.Weapon ? (role == RoleArcher ? "bow" : pMelee) : SlotName(type);
+                    if (!Needs(a, type, subtype, pTier)) continue;
+                    ActorEquipmentSlot slot = a.equipment.getSlot(type);
+                    int current = slot.getItem()?.getAsset().equipment_value ?? 0;
+                    City from = null;
+                    Item best = null;
+                    foreach (City city in pKingdom.getCities())
+                        foreach (long id in city.data.equipment.getEquipmentList(type))
+                        {
+                            Item item = World.world.items.get(id);
+                            if (item == null || item.isCursed()) continue;
+                            EquipmentAsset asset = item.getAsset();
+                            if (asset.equipment_value <= current || (best != null && asset.equipment_value <= best.getAsset().equipment_value)) continue;
+                            if (type == EquipmentType.Weapon && (role == RoleArcher ? asset.group_id != "bow" : asset.attack_type != WeaponType.Melee)) continue;
+                            best = item;
+                            from = city;
+                        }
+                    if (best == null) continue;
+                    from.data.equipment.getEquipmentList(type).Remove(best.id);
+                    from._storage_version++;
+                    Item old = slot.getItem();
+                    if (old != null)
+                    {
+                        slot.takeAwayItem();
+                        a.city?.tryToPutItem(old);
+                    }
+                    slot.setItem(best, a);
+                }
+            }
         }
 
         internal static List<Actor> Members(Kingdom pKingdom)
@@ -173,9 +255,7 @@ namespace DiplomacyOverhaul
             return sum;
         }
 
-        static bool Worn(Item pItem) => pItem.getDurabilityCurrent() < pItem.getDurabilityMax() * WornShare;
-
-        // 这个兵的这件装备不到制式：空着、档次不到、坏了，或同一档次但材质、武器种类和制式不一样（比制式好的不算）
+        // 这个兵的这件装备不到制式：空着、档次不到，或同一档次但材质、武器种类和制式不一样（比制式好的不算）
         static bool Needs(Actor pActor, EquipmentType pSlot, string pSubtype, int pTier)
         {
             Item item = pActor.equipment.getSlot(pSlot).getItem();
@@ -185,7 +265,7 @@ namespace DiplomacyOverhaul
             int value = asset.equipment_value;
             int standard = Tiers[pTier].value;
             if (value > standard) return false;
-            if (value < standard || Worn(item)) return true;
+            if (value < standard) return true;
             return asset.material != Tiers[pTier].material || asset.group_id != pSubtype;
         }
 
@@ -207,7 +287,7 @@ namespace DiplomacyOverhaul
         {
             ActorEquipmentSlot slot = pActor.equipment.getSlot(pSlot);
             Item old = slot.getItem();
-            int current = old == null || Worn(old) ? 0 : old.getAsset().equipment_value;
+            int current = old?.getAsset().equipment_value ?? 0;
             for (int t = pTier; t >= 0; t--)
             {
                 Tier tier = Tiers[t];
@@ -220,6 +300,7 @@ namespace DiplomacyOverhaul
                 Buy(pKingdom, tier.resource, tier.amount, tier.price);
                 pSpent += cost;
                 Item item = World.world.items.generateItem(asset, pKingdom, pKingdom.name, OfficialTries, pActor);
+                item.data.addFlag(FlagOfficial);
                 if (old != null)
                 {
                     slot.takeAwayItem();
@@ -261,6 +342,50 @@ namespace DiplomacyOverhaul
                 seller.addResourcesToRandomStockpile("gold", n * pPrice);
                 pAmount -= n;
             }
+        }
+    }
+
+    // 原版士兵在有兵营的城里免费修装备。禁军身上的官造装备由国家修（见 Armory.Repair），这里跳过；
+    // 其余照抄原版
+    [HarmonyPatch(typeof(BehCheckCanRepairEquipment), nameof(BehCheckCanRepairEquipment.execute))]
+    static class Patch_CheckRepair
+    {
+        static bool Prefix(Actor pActor, ref BehResult __result)
+        {
+            __result = BehResult.Stop;
+            if (!pActor.hasEquipment()) return false;
+            foreach (ActorEquipmentSlot slot in pActor.equipment)
+            {
+                Item item = slot.getItem();
+                if (!item.needRepair() || Patch_Repair.StateRepaired(pActor, item)) continue;
+                int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
+                if (pActor.money >= cost) __result = BehResult.Continue;
+            }
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(BehRepairEquipment), nameof(BehRepairEquipment.execute))]
+    static class Patch_Repair
+    {
+        internal static bool StateRepaired(Actor pActor, Item pItem) => Guard.IsMember(pActor) && Armory.IsOfficial(pItem);
+
+        static bool Prefix(Actor pActor, ref BehResult __result)
+        {
+            __result = BehResult.Continue;
+            bool repaired = false;
+            foreach (ActorEquipmentSlot slot in pActor.equipment)
+            {
+                Item item = slot.getItem();
+                if (!item.needRepair() || StateRepaired(pActor, item)) continue;
+                int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
+                if (!pActor.hasEnoughMoney(cost)) continue;
+                pActor.spendMoney(cost);
+                item.fullRepair();
+                repaired = true;
+            }
+            if (repaired) pActor.setStatsDirty();
+            return false;
         }
     }
 }
