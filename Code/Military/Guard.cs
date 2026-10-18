@@ -62,7 +62,7 @@ namespace DiplomacyOverhaul
         // 全国的禁军人数，征兵时要看国库养不养得起。每次征兵都数一遍太慢，约一秒数一次
         static readonly Dictionary<long, (int frame, int count)> _members = new Dictionary<long, (int, int)>();
 
-        static int KingdomMembers(Kingdom pKingdom)
+        internal static int KingdomMembers(Kingdom pKingdom)
         {
             int frame = Time.frameCount;
             if (_members.TryGetValue(pKingdom.id, out var c) && frame - c.frame < 60 && frame >= c.frame) return c.count;

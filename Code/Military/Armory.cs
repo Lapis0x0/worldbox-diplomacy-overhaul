@@ -103,7 +103,7 @@ namespace DiplomacyOverhaul
                 pKingdom.data.set(KeyTier, tier);
             }
 
-            int reserve = Mathf.CeilToInt(members.Count * Treasury.PayPerWarrior * ReserveYears);
+            int reserve = Mathf.CeilToInt(Guard.KingdomMembers(pKingdom) * Treasury.PayPerWarrior * ReserveYears);
             Repair(pKingdom, members, Treasury.Get(pKingdom) - reserve);
 
             float archers = ArcherShareOf(pKingdom);
