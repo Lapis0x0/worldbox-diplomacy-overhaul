@@ -310,7 +310,7 @@ namespace DiplomacyOverhaul
                 if (!IsMember(a) || a.is_army_captain) continue;
                 if (a.hasArmy() && !AtHome(a, pKingdom)) continue;
                 a.data.removeFlag(FlagMember);
-                if (Is(a.army)) a.removeFromArmy();
+                if (Is(a.army)) Leave(a);
                 pCount--;
             }
         }
@@ -320,9 +320,9 @@ namespace DiplomacyOverhaul
             foreach (Actor a in new List<Actor>(pWarriors))
             {
                 if (pCount <= 0) return;
-                if (IsMember(a) || !AtHome(a, pKingdom)) continue;
+                if (IsMember(a) || a.is_army_captain || !AtHome(a, pKingdom)) continue;
                 a.data.addFlag(FlagMember);
-                if (a.hasArmy()) a.removeFromArmy();
+                if (a.hasArmy()) Leave(a);
                 pCount--;
             }
         }
@@ -337,8 +337,15 @@ namespace DiplomacyOverhaul
                 if (!IsMember(a)) continue;
                 a.data.removeFlag(FlagMember);
                 if (pCaptured) a.stopBeingWarrior();
-                else if (Is(a.army)) a.removeFromArmy();
+                else if (Is(a.army)) Leave(a);
             }
+        }
+
+        // 离队时停下手头的事：队长正在执行的进攻任务每帧都读 army，离队后接着跑会空引用
+        static void Leave(Actor pActor)
+        {
+            pActor.removeFromArmy();
+            pActor.cancelAllBeh();
         }
 
         // ---------- 军饷 ----------
