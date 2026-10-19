@@ -2,6 +2,20 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.9.2
+
+### 中文
+
+1. 新增军械系统，国家按「军械拨款」议案、地方自筹经费，为禁军和地方军统一配发、维修制式装备
+2. 新增「交还指挥」神力：点一个国家，它所有听你命令的军队重新交给 AI 指挥
+3. 优化异常处理，个别单位出错时不再导致整个世界停止运行
+
+### English
+
+1. Added the armory system: the state funds standard equipment through the "Armory Funding" bill and local regions raise their own funds, to equip and repair gear for both the central guard and local armies
+2. Added the "Return Command" power: click a kingdom to hand all of its armies under your command back to the AI
+3. Improved error handling: a single unit's error no longer stops the whole world
+
 ## 0.9.1
 
 ### 中文
