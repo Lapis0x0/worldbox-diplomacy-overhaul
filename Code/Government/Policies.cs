@@ -18,28 +18,6 @@ namespace DiplomacyOverhaul
         Diplomacy
     }
 
-    // 一项政策的物质得失：每个选项给掌权家族（王室或执政家族）、地方家族各带来多少好处，距离单位，越大越好，
-    // 0 是不偏不倚，负数是吃亏（地方家族吃亏时城市忠诚下降，见 Parliament.Grievance）。
-    // 地方家族的那份按它的分量放大缩小，两边都按拿主意的人在不在意放大缩小，见 Parliament.Weight、Parliament.Care
-    public class Stake
-    {
-        public float[] ruler, local;
-
-        // 收归中央：越集权掌权家族越得利、地方家族越吃亏，按选项在轴上的位置算，
-        // 档数不同的政策挪一档时和国家坐标的变化同比例
-        public static Stake Crown(int pCount, float pPerUnit)
-        {
-            var stake = new Stake { ruler = new float[pCount], local = new float[pCount] };
-            for (int i = 0; i < pCount; i++)
-            {
-                float position = -1f + 2f * i / (pCount - 1);
-                stake.ruler[i] = pPerUnit * position;
-                stake.local[i] = -pPerUnit * position;
-            }
-            return stake;
-        }
-    }
-
     // 一项国家政策：几个选项依次排在一条轴上。现行选项存在 kingdom.data 里，
     // 国家政体例外，直接读写政体大类
     public class Policy
@@ -57,10 +35,12 @@ namespace DiplomacyOverhaul
         public Func<Kingdom, bool> proposable;
         public Func<Kingdom, int> read;
         public Action<Kingdom, int> write;
-        // 切身利益：立场之外的得失，加在议案通过后的距离上（正数是吃亏）。
-        // 一般写 stake（每个选项的得失），算法特殊的写 interest，两个都没有就只看立场
-        public Stake stake;
-        public Func<Kingdom, ParliamentClan, int, float> interest;
+        // 意识形态在这项政策上的载荷：和所在的轴不相干的政策是 0
+        public float load = 1f;
+        // 处境和利益：把一股势力在这项政策上的理想位置往哪边挪多少（和意识形态同一个单位）
+        public Func<Kingdom, ParliamentClan, float> lean;
+        // 收归中央的兵和钱：现行一档比势力想要的更集中时，它的不满算削藩
+        public bool crown;
 
         public int Get(Kingdom pKingdom)
         {
@@ -78,19 +58,11 @@ namespace DiplomacyOverhaul
                 foreach (Actor a in pKingdom.units) a.setStatsDirty();
         }
 
-        public float Interest(Kingdom pKingdom, ParliamentClan pClan, int pOption)
-        {
-            if (interest != null) return interest(pKingdom, pClan, pOption);
-            if (stake == null) return 0f;
-            float[] gain = pClan.ruling ? stake.ruler : stake.local;
-            float change = gain[pOption] - gain[Get(pKingdom)];
-            return -change * pClan.weight * Parliament.Care(Parliament.Voice(pKingdom, pClan));
-        }
-
         public bool CanPropose(Kingdom pKingdom) => active && shown(pKingdom) && (proposable == null || proposable(pKingdom));
 
-        // 选项在轴上的位置：三个选项是 -1、0、+1，两个选项是 -1、+1
-        public float Position(int pOption) => count <= 1 ? 0f : -1f + 2f * pOption / (count - 1);
+        // 档位均分：-1 到 1 按档数等分，每一档代表其中一段，这是那一段的中心。
+        // 三档是 -2/3、0、2/3，四档是 ±1/4、±3/4，两档是 ±1/2
+        public float Center(int pOption) => count <= 1 ? 0f : -1f + (2f * pOption + 1f) / count;
 
         public string OptionKey(int pOption) => id + "_" + pOption;
 
@@ -137,11 +109,33 @@ namespace DiplomacyOverhaul
         // 对宗主方针：争取自治、履行契约、忠诚臣属
         public const int SeekAutonomy = 0, Obligation = 1, Loyal = 2;
 
-        // 兵和钱收归中央时，掌权家族多得、地方家族交出的切身利益：选项在轴上每挪 1（三档政策的一档）算这么多
-        const float CrownStake = 0.2f;
-        // 改政体时各家族的切身利益：
-        // 改君主制，执政家族会成为王室，其他家族要受人统治；改共和制，王室失去王位，其他家族有机会轮流执政
-        const float FormInterest = 0.25f;
+        // 各项政策的处境和利益，单位和意识形态相同（三档政策的一段宽 2/3）
+        // 兵和钱收归中央：掌权家族往集权挪，占着地方城的往分权挪
+        const float CrownLean = 0.3f;
+        // 拿主意的人的性格和心性：治国的要税收、领地集中，尚武的要兵、军械、扩张，外交的要和平
+        const float PersonalityLean = 0.3f;
+        // 政体：王室和宗室守住王位，永远不投废君主制；共和国的执政家族改君主制后成为王室；
+        // 君主国的其他家族在共和制下有机会轮流执政
+        const float HoldThrone = 10f;
+        const float BecomeRoyal = 0.4f;
+        const float TakeTurns = 0.2f;
+        // 选官：地方势力要世袭守住自家的城，掌权家族要城主由朝廷定，受提拔的要唯才是举
+        const float OfficeLocal = 0.2f;
+        const float OfficeRuler = 0.3f;
+        const float OfficePromoted = 0.3f;
+        // 领地：离首都越远越想要分封（叛乱、攻城更容易改成分封），宗室想要分封宗室，君主国的王室也乐于分封宗室
+        const float TerritoryFar = 0.3f;
+        const float TerritoryCadet = 0.2f;
+        const float TerritoryRoyal = 0.1f;
+        // 教化：治理异族居民的势力要因俗而治（按城里异族居民的比例），掌权家族想统一（按全国的比例）
+        const float CustomsForeign = 1f;
+        const float CustomsUnify = 0.5f;
+        // 海军：临海城越多越要海权
+        const float NavyCoast = 1.2f;
+        // 军械：打仗时都想多拨
+        const float ArmsWar = 0.3f;
+        // 附庸政策：诚实、温和、和平的觉得强制同化不地道
+        const float VassalsMild = 0.2f;
 
         // 原版的贡赋特质：上缴比例改由税收体制决定
         const string TributeLow = "tax_rate_tribute_low";
@@ -156,6 +150,10 @@ namespace DiplomacyOverhaul
 
         public static int Value(Kingdom pKingdom, string pId) => Get(pId).Get(pKingdom);
 
+        static Actor V(ParliamentClan pc) => pc.voice;
+        static bool Is(ParliamentClan pc, string pPersonality) => Parliament.Personality(pc.voice) == pPersonality;
+        static float Crown(ParliamentClan pc) => pc.Local ? -CrownLean : CrownLean;
+
         public static void Init()
         {
             All.Clear();
@@ -168,36 +166,79 @@ namespace DiplomacyOverhaul
                 proposable = k => !Integration.IsProvince(k),
                 read = k => (int)Government.Form(k),
                 write = (k, v) => Regime.Reform(k, (GovForm)v),
-                interest = (k, pc, v) => pc.ruling == (v == (int)GovForm.Monarchy) ? -FormInterest : FormInterest
+                lean = (k, pc) =>
+                {
+                    if (Government.IsRepublic(k)) return pc.ruling ? -BecomeRoyal : 0f;
+                    return pc.ruling || pc.cadet ? -HoldThrone : TakeTurns;
+                }
             });
-            Add(new Policy { id = Office, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, icon = "ui/Icons/iconLeaders" });
+            Add(new Policy
+            {
+                id = Office, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, icon = "ui/Icons/iconLeaders",
+                lean = (k, pc) => (pc.Local ? -OfficeLocal : OfficeRuler) + OfficePromoted * pc.promoted
+            });
             Add(new Policy
             {
                 id = Territory, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconVillages",
                 // 附庸不分封，这一项对它没有意义
-                shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
+                shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k),
+                lean = (k, pc) => (Is(pc, "administrator") ? PersonalityLean : 0f) - TerritoryFar * pc.far
+                    - (pc.cadet ? TerritoryCadet : 0f) - (pc.ruling && !Government.IsRepublic(k) ? TerritoryRoyal : 0f)
             });
-            Add(new Policy { id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney", stake = Stake.Crown(3, CrownStake) });
-            Add(new Policy { id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture" });
-            Add(new Policy { id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", stake = Stake.Crown(4, CrownStake) });
-            Add(new Policy { id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat" });
-            Add(new Policy { id = Arms, tab = PolicyTab.Military, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge" });
             Add(new Policy
             {
-                id = War, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Radical, icon = "ui/Icons/iconWar",
+                id = Tax, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconMoney", crown = true,
+                lean = (k, pc) => (Is(pc, "administrator") ? PersonalityLean : 0f) + Crown(pc)
+            });
+            Add(new Policy
+            {
+                id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture",
+                lean = (k, pc) => -CustomsForeign * pc.foreign + (pc.ruling ? CustomsUnify * Parliament.KingdomForeign(k) : 0f)
+            });
+            Add(new Policy
+            {
+                id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", crown = true,
+                lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + Crown(pc)
+            });
+            Add(new Policy
+            {
+                // 海军和守旧还是求变无关，只看临海城多不多
+                id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat", load = 0f,
+                lean = (k, pc) => NavyCoast * (pc.coast - 0.5f)
+            });
+            Add(new Policy
+            {
+                id = Arms, tab = PolicyTab.Military, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge", load = 0.5f,
+                lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + (World.world.wars.hasWars(k) ? ArmsWar : 0f)
+            });
+            Add(new Policy
+            {
+                id = War, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Radical, icon = "ui/Icons/iconWar", load = 0.5f,
                 // 附庸不自己开战
-                shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k)
+                shown = k => !DiplomacyOverhaul.Vassals.IsVassal(k),
+                lean = (k, pc) =>
+                {
+                    float v = 0f;
+                    string personality = Parliament.Personality(pc.voice);
+                    if (personality == "militarist") v += PersonalityLean;
+                    else if (personality == "diplomat") v -= PersonalityLean;
+                    if (Parliament.Has(V(pc), "hotheaded") || Parliament.Has(V(pc), "bloodlust")) v += PersonalityLean;
+                    if (Parliament.Has(V(pc), "peaceful") || Parliament.Has(V(pc), "pacifist")) v -= PersonalityLean;
+                    return v;
+                }
             });
             Add(new Policy
             {
                 id = Vassals, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, icon = "ui/Icons/iconKingdomList",
-                shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0
+                shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0,
+                lean = (k, pc) => Parliament.Has(V(pc), "honest") || Parliament.Has(V(pc), "peaceful") || Parliament.Has(V(pc), "pacifist") ? -VassalsMild : 0f
             });
             Add(new Policy
             {
-                id = VassalTax, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconMoney",
+                // 附庸贡赋：多收的好处和逼反附庸的风险权衡出最划算的一档，意识形态只拉一半
+                id = VassalTax, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconMoney", load = 0.5f,
                 shown = k => DiplomacyOverhaul.Vassals.GetVassals(k).Count > 0,
-                interest = (k, pc, v) => Treasury.TributeInterest(k, v, Parliament.Voice(k, pc))
+                lean = (k, pc) => Get(VassalTax).Center(Treasury.TributeBest(k, pc.voice))
             });
             Add(new Policy
             {
@@ -250,22 +291,6 @@ namespace DiplomacyOverhaul
                 value = TaxShared;
             }
             return TributeRates[value];
-        }
-
-        // 国家坐标：各项现行政策的位置在两条轴上分别取平均
-        public static (float x, float y) Coordinate(Kingdom pKingdom, Policy pChanged = null, int pOption = -1)
-        {
-            float sx = 0f, sy = 0f;
-            int nx = 0, ny = 0;
-            foreach (Policy p in All)
-            {
-                if (!p.active || !p.shown(pKingdom)) continue;
-                int option = p == pChanged ? pOption : p.Get(pKingdom);
-                float pos = p.Position(option);
-                if (p.axis == PolicyAxis.Radical) { sx += pos; nx++; }
-                else { sy += pos; ny++; }
-            }
-            return (nx > 0 ? sx / nx : 0f, ny > 0 ? sy / ny : 0f);
         }
 
         // ---------- 各项政策的数值 ----------

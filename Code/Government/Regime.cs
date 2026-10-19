@@ -63,7 +63,8 @@ namespace DiplomacyOverhaul
         {
             var e = new Election { clans = Parliament.Clans(pKingdom) };
             var byClan = new Dictionary<Clan, ParliamentClan>();
-            foreach (ParliamentClan pc in e.clans) byClan[pc.clan] = pc;
+            // 宗室只在君主国才有，和王室同一个氏族，不单独出候选人
+            foreach (ParliamentClan pc in e.clans) if (!pc.cadet) byClan[pc.clan] = pc;
             Actor incumbent = pKingdom.hasKing() && pKingdom.king.isAlive() ? pKingdom.king : null;
             if (incumbent != null && incumbent.hasClan() && byClan.TryGetValue(incumbent.clan, out ParliamentClan own))
                 e.candidates.Add(new Candidate { actor = incumbent, clan = own, incumbent = true });

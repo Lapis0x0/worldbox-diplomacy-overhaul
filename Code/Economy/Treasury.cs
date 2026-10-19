@@ -51,19 +51,24 @@ namespace DiplomacyOverhaul
             Add(pKingdom, pAmount);
         }
 
-        // 议会表决附庸贡赋时的切身利益（正数是吃亏）：每多收一档是一份好处，多大看这一家拿主意的人的心性
-        // （王室、执政家族看君主本人，其他家族看族长）；
-        // 风险看附庸按新的贡赋还剩多少好感：低于「铁杆」线的部分，乘上它的实力占宗主实力的比例，各附庸加起来。
-        // 附庸好感高、实力弱时放心多收；附庸强、或者宗主衰落让好感下滑时，议会不敢加
+        // 议会里一股势力觉得最划算的附庸贡赋：每多收一档是一份好处，多大看这一股拿主意的人的心性；
+        // 风险看附庸按这一档还剩多少好感：低于「铁杆」线的部分，乘上它的实力占宗主实力的比例，各附庸加起来。
+        // 好处减风险最大的一档最划算。附庸好感高、实力弱时放心多收；附庸强、或者宗主衰落让好感下滑时，议会不敢加
         const float TributeGain = 0.1f;
         const float TributeRiskWeight = 1f;
         const int LoyalOpinion = 50;
         static OpinionAsset _taxOpinion;
 
-        public static float TributeInterest(Kingdom pLord, int pOption, Actor pVoice)
+        public static int TributeBest(Kingdom pLord, Actor pVoice)
         {
-            int current = Policies.Value(pLord, Policies.VassalTax);
-            return -TributeGainOf(pVoice) * (pOption - current) + TributeRisk(pLord, pOption) - TributeRisk(pLord, current);
+            float gain = TributeGainOf(pVoice), best = float.MinValue;
+            int bestOption = 0;
+            for (int o = 0; o < Policies.Get(Policies.VassalTax).count; o++)
+            {
+                float value = gain * o - TributeRisk(pLord, o);
+                if (value > best) { best = value; bestOption = o; }
+            }
+            return bestOption;
         }
 
         // 多在意这份钱照 Parliament.Care（贪婪的加倍，知足的减半）；

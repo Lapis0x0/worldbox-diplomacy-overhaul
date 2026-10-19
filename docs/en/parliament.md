@@ -6,16 +6,17 @@ Every kingdom has a parliament, monarchies included. Clans (vanilla clans) get s
 
 - Each city gives its lord's clan a share of seats. The bigger the city, the more seats (a city of 100 people gives about 20). The capital's seats belong to the royal house, or to the consul's clan in a republic.
 - In a one-city kingdom, the royal house holds all the seats. As the kingdom expands and gains more cities, the local clans together can outvote the royal house.
+- **Cadets**: In a monarchy, when members of the royal house become lords of outlying cities, those cities' seats form a separate bloc, the cadets. Royal cities next to or near the capital still count with the royal house. Only those out on the frontier are cadets. The cadets stand by the dynasty and never vote to abolish the monarchy, but they hold provincial cities, do not want to hand over their troops and money, and want land grants most of all. Royal Kin First hands cities to the royal house, and so grows the cadets.
 - Children join the clan of the parent who passes on the succession. A person still counts as part of a clan if anyone in the last three generations of ancestors was a king or city lord. If no one has held office for over a hundred years, that branch has faded.
 
 ## Stances and Factions
 
 Each clan has a position on two axes:
 
-- **Conservative ↔ Radical**: Old clans, the royal house, and chiefs who are Content or Honest lean conservative. New clans and young, ambitious chiefs lean radical.
-- **Central ↔ Local**: Clans that live near the capital and rose through appointments lean central. Clans far from the capital that want to stand on their own lean local.
+- **Conservative ↔ Radical**: Old clans and chiefs who are older, Content, or Honest lean conservative. New clans and young, ambitious chiefs lean radical.
+- **Central ↔ Local**: Clans that live near the capital and clans with Paranoid chiefs lean central. Clans far from the capital that want to stand on their own lean local.
 
-The chief's personality and traits matter a great deal. When an old chief dies and a new one takes over, the clan's stance often jumps a long way.
+The chief's traits matter a great deal, but a clan's stance builds up over generations: a new chief only pulls the clan part of the way toward his own views.
 
 The two axes make four factions. Clans in the same faction share a color:
 
@@ -40,7 +41,7 @@ Policies are on three pages: Domestic, Military, and Diplomacy. The options of e
 | Royal Kin First | Someone from the royal house first (the vanilla behavior). In a republic this is called Seniority |
 | Meritocracy | The ablest person in the kingdom, regardless of birth |
 
-The lord's clan decides who holds the city's seats, so Appointments reshapes parliament. Hereditary Office lets local clans keep their cities. Royal Kin First gives the royal house more and more. Meritocracy keeps promoting new clans.
+The lord's clan decides who holds the city's seats, so Appointments reshapes parliament. Hereditary Office lets local clans keep their cities. Royal Kin First hands more and more cities to the royal house, which grows the cadets. Meritocracy keeps promoting new clans.
 
 **Land Grants**:
 
@@ -136,9 +137,14 @@ Transports carry cannons and bombard the coast. They are also how armies cross t
 ## How Parliament Works
 
 - Each kingdom holds a parliament every 4 to 6 years, and votes on one bill. The bill is drafted at the previous session. In the parliament window you can see which clan proposed it and how many years until the vote.
-- **Drafting**: The more seats a clan has, the more likely it is to be the proposer. The proposer picks the policy that suits it best and is most likely to pass.
-- **Voting**: Each clan checks whether the bill would bring the kingdom closer to its own stance or further from it. Closer, it votes yes. Further, it votes no. Votes are counted by seats, and a majority passes the bill.
-- **Self-interest**: Some policies also affect a clan's own gains and losses. When troops and money move to the center, the royal house gains and local clans lose. Greedy chiefs care more about this, and Content chiefs care less. The overlord's clan wants to collect more Vassal Tribute, but parliament will not raise it when vassals are strong or already discontented.
+- **Each policy is voted on by itself**: Every clan has an option it wants on each policy. If the bill moves that policy closer to what the clan wants, it votes yes. Otherwise it votes no. Votes are counted by seats, and a majority passes the bill. The other policies do not affect this vote.
+- **Circumstances, not just stance**: Which option a clan wants depends on its stance, and also on its circumstances and interests:
+  - Clans with many ports want sea power, inland clans want land power.
+  - Clans that govern foreign residents fear unrest and want Local Customs.
+  - When troops and money move to the center, the royal house gains and local clans lose.
+  - Warlike or hotheaded chiefs want expansion and more arms, peaceful chiefs want fewer wars. In wartime everyone wants more arms.
+  - The overlord's clans want more Vassal Tribute, but not when vassals are strong or already discontented.
+- **Drafting**: The more discontented a clan is and the more seats it has, the more likely it is to be the proposer. The proposer picks the policy that suits it best and is most likely to pass. If nobody wants a change, there is no bill this time.
 - **The royal house's worries**: The ruling clan estimates whether a bill would push the provinces into revolt. At Prime the provinces are calm and the royal house is comfortable taking power. In Decline the provinces are already shaky and it dares not push too hard.
 
 When a bill passes, the world log records "kingdom adopts policy".
@@ -147,8 +153,8 @@ When a bill passes, the world log records "kingdom adopts policy".
 
 Policies affect the loyalty of cities held by each clan (the capital and the royal house's cities are exempt). The breakdowns appear in the vanilla city loyalty window:
 
-- **Favored policies / Opposed policies**: If the kingdom's policies are close to a clan's stance, its cities are more loyal. If they are far, its cities lose a lot of loyalty. Forcing through a policy that most clans oppose makes the opposing clans' cities unhappy together.
-- **Curbed privileges**: When troops and money move to the center, the cities of local clans are unhappy, even if the clan itself favors centralization. Large clans with greedy chiefs lose the most. If both Army and Taxation are at their most central, local cities rebel easily.
+- **Favored policies / Opposed policies**: If every policy is where a clan wants it, its cities are more loyal. The further the policies are from what it wants, the less loyal its cities. Forcing through a policy that most clans oppose makes the opposing clans' cities unhappy together.
+- **Curbed privileges**: When troops and money are more centralized than a clan wants, its cities are unhappy. Large clans with greedy chiefs care the most, and so do the cadets. If both Army and Taxation are at their most central, local cities rebel easily.
 
 Falling city loyalty also drags down the [dynastic cycle](cycle.md).
 
@@ -160,4 +166,4 @@ Falling city loyalty also drags down the [dynastic cycle](cycle.md).
 - **Decree**: Skip the vote and put the bill into effect. Cities of the clans that oppose it become unhappy.
 - **Withdraw**: Remove the current bill, whoever proposed it.
 
-The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown. Click a clan to see its chief and its cities. The right side shows the policies and the current bill.
+The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. Click a clan to see its chief (for the cadets, the leading prince) and its cities. The right side shows the policies and the current bill.

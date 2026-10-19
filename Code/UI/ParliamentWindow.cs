@@ -204,13 +204,13 @@ namespace DiplomacyOverhaul
         {
             if (_shell.root == null || _kingdom == null) return;
             List<ParliamentClan> clans = Parliament.Clans(_kingdom);
-            if (_selected >= 0 && clans.Find(c => c.clan.id == _selected) == null) _selected = -1;
+            if (_selected >= 0 && clans.Find(c => c.Key == _selected) == null) _selected = -1;
             bool republic = Government.IsRepublic(_kingdom);
             string k = _kingdom.id + "|";
 
             var ck = new System.Text.StringBuilder(k);
             foreach (ParliamentClan pc in clans)
-                ck.Append(pc.clan.id).Append(':').Append(pc.clan.name).Append(':').Append(pc.seats).Append(':').Append((int)pc.faction).Append(':').Append(pc.ruling).Append('|');
+                ck.Append(pc.Key).Append(':').Append(pc.clan.name).Append(':').Append(pc.seats).Append(':').Append((int)pc.faction).Append(':').Append(pc.ruling).Append('|');
             string clanKey = ck.ToString();
 
             bool built = Build(_frame, "frame", BuildFrame);
@@ -238,7 +238,7 @@ namespace DiplomacyOverhaul
             if (bill != null)
             {
                 bk.Append('b').Append(bill.policy.id).Append(bill.option).Append(bill.player).Append(bill.proposer).Append('|').Append(bill.policy.Get(_kingdom)).Append('|').Append(result.yes).Append(':').Append(result.no);
-                foreach (ParliamentClan pc in clans) bk.Append(result.votes.TryGetValue(pc.clan, out bool v) && v ? 'y' : 'n');
+                foreach (ParliamentClan pc in clans) bk.Append(result.votes.TryGetValue(pc.Key, out bool v) && v ? 'y' : 'n');
             }
             if (Build(_bill, bk.ToString(), () => BuildBill(clans, bill, result))) built = true;
             // 离表决还有几年：跨年只改这一行字
@@ -352,11 +352,15 @@ namespace DiplomacyOverhaul
             float ry = 0f;
             foreach (ParliamentClan pc in list)
             {
-                long id = pc.clan.id;
+                long id = pc.Key;
                 RectTransform row = Button(content, 0f, ry, ListW - 6f, RowH, "ui/special/windowInnerSlicedRound", () => Select(id));
                 Swatch(row, 6f, (RowH - 6f) / 2f, 6f, FactionColor(pc.faction), 1f);
-                Text(row, pc.clan.name, 16f, 0f, 90f, RowH, 7, Ink, TextAnchor.MiddleLeft);
-                if (pc.ruling) Text(row, LM.Get(Government.IsRepublic(_kingdom) ? "vd_parliament_ruling" : "vd_parliament_royal"), 16f + Measure(pc.clan.name, 7) + 3f, 0f, 30f, RowH, 6, Gold, TextAnchor.MiddleLeft);
+                // 名字和王室、宗室的小字一起放在派系那一栏之前，放不下时截短名字
+                string tag = Tag(pc);
+                float tagW = tag != null ? Measure(tag, 6) + 3f : 0f;
+                string name = UiKit.Fit(pc.clan.name, 7, 90f - tagW);
+                Text(row, name, 16f, 0f, 90f, RowH, 7, Ink, TextAnchor.MiddleLeft);
+                if (tag != null) Text(row, tag, 16f + Measure(name, 7) + 3f, 0f, 30f, RowH, 6, Gold, TextAnchor.MiddleLeft);
                 Text(row, LM.Get(FactionKey(pc.faction)), 108f, 0f, 36f, RowH, 6, Muted, TextAnchor.MiddleLeft);
                 Text(row, pc.seats.ToString(), ListW - 40f, 0f, 28f, RowH, 7, Gold, TextAnchor.MiddleRight);
                 _section.frames[id] = Frame(row, -1f).gameObject;
@@ -364,15 +368,25 @@ namespace DiplomacyOverhaul
             }
         }
 
+        // 列表里名字后面的小字：王室（共和国是执政）、宗室
+        static string Tag(ParliamentClan pClan)
+        {
+            if (pClan.ruling) return LM.Get(Government.IsRepublic(_kingdom) ? "vd_parliament_ruling" : "vd_parliament_royal");
+            return pClan.cadet ? LM.Get("vd_parliament_cadet") : null;
+        }
+
         static List<ParliamentClan> RulingFirst(List<ParliamentClan> pClans)
         {
+            // 王室在最上面，宗室紧跟着
             var list = new List<ParliamentClan>(pClans);
-            int i = list.FindIndex(c => c.ruling);
-            if (i > 0)
+            int at = 0;
+            foreach (System.Predicate<ParliamentClan> match in new System.Predicate<ParliamentClan>[] { c => c.ruling, c => c.cadet })
             {
+                int i = list.FindIndex(match);
+                if (i < 0) continue;
                 ParliamentClan r = list[i];
                 list.RemoveAt(i);
-                list.Insert(0, r);
+                list.Insert(at++, r);
             }
             return list;
         }
@@ -394,7 +408,7 @@ namespace DiplomacyOverhaul
                 for (int i = 0; i < pc.seats && s < seats.Count; i++, s++)
                 {
                     Dimmable(pc, Swatch(area, seats[s].x - size / 2f, seats[s].y - size / 2f, size, color, 1f), 0.25f);
-                    owners[s] = pc.clan.id;
+                    owners[s] = pc.Key;
                 }
             }
             SeatClicks(area, seats, owners, size);
@@ -458,17 +472,17 @@ namespace DiplomacyOverhaul
 
         static void Dimmable(ParliamentClan pClan, RectTransform pTarget, float pAlpha)
         {
-            _section.dims.Add(new Dim { clan = pClan.clan.id, graphic = pTarget.GetComponent<Graphic>(), outline = pTarget.GetComponent<Outline>(), alpha = pAlpha });
+            _section.dims.Add(new Dim { clan = pClan.Key, graphic = pTarget.GetComponent<Graphic>(), outline = pTarget.GetComponent<Outline>(), alpha = pAlpha });
         }
 
         // 选中的氏族：族长和占的城
         static string DetailText(List<ParliamentClan> pClans)
         {
-            ParliamentClan pc = pClans.Find(c => c.clan.id == _selected);
+            ParliamentClan pc = pClans.Find(c => c.Key == _selected);
             if (pc == null) return "";
             var parts = new List<string>();
-            Actor chief = pc.clan.getChief();
-            if (chief != null && chief.isAlive()) parts.Add($"{LM.Get("vd_parliament_chief")} <color=#8fb0ff>{chief.getName()}</color>");
+            Actor head = pc.cadet ? pc.voice : pc.clan.getChief();
+            if (head != null && head.isAlive()) parts.Add($"{LM.Get(pc.cadet ? "vd_parliament_cadet_head" : "vd_parliament_chief")} <color=#8fb0ff>{head.getName()}</color>");
             var cities = new List<string>();
             foreach (City c in pc.cities) cities.Add(c.data.name);
             if (cities.Count > 0) parts.Add(string.Join(LM.Get("vd_parliament_separator"), cities));
@@ -631,9 +645,11 @@ namespace DiplomacyOverhaul
             float ry = 0f;
             foreach (ParliamentClan pc in list)
             {
-                bool yes = result.votes.TryGetValue(pc.clan, out bool v) && v;
+                bool yes = result.votes.TryGetValue(pc.Key, out bool v) && v;
                 Swatch(votes, 6f, ry + 3f, 5f, FactionColor(pc.faction), 1f);
-                Text(votes, pc.clan.name, 16f, ry, 120f, rowH, 6, Ink, TextAnchor.MiddleLeft);
+                string suffix = pc.cadet ? " " + LM.Get("vd_parliament_cadet") : "";
+                string name = UiKit.Fit(pc.clan.name, 6, RightW - 102f - Measure(suffix, 6)) + suffix;
+                Text(votes, name, 16f, ry, RightW - 102f, rowH, 6, Ink, TextAnchor.MiddleLeft);
                 Text(votes, pc.seats.ToString(), RightW - 82f, ry, 28f, rowH, 6, Gold, TextAnchor.MiddleRight);
                 Icon(votes, yes ? "ui/Icons/iconMoodHappy" : "ui/Icons/iconMoodAngry", RightW - 50f, ry + 1.5f, 8f);
                 Text(votes, LM.Get(yes ? "vd_parliament_yes" : "vd_parliament_no"), RightW - 40f, ry, 30f, rowH, 6, yes ? YesText : NoText, TextAnchor.MiddleRight);
