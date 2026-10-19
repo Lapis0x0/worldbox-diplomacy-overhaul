@@ -27,7 +27,7 @@ namespace DiplomacyOverhaul
         public static WorldTile NearestIntruder(WorldTile pFrom, City pCity, Kingdom pGuard)
         {
             Kingdom owner = pCity.kingdom;
-            if (owner == null) return null;
+            if (owner.isRekt() || pGuard.isRekt()) return null;
             WorldTile best = null;
             float bestDist = float.MaxValue;
             foreach (Kingdom k in World.world.kingdoms)

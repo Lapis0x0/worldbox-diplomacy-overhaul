@@ -84,10 +84,12 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 本国和同阵营（见 Camp）：点它们的城市是去驻扎守城，不是宣战
+        // 本国和同阵营（见 Camp）：点它们的城市是去驻扎守城，不是宣战。
+        // 军队的城市没了时，原版 Army.getKingdom 返回军队记着的旧王国，那个王国可能已经灭亡、被原版清空，
+        // 对它调 isEnemy 会空引用；驻扎的军队每个士兵每次做决策都会走到这里
         public static bool Friendly(Kingdom a, Kingdom b)
         {
-            if (a == null || b == null) return false;
+            if (a.isRekt() || b.isRekt()) return false;
             if (a == b) return true;
             if (a.isEnemy(b)) return false;
             return Camp.Same(a, b);
