@@ -105,7 +105,7 @@ namespace DiplomacyOverhaul
             int sum = 0;
             foreach (Army a in pAll)
             {
-                Kingdom k = a.getKingdom();
+                Kingdom k = Orders.KingdomOf(a);
                 if (k == null || !k.isAlive() || !k.isEnemy(owner)) continue;
                 Actor lead = a.getCaptain();
                 if (lead == null || lead.isRekt() || lead.isInsideSomething()) continue;
@@ -134,7 +134,7 @@ namespace DiplomacyOverhaul
             foreach (Army a in World.world.armies)
             {
                 if (!Orders.HasUnits(a)) continue;
-                Kingdom k = a.getKingdom();
+                Kingdom k = Orders.KingdomOf(a);
                 if (k == null || !k.isAlive()) continue;
                 all.Add(a);
                 if (!Guard.Is(a)) continue;
@@ -369,7 +369,7 @@ namespace DiplomacyOverhaul
             City capital = pKingdom.capital;
             bool capitalHeld = false;
             foreach (Army g in World.world.armies)
-                if (Guard.Is(g) && g.getKingdom() == pKingdom && Task(g) == TaskStandby && Orders.GetGarrison(g) == capital)
+                if (Guard.Is(g) && Orders.KingdomOf(g) == pKingdom && Task(g) == TaskStandby && Orders.GetGarrison(g) == capital)
                     capitalHeld = true;
             City border = Border(pKingdom);
             foreach (Army g in pIdle)

@@ -31,7 +31,7 @@ namespace DiplomacyOverhaul
             foreach (Army a in pAll)
             {
                 if (Guard.Is(a) || a.getCity() == null) continue;
-                Kingdom k = a.getKingdom();
+                Kingdom k = Orders.KingdomOf(a);
                 if (!Conservative(k))
                 {
                     // 兵制改回贵族私兵：交还原版

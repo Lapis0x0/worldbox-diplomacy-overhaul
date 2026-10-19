@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 
 namespace DiplomacyOverhaul
@@ -19,23 +20,30 @@ namespace DiplomacyOverhaul
 
         static void Yearly()
         {
-            Regime.UpdateAll();
-            Government.UpdateAll();
-            Cycle.UpdateAll();
-            Integration.UpdateAll();
-            Territory.UpdateAll();
-            Assimilation.UpdateAll();
-            Treasury.UpdateAll();
-            Armory.UpdateAll();
-            Parliament.UpdateAll();
+            Run("Regime", Regime.UpdateAll);
+            Run("Government", Government.UpdateAll);
+            Run("Cycle", Cycle.UpdateAll);
+            Run("Integration", Integration.UpdateAll);
+            Run("Territory", Territory.UpdateAll);
+            Run("Assimilation", Assimilation.UpdateAll);
+            Run("Treasury", Treasury.UpdateAll);
+            Run("Armory", Armory.UpdateAll);
+            Run("Parliament", Parliament.UpdateAll);
         }
 
         static void Monthly()
         {
             // 兜底：把所有附庸的战争状态和宗主同步一次
-            Vassals.SyncAllWars();
-            Guard.Rebalance();
-            GuardAI.UpdateAll();
+            Run("Vassals", Vassals.SyncAllWars);
+            Run("Guard", Guard.Rebalance);
+            Run("GuardAI", GuardAI.UpdateAll);
+        }
+
+        // 一个系统出错不连累排在后面的系统，也不打断原版这一帧的更新（见 Isolation）
+        static void Run(string pName, Action pUpdate)
+        {
+            try { pUpdate(); }
+            catch (Exception e) { Isolation.Report($"定期更新 {pName}", e); }
         }
 
         [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.update))]

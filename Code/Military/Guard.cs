@@ -185,7 +185,7 @@ namespace DiplomacyOverhaul
             float bestDist = float.MaxValue;
             foreach (Army army in World.world.armies)
             {
-                if (!Is(army) || army.getKingdom() != kingdom || army.countUnits() == 0 || army.countUnits() >= GroupCap) continue;
+                if (!Is(army) || Orders.KingdomOf(army) != kingdom || army.countUnits() == 0 || army.countUnits() >= GroupCap) continue;
                 Actor captain = army.getCaptain();
                 if (captain == null || captain.isRekt() || captain.isInsideSomething()) continue;
                 if (!captain.current_tile.isSameIsland(pActor.current_tile)) continue;
@@ -212,14 +212,14 @@ namespace DiplomacyOverhaul
         // 「国名禁军 I」：同一国家的禁军编队按顺序编号
         internal static void Name(Army pArmy)
         {
-            Kingdom kingdom = pArmy.getKingdom();
+            Kingdom kingdom = Orders.KingdomOf(pArmy);
             if (kingdom == null) return;
             string template = LM.Get("vd_guard_army").Replace("$kingdom$", kingdom.name);
             string prefix = template.Substring(0, template.IndexOf("$num$"));
             if (pArmy.name != null && pArmy.name.StartsWith(prefix)) return;
             var used = new HashSet<string>();
             foreach (Army other in World.world.armies)
-                if (other != pArmy && Is(other) && other.getKingdom() == kingdom) used.Add(other.name);
+                if (other != pArmy && Is(other) && Orders.KingdomOf(other) == kingdom) used.Add(other.name);
             for (int n = 1; ; n++)
             {
                 string name = template.Replace("$num$", n.ToRoman());
@@ -258,7 +258,7 @@ namespace DiplomacyOverhaul
             foreach (Army army in new List<Army>(World.world.armies))
             {
                 if (!Is(army) || army.isRekt()) continue;
-                Kingdom kingdom = army.getKingdom();
+                Kingdom kingdom = Orders.KingdomOf(army);
                 if (kingdom == null || !kingdom.isAlive())
                 {
                     army.disband();
@@ -483,7 +483,7 @@ namespace DiplomacyOverhaul
             if (!pActor.isKingdomCiv()) return true;
             __result = ai.behaviours.BehResult.Continue;
             Army army = pActor.army;
-            if (Guard.Is(army) && army.getKingdom() == pActor.kingdom) return false;
+            if (Guard.Is(army) && Orders.KingdomOf(army) == pActor.kingdom) return false;
             if (army != null) pActor.removeFromArmy();
             Guard.Enlist(pActor);
             return false;

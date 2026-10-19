@@ -146,7 +146,7 @@ namespace DiplomacyOverhaul
                 // 指着一个国家就画它听命令的军队到目的地，否则画所有国家的
                 Kingdom kingdom = HoveredCity()?.kingdom;
                 foreach (Army army in World.world.armies)
-                    if ((kingdom == null || army.getKingdom() == kingdom) && Orders.IsCommanded(army)) DestinationArrow(pAsset, army);
+                    if ((kingdom == null || Orders.KingdomOf(army) == kingdom) && Orders.IsCommanded(army)) DestinationArrow(pAsset, army);
             }
             else if (Selected(Powers.MakeVassal) && Alive(Powers._lord) != null)
             {
@@ -194,7 +194,7 @@ namespace DiplomacyOverhaul
                 List<Army> armies = BoxCommand.SelectedArmies();
                 if (armies.Count > 0 && hovered != null)
                     Zones(pAsset, hovered.zones, BoxCommand.AllStationedAt(armies, World.world.getMouseTilePosCachedFrame())
-                        ? ColorSource : TargetColor(armies[0].getKingdom(), hovered));
+                        ? ColorSource : TargetColor(Orders.KingdomOf(armies[0]), hovered));
                 return;
             }
             if (!AnyOwnPowerSelected()) return;
@@ -207,7 +207,7 @@ namespace DiplomacyOverhaul
                 Army army = Powers.AliveArmy(Powers._army) ? Powers._army : null;
                 // 已经驻扎在这座城：白色，点了是解除驻扎
                 if (army != null && hovered != null && Powers.ArmyUnderCursor() != army)
-                    Zones(pAsset, hovered.zones, hovered == Orders.GetGarrison(army) ? ColorSource : TargetColor(army.getKingdom(), hovered));
+                    Zones(pAsset, hovered.zones, hovered == Orders.GetGarrison(army) ? ColorSource : TargetColor(Orders.KingdomOf(army), hovered));
             }
             else if (Selected(Powers.OrderKingdomAttack))
             {

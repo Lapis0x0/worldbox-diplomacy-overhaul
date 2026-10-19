@@ -79,14 +79,21 @@ namespace DiplomacyOverhaul
             var list = new List<Army>();
             foreach (Army army in World.world.armies)
             {
-                if (HasUnits(army) && army.getKingdom() == pKingdom) list.Add(army);
+                if (HasUnits(army) && KingdomOf(army) == pKingdom) list.Add(army);
             }
             return list;
         }
 
-        // 本国和同阵营（见 Camp）：点它们的城市是去驻扎守城，不是宣战。
-        // 军队的城市没了时，原版 Army.getKingdom 返回军队记着的旧王国，那个王国可能已经灭亡、被原版清空，
-        // 对它调 isEnemy 会空引用；驻扎的军队每个士兵每次做决策都会走到这里
+        // 军队所属的国家，已经灭亡的算没有。军队的城市没了时，原版 Army.getKingdom 返回军队记着的旧国家，
+        // 那个国家可能已经灭亡、被原版清空了 asset 和 data，对它判断敌友、读政策都会空引用。
+        // 模组里取军队的国家一律用这个
+        public static Kingdom KingdomOf(Army pArmy)
+        {
+            Kingdom k = pArmy?.getKingdom();
+            return k.isRekt() ? null : k;
+        }
+
+        // 本国和同阵营（见 Camp）：点它们的城市是去驻扎守城，不是宣战
         public static bool Friendly(Kingdom a, Kingdom b)
         {
             if (a.isRekt() || b.isRekt()) return false;
@@ -107,7 +114,7 @@ namespace DiplomacyOverhaul
             pArmy.data.get(KeyGarrison, out long id, -1L);
             if (id < 0) return null;
             City target = World.world.cities.get(id);
-            if (target != null && !target.isRekt() && Friendly(target.kingdom, pArmy.getKingdom())) return target;
+            if (target != null && !target.isRekt() && Friendly(target.kingdom, KingdomOf(pArmy))) return target;
             // 驻扎城丢了，或者那个国家不再是友方
             pArmy.data.removeLong(KeyGarrison);
             return null;
@@ -166,7 +173,7 @@ namespace DiplomacyOverhaul
             City garrison = GetGarrison(pArmy);
             if (garrison != null)
             {
-                WorldTile enemy = Siege.NearestIntruder(pFrom, garrison, pArmy.getKingdom());
+                WorldTile enemy = Siege.NearestIntruder(pFrom, garrison, KingdomOf(pArmy));
                 if (enemy != null) return enemy;
                 WorldTile center = garrison.getTile();
                 if (center != null) return Around(center);
@@ -204,7 +211,7 @@ namespace DiplomacyOverhaul
             if (garrison != null)
             {
                 // 敌军进城：不管队长在走还是在等，重新出发去打最近的那个（敌人会动，每次都重新挑）
-                if (Siege.NearestIntruder(captain.current_tile, garrison, pArmy.getKingdom()) != null)
+                if (Siege.NearestIntruder(captain.current_tile, garrison, KingdomOf(pArmy)) != null)
                 {
                     captain.setTask("warrior_army_leader_move_random", true, false, true);
                     return;
@@ -287,7 +294,7 @@ namespace DiplomacyOverhaul
         public static string Recall(Army pArmy, City pDest)
         {
             if (!HasUnits(pArmy)) return "vd_tip_no_army";
-            if (pDest == null || !Friendly(pArmy.getKingdom(), pDest.kingdom)) return "vd_tip_invalid";
+            if (pDest == null || !Friendly(KingdomOf(pArmy), pDest.kingdom)) return "vd_tip_invalid";
             MoveArmy(pArmy, pDest);
             return null;
         }
@@ -360,10 +367,10 @@ namespace DiplomacyOverhaul
         // 玩家指挥一支军队：点别国城市就进攻，点本国或友方城市就前往那里驻扎，点空地就前往那里扎营
         public static string CommandArmy(Army pArmy, WorldTile pTile)
         {
-            if (!HasUnits(pArmy) || pArmy.getKingdom() == null) return "vd_tip_no_army";
+            if (!HasUnits(pArmy) || KingdomOf(pArmy) == null) return "vd_tip_no_army";
             City target = TargetCity(pTile);
             string error = target == null ? Hold(pArmy, pTile)
-                : Friendly(target.kingdom, pArmy.getKingdom()) ? Recall(pArmy, target) : Attack(pArmy, target);
+                : Friendly(target.kingdom, KingdomOf(pArmy)) ? Recall(pArmy, target) : Attack(pArmy, target);
             if (error == null) Guard.OnPlayerOrder(pArmy);
             return error;
         }
@@ -373,7 +380,7 @@ namespace DiplomacyOverhaul
         {
             if (!HasUnits(pArmy)) return "vd_tip_no_army";
             if (pTarget == null || pTarget == pArmy.getCity()) return "vd_tip_invalid";
-            string error = EnsureWar(pArmy.getKingdom(), pTarget.kingdom);
+            string error = EnsureWar(KingdomOf(pArmy), pTarget.kingdom);
             if (error != null) return error;
             Order(pArmy, pTarget);
             _forced[pArmy.id] = pTarget.id;
@@ -438,7 +445,8 @@ namespace DiplomacyOverhaul
 
         public static void Dispatch(Army pArmy, WorldTile pTarget)
         {
-            Kingdom kingdom = pArmy.getKingdom();
+            Kingdom kingdom = Orders.KingdomOf(pArmy);
+            if (kingdom == null) return;
             var units = new List<Actor>();
             foreach (Actor unit in pArmy.units)
             {
