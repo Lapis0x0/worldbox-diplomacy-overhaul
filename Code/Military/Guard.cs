@@ -379,7 +379,8 @@ namespace DiplomacyOverhaul
     }
 
     // 编队的士兵校验任务、执行决策和 AI 时换上编队的进攻目标。这三步每帧对每个单位跑一次，
-    // 补丁挂在单位的方法上开销太大，改为挂在批处理的循环上：照抄原版循环，只对禁军编队里的人多做一次替换
+    // 补丁挂在单位的方法上开销太大，改为挂在批处理的循环上：照抄原版循环，只对禁军编队里的人多做一次替换。
+    // 每个单位单独兜住异常，一个单位出错不再连累同批的其他单位（见 Isolation）
     [HarmonyPatch(typeof(BatchActors), nameof(BatchActors.b4_checkTaskVerifier))]
     static class Patch_GuardVerifier
     {
@@ -392,14 +393,18 @@ namespace DiplomacyOverhaul
             for (int i = 0; i < count; i++)
             {
                 Actor a = array[i];
-                if (a.army == null || !Guard.Is(a.army))
+                try
                 {
-                    a.b4_checkTaskVerifier(elapsed);
-                    continue;
+                    if (a.army == null || !Guard.Is(a.army))
+                    {
+                        a.b4_checkTaskVerifier(elapsed);
+                        continue;
+                    }
+                    Guard.Swap swap = Guard.Enter(a);
+                    try { a.b4_checkTaskVerifier(elapsed); }
+                    finally { Guard.Exit(swap); }
                 }
-                Guard.Swap swap = Guard.Enter(a);
-                try { a.b4_checkTaskVerifier(elapsed); }
-                finally { Guard.Exit(swap); }
+                catch (System.Exception e) { Isolation.ActorFailed(a, "b4_checkTaskVerifier", e); }
             }
             return false;
         }
@@ -417,14 +422,18 @@ namespace DiplomacyOverhaul
             for (int i = 0; i < count; i++)
             {
                 Actor a = array[i];
-                if (a.army == null || !Guard.Is(a.army))
+                try
                 {
-                    a.b6_0_updateDecision(elapsed);
-                    continue;
+                    if (a.army == null || !Guard.Is(a.army))
+                    {
+                        a.b6_0_updateDecision(elapsed);
+                        continue;
+                    }
+                    Guard.Swap swap = Guard.Enter(a);
+                    try { a.b6_0_updateDecision(elapsed); }
+                    finally { Guard.Exit(swap); }
                 }
-                Guard.Swap swap = Guard.Enter(a);
-                try { a.b6_0_updateDecision(elapsed); }
-                finally { Guard.Exit(swap); }
+                catch (System.Exception e) { Isolation.ActorFailed(a, "b6_0_updateDecision", e); }
             }
             __instance._cur_container.Clear();
             return false;
@@ -443,14 +452,18 @@ namespace DiplomacyOverhaul
             for (int i = 0; i < count; i++)
             {
                 Actor a = array[i];
-                if (a.army == null || !Guard.Is(a.army))
+                try
                 {
-                    a.b6_updateAI(elapsed);
-                    continue;
+                    if (a.army == null || !Guard.Is(a.army))
+                    {
+                        a.b6_updateAI(elapsed);
+                        continue;
+                    }
+                    Guard.Swap swap = Guard.Enter(a);
+                    try { a.b6_updateAI(elapsed); }
+                    finally { Guard.Exit(swap); }
                 }
-                Guard.Swap swap = Guard.Enter(a);
-                try { a.b6_updateAI(elapsed); }
-                finally { Guard.Exit(swap); }
+                catch (System.Exception e) { Isolation.ActorFailed(a, "b6_updateAI", e); }
             }
             return false;
         }

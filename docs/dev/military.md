@@ -182,7 +182,7 @@
 - `warrior_army_follow_leader` 决策：驻扎、扎营时士兵也跟随队长。
 - `Actor.isAbleToSkipPriorityLevels`：驻扎、扎营时士兵不散去。
 - `City.isOkToSendArmy`：玩家命令和禁军跳过出兵门槛；保守的地方军只在被派出征时出兵。
-- `BatchActors.b4_checkTaskVerifier`、`b6_0_updateDecision`、`b6_updateAI`：原版队长挑落点、校验目标、跨海叫船、跟随队长读的都是士兵户籍城的进攻目标。禁军编队的士兵执行这三步时，把户籍城的目标字段临时换成编队的，执行完换回。挂在批处理循环上而不是单位的方法上，补丁每帧只进一次。
+- `BatchActors.b4_checkTaskVerifier`、`b6_0_updateDecision`、`b6_updateAI`：原版队长挑落点、校验目标、跨海叫船、跟随队长读的都是士兵户籍城的进攻目标。禁军编队的士兵执行这三步时，把户籍城的目标字段临时换成编队的，执行完换回。挂在批处理循环上而不是单位的方法上，补丁每帧只进一次。循环里逐个单位兜住异常，见[异常隔离](README.md#异常隔离)。
 - `CityBehCheckArmy.execute`：城市的地方军只从地方兵里挑队长。
 - `City.makeWarrior`：新兵编入禁军还是地方兵。
 - `Army.generateName`：禁军编队的名字。
