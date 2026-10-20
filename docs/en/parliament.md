@@ -59,9 +59,9 @@ The lord's clan decides who holds the city's seats, so Appointments reshapes par
 
 | Option | Sent up |
 |---|---|
-| Tax Farming | 20% |
+| Tax Farming | 25% |
 | Shared Revenue | 50% |
-| Central Collection | 70% |
+| Central Collection | 75% |
 
 Elven kingdoms start with Tax Farming, sheep kingdoms start with Central Collection, and all others start with Shared Revenue. This policy replaces vanilla's Low Tribute and High Tribute traits.
 

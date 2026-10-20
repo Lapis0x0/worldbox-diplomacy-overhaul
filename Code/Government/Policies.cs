@@ -145,7 +145,7 @@ namespace DiplomacyOverhaul
         const string TributeGroup = "tribute";
         // 议会关掉时按税收体制给国家加回原版贡赋特质，记一笔，重新打开时按特质换回税收体制
         const string KeyTributeRestored = "vd_tribute_restored";
-        static readonly float[] TributeRates = { 0.2f, 0.5f, 0.7f };
+        static readonly float[] TributeRates = { 0.25f, 0.5f, 0.75f };
 
         public static readonly List<Policy> All = new List<Policy>();
         static readonly Dictionary<string, Policy> _byId = new Dictionary<string, Policy>();
