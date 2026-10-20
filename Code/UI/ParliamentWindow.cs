@@ -67,7 +67,7 @@ namespace DiplomacyOverhaul
         // 热重载：旧版本建的窗口和按钮引用着旧代码，全部拆掉，用到时重建
         public static void Init()
         {
-            _shell = new KingdomTabWindow(WindowId, IconPath, 1, W, H, Open, Tick);
+            _shell = new KingdomTabWindow(WindowId, IconPath, 1, W, H, Open, Tick) { enabled = () => Settings.ParliamentEnabled };
             _shell.Init();
             foreach (RectTransform t in Resources.FindObjectsOfTypeAll<RectTransform>())
             {
@@ -146,9 +146,15 @@ namespace DiplomacyOverhaul
             return SelectedObjects.getSelectedNanoObject() as Kingdom;
         }
 
+        internal static void OnToggle(bool pEnabled)
+        {
+            _shell?.Refresh();
+            UpdateSide();
+        }
+
         internal static void UpdateSide()
         {
-            bool show = PowerButtonSelector.instance.cancelUnitSelectedMover.visible && SelectedKingdom() != null;
+            bool show = Settings.ParliamentEnabled && PowerButtonSelector.instance.cancelUnitSelectedMover.visible && SelectedKingdom() != null;
             if (_side == null)
             {
                 if (!show) return;
@@ -168,7 +174,7 @@ namespace DiplomacyOverhaul
 
         public static void Open(Kingdom pKingdom)
         {
-            if (pKingdom == null || !pKingdom.isAlive()) return;
+            if (pKingdom == null || !pKingdom.isAlive() || !Settings.ParliamentEnabled) return;
             if (_kingdom != pKingdom) _selected = -1;
             _kingdom = pKingdom;
             KingdomTabWindow.Current = pKingdom;

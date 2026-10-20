@@ -29,6 +29,7 @@ namespace DiplomacyOverhaul
                 } },
                 new Card { title = "vd_settings_domestic", icon = "ui/Icons/iconCrown", rows = new[]
                 {
+                    (Settings.GroupParliament, Settings.KeyParliament),
                     (Settings.GroupCycle, "vd_cycle_enabled"),
                     (Settings.GroupGovernment, "vd_gov_auto_enabled"),
                     (Settings.GroupGovernment, "vd_gov_events_enabled")
@@ -137,7 +138,6 @@ namespace DiplomacyOverhaul
                 }
             }
             float footY = Height() - Pad - FooterH + 2f;
-            Text(_root, LM.Get("vd_settings_footer"), Pad + 2f, footY, W - 2f * Pad - 60f, 16f, 6, Muted, TextAnchor.MiddleLeft);
             RectTransform reset = Button(_root, W - Pad - 54f, footY, 54f, 16f, "ui/special/special_buttonGray", Reset);
             Text(reset, LM.Get("vd_settings_reset"), 0f, 0f, 54f, 16f, 7, Color.white, TextAnchor.MiddleCenter);
         }

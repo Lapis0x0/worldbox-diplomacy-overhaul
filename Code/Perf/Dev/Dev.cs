@@ -21,7 +21,7 @@ namespace DiplomacyOverhaul.Perf
     //   opt <字段名|all> <on|off>
     //   debugopt <选项> <on|off>   切换原版调试菜单的选项（DebugOption 的名字）
     //   settings                 打开模组设置窗口
-    //   setting <分组> <设置项> <值>   改模组设置，如 setting vd_group_perf vd_perf_enabled false
+    //   setting <分组> <开关> <true|false>   改模组设置，如 setting vd_group_perf vd_perf_enabled false
     //   measure <标签> <秒> [detail] [mono]   测帧时间；detail 同时打开原版 Bench 分项计时，
     //                           mono 给所有脚本的 Update/LateUpdate 计时（都有额外开销）
     //   probe <类型.方法> ...     detail 测量时额外计时这些方法（同名重载都算），不带参数则清空
@@ -38,6 +38,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl sim <轮数>           每个国家连开几轮议会（立场不变，不写世界日志），统计议案、政策分布和地方势力的忠诚修正，算完恢复原样
     //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy，再跟政策 id 展开这一项）
     //   parl lock <国家> <政策 id>   切换这项政策的锁定
+    //   parl tribute             各国的税收体制、原版贡赋特质、实际上缴比例、附庸贡赋和政见不合合计
     //   parl election [国家]       打开选举与任命窗口
     //   parl vote [国家]           按眼下的议会选一次执政，只打印候选人和票数，不生效
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
@@ -142,10 +143,8 @@ namespace DiplomacyOverhaul.Perf
                     SettingsWindow.Open();
                     break;
                 case "setting":
-                    // 和玩家在设置里改一样：直接改 ModConfig 里的值
-                    var item = Settings.Config[a[1]][a[2]];
-                    if (bool.TryParse(a[3], out bool b)) item.SetValue(b);
-                    else item.SetValue(int.Parse(a[3]));
+                    // 和玩家在设置窗口里点开关一样
+                    Settings.Set(a[1], a[2], bool.Parse(a[3]));
                     Log($"  {a[1]}.{a[2]} = {a[3]}");
                     break;
                 case "opt":

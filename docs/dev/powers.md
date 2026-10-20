@@ -41,7 +41,8 @@
 |---|---|---|---|
 | 外交 | 分封与称臣 | `vd_group_vassal` / `vd_feudal_enabled` | 开 |
 | | 和谈 | `vd_group_peace` / `vd_peace_enabled` | 开 |
-| 内政 | 王朝周期 | `vd_group_cycle` / `vd_cycle_enabled` | 开 |
+| 内政 | 议会与政策 | `vd_group_parliament` / `vd_parliament_enabled` | 开 |
+| | 王朝周期 | `vd_group_cycle` / `vd_cycle_enabled` | 开 |
 | | 政体随国力变化 | `vd_group_government` / `vd_gov_auto_enabled` | 开 |
 | | 历史事件改制 | `vd_group_government` / `vd_gov_events_enabled` | 开 |
 | 显示 | 国名显示政体 | `vd_group_government` / `vd_gov_name_enabled` | 开 |

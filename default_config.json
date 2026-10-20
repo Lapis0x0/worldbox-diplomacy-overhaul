@@ -50,5 +50,13 @@
       "IconPath": "ui/Icons/iconClock",
       "BoolVal": true
     }
+  ],
+  "vd_group_parliament": [
+    {
+      "Id": "vd_parliament_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconKings",
+      "BoolVal": true
+    }
   ]
 }

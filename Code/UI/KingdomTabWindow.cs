@@ -22,6 +22,8 @@ namespace DiplomacyOverhaul
         readonly Action<Kingdom> _open;
         readonly Action _tick;
         public readonly float W, H;
+        // 系统关掉时页签栏里不显示这个窗口的按钮
+        public Func<bool> enabled = () => true;
 
         public ScrollWindow window;
         public RectTransform root;
@@ -86,7 +88,13 @@ namespace DiplomacyOverhaul
         void EnsureButton(KingdomWindow pWindow)
         {
             Transform tabs = pWindow.transform.Find("Background/Tabs");
-            if (tabs == null || tabs.Find(_button) != null) return;
+            if (tabs == null) return;
+            Transform existing = tabs.Find(_button);
+            if (existing != null)
+            {
+                if (existing.gameObject.activeSelf != enabled()) SetButtonActive(tabs, existing.gameObject, enabled());
+                return;
+            }
             Transform template = tabs.Find("Villages");
             if (template == null) return;
             GameObject go = Object.Instantiate(template.gameObject, tabs);
@@ -109,9 +117,23 @@ namespace DiplomacyOverhaul
             UnityEngine.UI.Button button = go.GetComponent<UnityEngine.UI.Button>();
             button.onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
             button.onClick.AddListener(() => _open(SelectedMetas.selected_kingdom));
-            // 原版这一栏有两个挨着的空位，第一个窗口收掉一个，页签栏保持原来的长度
-            if (_index == 1) tabs.Find("space (2)")?.gameObject.SetActive(false);
-            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)tabs);
+            SetButtonActive(tabs, go, enabled());
+        }
+
+        // 原版这一栏有两个挨着的空位，第一个窗口占掉一个，页签栏保持原来的长度
+        void SetButtonActive(Transform pTabs, GameObject pButton, bool pActive)
+        {
+            pButton.SetActive(pActive);
+            if (_index == 1) pTabs.Find("space (2)")?.gameObject.SetActive(!pActive);
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)pTabs);
+        }
+
+        // 开关改了：按钮马上跟着显示或隐藏，关掉时窗口开着就关上
+        public void Refresh()
+        {
+            KingdomWindow tabs = KingdomTabs();
+            if (tabs != null) EnsureButton(tabs);
+            if (!enabled() && IsOpen) ScrollWindow.hideAllEvent(false);
         }
 
         // ---------- 窗口 ----------

@@ -732,7 +732,7 @@ namespace DiplomacyOverhaul
         static (int dissent, int grievance) CityModifiers(City pCity)
         {
             Kingdom k = pCity.kingdom;
-            if (k == null || !k.isCiv() || pCity.isCapitalCity()) return (0, 0);
+            if (k == null || !k.isCiv() || pCity.isCapitalCity() || !Settings.ParliamentEnabled) return (0, 0);
             int year = Date.getCurrentYear();
             if (!_modifiers.TryGetValue(k.id, out var entry) || entry.year != year)
             {
@@ -780,9 +780,16 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             int year = Date.getCurrentYear();
+            bool enabled = Settings.ParliamentEnabled;
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
             {
                 if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
+                if (!enabled)
+                {
+                    // 议会关着：不开会，按税收体制加回原版贡赋特质（读进来的存档、关着期间建的国家）
+                    Policies.RestoreTribute(k);
+                    continue;
+                }
                 Policies.ConvertTribute(k);
                 int next = NextSession(k);
                 if (next < 0 || next > year + MaxInterval)
@@ -796,6 +803,29 @@ namespace DiplomacyOverhaul
                 Session(k);
                 k.data.set(KeyNext, year + Randy.randomInt(MinInterval, MaxInterval + 1));
             }
+        }
+
+        // 设置里开关议会：关掉时政策都按中间一档算，城市的政见不合和削藩归零，加回原版贡赋特质；
+        // 打开时按特质换回税收体制，各国重新错开下一次开会的时间
+        public static void OnToggle(bool pEnabled)
+        {
+            _modifiers.Clear();
+            Policies.ShowTributeTraits(!pEnabled);
+            if (World.world?.kingdoms == null) return;
+            int year = Date.getCurrentYear();
+            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            {
+                if (!k.isAlive() || !k.isCiv()) continue;
+                if (pEnabled)
+                {
+                    Policies.ConvertTribute(k);
+                    k.data.set(KeyNext, year + Randy.randomInt(1, MaxInterval + 1));
+                }
+                else Policies.RestoreTribute(k);
+                // 海军方针改了陆上单位的伤害
+                foreach (Actor a in k.units) a.setStatsDirty();
+            }
+            ParliamentWindow.OnToggle(pEnabled);
         }
 
         // 开一次议会：表决现有的议案，没有就当场起草一个；之后起草下一期的议案

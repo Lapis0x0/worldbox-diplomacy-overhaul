@@ -42,9 +42,11 @@ namespace DiplomacyOverhaul
         // 收归中央的兵和钱：现行一档比势力想要的更集中时，它的不满算削藩
         public bool crown;
 
+        // 议会关掉时政策不起作用：都按中间一档算，这一档的效果和原版一样（国家政体例外，就是政体本身）
         public int Get(Kingdom pKingdom)
         {
             if (read != null) return read(pKingdom);
+            if (!Settings.ParliamentEnabled) return Policies.Default;
             pKingdom.data.get(id, out int value, -1);
             return value < 0 || value >= count ? Policies.Default : value;
         }
@@ -141,6 +143,8 @@ namespace DiplomacyOverhaul
         const string TributeLow = "tax_rate_tribute_low";
         const string TributeHigh = "tax_rate_tribute_high";
         const string TributeGroup = "tribute";
+        // 议会关掉时按税收体制给国家加回原版贡赋特质，记一笔，重新打开时按特质换回税收体制
+        const string KeyTributeRestored = "vd_tribute_restored";
         static readonly float[] TributeRates = { 0.2f, 0.5f, 0.7f };
 
         public static readonly List<Policy> All = new List<Policy>();
@@ -245,7 +249,7 @@ namespace DiplomacyOverhaul
                 id = Overlord, tab = PolicyTab.Diplomacy, axis = PolicyAxis.Central, icon = "ui/Icons/iconKingdom",
                 shown = k => DiplomacyOverhaul.Vassals.IsVassal(k)
             });
-            HideTributeTraits();
+            ShowTributeTraits(!Settings.ParliamentEnabled);
         }
 
         static void Add(Policy pPolicy)
@@ -254,23 +258,49 @@ namespace DiplomacyOverhaul
             _byId[pPolicy.id] = pPolicy;
         }
 
-        // 从特质编辑器里拿掉原版的贡赋特质：编辑器列的是库的 list，dict 里留着，
+        // 议会开着时从特质编辑器里拿掉原版的贡赋特质：编辑器列的是库的 list，dict 里留着，
         // 物种默认特质和旧存档里的特质照样能按 id 找到，再由 ConvertTribute 换成政策
-        static void HideTributeTraits()
+        public static void ShowTributeTraits(bool pShow)
         {
             foreach (string id in new[] { TributeLow, TributeHigh })
             {
                 KingdomTrait t = AssetManager.kingdoms_traits.get(id);
-                if (t != null) AssetManager.kingdoms_traits.list.Remove(t);
+                if (t == null) continue;
+                AssetManager.kingdoms_traits.list.Remove(t);
+                if (pShow) AssetManager.kingdoms_traits.list.Add(t);
             }
             KingdomTraitGroupAsset group = AssetManager.kingdoms_traits_groups.get(TributeGroup);
-            if (group != null) AssetManager.kingdoms_traits_groups.list.Remove(group);
+            if (group == null) return;
+            AssetManager.kingdoms_traits_groups.list.Remove(group);
+            if (pShow) AssetManager.kingdoms_traits_groups.list.Add(group);
+        }
+
+        // 议会关掉：按税收体制加回原版贡赋特质，包税制是低贡物，国库集中制是高贡物
+        public static void RestoreTribute(Kingdom pKingdom)
+        {
+            pKingdom.data.get(KeyTributeRestored, out bool done, false);
+            if (done) return;
+            pKingdom.data.get(Tax, out int value, -1);
+            if (value == TaxFarming) pKingdom.addTrait(TributeLow, true);
+            else if (value == TaxCentral) pKingdom.addTrait(TributeHigh, true);
+            pKingdom.data.set(KeyTributeRestored, true);
+        }
+
+        // 议会重新打开：关着期间特质可能被改过，按现在的特质定税收体制
+        static void TakeBackTribute(Kingdom pKingdom)
+        {
+            pKingdom.data.get(KeyTributeRestored, out bool done, false);
+            if (!done) return;
+            int value = pKingdom.hasTrait(TributeLow) ? TaxFarming : pKingdom.hasTrait(TributeHigh) ? TaxCentral : TaxShared;
+            pKingdom.data.set(Tax, value);
+            pKingdom.data.removeBool(KeyTributeRestored);
         }
 
         // 国家身上的原版贡赋特质（物种默认、旧存档）换成税收体制的初始值：
         // 原版精灵默认低贡物，羊族默认高贡物
         public static void ConvertTribute(Kingdom pKingdom)
         {
+            TakeBackTribute(pKingdom);
             foreach (KingdomTrait t in new List<KingdomTrait>(pKingdom.getTraits()))
             {
                 if (t.id != TributeLow && t.id != TributeHigh) continue;
@@ -350,9 +380,10 @@ namespace DiplomacyOverhaul
         static readonly float[] VassalTaxRates = { 0f, 0.25f, 0.5f, 0.75f };
         static readonly int[] VassalTaxOpinions = { 15, 0, -30, -50 };
 
-        public static float VassalTaxRate(Kingdom pLord) => VassalTaxRates[Value(pLord, VassalTax)];
+        // 原版没有附庸上贡：议会关掉时不上贡，也没有贡赋带来的好感变化
+        public static float VassalTaxRate(Kingdom pLord) => Settings.ParliamentEnabled ? VassalTaxRates[Value(pLord, VassalTax)] : 0f;
 
-        public static int VassalTaxOpinion(Kingdom pLord) => VassalTaxOpinions[Value(pLord, VassalTax)];
+        public static int VassalTaxOpinion(Kingdom pLord) => Settings.ParliamentEnabled ? VassalTaxOpinions[Value(pLord, VassalTax)] : 0;
 
         public static int VassalTaxOpinionOf(int pOption) => VassalTaxOpinions[pOption];
 
@@ -430,12 +461,13 @@ namespace DiplomacyOverhaul
         static string Change(float pFactor) => Signed((pFactor - 1f) * 100f) + "%";
     }
 
-    // 城主上缴国王的比例由税收体制决定，不再看原版的贡赋特质
+    // 城主上缴国王的比例由税收体制决定，不再看原版的贡赋特质；议会关掉时照原版
     [HarmonyPatch(typeof(Kingdom), nameof(Kingdom.getTaxRateTribute))]
     static class Patch_TributeRate
     {
         static bool Prefix(Kingdom __instance, ref float __result)
         {
+            if (!Settings.ParliamentEnabled) return true;
             __result = Policies.TributeRate(__instance);
             return false;
         }

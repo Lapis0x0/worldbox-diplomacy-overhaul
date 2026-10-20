@@ -167,4 +167,6 @@ Falling city loyalty also drags down the [dynastic cycle](cycle.md).
 - **Withdraw**: Remove the current bill, whoever proposed it.
 - **Lock a policy**: Expand a policy and click the lock at the right end of the selected option; it turns gold. Parliament will no longer propose changing that policy, though clans can still resent it. Clicking the lock on the option of your own bill decrees it at once and locks it. Picking another option unlocks it.
 
+If you don't want parliament, turn off "Parliament and policies" in the settings. Policies stop having any effect, city tribute follows the vanilla tribute traits, vassals pay no tribute, and clans no longer resent policies. Republics still elect their consuls.
+
 The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. Click a clan to see its chief (for the cadets, the leading prince) and its cities. The right side shows the policies and the current bill.

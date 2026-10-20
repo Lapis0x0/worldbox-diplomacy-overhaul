@@ -39,7 +39,8 @@ Open them with the settings button at the far left of the tab. Each system has o
 |---|---|---|
 | Diplomacy | Grants and submission | Great realms grant cities, weak neighbours submit |
 | | Peace talks | Long wars end in treaties based on how they went; off restores the vanilla peace negotiation |
-| Domestic | Dynastic cycle | Great realms rise, peak, decline and collapse |
+| Domestic | Parliament and policies | Clans vote on the realm's policies by seats; off means policies have no effect and tribute follows the vanilla traits |
+| | Dynastic cycle | Great realms rise, peak, decline and collapse |
 | | Government follows power | Government changes with strength and vassalage; manual picks are kept |
 | | Historic upheavals | Extinct royal lines, republics crowning emperors, coups |
 | Display | Government in names | For example, Duchy of Coimbra |

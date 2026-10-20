@@ -17,6 +17,19 @@ namespace DiplomacyOverhaul.Perf
                 else ParliamentWindow.Open(target);
                 return;
             }
+            if (mode == "tribute")
+            {
+                foreach (Kingdom k in World.world.kingdoms.Where(k => k.isAlive() && k.isCiv()).OrderByDescending(k => k.countCities()))
+                {
+                    k.data.get(Policies.Tax, out int tax, -1);
+                    k.data.get("vd_tribute_restored", out bool restored, false);
+                    string trait = k.hasTrait("tax_rate_tribute_low") ? "low" : k.hasTrait("tax_rate_tribute_high") ? "high" : "-";
+                    int dissent = 0;
+                    foreach (City c in k.getCities()) dissent += Parliament.CityLoyalty(c);
+                    Dev.Log($"  {k.data.name}: tax={tax} trait={trait} restored={restored} rate={k.getTaxRateTribute():F2} vassalTax={Policies.VassalTaxRate(k):F2} dissent={dissent}");
+                }
+                return;
+            }
             if (mode == "lock")
             {
                 Kingdom target = Find(a.Length > 2 ? a[2] : null);
