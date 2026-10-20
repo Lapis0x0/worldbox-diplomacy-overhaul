@@ -65,17 +65,4 @@ namespace DiplomacyOverhaul
             }
         }
     }
-
-    // 王国灭亡时释放它的附庸
-    [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.removeObject))]
-    static class Patch_RemoveKingdom
-    {
-        static void Prefix(Kingdom pKingdom)
-        {
-            List<Kingdom> vassals = Vassals.GetVassals(pKingdom);
-            if (vassals.Count == 0 && !Vassals.IsVassal(pKingdom)) return;
-            foreach (Kingdom v in vassals) Vassals.Clear(v);
-            World.world.zone_calculator.dirtyAndClear();
-        }
-    }
 }

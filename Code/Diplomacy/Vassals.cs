@@ -104,6 +104,15 @@ namespace DiplomacyOverhaul
             return n;
         }
 
+        // 王国灭亡时释放它的附庸
+        public static void OnKingdomRemoved(Kingdom pKingdom)
+        {
+            List<Kingdom> vassals = GetVassals(pKingdom);
+            if (vassals.Count == 0 && !IsVassal(pKingdom)) return;
+            foreach (Kingdom v in vassals) Clear(v);
+            World.world.zone_calculator.dirtyAndClear();
+        }
+
         // 只清数据，不刷新战争和地图
         public static void Clear(Kingdom pKingdom)
         {

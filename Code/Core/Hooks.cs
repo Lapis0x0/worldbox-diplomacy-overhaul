@@ -25,6 +25,17 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 王国移除（原版在没有城市、人口、建筑和飞行中的弹道时移除）
+    [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.removeObject))]
+    static class Hook_KingdomRemoved
+    {
+        static void Prefix(Kingdom pKingdom)
+        {
+            Vassals.OnKingdomRemoved(pKingdom);
+            ProjectileGuard.OnKingdomRemoved(pKingdom);
+        }
+    }
+
     // 战争结束
     [HarmonyPatch(typeof(WarManager), nameof(WarManager.endWar))]
     static class Hook_EndWar

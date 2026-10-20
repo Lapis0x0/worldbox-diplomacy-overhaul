@@ -98,4 +98,79 @@ namespace DiplomacyOverhaul
             return false;
         }
     }
+
+    // 弹道发射时记下射手的国家，每帧据此找附近的敌人。这个国家已经销毁时（原版销毁国家会清空 asset），
+    // 找敌人读 asset 抛空引用；抛在弹道落地之前，这支箭永远不会被移除，之后每帧都抛，
+    // 这一帧弹道之后的模拟和整段画面更新（玩家操作、单位的渲染）全被跳过，画面停住、点什么都没反应。
+    // 记下的国家已销毁时换成射手现在的国家；射手的国家也销毁了，就当没射中，箭照常落地
+    [HarmonyPatch(typeof(Projectile), "checkHitOnNearbyUnits")]
+    static class Patch_ProjectileKingdom
+    {
+        static bool Prefix(Projectile __instance, ref AttackDataResult __result)
+        {
+            Kingdom k = __instance.kingdom;
+            if (k == null || k.asset != null || __instance.isTargetReached()) return true;
+            BaseSimObject shooter = __instance.by_who;
+            Kingdom now = shooter != null && !shooter.isRekt() ? shooter.kingdom : null;
+            ProjectileGuard.Warn($"弹道 {__instance.asset?.id} 记下的国家已销毁，射手 {(shooter as Actor)?.asset?.id ?? shooter?.GetType().Name}"
+                + $"{(now == null ? "已不在" : now.asset == null ? "的国家也已销毁，按没射中处理" : " 的国家还在，改用它")}");
+            if (now != null && now.asset != null)
+            {
+                __instance.kingdom = now;
+                return true;
+            }
+            __result = AttackDataResult.Miss;
+            return false;
+        }
+    }
+
+    public static class ProjectileGuard
+    {
+        static readonly HashSet<string> _reported = new HashSet<string>();
+
+        // 原版本该等这个国家的箭都落地再移除它。还有箭在飞就被移除时，记下是从哪里移除的，每条路径记一次
+        public static void OnKingdomRemoved(Kingdom pKingdom)
+        {
+            int flying = 0;
+            foreach (Projectile p in World.world.projectiles.list)
+                if (p.kingdom == pKingdom && !p.isTargetReached() && !p.isFinished()) flying++;
+            if (flying == 0) return;
+            Warn($"王国 {pKingdom.data?.name} 被移除时还有 {flying} 支箭在飞，移除自：{Environment.StackTrace}");
+        }
+
+        // 同样的情况只记一次
+        public static void Warn(string pMessage)
+        {
+            if (_reported.Add(pMessage)) Debug.LogWarning("[外交大修] " + pMessage);
+        }
+    }
+
+    // 弹道更新没有异常保护：一支箭出错，这一帧它后面的弹道不再登记「还有箭在飞」也不再更新，之后的模拟和画面更新全被跳过；
+    // 出错的箭不移除，每帧都是如此。没登记上的箭所属的国家还会被当成可以移除，又造出新的出错的箭。
+    // 这里照原版逐支登记、更新，每支箭各自兜住异常，出错的箭直接移除
+    [HarmonyPatch(typeof(ProjectileManager), "updateProjectiles")]
+    static class Patch_IsolateProjectiles
+    {
+        static bool Prefix(ProjectileManager __instance, float pElapsed)
+        {
+            Dictionary<Kingdom, bool> kingdoms = __instance._kingdoms;
+            kingdoms.Clear();
+            List<Projectile> list = __instance.list;
+            for (int i = 0; i < list.Count; i++)
+            {
+                Projectile p = list[i];
+                try
+                {
+                    if (!p.isTargetReached()) kingdoms[p.kingdom] = true;
+                    p.update(pElapsed);
+                }
+                catch (Exception e)
+                {
+                    Isolation.Report($"弹道 {p.asset?.id}", e);
+                    p.setState(ProjectileState.ToRemove);
+                }
+            }
+            return false;
+        }
+    }
 }
