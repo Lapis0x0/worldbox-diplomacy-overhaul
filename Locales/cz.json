@@ -315,6 +315,8 @@
   "vd_faction_aristocrats": "贵族派",
   "vd_faction_reformist": "维新派",
   "vd_faction_republican": "共和派",
+  "vd_faction_royalist_republic": "元老派",
+  "vd_faction_republican_republic": "自治派",
   "vd_policy_tab_domestic": "内政",
   "vd_policy_tab_military": "军事",
   "vd_policy_tab_diplomacy": "外交",

@@ -397,7 +397,14 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        static string FactionKey(Faction pFaction) => "vd_faction_" + pFaction.ToString().ToLowerInvariant();
+        // 共和国里朝中的老家族叫元老派，地方新贵叫自治派
+        static string FactionKey(Faction pFaction)
+        {
+            string key = "vd_faction_" + pFaction.ToString().ToLowerInvariant();
+            bool republic = _kingdom != null && Government.IsRepublic(_kingdom);
+            if (republic && (pFaction == Faction.Royalist || pFaction == Faction.Republican)) key += "_republic";
+            return key;
+        }
 
         // 议席半圆：按派系从激进（左）到保守（右）排开，中间写最大派系
         static void Hemicycle(List<ParliamentClan> pClans, float pX, float pY)

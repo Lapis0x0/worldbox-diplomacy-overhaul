@@ -25,6 +25,8 @@ The two axes make four factions. Clans in the same faction share a color:
 | Conservative | Royalists (blue): old clans at court | Aristocrats (teal): old clans in the provinces |
 | Radical | Reformists (red): new powers at court | Republicans (orange): new powers in the provinces |
 
+In a republic the Royalists are called Senators and the Republicans are called Autonomists; the colors stay the same.
+
 ## Policies
 
 Policies are on three pages: Domestic, Military, and Diplomacy. The options of each policy lie along one axis, with the conservative or local end on one side and the radical or central end on the other. Vassal Policy and Vassal Tribute exist only for kingdoms with vassals. Fealty exists only for vassals.

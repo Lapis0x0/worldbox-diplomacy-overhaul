@@ -315,6 +315,8 @@
   "vd_faction_aristocrats": "Aristocrats",
   "vd_faction_reformist": "Reformists",
   "vd_faction_republican": "Republicans",
+  "vd_faction_royalist_republic": "Senators",
+  "vd_faction_republican_republic": "Autonomists",
   "vd_policy_tab_domestic": "Domestic",
   "vd_policy_tab_military": "Military",
   "vd_policy_tab_diplomacy": "Diplomacy",
