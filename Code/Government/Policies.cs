@@ -53,6 +53,8 @@ namespace DiplomacyOverhaul
 
         public void Set(Kingdom pKingdom, int pOption)
         {
+            // 改税收体制记进国库的账簿
+            if (id == Policies.Tax && Get(pKingdom) != pOption) Ledger.Log(pKingdom, "vd_ledger_tax", OptionKey(pOption));
             if (write != null) write(pKingdom, pOption);
             else pKingdom.data.set(id, pOption);
             // 海军方针改了陆上单位的伤害，让全国单位重算属性

@@ -86,14 +86,18 @@ namespace DiplomacyOverhaul
             {
                 if (pAmount <= 0) return;
                 if (city != null) city.takeResource("gold", Mathf.Min(pAmount, Gold));
-                else Treasury.Take(kingdom, pAmount);
+                else Ledger.Record(kingdom, Ledger.Flow.Arms, Treasury.Take(kingdom, pAmount));
             }
 
             public void Refund(int pAmount)
             {
                 if (pAmount <= 0) return;
                 if (city != null) city.addResourcesToRandomStockpile("gold", pAmount);
-                else Treasury.Add(kingdom, pAmount);
+                else
+                {
+                    Treasury.Add(kingdom, pAmount);
+                    Ledger.Record(kingdom, Ledger.Flow.Arms, -pAmount);
+                }
             }
         }
 

@@ -244,6 +244,7 @@ namespace DiplomacyOverhaul.Perf
             {
                 // parl sim <轮数>：每个国家连开几轮议会（立场不变，不写世界日志），统计议案、各项政策停在哪一档、地方势力的忠诚修正，算完恢复原样
                 int rounds = int.Parse(a[2]);
+                Ledger.Muted = true;
                 int bills = 0, passed = 0, none = 0;
                 var moves = new System.Collections.Generic.Dictionary<string, int>();
                 var final = Policies.All.ToDictionary(p => p.id, p => new int[p.count]);
@@ -274,6 +275,7 @@ namespace DiplomacyOverhaul.Perf
                     }
                     for (int i = 0; i < Policies.All.Count; i++) if (Policies.All[i].Get(k) != saved[i]) Policies.All[i].Set(k, saved[i]);
                 }
+                Ledger.Muted = false;
                 Dev.Log($"  bills={bills} passed={passed} none={none} passRate={(float)passed / UnityEngine.Mathf.Max(1, bills):F2}");
                 Dev.Log("  late moves: " + string.Join(" ", moves.Select(m => m.Key + "=" + m.Value)));
                 Dev.Log("  factions: " + string.Join(" ", factionSeats.Select(f => f.Key + "=" + f.Value)));

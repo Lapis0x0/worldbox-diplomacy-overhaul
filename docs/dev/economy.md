@@ -42,14 +42,40 @@
 
 选中王国时底部信息栏的金币格显示国库（原版这一格是全国所有人身上的钱之和）。王国窗口和王国的悬停提示里，「领袖财富」（国王个人的钱）下面一行也是国库余额。
 
+## 账本
+
+国库每一笔进出按类别记进今年的账，每年发完军饷后（`Clock` 里紧跟 `Treasury.UpdateAll`）结账：今年转成去年、今年清零。国库页画的是去年。
+
+| 类别 | 记在哪 |
+|---|---|
+| 城主上缴（全额，含国王的份；同时记在这座城名下） | `Patch_PayTribute` |
+| 国王的份 | `Patch_PayTribute` |
+| 附庸贡赋（宗主收）、交给宗主的贡赋（附庸付） | `Treasury.Income` |
+| 赔款（胜方收国库和各城交出的全部；败方只记国库交出的部分） | `PeaceTalks.Reparations` |
+| 禁军军饷（实付） | `Guard.Pay` |
+| 禁军军械（实付减去退回） | `Armory` 的 `Spend` / `Refund` |
+| 密谋（实付） | `Patch_SpendMoney` |
+
+账簿只记一次性、会改变钱的流向的事，最新的在前，每国留 20 条：获赔款、赔款、发起密谋、禁军欠饷和付清（状态变化的那一年）、改税收体制（`Policy.Set`）、附庸称臣或离去（`Vassals.MakeVassal` / `Release`，宗主和附庸各记一条）。开发命令模拟议会时不记（`Ledger.Muted`）。
+
+## 国库页
+
+王国窗口页签栏里名人页签前面的单独窗口（占掉家族下面的空位），竖排：
+
+- 存金和去年国库的结余（去年进国库的减去国库花出去的，不含国王的份）。
+- 流向图：左边上缴最多的 3 座城单独列（只多一座时全列），其余合成一股，再加附庸贡赋、赔款；中间竖条上段是国王（共和国是执政）的份，下段是国库；右边是禁军军饷、军械、密谋、交给宗主的贡赋、战败赔款。结余补成右边的「存入国库」，亏空补成左边的「动用存金」，两侧总量相等。两侧各股的短条在整个高度上均匀排开，带子半透明，在中间条上紧挨着。还没结过账时显示「国库的账年底才结」。
+- 账簿：可滚动。
+
 ## 实现
 
 | 文件 | 内容 |
 |---|---|
 | `Treasury.cs` | 国库的读写、上缴分账、附庸贡赋、地方兵军饷和欠饷、密谋花国库 |
 | `Guard.cs` | 禁军的军饷和欠饷 |
+| `Ledger.cs` | 账本：按类别记年账、结账，账簿 |
+| `TreasuryWindow.cs`、`SankeyGraphic.cs` | 国库页、流向图的带子 |
 
-数据：国库存在 `kingdom.data` 的 `vd_treasury`；地方兵欠饷和减益存在 `city.data` 的 `vd_unpaid`、`vd_unpaid_penalty`，禁军的存在 `kingdom.data` 的 `vd_guard_unpaid`、`vd_guard_unpaid_penalty`。
+数据：国库存在 `kingdom.data` 的 `vd_treasury`；账本存在 `kingdom.data` 的 `vd_ledger_<类别序号>`（今年）、`vd_ledger_last_<类别序号>`（去年）、`vd_ledger_closed`（结过账）、`vd_ledger_log`（账簿，一行一条：年份、语言 key、名字、金额，用制表符隔开），各城的上缴存在 `city.data` 的 `vd_ledger_tax`、`vd_ledger_tax_last`；地方兵欠饷和减益存在 `city.data` 的 `vd_unpaid`、`vd_unpaid_penalty`，禁军的存在 `kingdom.data` 的 `vd_guard_unpaid`、`vd_guard_unpaid_penalty`。
 
 原版挂点：
 

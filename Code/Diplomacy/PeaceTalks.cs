@@ -374,6 +374,8 @@ namespace DiplomacyOverhaul
         static string Reparations(Kingdom pLoser, Kingdom pWinner, int pRate)
         {
             int paid = Treasury.Take(pLoser, Treasury.Get(pLoser) * pRate / 100);
+            Ledger.Record(pLoser, Ledger.Flow.ReparationsPaid, paid);
+            Ledger.Log(pLoser, "vd_ledger_reparations_paid", pWinner.data.name, -paid);
             foreach (City city in pLoser.getCities())
             {
                 int take = city.getResourcesAmount("gold") * pRate / 100;
@@ -382,6 +384,8 @@ namespace DiplomacyOverhaul
                 paid += take;
             }
             Treasury.Add(pWinner, paid);
+            Ledger.Record(pWinner, Ledger.Flow.Reparations, paid);
+            Ledger.Log(pWinner, "vd_ledger_reparations", pLoser.data.name, paid);
             return "gold:" + paid;
         }
 

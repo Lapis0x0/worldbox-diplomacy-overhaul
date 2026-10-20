@@ -24,6 +24,8 @@ namespace DiplomacyOverhaul
         public readonly float W, H;
         // 系统关掉时页签栏里不显示这个窗口的按钮
         public Func<bool> enabled = () => true;
+        // 按钮插在原版哪个页签前面（不设时按 pIndex 排），显示时藏起原版的哪个空位，让页签栏保持原来的长度
+        public string before, spacer;
 
         public ScrollWindow window;
         public RectTransform root;
@@ -101,7 +103,8 @@ namespace DiplomacyOverhaul
             if (template == null) return;
             GameObject go = Object.Instantiate(template.gameObject, tabs);
             go.name = _button;
-            go.transform.SetSiblingIndex(_index);
+            Transform anchor = before != null ? tabs.Find(before) : null;
+            go.transform.SetSiblingIndex(anchor != null ? anchor.GetSiblingIndex() : _index);
             foreach (Component c in go.GetComponents<Component>())
             {
                 if (c is WindowMetaTab || c is DragOrderElement || c is ScrollableButton || c is UnityEngine.EventSystems.EventTrigger) Object.DestroyImmediate(c);
@@ -122,11 +125,10 @@ namespace DiplomacyOverhaul
             SetButtonActive(tabs, go, enabled());
         }
 
-        // 原版这一栏有两个挨着的空位，第一个窗口占掉一个，页签栏保持原来的长度
         void SetButtonActive(Transform pTabs, GameObject pButton, bool pActive)
         {
             pButton.SetActive(pActive);
-            if (_index == 1) pTabs.Find("space (2)")?.gameObject.SetActive(!pActive);
+            if (spacer != null) pTabs.Find(spacer)?.gameObject.SetActive(!pActive);
             LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)pTabs);
         }
 

@@ -68,7 +68,7 @@ namespace DiplomacyOverhaul
         // 热重载：旧版本建的窗口和按钮引用着旧代码，全部拆掉，用到时重建
         public static void Init()
         {
-            _shell = new KingdomTabWindow(WindowId, IconPath, 1, W, H, Open, Tick) { enabled = () => Settings.ParliamentEnabled };
+            _shell = new KingdomTabWindow(WindowId, IconPath, 1, W, H, Open, Tick) { enabled = () => Settings.ParliamentEnabled, spacer = "space (2)" };
             _shell.Init();
             foreach (RectTransform t in Resources.FindObjectsOfTypeAll<RectTransform>())
             {

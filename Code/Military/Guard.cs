@@ -390,7 +390,11 @@ namespace DiplomacyOverhaul
             }
             int cost = Mathf.RoundToInt(members.Count * Treasury.PayPerWarrior);
             int paid = Treasury.Take(pKingdom, cost);
+            Ledger.Record(pKingdom, Ledger.Flow.Guard, paid);
+            pKingdom.data.get(KeyUnpaid, out bool wasUnpaid, false);
             int disband = Treasury.Settle(pKingdom.data, KeyUnpaid, KeyPenalty, cost, paid, out bool changed);
+            pKingdom.data.get(KeyUnpaid, out bool unpaid, false);
+            Ledger.GuardPayChanged(pKingdom, wasUnpaid, unpaid);
             foreach (Actor a in members)
             {
                 if (!a.isAlive()) continue;

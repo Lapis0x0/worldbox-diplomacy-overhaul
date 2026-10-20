@@ -46,6 +46,8 @@ namespace DiplomacyOverhaul
                 int share = Mathf.FloorToInt(exact);
                 if (Randy.randomChance(exact - share)) share++;
                 Add(lord, share);
+                Ledger.Record(lord, Ledger.Flow.Tribute, share);
+                Ledger.Record(pKingdom, Ledger.Flow.Overlord, share);
                 pAmount -= share;
             }
             Add(pKingdom, pAmount);
@@ -217,6 +219,8 @@ namespace DiplomacyOverhaul
             pActor.addMoney(rest - toCity);
             int toKing = (int)(tribute * Treasury.KingShare);
             pKing.addLoot(toKing);
+            Ledger.RecordTax(pActor.city, tribute);
+            Ledger.Record(pActor.kingdom, Ledger.Flow.King, toKing);
             Treasury.Income(pActor.kingdom, tribute - toKing);
             pActor.paidTax(pTaxRate, "fx_money_paid_tribute");
             return false;
@@ -267,7 +271,9 @@ namespace DiplomacyOverhaul
         static bool Prefix(Actor __instance, int pCost)
         {
             if (Treasury.PlotPayer != __instance || !__instance.isKing()) return true;
-            Treasury.Take(__instance.kingdom, pCost);
+            int taken = Treasury.Take(__instance.kingdom, pCost);
+            Ledger.Record(__instance.kingdom, Ledger.Flow.Plots, taken);
+            Ledger.Log(__instance.kingdom, "vd_ledger_plot", "", -taken);
             return false;
         }
     }

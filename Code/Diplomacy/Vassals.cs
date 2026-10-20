@@ -131,7 +131,10 @@ namespace DiplomacyOverhaul
 
             if (pVassal.hasAlliance()) pVassal.getAlliance().leave(pVassal);
 
+            Kingdom former = GetOverlord(pVassal);
+            if (former != null) Ledger.VassalLeft(former, pVassal);
             pVassal.data.set(KeyOverlord, pLord.id);
+            Ledger.VassalJoined(pLord, pVassal);
             Integration.Set(pVassal, pIntegration);
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
 
@@ -189,6 +192,7 @@ namespace DiplomacyOverhaul
         public static void Release(Kingdom pVassal)
         {
             if (pVassal?.data == null) return;
+            Ledger.VassalLeft(GetOverlord(pVassal), pVassal);
             Clear(pVassal);
             if (Settings.GovernmentAutoEnabled) Government.Update(pVassal);
             Refresh();
