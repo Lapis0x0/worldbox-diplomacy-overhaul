@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using ai.behaviours;
 using HarmonyLib;
@@ -65,6 +66,7 @@ namespace DiplomacyOverhaul
             public City city;
             public List<Actor> members;
             public int reserve;
+            public int capacity;   // 编制人数：升档看达标的人数占编制的比例，打空了不算达标
             public float rate;
             public bool upgrades;
 
@@ -144,6 +146,7 @@ namespace DiplomacyOverhaul
                         kingdom = k,
                         members = Members(k),
                         reserve = Mathf.CeilToInt(Guard.KingdomMembers(k) * Treasury.PayPerWarrior * ReserveYears),
+                        capacity = k.getCities().Sum(c => Guard.Quota(c)),
                         rate = BudgetRates[option],
                         upgrades = option > Replacements
                     });
@@ -153,6 +156,7 @@ namespace DiplomacyOverhaul
                         kingdom = k,
                         city = city,
                         members = LocalMembers(city),
+                        capacity = city.getMaxWarriors() - Guard.Quota(city),
                         reserve = Mathf.CeilToInt(Guard.CountLocal(city) * Treasury.PayPerWarrior * ReserveYears) + CityBuildReserve,
                         rate = CityBudgetRate,
                         upgrades = true
@@ -168,7 +172,7 @@ namespace DiplomacyOverhaul
             string melee = MeleeWeapon(pArsenal.Culture);
             int tier = TierOf(pArsenal.Data);
             if (pArsenal.upgrades && tier < Tiers.Length - 1
-                && members.FindAll(a => Short(a, melee, tier)).Count <= members.Count * (1f - UpgradeShare)
+                && members.FindAll(a => !Short(a, melee, tier)).Count >= Mathf.Max(pArsenal.capacity, members.Count) * UpgradeShare
                 && Available(pArsenal, Tiers[tier + 1]))
             {
                 tier++;
