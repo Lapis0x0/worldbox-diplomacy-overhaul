@@ -58,5 +58,13 @@
       "IconPath": "ui/Icons/iconKings",
       "BoolVal": true
     }
+  ],
+  "vd_group_military": [
+    {
+      "Id": "vd_military_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconWar",
+      "BoolVal": true
+    }
   ]
 }

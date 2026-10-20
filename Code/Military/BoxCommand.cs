@@ -165,7 +165,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(PlayerControl __instance, ref bool __result)
         {
-            if (!MapBox.isRenderMiniMap()) return true;
+            if (!Military.On || !MapBox.isRenderMiniMap()) return true;
             __result = Check(__instance);
             return false;
         }
@@ -198,7 +198,7 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(ref MetaType __result)
         {
-            if (__result.isNone() && !World.world.isAnyPowerSelected() && BoxCommand.HasBoxSelection()) __result = MetaType.City;
+            if (Military.On && __result.isNone() && !World.world.isAnyPowerSelected() && BoxCommand.HasBoxSelection()) __result = MetaType.City;
         }
     }
 
@@ -207,7 +207,7 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(HotkeyLibrary), "escapeAction")]
     static class Patch_BoxEscape
     {
-        static bool Prefix() => !BoxCommand.Escape();
+        static bool Prefix() => !Military.On || !BoxCommand.Escape();
     }
 
     // 缩远时框选结束：选军队而不是选单位
@@ -216,6 +216,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(PlayerControl __instance)
         {
+            if (!Military.On) return true;
             if (!MapBox.isRenderMiniMap())
             {
                 // 拉近时是原版框选单位，之前缩远框选的军队作废
@@ -234,7 +235,7 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(ref bool __result)
         {
-            if (__result && MapBox.isRenderMiniMap()) __result = false;
+            if (Military.On && __result && MapBox.isRenderMiniMap()) __result = false;
         }
     }
 
@@ -244,7 +245,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(PlayerControl __instance, ref bool __result)
         {
-            if (!InputHelpers.mouseSupported || !InputHelpers.GetMouseButtonUp(1)) return true;
+            if (!Military.On || !InputHelpers.mouseSupported || !InputHelpers.GetMouseButtonUp(1)) return true;
             if (MoveCamera.camera_drag_activated || __instance.already_used_camera_drag) return true;
             if (!BoxCommand.RightClick(__instance.getMouseTilePosCachedFrame())) return true;
             __result = true;

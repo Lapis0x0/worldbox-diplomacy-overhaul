@@ -2,6 +2,8 @@
 
 Each kingdom's troops are divided into two parts. The **Guard** is paid for by the treasury and deployed by the kingdom as a whole, and goes on campaign and rescues cities. **Local armies** are paid for by each city and mainly guard the borders. The split is set by parliament's [Army](parliament.md#military) policy.
 
+If you don't want these changes, turn off "Military overhaul" in the settings. Armies then behave as in vanilla: no Guard and no pay, cities send their own armies, and the army command powers are removed.
+
 ## The Guard
 
 - All troops in the capital belong to the Guard. In other cities, the Army policy decides what share is drafted into the Guard, and the rest are local troops.

@@ -167,6 +167,19 @@ namespace DiplomacyOverhaul
 
         internal static void ClearStation(Army pArmy) => SetStation(pArmy, null, null);
 
+        // 关掉军队大修：所有军队的命令、驻扎、扎营、任务都撤掉，交还原版 AI
+        internal static void ClearAll()
+        {
+            _forced.Clear();
+            _rally.Clear();
+            foreach (Army army in World.world.armies)
+            {
+                if (army?.data == null) continue;
+                ClearStation(army);
+                army.data.removeInt(Guard.KeyTask);
+            }
+        }
+
         // 驻扎：城里有敌人就去最近的敌人那里，没有就在城中心附近挑；扎营：在那块地附近挑
         static WorldTile StationTile(Army pArmy, WorldTile pFrom)
         {
@@ -582,6 +595,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref ai.behaviours.BehResult __result)
         {
+            if (!Military.On) return true;
             if (!Orders.TakeRallyTile(pActor, out WorldTile tile) && !Orders.TakeStationTile(pActor, out tile)) return true;
             pActor.beh_tile_target = tile;
             __result = ai.behaviours.BehResult.Continue;
@@ -595,6 +609,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor)
         {
+            if (!Military.On) return true;
             TaxiRequest current = TaxiManager.getRequestForActor(pActor);
             return current == null || current.isState(TaxiRequestState.Finished);
         }
@@ -607,7 +622,7 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor pActor, ai.behaviours.BehResult __result)
         {
-            if (__result != ai.behaviours.BehResult.Continue || pActor.hasArmy() || !pActor.city.hasArmy() || Guard.IsMember(pActor)) return;
+            if (!Military.On || __result != ai.behaviours.BehResult.Continue || pActor.hasArmy() || !pActor.city.hasArmy() || Guard.IsMember(pActor)) return;
             Army army = pActor.city.army;
             Actor captain = army.getCaptain();
             if (captain == null || captain.isRekt() || captain.isInsideSomething()) return;
@@ -624,7 +639,7 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor __instance, ref bool __result)
         {
-            if (__result && __instance.isWarrior() && __instance.hasArmy() && Orders.HasStation(__instance.army)) __result = false;
+            if (Military.On && __result && __instance.isWarrior() && __instance.hasArmy() && Orders.HasStation(__instance.army)) __result = false;
         }
     }
 
@@ -635,6 +650,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City __instance, ref bool __result)
         {
+            if (!Military.On) return true;
             if (Guard.Acting != null || (__instance.hasArmy() && Orders.IsForced(__instance.army)))
             {
                 __result = true;
@@ -652,7 +668,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
         {
-            if (!pCity.hasArmy() || !Orders.HasStation(pCity.army)) return true;
+            if (!Military.On || !pCity.hasArmy() || !Orders.HasStation(pCity.army)) return true;
             Orders.KeepStation(pCity.army);
             __result = ai.behaviours.BehResult.Continue;
             return false;
@@ -660,7 +676,7 @@ namespace DiplomacyOverhaul
 
         static void Postfix(City pCity)
         {
-            if (pCity.hasArmy()) Orders.CheckForced(pCity.army);
+            if (Military.On && pCity.hasArmy()) Orders.CheckForced(pCity.army);
         }
     }
 }

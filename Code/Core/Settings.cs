@@ -15,6 +15,8 @@ namespace DiplomacyOverhaul
         public const string GroupPerf = "vd_group_perf";
         public const string GroupParliament = "vd_group_parliament";
         public const string KeyParliament = "vd_parliament_enabled";
+        public const string GroupMilitary = "vd_group_military";
+        public const string KeyMilitary = "vd_military_enabled";
 
         public static bool FeudalEnabled => Get(GroupVassal, "vd_feudal_enabled");
         public static bool PeaceEnabled => Get(GroupPeace, "vd_peace_enabled");
@@ -24,6 +26,7 @@ namespace DiplomacyOverhaul
         public static bool GovernmentEventsEnabled => Get(GroupGovernment, "vd_gov_events_enabled");
         public static bool PerfEnabled => Get(GroupPerf, "vd_perf_enabled");
         public static bool ParliamentEnabled => Get(GroupParliament, KeyParliament);
+        public static bool MilitaryEnabled => Get(GroupMilitary, KeyMilitary);
 
         // 政策每次读取都要看议会开关，读过的值记下来，改的时候一起改
         static readonly Dictionary<string, bool> _cache = new Dictionary<string, bool>();
@@ -51,6 +54,7 @@ namespace DiplomacyOverhaul
             }
             _cache[pId] = pValue;
             if (pId == KeyParliament) Parliament.OnToggle(pValue);
+            if (pId == KeyMilitary) Military.OnToggle(pValue);
         }
     }
 }

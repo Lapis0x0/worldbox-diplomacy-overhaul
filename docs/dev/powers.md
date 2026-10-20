@@ -35,7 +35,7 @@
 
 ## 设置
 
-点 Tab 最左边的设置按钮，打开模组自己的设置窗口（`SettingsWindow.cs`）。每个系统一个开关，按外交、内政、显示、性能分成几块，两列排开；点一下马上生效并存盘，「恢复默认」把所有开关打开。开关存在 NML 的 `ModConfig` 里，键名和分组见下表；改 `default_config.json`（新增、删除开关）要重启游戏才生效。
+点 Tab 最左边的设置按钮，打开模组自己的设置窗口（`SettingsWindow.cs`）。每个系统一个开关，按外交、内政、军事、显示、性能分成几块，两列排开；点一下马上生效并存盘，「恢复默认」把所有开关打开。开关存在 NML 的 `ModConfig` 里，键名和分组见下表；改 `default_config.json`（新增、删除开关）要重启游戏才生效。
 
 | 分块 | 开关 | 分组 / 键 | 默认 |
 |---|---|---|---|
@@ -45,6 +45,7 @@
 | | 王朝周期 | `vd_group_cycle` / `vd_cycle_enabled` | 开 |
 | | 政体随国力变化 | `vd_group_government` / `vd_gov_auto_enabled` | 开 |
 | | 历史事件改制 | `vd_group_government` / `vd_gov_events_enabled` | 开 |
+| 军事 | 军队大修 | `vd_group_military` / `vd_military_enabled` | 开 |
 | 显示 | 国名显示政体 | `vd_group_government` / `vd_gov_name_enabled` | 开 |
 | 性能 | 优化原版计算 | `vd_group_perf` / `vd_perf_enabled` | 开 |
 

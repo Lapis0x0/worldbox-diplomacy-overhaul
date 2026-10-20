@@ -21,6 +21,7 @@ namespace DiplomacyOverhaul.Perf
     //   opt <字段名|all> <on|off>
     //   debugopt <选项> <on|off>   切换原版调试菜单的选项（DebugOption 的名字）
     //   settings                 打开模组设置窗口
+    //   mil                      军队大修的状态：军队、禁军编队和人数、驻扎中的军队、欠饷的国家和城市
     //   setting <分组> <开关> <true|false>   改模组设置，如 setting vd_group_perf vd_perf_enabled false
     //   measure <标签> <秒> [detail] [mono]   测帧时间；detail 同时打开原版 Bench 分项计时，
     //                           mono 给所有脚本的 Update/LateUpdate 计时（都有额外开销）
@@ -139,6 +140,28 @@ namespace DiplomacyOverhaul.Perf
                     DebugConfig.setOption((DebugOption)Enum.Parse(typeof(DebugOption), a[1]), a[2] == "on");
                     Log($"  {a[1]} = {DebugConfig.isOn((DebugOption)Enum.Parse(typeof(DebugOption), a[1]))}");
                     break;
+                case "mil":
+                {
+                    int guardArmies = 0, guardUnits = 0, members = 0, stations = 0, armies = 0, unpaidCities = 0, unpaidKingdoms = 0;
+                    foreach (Army army in World.world.armies)
+                    {
+                        armies++;
+                        if (Guard.Is(army)) { guardArmies++; guardUnits += army.countUnits(); }
+                        if (Orders.HasStation(army)) stations++;
+                    }
+                    foreach (Kingdom k in World.world.kingdoms)
+                    {
+                        if (!k.isAlive()) continue;
+                        if (Guard.Penalty(k) > 0f) unpaidKingdoms++;
+                        foreach (City c in k.getCities())
+                        {
+                            members += Guard.CountMembers(c);
+                            if (Treasury.Penalty(c) > 0f) unpaidCities++;
+                        }
+                    }
+                    Log($"  military={Military.On} armies={armies} guardArmies={guardArmies} guardUnits={guardUnits} members={members} stations={stations} unpaidKingdoms={unpaidKingdoms} unpaidCities={unpaidCities}");
+                    break;
+                }
                 case "settings":
                     SettingsWindow.Open();
                     break;

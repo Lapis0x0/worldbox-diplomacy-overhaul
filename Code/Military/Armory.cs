@@ -136,6 +136,7 @@ namespace DiplomacyOverhaul
 
         public static void UpdateAll()
         {
+            if (!Military.On) return;
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
@@ -450,6 +451,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref BehResult __result)
         {
+            if (!Military.On) return true;
             __result = BehResult.Stop;
             if (!pActor.hasEquipment()) return false;
             foreach (ActorEquipmentSlot slot in pActor.equipment)
@@ -471,6 +473,7 @@ namespace DiplomacyOverhaul
 
         static bool Prefix(Actor pActor, ref BehResult __result)
         {
+            if (!Military.On) return true;
             __result = BehResult.Continue;
             bool repaired = false;
             foreach (ActorEquipmentSlot slot in pActor.equipment)

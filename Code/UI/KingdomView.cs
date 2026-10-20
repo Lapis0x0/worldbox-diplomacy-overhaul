@@ -117,6 +117,7 @@ namespace DiplomacyOverhaul
                 Kingdom k = SelectedMetas.selected_kingdom;
                 if (k == null) return;
                 __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
+                if (!Military.On) return;
                 if (Policies.Value(k, Policies.Arms) > 0) __instance.showStatRow("vd_arms_standard", LM.Get(Armory.TierKey(k)), null, MetaType.None, -1L, false, "iconReforge");
                 float penalty = Guard.Penalty(k);
                 if (penalty > 0f) __instance.showStatRow("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
@@ -124,7 +125,7 @@ namespace DiplomacyOverhaul
             else if (__instance is CityWindow)
             {
                 City c = SelectedMetas.selected_city;
-                if (c == null) return;
+                if (c == null || !Military.On) return;
                 if (Guard.CountLocal(c) > 0) __instance.showStatRow("vd_arms_local_standard", LM.Get(Armory.TierKey(c)), null, MetaType.None, -1L, false, "iconReforge");
                 float penalty = Treasury.Penalty(c);
                 if (penalty > 0f) __instance.showStatRow("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
@@ -216,6 +217,7 @@ namespace DiplomacyOverhaul
             }
             if (k == null || pID != "villages") return;
             __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
+            if (!Military.On) return;
             if (Policies.Value(k, Policies.Arms) > 0) __instance.addLineText("vd_arms_standard", LM.Get(Armory.TierKey(k)));
             float penalty = Guard.Penalty(k);
             if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);

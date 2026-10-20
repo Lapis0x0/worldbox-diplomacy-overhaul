@@ -43,6 +43,7 @@ Open them with the settings button at the far left of the tab. Each system has o
 | | Dynastic cycle | Great realms rise, peak, decline and collapse |
 | | Government follows power | Government changes with strength and vassalage; manual picks are kept |
 | | Historic upheavals | Extinct royal lines, republics crowning emperors, coups |
+| Military | Military overhaul | Royal guard, national command, orders and box selection, sieges, arms and pay; off means armies behave as in vanilla and the army command powers are removed |
 | Display | Government in names | For example, Duchy of Coimbra |
 | Performance | Optimize base game | Does not change outcomes |
 

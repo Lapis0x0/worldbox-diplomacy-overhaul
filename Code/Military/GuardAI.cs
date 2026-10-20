@@ -129,6 +129,7 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             _defenders.Clear();
+            if (!Military.On) return;
             var all = new List<Army>();
             var byKingdom = new Dictionary<Kingdom, List<Army>>();
             foreach (Army a in World.world.armies)

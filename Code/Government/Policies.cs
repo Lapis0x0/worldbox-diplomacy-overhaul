@@ -202,17 +202,21 @@ namespace DiplomacyOverhaul
             Add(new Policy
             {
                 id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", crown = true,
+                // 军事三项随军队大修一起关掉
+                shown = _ => Military.On,
                 lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + Crown(pc)
             });
             Add(new Policy
             {
                 // 海军和守旧还是求变无关，只看临海城多不多
                 id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat", load = 0f,
+                shown = _ => Military.On,
                 lean = (k, pc) => NavyCoast * (pc.coast - 0.5f)
             });
             Add(new Policy
             {
                 id = Arms, tab = PolicyTab.Military, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge", load = 0.5f,
+                shown = _ => Military.On,
                 lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + (World.world.wars.hasWars(k) ? ArmsWar : 0f)
             });
             Add(new Policy
@@ -346,12 +350,13 @@ namespace DiplomacyOverhaul
         public static readonly int MaxTransports = 4;
         static readonly float[] LandDamageFactors = { 1.15f, 1f, 0.85f };
 
-        public static float LandDamageFactor(Kingdom pKingdom) => LandDamageFactors[Value(pKingdom, Navy)];
+        // 军队大修关掉时照原版：伤害不变，每个港口 1 艘运输船
+        public static float LandDamageFactor(Kingdom pKingdom) => Military.On ? LandDamageFactors[Value(pKingdom, Navy)] : 1f;
 
         public static int TransportCap(Docks pDocks)
         {
             Kingdom k = pDocks?.building?.city?.kingdom;
-            if (k == null || !k.isAlive()) return 1;
+            if (k == null || !k.isAlive() || !Military.On) return 1;
             return TransportLimit[Value(k, Navy)];
         }
 

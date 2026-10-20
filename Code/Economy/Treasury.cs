@@ -129,7 +129,7 @@ namespace DiplomacyOverhaul
         // 士兵因欠饷减掉的伤害：禁军看国家，地方兵看本城
         public static float Penalty(Actor pActor)
         {
-            if (!pActor.isWarrior() || pActor.city == null) return 0f;
+            if (!Military.On || !pActor.isWarrior() || pActor.city == null) return 0f;
             return Guard.IsMember(pActor) ? Guard.Penalty(pActor.kingdom) : Penalty(pActor.city);
         }
 
@@ -155,9 +155,21 @@ namespace DiplomacyOverhaul
             return Mathf.CeilToInt(Mathf.CeilToInt((pCost - pPaid) / PayPerWarrior) * DisbandShare);
         }
 
-        // 每年：各城给地方兵发饷，国库给禁军发饷
+        // 关掉军队大修：各城地方兵的欠饷和减益清掉
+        internal static void ClearArrears()
+        {
+            foreach (City city in World.world.cities)
+            {
+                if (city?.data == null) continue;
+                city.data.removeBool(KeyUnpaid);
+                city.data.removeFloat(KeyPenalty);
+            }
+        }
+
+        // 每年：各城给地方兵发饷，国库给禁军发饷；关掉军队大修时照原版不发饷
         public static void UpdateAll()
         {
+            if (!Military.On) return;
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
@@ -217,7 +229,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City __instance, ref bool __result)
         {
-            if (Guard.CanRecruit(__instance)) return true;
+            if (!Military.On || Guard.CanRecruit(__instance)) return true;
             __result = false;
             return false;
         }

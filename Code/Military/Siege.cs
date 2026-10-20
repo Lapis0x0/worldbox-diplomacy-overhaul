@@ -83,7 +83,7 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor pActor, ai.behaviours.BehResult __result)
         {
-            if (__result != ai.behaviours.BehResult.Continue) return;
+            if (!Military.On || __result != ai.behaviours.BehResult.Continue) return;
             City target = pActor.city?.target_attack_zone?.city;
             if (target == null || pActor.current_tile.zone.city != target) return;
             WorldTile tile = Siege.NearestDefender(pActor, target);
@@ -107,7 +107,7 @@ namespace DiplomacyOverhaul
 
         static void Postfix(City __instance, float pElapsed, float __state)
         {
-            if (__state < 0f || __instance.isRekt()) return;
+            if (__state < 0f || !Military.On || __instance.isRekt()) return;
             Siege.Overwhelm(__instance, __state, pElapsed);
         }
     }

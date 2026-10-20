@@ -62,10 +62,14 @@ namespace DiplomacyOverhaul
             AddPower(tab, Powers.GreatRebellion, "ui/Icons/iconFireSkull");
             AddPower(tab, Powers.Mandate, "ui/Icons/vd_power_mandate");
             AddPower(tab, Powers.ReleaseCity, "ui/Icons/vd_power_release_city");
-            AddSeparator(tab);
-            AddPower(tab, Powers.CommandArmy, "ui/Icons/vd_power_command_army");
-            AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/vd_power_order_kingdom_attack");
-            AddPower(tab, Powers.ReleaseArmy, "ui/Icons/vd_power_release_army");
+            // 军队大修关掉时没有指挥军队这一组
+            if (Military.On)
+            {
+                AddSeparator(tab);
+                AddPower(tab, Powers.CommandArmy, "ui/Icons/vd_power_command_army");
+                AddPower(tab, Powers.OrderKingdomAttack, "ui/Icons/vd_power_order_kingdom_attack");
+                AddPower(tab, Powers.ReleaseArmy, "ui/Icons/vd_power_release_army");
+            }
             AddSeparator(tab);
             AddPower(tab, Powers.TransferCity, "ui/Icons/vd_power_transfer_city");
             AddPower(tab, Powers.Annex, "ui/Icons/vd_power_annex");

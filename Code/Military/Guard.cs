@@ -283,6 +283,7 @@ namespace DiplomacyOverhaul
         // 少了就从在本国境内、没在打仗的地方兵里调
         internal static void Rebalance()
         {
+            if (!Military.On) return;
             foreach (Kingdom kingdom in World.world.kingdoms)
             {
                 if (!kingdom.isAlive() || !kingdom.isCiv()) continue;
@@ -346,6 +347,32 @@ namespace DiplomacyOverhaul
         {
             pActor.removeFromArmy();
             pActor.cancelAllBeh();
+        }
+
+        // 关掉军队大修：禁军编队解散，兵回到户籍城当地方兵；欠饷和减益清掉
+        internal static void DisbandAll()
+        {
+            foreach (Army army in new List<Army>(World.world.armies))
+            {
+                if (!Is(army)) continue;
+                foreach (Actor a in new List<Actor>(army.units)) Leave(a);
+                army.disband();
+            }
+            foreach (Kingdom k in World.world.kingdoms)
+            {
+                if (!k.isAlive()) continue;
+                k.data.removeBool(KeyUnpaid);
+                k.data.removeFloat(KeyPenalty);
+                foreach (City city in k.getCities())
+                {
+                    List<Actor> warriors = Warriors(city);
+                    if (warriors == null) continue;
+                    foreach (Actor a in warriors) a.data.removeFlag(FlagMember);
+                }
+            }
+            _targets.Clear();
+            _members.Clear();
+            Acting = null;
         }
 
         // ---------- 军饷 ----------
@@ -475,6 +502,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref ai.behaviours.BehResult __result)
         {
+            if (!Military.On) return true;
             if (!Guard.IsMember(pActor))
             {
                 if (Guard.Is(pActor.army)) pActor.removeFromArmy();
@@ -496,6 +524,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
         {
+            if (!Military.On) return true;
             __result = ai.behaviours.BehResult.Continue;
             pCity.checkArmyExistence();
             if (pCity.hasArmy()) return false;
@@ -515,7 +544,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City __instance, Actor pActor)
         {
-            if (__instance.getResourcesAmount("gold") > 10 || __instance.isGettingCaptured() || __instance._timer_warrior > 0f) return true;
+            if (!Military.On || __instance.getResourcesAmount("gold") > 10 || __instance.isGettingCaptured() || __instance._timer_warrior > 0f) return true;
             if (!pActor.isProfession(UnitProfession.Unit) || !__instance.hasEnoughFoodForArmy() || !Guard.WantsMember(__instance)) return true;
             return !__instance.tryToMakeWarrior(pActor);
         }
@@ -525,7 +554,10 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(City), nameof(City.makeWarrior))]
     static class Patch_MakeWarrior
     {
-        static void Postfix(City __instance, Actor pActor) => Guard.OnMadeWarrior(__instance, pActor);
+        static void Postfix(City __instance, Actor pActor)
+        {
+            if (Military.On) Guard.OnMadeWarrior(__instance, pActor);
+        }
     }
 
     // 禁军编队改名（国家改名时原版会重新生成军队名）
@@ -558,7 +590,7 @@ namespace DiplomacyOverhaul
 
         static void Postfix()
         {
-            if (Clock.Due(ref _last, 1.0)) Guard.Tick();
+            if (Military.On && Clock.Due(ref _last, 1.0)) Guard.Tick();
         }
     }
 }

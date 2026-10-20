@@ -37,6 +37,10 @@ namespace DiplomacyOverhaul
             },
             new[]
             {
+                new Card { title = "vd_settings_military", icon = "ui/Icons/iconWar", rows = new[]
+                {
+                    (Settings.GroupMilitary, Settings.KeyMilitary)
+                } },
                 new Card { title = "vd_settings_display", icon = "ui/Icons/iconKingdom", rows = new[]
                 {
                     (Settings.GroupGovernment, "vd_gov_name_enabled")

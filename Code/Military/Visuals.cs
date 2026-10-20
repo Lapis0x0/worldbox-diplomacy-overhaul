@@ -78,6 +78,11 @@ namespace DiplomacyOverhaul
         // 照抄原版 QuantumSpriteLibrary.drawArmies，只改人数：选中的军队、玩家下过令的军队显示；打开了原版「军队旁显示人数」选项则全部显示
         static void DrawArmyFlags(QuantumSpriteAsset pAsset)
         {
+            if (!Military.On)
+            {
+                QuantumSpriteLibrary.drawArmies(pAsset);
+                return;
+            }
             if (!PlayerConfig.optionBoolEnabled("marks_armies")) return;
             if (global::Zones.showArmyZones() && global::Zones.showMapNames()) return;
             List<Army> selected = CommandedArmies();
