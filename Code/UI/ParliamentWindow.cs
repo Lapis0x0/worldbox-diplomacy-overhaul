@@ -27,7 +27,7 @@ namespace DiplomacyOverhaul
         static Kingdom _kingdom;
         static long _selected = -1;
         static PolicyTab _tab = PolicyTab.Domestic;
-        static string _open;
+        internal static string _open;
         static Section _frame, _seats, _clans, _compass, _detail, _policies, _bill;
         static Section[] _sections;
         static Section _section;
@@ -229,8 +229,8 @@ namespace DiplomacyOverhaul
 
             Bill bill = Parliament.GetBill(_kingdom);
             var ok = new System.Text.StringBuilder(k).Append((int)_tab).Append('|').Append(_open).Append('|').Append(republic).Append('|');
-            foreach (Policy p in Policies.All) ok.Append(p.shown(_kingdom) ? p.Get(_kingdom) : -1).Append(',');
-            if (bill != null) ok.Append('b').Append(bill.policy.id).Append(bill.option);
+            foreach (Policy p in Policies.All) ok.Append(p.shown(_kingdom) ? p.Get(_kingdom) : -1).Append(Parliament.Locked(_kingdom, p) ? 'L' : ',');
+            if (bill != null) ok.Append('b').Append(bill.policy.id).Append(bill.option).Append(bill.player);
             Build(_policies, ok.ToString(), () => BuildPolicies(bill));
 
             VoteResult result = bill != null ? Parliament.Vote(_kingdom, bill, clans) : null;
@@ -554,13 +554,19 @@ namespace DiplomacyOverhaul
                 Text(head, LM.Get(p.id), 23f, 0f, 90f, 22f, 7, p.active ? Ink : Muted, TextAnchor.MiddleLeft);
                 int current = p.Get(_kingdom);
                 string currentName = LM.Get(p.OptionName(_kingdom, current));
-                float pillW = Measure(currentName, 6) + 14f;
+                bool locked = Parliament.Locked(_kingdom, p);
+                // 锁定的政策在现行选项里带一把锁
+                float lockW = locked ? LockW + 2f : 0f;
+                float pillW = Measure(currentName, 6) + 14f + lockW;
                 RectTransform pill = Sliced(head, p.active ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray",
                     RightW - 30f - pillW, 4f, pillW, 14f);
-                Text(pill, currentName, 0f, 0f, pillW, 14f, 6, p.active ? Color.white : Muted, TextAnchor.MiddleCenter);
+                Text(pill, currentName, 0f, 0f, pillW - lockW, 14f, 6, p.active ? Color.white : Muted, TextAnchor.MiddleCenter);
+                if (locked) LockIconAt(pill, LockIcon, pillW - LockW - 5f, (14f - LockH) / 2f);
                 if (p.active) Text(head, open ? "▲" : "▼", RightW - 24f, 0f, 12f, 22f, 6, Muted, TextAnchor.MiddleCenter);
                 if (open)
                 {
+                    // 锁跟着玩家选中的那一档：这项政策上有玩家的议案就在议案那一档，否则在现行那一档
+                    int lockOption = bill != null && bill.player && bill.policy == p ? bill.option : current;
                     float ow = (RightW - 8f - 23f - 6f - 4f * (p.count - 1)) / p.count;
                     for (int o = 0; o < p.count; o++)
                     {
@@ -568,13 +574,45 @@ namespace DiplomacyOverhaul
                         bool isCurrent = o == current;
                         RectTransform ob = Button(slot, 23f + o * (ow + 4f), 23f, ow, 15f,
                             isCurrent ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray", () => Pick(policy, option));
-                        Text(ob, LM.Get(p.OptionName(_kingdom, o)), 0f, 0f, ow, 15f, 6, Color.white, TextAnchor.MiddleCenter);
+                        bool lockable = o == lockOption && p.CanPropose(_kingdom);
+                        float textW = lockable ? ow - LockW - 7f : ow;
+                        Text(ob, LM.Get(p.OptionName(_kingdom, o)), 0f, 0f, textW, 15f, 6, Color.white, TextAnchor.MiddleCenter);
                         if (bill != null && bill.policy == p && bill.option == o) Frame(ob, -1.5f);
                         OptionTip(ob, policy, option);
+                        if (lockable) LockButton(ob, policy, option, ow, locked && isCurrent);
                     }
                 }
                 y += h + 3f;
             }
+        }
+
+        const string LockIcon = "ui/Icons/vd_lock";
+        const string UnlockIcon = "ui/Icons/vd_unlock";
+        const float LockW = 9f, LockH = 9f;
+
+        static void LockIconAt(RectTransform pParent, string pSprite, float pX, float pY) =>
+            UiKit.Picture(pParent, SpriteTextureLoader.getSprite(pSprite), pX, pY, LockW, LockH);
+
+        // 选中的那一档右端的锁：锁上后议会不再提议改这项政策。点议案那一档上的锁，直接颁布再锁上
+        static void LockButton(RectTransform pOption, Policy pPolicy, int pOptionIndex, float pW, bool pLocked)
+        {
+            bool enact = pPolicy.Get(_kingdom) != pOptionIndex;
+            RectTransform lb = Button(pOption, pW - LockW - 9f, 0f, LockW + 9f, 15f, null, () =>
+            {
+                if (enact) Parliament.Enact(_kingdom, new Bill { policy = pPolicy, option = pOptionIndex, player = true });
+                Parliament.SetLocked(_kingdom, pPolicy, !pLocked);
+                Tooltip.hideTooltip();
+                Refresh();
+            });
+            LockIconAt(lb, pLocked ? LockIcon : UnlockIcon, 2f, (15f - LockH) / 2f);
+            var trigger = lb.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
+            enter.callback.AddListener(_ => Tooltip.show(lb.gameObject, "tip",
+                new TooltipData { tip_name = pLocked ? "vd_policy_unlock" : "vd_policy_lock", tip_description = enact ? "vd_policy_lock_enact_info" : "vd_policy_lock_info" }));
+            trigger.triggers.Add(enter);
+            var exit = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit };
+            exit.callback.AddListener(_ => Tooltip.hideTooltip());
+            trigger.triggers.Add(exit);
         }
 
         // 共和国的说明里没有王冠，换成国库
@@ -596,6 +634,7 @@ namespace DiplomacyOverhaul
                 Refresh();
                 return;
             }
+            Parliament.SetLocked(_kingdom, pPolicy, false);
             Parliament.SetBill(_kingdom, new Bill { policy = pPolicy, option = pOption, player = true });
             Clan rival = old != null && !old.player ? ProposerClan(old) : null;
             if (rival != null && (old.policy != pPolicy || old.option != pOption))

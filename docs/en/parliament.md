@@ -165,5 +165,6 @@ Falling city loyalty also drags down the [dynastic cycle](cycle.md).
 - **Vote now**: Hold the vote immediately instead of waiting for the next session.
 - **Decree**: Skip the vote and put the bill into effect. Cities of the clans that oppose it become unhappy.
 - **Withdraw**: Remove the current bill, whoever proposed it.
+- **Lock a policy**: Expand a policy and click the lock at the right end of the selected option; it turns gold. Parliament will no longer propose changing that policy, though clans can still resent it. Clicking the lock on the option of your own bill decrees it at once and locks it. Picking another option unlocks it.
 
 The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. Click a clan to see its chief (for the cadets, the leading prince) and its cities. The right side shows the policies and the current bill.

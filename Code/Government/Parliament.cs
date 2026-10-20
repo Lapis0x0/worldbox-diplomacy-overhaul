@@ -65,6 +65,7 @@ namespace DiplomacyOverhaul
         const string KeyBillPlayer = "vd_bill_player";
         const string KeyBillProposer = "vd_bill_proposer";
         const string KeyRejected = "vd_bill_rejected";
+        const string KeyLockPrefix = "vd_policy_lock_";
         // 被否决的议案这么多年内没人原样重提，除非按眼下的票数能过了
         const int RejectedYears = 15;
 
@@ -515,7 +516,20 @@ namespace DiplomacyOverhaul
 
         static bool Valid(Kingdom pKingdom, Bill pBill) =>
             pBill.option >= 0 && pBill.option < pBill.policy.count && pBill.policy.CanPropose(pKingdom)
-            && pBill.policy.Get(pKingdom) != pBill.option;
+            && pBill.policy.Get(pKingdom) != pBill.option && (pBill.player || !Locked(pKingdom, pBill.policy));
+
+        // 玩家锁定的政策：议会不起草改动它的议案，玩家自己改了选项就解锁
+        public static bool Locked(Kingdom pKingdom, Policy pPolicy)
+        {
+            pKingdom.data.get(KeyLockPrefix + pPolicy.id, out bool locked, false);
+            return locked;
+        }
+
+        public static void SetLocked(Kingdom pKingdom, Policy pPolicy, bool pLocked)
+        {
+            if (pLocked) pKingdom.data.set(KeyLockPrefix + pPolicy.id, true);
+            else pKingdom.data.removeBool(KeyLockPrefix + pPolicy.id);
+        }
 
         public static void SetBill(Kingdom pKingdom, Bill pBill)
         {
@@ -561,7 +575,7 @@ namespace DiplomacyOverhaul
             int total = TotalSeats(pClans);
             foreach (Policy p in Policies.All)
             {
-                if (!p.CanPropose(pKingdom)) continue;
+                if (!p.CanPropose(pKingdom) || Locked(pKingdom, p)) continue;
                 int current = p.Get(pKingdom);
                 for (int o = 0; o < p.count; o++)
                 {
@@ -740,6 +754,7 @@ namespace DiplomacyOverhaul
         public static void Enact(Kingdom pKingdom, Bill pBill)
         {
             pBill.policy.Set(pKingdom, pBill.option);
+            SetLocked(pKingdom, pBill.policy, false);
             ClearBill(pKingdom);
             _modifiers.Remove(pKingdom.id);
             WorldLogs.Add(WorldLogs.PolicyEnacted, Location(pKingdom), pKingdom.king,

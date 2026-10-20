@@ -35,7 +35,8 @@ namespace DiplomacyOverhaul.Perf
     //   parl boats [数量]         城市最多的几个国家每个港口的运输船数、陆上单位的平均伤害
     //   parl draft [数量]         城市最多的几个国家：各股势力的处境、意识形态、各项政策的理想位置、忠诚修正，和它当提案人时收益最高的几项
     //   parl sim <轮数>           每个国家连开几轮议会（立场不变，不写世界日志），统计议案、政策分布和地方势力的忠诚修正，算完恢复原样
-    //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy）
+    //   parl show|session|open [国家 id 或名字] [页签]   查看一个国家的议会；session 让它立即开一次议会；open 打开议会窗口（页签 domestic|military|diplomacy，再跟政策 id 展开这一项）
+    //   parl lock <国家> <政策 id>   切换这项政策的锁定
     //   parl election [国家]       打开选举与任命窗口
     //   parl vote [国家]           按眼下的议会选一次执政，只打印候选人和票数，不生效
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效

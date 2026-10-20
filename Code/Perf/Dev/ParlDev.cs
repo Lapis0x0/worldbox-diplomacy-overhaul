@@ -12,8 +12,18 @@ namespace DiplomacyOverhaul.Perf
             {
                 Kingdom target = Find(a.Length > 2 ? a[2] : null);
                 SelectedMetas.selected_kingdom = target;
+                if (a.Length > 4) ParliamentWindow._open = a[4];
                 if (a.Length > 3) ParliamentWindow.Open(target, (PolicyTab)System.Enum.Parse(typeof(PolicyTab), a[3], true));
                 else ParliamentWindow.Open(target);
+                return;
+            }
+            if (mode == "lock")
+            {
+                Kingdom target = Find(a.Length > 2 ? a[2] : null);
+                Policy policy = a.Length > 3 ? Policies.Get(a[3]) : null;
+                if (target == null || policy == null) { Dev.Log("parl lock <国家> <政策 id>"); return; }
+                Parliament.SetLocked(target, policy, !Parliament.Locked(target, policy));
+                Dev.Log($"{target.data.name} {policy.id} locked={Parliament.Locked(target, policy)}");
                 return;
             }
             if (mode == "election")
