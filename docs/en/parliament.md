@@ -18,6 +18,8 @@ Each clan has a position on two axes:
 
 The chief's traits matter a great deal, but a clan's stance builds up over generations: a new chief only pulls the clan part of the way toward his own views.
 
+Clans can carry Politics traits: Conservative, Radical, Centralist and Localist. A clan with one of them always stays on that side; its lineage and chief only decide how far. Add them in the clan window's trait editor.
+
 The two axes make four factions. Clans in the same faction share a color:
 
 | | Central | Local |

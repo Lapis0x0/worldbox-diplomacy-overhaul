@@ -40,6 +40,46 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"{target.data.name} {policy.id} locked={Parliament.Locked(target, policy)}");
                 return;
             }
+            if (mode == "trait")
+            {
+                // parl trait <国家> <氏族名的一部分> [特质 id|clear|open]：给议会里的一个氏族加政见特质，open 打开氏族窗口，不给就只看
+                if (a.Length == 2)
+                {
+                    // 只写 parl trait：数一下所有议会里带政见特质的氏族
+                    var count = new Dictionary<string, int>();
+                    int total = 0;
+                    foreach (Kingdom k in World.world.kingdoms.Where(k => k.isAlive() && k.isCiv()))
+                        foreach (ParliamentClan c in Parliament.Clans(k))
+                        {
+                            total++;
+                            foreach (ClanTrait t in c.clan.getTraits().Where(t => t.group_id == Politics.GroupId))
+                                count[t.id] = (count.TryGetValue(t.id, out int n) ? n : 0) + 1;
+                        }
+                    Dev.Log($"  clans={total} " + string.Join(" ", count.Select(p => $"{p.Key}={p.Value}")));
+                    return;
+                }
+                Kingdom target = Find(a.Length > 2 ? a[2] : null);
+                ParliamentClan pc = target != null && a.Length > 3
+                    ? Parliament.Clans(target).FirstOrDefault(c => c.clan.name.Contains(a[3])) : null;
+                if (pc == null) { Dev.Log("parl trait <国家> <氏族名> [vd_conservative|vd_radical|vd_central|vd_local|clear]"); return; }
+                if (a.Length > 4)
+                {
+                    if (a[4] == "open")
+                    {
+                        SelectedMetas.selected_clan = pc.clan;
+                        ScrollWindow.showWindow("clan");
+                        return;
+                    }
+                    if (a[4] == "clear")
+                        foreach (string id in new[] { Politics.Conservative, Politics.Radical, Politics.Central, Politics.Local })
+                            pc.clan.removeTrait(id);
+                    else pc.clan.addTrait(a[4], true);
+                    pc = Parliament.Clans(target).First(c => c.clan == pc.clan && c.cadet == pc.cadet);
+                }
+                string traits = string.Join(",", pc.clan.getTraits().Where(t => t.group_id == Politics.GroupId).Select(t => t.id));
+                Dev.Log($"  {pc.clan.name} traits=[{traits}] stance=({pc.x:F2},{pc.y:F2}) {pc.faction}");
+                return;
+            }
             if (mode == "election")
             {
                 Kingdom target = Find(a.Length > 2 ? a[2] : null);

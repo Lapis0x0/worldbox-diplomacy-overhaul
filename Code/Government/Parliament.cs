@@ -321,7 +321,8 @@ namespace DiplomacyOverhaul
 
         // 保守-激进：门第，比议会里的平均老 4 倍 -0.6、新 4 倍 +0.6；拿主意的人的心性和年龄（见 VoiceRadical）；
         // 族人的心性按平均值算四分之一；家风。
-        // 分权-集权：离首都的远近，在首都 +0.6、和最远的城一样远 -0.6；拿主意的人多疑、野心（见 VoiceCentral）；家风
+        // 分权-集权：离首都的远近，在首都 +0.6、和最远的城一样远 -0.6；拿主意的人多疑、野心（见 VoiceCentral）；家风。
+        // 最后按政见特质定下站在哪一边（见 Politics）
         static void Stance(ParliamentClan pClan, StanceContext pContext)
         {
             Clan clan = pClan.clan;
@@ -337,8 +338,11 @@ namespace DiplomacyOverhaul
             float lineage = -0.6f * Mathf.Clamp((LogAge(clan) - pContext.meanLogAge) / Mathf.Log(4f), -1f, 1f);
             float near = 0.6f - 1.2f * pClan.far;
             (float vx, float vy) = VoicePart(pClan, pContext);
-            pClan.x = Mathf.Clamp(lineage + vx + MembersWeight * membersX + HouseStyle(clan.id, 1), -1f, 1f);
-            pClan.y = Mathf.Clamp(near + vy + HouseStyle(clan.id, 2), -1f, 1f);
+            float x = Mathf.Clamp(lineage + vx + MembersWeight * membersX + HouseStyle(clan.id, 1), -1f, 1f);
+            float y = Mathf.Clamp(near + vy + HouseStyle(clan.id, 2), -1f, 1f);
+            Politics.Apply(clan, ref x, ref y);
+            pClan.x = x;
+            pClan.y = y;
             pClan.faction = FactionOf(pClan.x, pClan.y);
         }
 
