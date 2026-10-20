@@ -77,9 +77,31 @@ namespace DiplomacyOverhaul
             Kingdom k = KingdomOn(pZone);
             if (k == null) return false;
             NanoObject faction = Camp.Of(k);
-            if (faction is Alliance) pAsset.cursor_tooltip_action(faction);
-            else MetaTypeLibrary.kingdom.cursor_tooltip_action(faction);
+            if (faction is Alliance)
+            {
+                pAsset.cursor_tooltip_action(faction);
+                return true;
+            }
+            _blocTooltip = true;
+            try { MetaTypeLibrary.kingdom.cursor_tooltip_action(faction); }
+            finally { _blocTooltip = false; }
             return true;
+        }
+
+        // 没有联盟的集团借用王国提示，人口和兵力换成整个集团的
+        static bool _blocTooltip;
+
+        internal static void BlocStats(Tooltip pTooltip, Kingdom pKingdom)
+        {
+            if (!_blocTooltip) return;
+            SetIcon(pTooltip, "i_population", Camp.Population(pKingdom));
+            SetIcon(pTooltip, "i_army", Camp.Warriors(pKingdom));
+        }
+
+        internal static void SetIcon(Tooltip pTooltip, string pName, int pValue)
+        {
+            StatsIcon icon = pTooltip.transform.FindRecursive(pName)?.GetComponent<StatsIcon>();
+            if (icon != null) icon.setValue(pValue);
         }
 
         static bool Click(WorldTile pTile, string pPower)
@@ -173,14 +195,8 @@ namespace DiplomacyOverhaul
         {
             Alliance alliance = pData?.alliance;
             if (alliance == null) return;
-            Set(pTooltip, "i_population", Camp.Population(alliance));
-            Set(pTooltip, "i_army", Camp.Warriors(alliance));
-        }
-
-        static void Set(Tooltip pTooltip, string pName, int pValue)
-        {
-            StatsIcon icon = pTooltip.transform.FindRecursive(pName)?.GetComponent<StatsIcon>();
-            if (icon != null) icon.setValue(pValue);
+            AllianceView.SetIcon(pTooltip, "i_population", Camp.Population(alliance));
+            AllianceView.SetIcon(pTooltip, "i_army", Camp.Warriors(alliance));
         }
     }
 }

@@ -196,6 +196,7 @@ namespace DiplomacyOverhaul
             Current = null;
             Kingdom k = pData?.kingdom;
             if (k == null) return;
+            AllianceView.BlocStats(pTooltip, k);
             if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
             pTooltip.setTitle(Government.DisplayName(k), Government.TitleKey(k), k.getColor().color_text);
         }
