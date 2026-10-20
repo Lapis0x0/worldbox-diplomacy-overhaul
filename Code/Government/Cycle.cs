@@ -309,8 +309,9 @@ namespace DiplomacyOverhaul
             RefreshDamage(pKingdom);
         }
 
+        // 大国：自己加附庸一共 6 座城及以上
         public static bool IsEmpire(Kingdom pKingdom) =>
-            pKingdom.isAlive() && pKingdom.isCiv() && !Vassals.IsVassal(pKingdom) && pKingdom.countCities() >= EmpireCities;
+            pKingdom.isAlive() && pKingdom.isCiv() && !Vassals.IsVassal(pKingdom) && Vassals.BlocCities(pKingdom) >= EmpireCities;
 
         // 有周期：独立的大国，或者带着附庸的宗主（哪怕自己已经很小）
         static bool Eligible(Kingdom pKingdom) =>

@@ -9,7 +9,7 @@ The government is shown as a kingdom trait. It also appears after the kingdom na
 | Government | Which kingdom | Ruler title |
 |---|---|---|
 | Kingdom | A monarchy with 5 cities or fewer | King |
-| Empire | A monarchy with 6 cities or more | Emperor |
+| Empire | A monarchy with 6 cities or more, counting its vassals | Emperor |
 | Republic | An ordinary republic | Consul |
 | Merchant Republic | A republic whose culture has Golden Rule | Consul |
 | Military Republic | A republic founded when generals seized power | Lord Protector |
@@ -84,7 +84,7 @@ If it does not switch, it splits as in vanilla.
 
 ### Republic Crowns an Emperor
 
-A republic with 6 or more cities at its [Prime](cycle.md) may see an ambitious consul crown himself or herself emperor. The consul's clan becomes the royal house and the kingdom becomes an Empire. Ambitious, Bloodlust, and Evil consuls are the most likely to do it. Content, Honest, Pacifist, and Peaceful consuls never do. In a republic with an ordinary consul, about a quarter crown an emperor during a whole Prime phase.
+A republic with 6 or more cities (counting its vassals) at its [Prime](cycle.md) may see an ambitious consul crown himself or herself emperor. The consul's clan becomes the royal house and the kingdom becomes an Empire. Ambitious, Bloodlust, and Evil consuls are the most likely to do it. Content, Honest, Pacifist, and Peaceful consuls never do. In a republic with an ordinary consul, about a quarter crown an emperor during a whole Prime phase.
 
 ### Coup in Times of Collapse
 
