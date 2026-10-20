@@ -2,6 +2,46 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.10.0
+
+### 中文
+
+1. 引入「政制」机制，根据国家政策自动改变对应的命名与议会称呼
+2. 引入「国库」页面，可以实时追踪国家财政状况
+3. 添加「宗室」势力；优化游戏内的议会 AI 决策表现
+4. 新增氏族政见特质，可以在氏族编辑器里决定家族在议会中的立场
+5. 为禁军添加专门的军旗
+6. 重做设置页面，可自由关闭模组的各个模块
+7. 优化议会页的交互体验；支持锁定议案政策
+8. 优化共和国执政的选举机制，纳入声望因素
+9. 优化共和国的派系命名，保王派和共和派改称元老派和自治派
+10. 优化共和国的图标，王国窗口和议会里领袖头上的皇冠换成金橄榄冠
+11. 优化小国议会的立场，增加多样性
+12. 优化王国/帝国判定，附庸的城市也会被计入
+13. 优化联盟视图的悬停提示，宗主国和附庸的人口、兵力合并显示
+14. 优化税收制度的上缴比例
+15. 修复长期战争中禁军人数下降反而更容易升级军械的问题
+16. 修复处于战争状态的国家可能会被他国威逼称臣的问题
+
+### English
+
+1. Added regime names: a kingdom's name and what its parliament is called now change automatically with its policies
+2. Added the "Treasury" page to track a kingdom's finances in real time
+3. Added the "Cadets" bloc for royal relatives in parliament; improved the parliament AI's decisions
+4. Added clan political-stance traits: set a family's stance in parliament from the clan editor
+5. Added a dedicated banner for the central guard
+6. Reworked the settings page: each module of the mod can now be turned off freely
+7. Improved the parliament page's interaction; bill policies can now be locked
+8. Improved how republics elect their consul, now taking renown into account
+9. Improved republic faction names: the Royalists and Republicans are now the Senators and Autonomists
+10. Improved the republic icon: the crown over the leader in the kingdom window and parliament is now a golden olive wreath
+11. Improved the stances of small kingdoms' parliaments for more variety
+12. Improved the kingdom/empire check: vassal cities now count too
+13. Improved the alliance view tooltip: an overlord's and its vassals' population and army are shown combined
+14. Improved the share of taxes sent to the treasury
+15. Fixed the central guard upgrading its equipment more easily as its numbers shrank in long wars
+16. Fixed kingdoms at war sometimes being pressured into submission by other kingdoms
+
 ## 0.9.2
 
 ### 中文
