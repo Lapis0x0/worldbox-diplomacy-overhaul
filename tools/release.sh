@@ -41,7 +41,9 @@ zip=$(tools/package.sh)
 echo "✓ 发布包 $zip"
 unzip -l "$zip" | tail -1
 
-git push origin main
+# 一次推送的提交多、带图片时，HTTPS 默认缓冲区不够，GitHub 会回 HTTP 400
+push() { git -c http.postBuffer=524288000 push origin "$@"; }
+push main
 git tag -a "$tag" -m "版本 $version"
-git push origin "$tag"
+push "$tag"
 echo "✓ 已推送 $tag，GitHub Actions 正在建 Release：https://github.com/Lapis0x0/worldbox-diplomacy-overhaul/releases/tag/$tag"
