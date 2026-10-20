@@ -53,6 +53,8 @@ namespace DiplomacyOverhaul.Perf
     //   bench arrow [stale|restore|null]   射一支箭，把它记下的国家换成已销毁的国家，检查弹道兜底（变体见 BenchDev.Arrow）
     //   safety [fail <系统> [次数] | reset | throw on|off]   各系统熔断状态；fail 模拟某个系统的补丁出错，reset 全部恢复；
     //                           throw 让第一座城的原版更新每帧抛异常，检查原版每帧更新的兜底
+    //   check                    巡检对象之间的关系（附庸、城市、单位、军队、弹道、战争指向的国家都还在），每条违规一行 @violation（tools/soak.sh 用）
+    //   year                     写一行 @year <当前年份>
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {
@@ -246,6 +248,8 @@ namespace DiplomacyOverhaul.Perf
                 case "arms": ArmsDev.Run(a); break;
                 case "treasury": TreasuryDev.Run(a); break;
                 case "bench": BenchDev.Run(a); break;
+                case "check": CheckDev.Run(); break;
+                case "year": Log("@year " + Date.getCurrentYear()); break;
                 case "safety":
                     // safety fail <系统> [次数]：模拟这个系统的补丁出错，检查熔断；safety reset：全部恢复
                     if (a.Length > 2 && a[1] == "fail")
