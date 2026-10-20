@@ -321,7 +321,7 @@ namespace DiplomacyOverhaul
 
         // 保守-激进：门第，比议会里的平均老 4 倍 -0.6、新 4 倍 +0.6；拿主意的人的心性和年龄（见 VoiceRadical）；
         // 族人的心性按平均值算四分之一；家风。
-        // 分权-集权：离首都的远近，在首都 +0.6、和最远的城一样远 -0.6；拿主意的人多疑、野心（见 VoiceCentral）；家风。
+        // 分权-集权：离首都的远近，在首都 +0.6、和最远的城一样远 -0.6，城少的国家按 Spread 打折；拿主意的人多疑、野心（见 VoiceCentral）；家风。
         // 最后按政见特质定下站在哪一边（见 Politics）
         static void Stance(ParliamentClan pClan, StanceContext pContext)
         {
@@ -336,7 +336,7 @@ namespace DiplomacyOverhaul
             }
             float membersX = n > 0 ? sum / n : 0f;
             float lineage = -0.6f * Mathf.Clamp((LogAge(clan) - pContext.meanLogAge) / Mathf.Log(4f), -1f, 1f);
-            float near = 0.6f - 1.2f * pClan.far;
+            float near = (0.6f - 1.2f * pClan.far) * Spread(pContext.kingdom);
             (float vx, float vy) = VoicePart(pClan, pContext);
             float x = Mathf.Clamp(lineage + vx + MembersWeight * membersX + HouseStyle(clan.id, 1), -1f, 1f);
             float y = Mathf.Clamp(near + vy + HouseStyle(clan.id, 2), -1f, 1f);
@@ -345,6 +345,9 @@ namespace DiplomacyOverhaul
             pClan.y = y;
             pClan.faction = FactionOf(pClan.x, pClan.y);
         }
+
+        // 国家铺得多开：一座城没有地方可言，离首都的远近不算；每多一座城加 1/4，5 座城及以上算满
+        static float Spread(Kingdom pKingdom) => Mathf.Clamp01((pKingdom.countCities() - 1) / 4f);
 
         // 拿主意的人带来的那部分意识形态。换人时只往新人那边挪 1/3，记在氏族数据里，
         // 所以一个家族的立场是几代人慢慢攒下来的，不会因为换一个族长整个翻过来

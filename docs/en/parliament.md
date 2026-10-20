@@ -14,7 +14,7 @@ Every kingdom has a parliament, monarchies included. Clans (vanilla clans) get s
 Each clan has a position on two axes:
 
 - **Conservative ↔ Radical**: Old clans and chiefs who are older, Content, or Honest lean conservative. New clans and young, ambitious chiefs lean radical.
-- **Central ↔ Local**: Clans that live near the capital and clans with Paranoid chiefs lean central. Clans far from the capital that want to stand on their own lean local.
+- **Central ↔ Local**: Clans that live near the capital and clans with Paranoid chiefs lean central. Clans far from the capital that want to stand on their own lean local. The fewer cities a kingdom has, the less distance from the capital matters: in a kingdom of one or two cities, a clan's central or local lean comes mostly from its chief's temperament.
 
 The chief's traits matter a great deal, but a clan's stance builds up over generations: a new chief only pulls the clan part of the way toward his own views.
 
