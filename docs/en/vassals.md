@@ -37,7 +37,7 @@ If an overlord and its vassal end up on opposite sides of the same war (for exam
 
 **Cities taken by a vassal**: A vassal fights alongside its overlord, and it can grow to at most 3 cities through war. Cities it takes beyond that go to the overlord or to other vassals, which makes the vassal a little unhappy.
 
-**Pressure into submission**: The king of a strong kingdom can send envoys to pressure a neighboring weak kingdom. The target must meet all of these: it is not at war with the strong kingdom, it is not a vassal and has no vassals, its opinion of the strong kingdom is not negative, and the strong kingdom plus its vassals has at least 3 times the strength of the target's whole bloc (2 times for an Empire). A target with allies backing it is hard to intimidate. A declining kingdom will not do this.
+**Pressure into submission**: The king of a strong kingdom can send envoys to pressure a neighboring weak kingdom. The target must meet all of these: it is not at war with anyone, it is not a vassal and has no vassals, its opinion of the strong kingdom is not negative, and the strong kingdom plus its vassals has at least 3 times the strength of the target's whole bloc (2 times for an Empire). A target with allies backing it is hard to intimidate. A declining kingdom will not do this.
 
 **Royal appanage**: For a monarchy with more cities than it can govern, the king grants the cities farthest from the capital to a member of the royal house. It grants at most 3, and prefers his or her own children.
 

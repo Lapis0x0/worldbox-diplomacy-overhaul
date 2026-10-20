@@ -261,7 +261,8 @@ namespace DiplomacyOverhaul
         {
             if (!pTarget.isAlive() || !pTarget.isCiv() || pTarget.countCities() == 0) return false;
             if (Vassals.IsVassal(pTarget) || Vassals.HasVassals(pTarget)) return false;
-            if (pTarget.isInWarWith(pLord)) return false;
+            // 正在打仗的国家顾不上别人的威逼
+            if (World.world.wars.hasWars(pTarget)) return false;
             if (Vassals.BlocPower(pLord) < Camp.Power(Camp.Of(pTarget)) * RequiredRatio(pLord)) return false;
             return World.world.diplomacy.getOpinion(pTarget, pLord).total >= 0;
         }
