@@ -6,6 +6,26 @@ namespace DiplomacyOverhaul
     // 被几个系统同时关心的原版方法只挂一个补丁，在这里按顺序调用各系统。
     // 只有一个系统用到的补丁留在那个系统的文件里
 
+    // 每帧开头
+    [SafeBy("只弹熔断提示")]
+    [HarmonyPatch(typeof(MapBox), "Update")]
+    static class Hook_FrameStart
+    {
+        static void Prefix() => Safety.Tick();
+    }
+
+    // 新世界或读档前会清空世界
+    [SafeBy("只重置标记")]
+    [HarmonyPatch(typeof(MapBox), nameof(MapBox.clearWorld))]
+    static class Hook_ClearWorld
+    {
+        static void Postfix()
+        {
+            Cycle.ResetSession();
+            Safety.Reset();
+        }
+    }
+
     // 城市换国家（被攻占、叛乱、神力转让……）
     [HarmonyPatch(typeof(City), nameof(City.joinAnotherKingdom))]
     static class Hook_CityChanged

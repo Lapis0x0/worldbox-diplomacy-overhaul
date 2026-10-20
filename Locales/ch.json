@@ -598,5 +598,8 @@
   "vd_regime_appanage_republic_ruler": "盟主",
   "vd_regime_feudalism_republic_ruler": "盟主",
   "vd_regime_tributary_republic_ruler": "盟主",
-  "vd_regime_patrimonial_republic_ruler": "首席元老"
+  "vd_regime_patrimonial_republic_ruler": "首席元老",
+  "vd_safety_off": "外交大修的「$system$」功能出错，本局已暂停",
+  "vd_sys_economy": "国库",
+  "vd_sys_interface": "界面显示"
 }

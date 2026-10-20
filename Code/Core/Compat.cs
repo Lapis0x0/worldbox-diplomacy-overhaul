@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 
@@ -142,6 +143,33 @@ namespace DiplomacyOverhaul
         public static void Warn(string pMessage)
         {
             if (_reported.Add(pMessage)) Debug.LogWarning("[外交大修] " + pMessage);
+        }
+    }
+
+    // 原版每帧的更新没有异常保护：模拟里一个子系统抛异常，这一帧排在它后面的子系统、之后的玩家操作和渲染全被跳过，
+    // 条件不变就每帧如此，画面停住。这里给每一环兜底：出错只丢掉这一环这一帧的结果。
+    // 城市和战争逐个对象更新，兜在对象上，一座城出错不影响其他城；其余兜在子系统上；整个模拟步骤再兜一层，
+    // 模拟出错不影响之后的玩家操作和渲染
+    [HarmonyPatch]
+    static class Patch_IsolateFrame
+    {
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            foreach (string name in new[] { "updateSimulation", "updateCities", "updateActors", "updateBuildings", "updateWorldBehaviours", "updateMapLayers", "renderStuff" })
+                yield return AccessTools.Method(typeof(MapBox), name);
+            foreach (Type manager in new[] { typeof(ArmyManager), typeof(KingdomManager), typeof(DiplomacyManager), typeof(SubspeciesManager), typeof(PlotManager),
+                         typeof(ClanManager), typeof(AllianceManager), typeof(WarManager), typeof(StatusManager) })
+                yield return AccessTools.Method(manager, "update", new[] { typeof(float) });
+            yield return AccessTools.Method(typeof(City), nameof(City.update));
+            yield return AccessTools.Method(typeof(War), nameof(War.update));
+            yield return AccessTools.Method(typeof(NameplateManager), "update");
+            yield return AccessTools.Method(typeof(PlayerControl), "updateControls");
+        }
+
+        static Exception Finalizer(Exception __exception, MethodBase __originalMethod)
+        {
+            if (__exception != null) Isolation.Report($"原版 {__originalMethod.DeclaringType?.Name}.{__originalMethod.Name}", __exception);
+            return null;
         }
     }
 

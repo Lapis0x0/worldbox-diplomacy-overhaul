@@ -24,6 +24,7 @@ namespace DiplomacyOverhaul
             LoadIcons(pFolder);
             _harmony = new Harmony(HarmonyId);
             _harmony.PatchAll(typeof(Core).Assembly);
+            if (Perf.Dev.Enabled) Safety.Audit(_harmony);
             Vassals.Init();
             Independence.Init();
             Feudal.Init();

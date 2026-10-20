@@ -24,6 +24,7 @@
 | 原版方法 | 补丁 | 说明 |
 |---|---|---|
 | `City.updateCapture` | `Siege.cs` | 每座城每 0.1 秒 |
+| `City.update`、`War.update` 和各子系统的 `update` | `Compat.cs`（异常兜底） | 每帧每座城、每场战争、每个子系统，只挂 Finalizer |
 | `War.update` | `PeaceTalks.cs` | 每场战争每帧 |
 | 城市 AI（`CityBehCheckAttackZone`、`CityBehCheckArmy`、`CityBehCheckLeader.checkFindLeader`）、`City.isOkToSendArmy` | `Orders.cs`、`Guard.cs`、`Offices.cs` | 每座城的决策节奏 |
 | `KingdomBehCheckKing` | `Regime.cs`、`Succession.cs` | 每个王国的决策节奏 |

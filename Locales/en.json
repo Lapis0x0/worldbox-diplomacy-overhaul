@@ -598,5 +598,8 @@
   "vd_regime_appanage_republic_ruler": "Hegemon",
   "vd_regime_feudalism_republic_ruler": "Hegemon",
   "vd_regime_tributary_republic_ruler": "Hegemon",
-  "vd_regime_patrimonial_republic_ruler": "Princeps Senatus"
+  "vd_regime_patrimonial_republic_ruler": "Princeps Senatus",
+  "vd_safety_off": "Diplomacy Overhaul: \"$system$\" ran into errors and is paused for this session",
+  "vd_sys_economy": "Treasury",
+  "vd_sys_interface": "Interface"
 }

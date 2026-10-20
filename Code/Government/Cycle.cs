@@ -585,11 +585,4 @@ namespace DiplomacyOverhaul
             pTooltip.addLineText(pKey, v > 0 ? "+" + v : v.ToString(), v > 0 ? "#8FE07A" : v < 0 ? "#FF8F7A" : null);
         }
     }
-
-    // 新世界或读档前会清空世界
-    [HarmonyPatch(typeof(MapBox), nameof(MapBox.clearWorld))]
-    static class Patch_CycleClearWorld
-    {
-        static void Postfix() => Cycle.ResetSession();
-    }
 }

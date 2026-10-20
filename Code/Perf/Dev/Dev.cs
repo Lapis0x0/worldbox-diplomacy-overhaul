@@ -51,6 +51,8 @@ namespace DiplomacyOverhaul.Perf
     //   bench stress <附庸数>      城市最多的国家把最小的几个国家收为附庸、吞并其余所有国家，造一个大帝国（tools/perf-check.sh 用）
     //   bench run                 直接调用议会、好感、各定期结算系统等重函数计时，每项一行 @bench <名字> <毫秒>
     //   bench arrow [stale|restore|null]   射一支箭，把它记下的国家换成已销毁的国家，检查弹道兜底（变体见 BenchDev.Arrow）
+    //   safety [fail <系统> [次数] | reset | throw on|off]   各系统熔断状态；fail 模拟某个系统的补丁出错，reset 全部恢复；
+    //                           throw 让第一座城的原版更新每帧抛异常，检查原版每帧更新的兜底
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {
@@ -244,6 +246,18 @@ namespace DiplomacyOverhaul.Perf
                 case "arms": ArmsDev.Run(a); break;
                 case "treasury": TreasuryDev.Run(a); break;
                 case "bench": BenchDev.Run(a); break;
+                case "safety":
+                    // safety fail <系统> [次数]：模拟这个系统的补丁出错，检查熔断；safety reset：全部恢复
+                    if (a.Length > 2 && a[1] == "fail")
+                    {
+                        Sys sys = (Sys)Enum.Parse(typeof(Sys), a[2], true);
+                        int n = a.Length > 3 ? int.Parse(a[3]) : 1;
+                        for (int i = 0; i < n; i++) Safety.Fail(sys, "开发命令模拟", new InvalidOperationException("safety fail"));
+                    }
+                    else if (a.Length > 1 && a[1] == "reset") Safety.Reset();
+                    else if (a.Length > 2 && a[1] == "throw") Dev_ThrowInCity.On = a[2] == "on";
+                    Log("  " + string.Join(" ", Enum.GetValues(typeof(Sys)).Cast<Sys>().Select(s => s + "=" + (Safety.On(s) ? "on" : "off"))));
+                    break;
                 case "end": Log("@done " + (a.Length > 1 ? a[1] : "")); break;
                 default: Log("! unknown command"); break;
             }
@@ -320,11 +334,26 @@ namespace DiplomacyOverhaul.Perf
     }
 
     // 挂在帧首：世界更新抛异常时帧末的补丁不会执行，开发命令照样要能跑
+    [SafeBy("Dev.Update 逐条命令兜住，只在开发时启用")]
     [HarmonyPatch(typeof(MapBox), "Update")]
     static class Dev_Update
     {
         static bool Prepare() => Dev.Enabled;
 
         static void Prefix() => Dev.Update();
+    }
+
+    [SafeBy("故意抛异常，只在开发时启用")]
+    [HarmonyPatch(typeof(City), nameof(City.update))]
+    static class Dev_ThrowInCity
+    {
+        public static bool On;
+
+        static bool Prepare() => Dev.Enabled;
+
+        static void Prefix(City __instance)
+        {
+            if (On && __instance == World.world.cities.list[0]) throw new InvalidOperationException("safety throw");
+        }
     }
 }

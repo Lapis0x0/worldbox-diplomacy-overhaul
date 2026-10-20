@@ -57,7 +57,7 @@
 - `tools/game.sh start|stop|restart|status`：启动或重启游戏，等到世界就绪才返回
 - `tools/dev.sh "命令" ...`：给游戏发开发命令并等结果
 - `tools/ab.sh <字段名|all> [轮数] [秒数] [速度]`：读基准档，交替关、开某项优化，比较平均帧耗时和内存分配
-- `tools/perf-check.sh [--save] [轮数]`：发版前跑。读基准档，在原规模和用 `bench stress` 扩成大帝国后，各测一遍议会、好感、各定期结算系统、议会窗口等模组逻辑的重函数（`bench run`），和 `bin/bench/perf/baseline.txt` 比较；比基线慢一倍以上或超出预算的标出来。`--save` 存为新基线。开发时各定期结算系统单次超过 16ms 会在 `out.log` 里记一行 `@spike`
+- `tools/perf-check.sh [--save] [轮数]`：发版前跑。读基准档，在原规模和用 `bench stress` 扩成大帝国后，各测一遍议会、好感、各定期结算系统、议会窗口等模组逻辑的重函数（`bench run`），和 `bin/bench/perf/baseline.txt` 比较；比基线慢一倍以上或超出预算的标出来，同时数运行期间日志里的异常（应该是 0）。每轮先跑一遍只为编译，再重新读档，在同一个暂停的世界上测，两次之间的差别在 15% 以内。`--save` 存为新基线。开发时各定期结算系统单次超过 16ms 会在 `out.log` 里记一行 `@spike`
 - 基准档放在 `bin/bench/saves/tamriel_910`（不进仓库）；`load` 会先复制到 `bin/dev/run_save` 再读，不占用玩家的存档槽
 
 验证一遍：

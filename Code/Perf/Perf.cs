@@ -62,6 +62,7 @@ namespace DiplomacyOverhaul.Perf
         }
     }
 
+    [SafeBy("只读设置开关")]
     [HarmonyPatch(typeof(MapBox), "Update")]
     static class Perf_Tick
     {
