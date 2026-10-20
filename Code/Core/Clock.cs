@@ -26,6 +26,7 @@ namespace DiplomacyOverhaul
             Run("Integration", Integration.UpdateAll);
             Run("Territory", Territory.UpdateAll);
             Run("Assimilation", Assimilation.UpdateAll);
+            Run("Tribute", Treasury.CollectAll);
             Run("Treasury", Treasury.UpdateAll);
             // 军饷发完再结年账，去年的账里有这一年的军饷
             Run("Ledger", Ledger.CloseYear);

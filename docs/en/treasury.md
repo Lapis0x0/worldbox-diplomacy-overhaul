@@ -5,7 +5,7 @@ In vanilla, money that reaches a city lord or king only ever comes in and never 
 ## How Money Flows
 
 - **Residents → city lord**: As in vanilla, residents give part of their income to the city lord.
-- **City lord → kingdom**: City lords send money up according to parliament's [Taxation](parliament.md#domestic) policy: Tax Farming 25%, Shared Revenue 50%, Central Collection 75%. A small part of what is sent goes to the king personally, and the rest goes into the treasury. Half of what the city lord keeps goes into the city stockpile.
+- **City lord → kingdom**: City lords send money up according to parliament's [Taxation](parliament.md#domestic) policy: Tax Farming 25%, Shared Revenue 50%, Central Collection 75%. A small part of what is sent goes to the king personally, and the rest goes into the treasury. Half of what the city lord keeps goes into the city stockpile. Every year, each city lord hands in the taxes gathered over the year.
 - **Vassal → overlord**: Part of the vassal treasury's income goes to the overlord, according to the overlord's [Vassal Tribute](parliament.md#diplomacy).
 
 The treasury holds only gold. Wood, stone, and food stay in the city stockpiles.

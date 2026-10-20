@@ -202,6 +202,42 @@ namespace DiplomacyOverhaul
 
         // 国王发起密谋时，钱的检查和花费换成国库
         internal static Actor PlotPayer;
+
+        // 城主把手上的税交上来：按税收体制上缴，国王分一份（王位空着时全进国库），其余进国库；
+        // 城主留下的一半进城市仓库，一半归自己
+        internal static void PayTribute(Actor pActor, Actor pKing, float pTaxRate)
+        {
+            if (pActor.loot <= 0) return;
+            int loot = pActor.loot;
+            int tribute = (int)(loot * pTaxRate);
+            int rest = loot - tribute;
+            int toCity = (int)(rest * 0.5f);
+            pActor.city.addResourcesToRandomStockpile("gold", toCity);
+            pActor.addMoney(rest - toCity);
+            int toKing = pKing != null ? (int)(tribute * KingShare) : 0;
+            if (toKing > 0) pKing.addLoot(toKing);
+            Ledger.RecordTax(pActor.city, tribute);
+            Ledger.Record(pActor.kingdom, Ledger.Flow.King, toKing);
+            Income(pActor.kingdom, tribute - toKing);
+            pActor.paidTax(pTaxRate, "fx_money_paid_tribute");
+        }
+
+        // 每年发饷之前，各城城主把这一年攒下的税交上来。原版城主要碰上交税的决定、当时又正好在自己城里才交，
+        // 往往几年才交一次，国库的进账忽多忽少；平时碰上了照样交
+        public static void CollectAll()
+        {
+            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            {
+                if (!k.isAlive() || !k.isCiv()) continue;
+                Actor king = k.hasKing() ? k.king : null;
+                foreach (City city in new List<City>(k.getCities()))
+                {
+                    Actor leader = city.leader;
+                    if (leader == null || !leader.isAlive() || leader.isKing() || leader.loot <= 0) continue;
+                    PayTribute(leader, king, k.getTaxRateTribute());
+                }
+            }
+        }
     }
 
     // 城主上缴：原版全部进国王腰包，现在国王分一份，其余进国库。城主留下的部分照原版
@@ -210,19 +246,7 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, Actor pKing, float pTaxRate)
         {
-            if (pActor.loot <= 0) return false;
-            int loot = pActor.loot;
-            int tribute = (int)(loot * pTaxRate);
-            int rest = loot - tribute;
-            int toCity = (int)(rest * 0.5f);
-            pActor.city.addResourcesToRandomStockpile("gold", toCity);
-            pActor.addMoney(rest - toCity);
-            int toKing = (int)(tribute * Treasury.KingShare);
-            pKing.addLoot(toKing);
-            Ledger.RecordTax(pActor.city, tribute);
-            Ledger.Record(pActor.kingdom, Ledger.Flow.King, toKing);
-            Treasury.Income(pActor.kingdom, tribute - toKing);
-            pActor.paidTax(pTaxRate, "fx_money_paid_tribute");
+            Treasury.PayTribute(pActor, pKing, pTaxRate);
             return false;
         }
     }

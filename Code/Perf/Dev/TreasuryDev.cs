@@ -39,7 +39,7 @@ namespace DiplomacyOverhaul.Perf
                 k.data.get("vd_ledger_" + (int)f, out int now, 0);
                 Dev.Log($"    {f}: this={now} last={Ledger.LastYear(k, f)}");
             }
-            foreach (City c in k.getCities()) Dev.Log($"    city {c.name}: last={Ledger.LastYear(c)}");
+            foreach (City c in k.getCities()) Dev.Log($"    city {c.name}: last={Ledger.LastYear(c)} leader={(c.leader != null ? c.leader.getName() + " loot=" + c.leader.loot : "-")}");
             foreach (Ledger.Entry e in Ledger.Entries(k)) Dev.Log($"    log {e.year} {e.key} {e.name} {e.amount}");
         }
 
