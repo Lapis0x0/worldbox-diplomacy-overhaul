@@ -17,6 +17,7 @@
 | `Actor.isAbleToSkipPriorityLevels` | `Orders.cs` | 每次决策 |
 | 军队、攻城的行为（`BehCheckCityActorArmyGroup`、`BehFindRandomTile`、`BehCityActorCheckAttack`） | `Orders.cs`、`Guard.cs`、`Siege.cs` | 每个执行这一步行为的单位，行为之间有随机等待 |
 | `DiplomacyManager.getRelation` | `Compat.cs` | 原版到处调，每次拼一个字符串作键 |
+| `ProjectileManager.updateProjectiles`、`Projectile.checkHitOnNearbyUnits` | `Compat.cs` | 每支飞行中的箭每帧 |
 
 ### 每帧、每座城或每个王国
 

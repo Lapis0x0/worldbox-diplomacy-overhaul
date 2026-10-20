@@ -18,7 +18,7 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        static void Yearly()
+        internal static void Yearly()
         {
             Run("Regime", Regime.UpdateAll);
             Run("Government", Government.UpdateAll);
@@ -34,7 +34,7 @@ namespace DiplomacyOverhaul
             Run("Parliament", Parliament.UpdateAll);
         }
 
-        static void Monthly()
+        internal static void Monthly()
         {
             // 兜底：把所有附庸的战争状态和宗主同步一次
             Run("Vassals", Vassals.SyncAllWars);
@@ -42,11 +42,14 @@ namespace DiplomacyOverhaul
             Run("GuardAI", GuardAI.UpdateAll);
         }
 
-        // 一个系统出错不连累排在后面的系统，也不打断原版这一帧的更新（见 Isolation）
+        // 一个系统出错不连累排在后面的系统，也不打断原版这一帧的更新（见 Isolation）。
+        // 开发时给每个系统计时（见 Perf.Dev.Timed）
         static void Run(string pName, Action pUpdate)
         {
+            long start = Perf.Dev.Enabled ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
             try { pUpdate(); }
             catch (Exception e) { Isolation.Report($"定期更新 {pName}", e); }
+            if (Perf.Dev.Enabled) Perf.Dev.Timed("clock." + pName, start);
         }
 
         [HarmonyPatch(typeof(KingdomManager), nameof(KingdomManager.update))]

@@ -48,6 +48,9 @@ namespace DiplomacyOverhaul.Perf
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
+    //   bench stress <附庸数>      城市最多的国家把最小的几个国家收为附庸、吞并其余所有国家，造一个大帝国（tools/perf-check.sh 用）
+    //   bench run                 直接调用议会、好感、各定期结算系统等重函数计时，每项一行 @bench <名字> <毫秒>
+    //   bench arrow [stale|restore|null]   射一支箭，把它记下的国家换成已销毁的国家，检查弹道兜底（变体见 BenchDev.Arrow）
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     public static class Dev
     {
@@ -77,6 +80,17 @@ namespace DiplomacyOverhaul.Perf
         }
 
         public static string Dir => _dir;
+
+        // 开发时各定期结算系统最近一次的耗时；单次超过一帧（16ms）就写一行 @spike
+        public static readonly Dictionary<string, double> Timings = new Dictionary<string, double>();
+        const double SpikeMs = 16.0;
+
+        public static void Timed(string pName, long pStart)
+        {
+            double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - pStart) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            Timings[pName] = ms;
+            if (ms > SpikeMs) Log($"@spike {pName} {ms:F1}ms");
+        }
 
         public static void Log(string pLine)
         {
@@ -229,6 +243,7 @@ namespace DiplomacyOverhaul.Perf
                 case "parl": ParlDev.Run(a); break;
                 case "arms": ArmsDev.Run(a); break;
                 case "treasury": TreasuryDev.Run(a); break;
+                case "bench": BenchDev.Run(a); break;
                 case "end": Log("@done " + (a.Length > 1 ? a[1] : "")); break;
                 default: Log("! unknown command"); break;
             }
@@ -304,11 +319,12 @@ namespace DiplomacyOverhaul.Perf
         static float F(string s) => float.Parse(s, CultureInfo.InvariantCulture);
     }
 
+    // 挂在帧首：世界更新抛异常时帧末的补丁不会执行，开发命令照样要能跑
     [HarmonyPatch(typeof(MapBox), "Update")]
     static class Dev_Update
     {
         static bool Prepare() => Dev.Enabled;
 
-        static void Postfix() => Dev.Update();
+        static void Prefix() => Dev.Update();
     }
 }
