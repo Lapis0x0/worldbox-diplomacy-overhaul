@@ -22,13 +22,14 @@ namespace DiplomacyOverhaul
         static readonly Color NoBar = Hex("#d5491b");
         internal static readonly Color YesText = Hex("#5fb8f0");
         internal static readonly Color NoText = Hex("#ff7a4a");
+        static readonly Color RegimeText = Hex("#f5d08a");
 
         static KingdomTabWindow _shell;
         static Kingdom _kingdom;
         static long _selected = -1;
         static PolicyTab _tab = PolicyTab.Domestic;
         internal static string _open;
-        static Section _frame, _seats, _clans, _compass, _detail, _policies, _bill;
+        static Section _frame, _regime, _seats, _clans, _compass, _detail, _policies, _bill;
         static Section[] _sections;
         static Section _section;
         static RectTransform _parent;
@@ -180,7 +181,7 @@ namespace DiplomacyOverhaul
             KingdomTabWindow.Current = pKingdom;
             if (_shell.Create())
             {
-                _sections = new[] { _frame = NewSection("frame"), _seats = NewSection("seats"), _clans = NewSection("clans"), _compass = NewSection("compass"),
+                _sections = new[] { _frame = NewSection("frame"), _regime = NewSection("regime"), _seats = NewSection("seats"), _clans = NewSection("clans"), _compass = NewSection("compass"),
                     _detail = NewSection("detail"), _policies = NewSection("policies"), _bill = NewSection("bill") };
             }
             _shell.Show(pKingdom);
@@ -219,7 +220,11 @@ namespace DiplomacyOverhaul
                 ck.Append(pc.Key).Append(':').Append(pc.clan.name).Append(':').Append(pc.seats).Append(':').Append((int)pc.faction).Append(':').Append(pc.ruling).Append('|');
             string clanKey = ck.ToString();
 
-            bool built = Build(_frame, "frame", BuildFrame);
+            RegimeNames.Rule regime = RegimeNames.Of(_kingdom);
+            string assembly = RegimeNames.AssemblyKey(regime, republic);
+            bool built = Build(_frame, "frame" + assembly, () => BuildFrame(assembly));
+            string regimeKey = regime == null ? "" : regime.id + republic + string.Join(",", RegimeNames.Reasons(_kingdom, regime));
+            Build(_regime, k + regimeKey, () => Regime(regime));
             built |= Build(_seats, clanKey, () =>
             {
                 if (clans.Count > 0) Hemicycle(clans, LeftX, Top + 24f);
@@ -333,19 +338,37 @@ namespace DiplomacyOverhaul
             content.anchoredPosition = new Vector2(content.anchoredPosition.x, y);
         }
 
-        // 不随数据变的部分：三个分区标题
-        static void BuildFrame()
+        // 三个分区标题；议会那一栏按政制换叫法
+        static void BuildFrame(string pAssembly)
         {
-            Header(LeftX, Top, LeftW, LM.Get("vd_parliament_seats"), IconPath);
+            Header(LeftX, Top, LeftW, LM.Get(pAssembly), IconPath);
             Header(RightX, Top, RightW, LM.Get("vd_parliament_policies"), "ui/Icons/iconKings");
             Header(RightX, BillY, RightW, LM.Get("vd_parliament_bill"), "ui/Icons/iconDiplomacy");
+        }
+
+        // 国名下面一行小字：政制名称，悬停列出是哪几项政策凑成的
+        static void Regime(RegimeNames.Rule pRule)
+        {
+            if (pRule == null) return;
+            string name = LM.Get(RegimeNames.Key(pRule, Government.IsRepublic(_kingdom)));
+            float w = Measure(name, 9) + 12f;
+            RectTransform hover = UiKit.Rect(_parent, (W - w) / 2f, RegimeY, w, 14f, new Color(0f, 0f, 0f, 0f));
+            Text(hover, name, 0f, 0f, w, 14f, 9, RegimeText, TextAnchor.MiddleCenter);
+            List<string> reasons = RegimeNames.Reasons(_kingdom, pRule);
+            string info = "vd_regime_default_info";
+            if (reasons.Count > 0)
+            {
+                info = "vd_regime_info_" + _kingdom.id;
+                LM.AddToCurrentLocale(info, string.Join(LM.Get("vd_parliament_separator"), reasons));
+            }
+            HoverTip(hover, () => Tooltip.show(hover.gameObject, "tip", new TooltipData { tip_name = RegimeNames.Key(pRule, Government.IsRepublic(_kingdom)), tip_description = info }));
         }
 
         // ---------- 左边：议会 ----------
 
         const float LeftX = 18f, LeftW = 266f;
         const float RightX = 298f, RightW = 244f;
-        const float Top = 26f;
+        const float Top = 26f, RegimeY = 7f;
         const int ListRows = 5;
 
         const float ListW = 176f, RowH = 15f, ListY = Top + 24f + 146f;
@@ -618,10 +641,16 @@ namespace DiplomacyOverhaul
                 Refresh();
             });
             LockIconAt(lb, pLocked ? LockIcon : UnlockIcon, 2f, (15f - LockH) / 2f);
-            var trigger = lb.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
-            var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
-            enter.callback.AddListener(_ => Tooltip.show(lb.gameObject, "tip",
+            HoverTip(lb, () => Tooltip.show(lb.gameObject, "tip",
                 new TooltipData { tip_name = pLocked ? "vd_policy_unlock" : "vd_policy_lock", tip_description = enact ? "vd_policy_lock_enact_info" : "vd_policy_lock_info" }));
+        }
+
+        // 鼠标移上去时显示提示，移开时收起
+        static void HoverTip(RectTransform pTarget, Action pShow)
+        {
+            var trigger = pTarget.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
+            enter.callback.AddListener(_ => pShow());
             trigger.triggers.Add(enter);
             var exit = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit };
             exit.callback.AddListener(_ => Tooltip.hideTooltip());
@@ -757,9 +786,7 @@ namespace DiplomacyOverhaul
         // 政策选项的悬停提示：一句说明，下面是这一档的数字
         static void OptionTip(RectTransform pTarget, Policy pPolicy, int pOption)
         {
-            var trigger = pTarget.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
-            var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
-            enter.callback.AddListener(_ =>
+            HoverTip(pTarget, () =>
             {
                 TipName = pPolicy.OptionName(_kingdom, pOption);
                 TipEffects = Policies.Effects(_kingdom, pPolicy, pOption);
@@ -767,10 +794,6 @@ namespace DiplomacyOverhaul
                 TipVote = TipBill != null ? Parliament.Vote(_kingdom, TipBill, Parliament.Clans(_kingdom)) : null;
                 Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = TipName, tip_description = DescriptionKey(pPolicy, pOption) });
             });
-            trigger.triggers.Add(enter);
-            var exit = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit };
-            exit.callback.AddListener(_ => Tooltip.hideTooltip());
-            trigger.triggers.Add(exit);
         }
     }
 

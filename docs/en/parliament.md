@@ -138,6 +138,10 @@ Transports carry cannons and bombard the coast. They are also how armies cross t
 | Honor the Contract | Normal |
 | Loyal Subject | Assimilates quickly and wants independence less |
 
+## Regime Names
+
+Under the kingdom name in the parliament window is a line naming the kingdom's regime, decided by its current mix of policies; hover over it to see which policies produced it. The name changes with the policies: a kingdom of fiefs, hereditary offices and private armies is a "Feudal Fragmentation", and after taking its lands under direct rule it may become an "Autocracy"; a great empire with Uniformity and Direct Rule is a "Celestial Empire"; a vassal seeking autonomy is a "Dominion". Parliament itself is called differently under each regime: the Estates-General in an Estates Monarchy, the Privy Council under an Autocracy, the Senate in a Principate or Senatorial Republic, the Great Council in an Aristocratic Republic.
+
 ## How Parliament Works
 
 - Each kingdom holds a parliament every 4 to 6 years, and votes on one bill. The bill is drafted at the previous session. In the parliament window you can see which clan proposed it and how many years until the vote.

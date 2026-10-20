@@ -110,6 +110,12 @@ namespace DiplomacyOverhaul
         public const int Autonomy = 0, Contract = 1, Assimilation = 2;
         // 对宗主方针：争取自治、履行契约、忠诚臣属
         public const int SeekAutonomy = 0, Obligation = 1, Loyal = 2;
+        // 兵制：贵族私兵、有限义务、均衡动员、中央军团
+        public const int PrivateArmies = 0, LimitedLevy = 1, BalancedLevy = 2, CentralLegions = 3;
+        // 军械拨款：自备军械、补缺换损、按例拨款、优先军备
+        public const int SelfArmed = 0, Replacement = 1, RegularBudget = 2, ArmsFirst = 3;
+        // 附庸贡赋：休养生息、按例纳贡、加重贡赋、竭泽而渔
+        public const int NoTribute = 0, CustomaryTribute = 1, HeavyTribute = 2, RuinousTribute = 3;
 
         // 各项政策的处境和利益，单位和意识形态相同（三档政策的一段宽 2/3）
         // 兵和钱收归中央：掌权家族往集权挪，占着地方城的往分权挪

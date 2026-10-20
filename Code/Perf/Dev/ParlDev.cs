@@ -196,6 +196,31 @@ namespace DiplomacyOverhaul.Perf
                 }
                 return;
             }
+            if (mode == "regime")
+            {
+                // parl regime：各个政制名称有几个国家在用，从来没人用的也列出来
+                var used = new System.Collections.Generic.Dictionary<string, List<string>>();
+                foreach (Kingdom k in World.world.kingdoms)
+                {
+                    if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
+                    RegimeNames.Rule r = RegimeNames.Of(k);
+                    if (r == null) continue;
+                    string key = RegimeNames.Key(r, Government.IsRepublic(k));
+                    if (!used.TryGetValue(key, out List<string> list)) used[key] = list = new List<string>();
+                    list.Add(k.data.name);
+                }
+                foreach (RegimeNames.Rule r in RegimeNames.Rules)
+                {
+                    foreach (bool republic in new[] { false, true })
+                    {
+                        string key = RegimeNames.Key(r, republic);
+                        if (!LocalizedTextManager.stringExists(key)) continue;
+                        used.TryGetValue(key, out List<string> list);
+                        Dev.Log($"  {NeoModLoader.General.LM.Get(key)}（{r.id}）{list?.Count ?? 0}" + (list != null ? "：" + string.Join("、", list) : ""));
+                    }
+                }
+                return;
+            }
             if (mode == "stats")
             {
                 int n = 0;
