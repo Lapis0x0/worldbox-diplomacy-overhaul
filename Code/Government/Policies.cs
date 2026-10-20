@@ -480,9 +480,13 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Kingdom __instance, ref float __result)
         {
-            if (!Settings.ParliamentEnabled) return true;
-            __result = Policies.TributeRate(__instance);
-            return false;
+            if (!Settings.ParliamentEnabled || !Safety.On(Sys.Parliament)) return true;
+            try
+            {
+                __result = Policies.TributeRate(__instance);
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Parliament, "上缴比例", e); return true; }
         }
     }
 
@@ -513,9 +517,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Docks __instance, string pType, ref bool __result)
         {
-            if (pType != Policies.TransportBoat) return true;
-            __result = __instance.countBoatTypes(pType) >= Policies.TransportCap(__instance);
-            return false;
+            if (!Safety.On(Sys.Parliament)) return true;
+            try
+            {
+                if (pType != Policies.TransportBoat) return true;
+                __result = __instance.countBoatTypes(pType) >= Policies.TransportCap(__instance);
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Parliament, "港口运输船满额", e); return true; }
         }
     }
 
@@ -524,9 +533,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Docks __instance, string pType, ref bool __result)
         {
-            if (pType != Policies.TransportBoat) return true;
-            __result = __instance.countBoatTypes(pType) > Policies.MaxTransports;
-            return false;
+            if (!Safety.On(Sys.Parliament)) return true;
+            try
+            {
+                if (pType != Policies.TransportBoat) return true;
+                __result = __instance.countBoatTypes(pType) > Policies.MaxTransports;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Parliament, "港口运输船超额", e); return true; }
         }
     }
 
@@ -536,25 +550,37 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Docks __instance, City pCity, ref Actor __result)
         {
-            __result = null;
-            ActorAsset asset = __instance.building.asset.getRandomBoatAssetToBuild(pCity);
-            if (asset == null) return false;
-            int limit = asset.boat_type == Policies.TransportBoat ? Policies.TransportCap(__instance) : 1;
-            if (__instance.countBoatTypes(asset.boat_type) >= limit) return false;
-            if (!pCity.hasEnoughResourcesFor(asset.cost)) return false;
-            if (__instance.tiles_ocean.Count == 0)
+            if (!Safety.On(Sys.Parliament)) return true;
+            Actor boat = null;
+            try
             {
-                __instance.recalculateOceanTiles();
+                __result = null;
+                ActorAsset asset = __instance.building.asset.getRandomBoatAssetToBuild(pCity);
+                if (asset == null) return false;
+                int limit = asset.boat_type == Policies.TransportBoat ? Policies.TransportCap(__instance) : 1;
+                if (__instance.countBoatTypes(asset.boat_type) >= limit) return false;
+                if (!pCity.hasEnoughResourcesFor(asset.cost)) return false;
+                if (__instance.tiles_ocean.Count == 0)
+                {
+                    __instance.recalculateOceanTiles();
+                    return false;
+                }
+                WorldTile tile = __instance.tiles_ocean.GetRandom();
+                if (!tile.region.island.goodForDocks()) return false;
+                boat = World.world.units.createNewUnit(asset.id, tile);
+                if (boat == null) return false;
+                __instance.addBoatToDock(boat);
+                pCity.spendResourcesForBuildingAsset(asset.cost);
+                __result = boat;
                 return false;
             }
-            WorldTile tile = __instance.tiles_ocean.GetRandom();
-            if (!tile.region.island.goodForDocks()) return false;
-            Actor boat = World.world.units.createNewUnit(asset.id, tile);
-            if (boat == null) return false;
-            __instance.addBoatToDock(boat);
-            pCity.spendResourcesForBuildingAsset(asset.cost);
-            __result = boat;
-            return false;
+            catch (Exception e)
+            {
+                Safety.Fail(Sys.Parliament, "港口造船", e);
+                // 船已经造出来就不再交给原版，免得再造一艘
+                __result = boat;
+                return boat == null;
+            }
         }
     }
 }

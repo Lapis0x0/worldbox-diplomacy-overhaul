@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 
@@ -27,11 +28,16 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(War __instance, Kingdom pKingdom)
         {
-            Betrayal.Check(__instance, pKingdom);
-            foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+            if (!Safety.On(Sys.Vassal)) return;
+            try
             {
-                if (!__instance.hasKingdom(v) && Integration.JoinsOffensive(__instance, v)) __instance.joinAttackers(v);
+                Betrayal.Check(__instance, pKingdom);
+                foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+                {
+                    if (!__instance.hasKingdom(v) && Integration.JoinsOffensive(__instance, v)) __instance.joinAttackers(v);
+                }
             }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸随宗主进攻", e); }
         }
     }
 
@@ -40,14 +46,19 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(War __instance, Kingdom pKingdom)
         {
-            if (!__instance.isDefender(pKingdom)) return; // 总体战等情况下 joinDefenders 不生效
-            Betrayal.Check(__instance, pKingdom);
-            foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+            if (!Safety.On(Sys.Vassal)) return;
+            try
             {
-                if (!__instance.hasKingdom(v)) __instance.joinDefenders(v);
+                if (!__instance.isDefender(pKingdom)) return; // 总体战等情况下 joinDefenders 不生效
+                Betrayal.Check(__instance, pKingdom);
+                foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+                {
+                    if (!__instance.hasKingdom(v)) __instance.joinDefenders(v);
+                }
+                Kingdom lord = Vassals.GetOverlord(pKingdom);
+                if (lord != null && !__instance.hasKingdom(lord)) __instance.joinDefenders(lord);
             }
-            Kingdom lord = Vassals.GetOverlord(pKingdom);
-            if (lord != null && !__instance.hasKingdom(lord)) __instance.joinDefenders(lord);
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "宗主附庸一起防守", e); }
         }
     }
 
@@ -57,12 +68,17 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(War __instance, Kingdom pKingdom, bool pInPeace)
         {
-            if (__instance.hasEnded()) return;
-            foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+            if (!Safety.On(Sys.Vassal)) return;
+            try
             {
                 if (__instance.hasEnded()) return;
-                if (__instance.hasKingdom(v)) __instance.removeFromWar(v, pInPeace);
+                foreach (Kingdom v in Vassals.GetVassals(pKingdom))
+                {
+                    if (__instance.hasEnded()) return;
+                    if (__instance.hasKingdom(v)) __instance.removeFromWar(v, pInPeace);
+                }
             }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸随宗主退出战争", e); }
         }
     }
 }

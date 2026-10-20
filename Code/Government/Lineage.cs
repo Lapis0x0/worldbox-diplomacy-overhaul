@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 
 namespace DiplomacyOverhaul
@@ -58,7 +59,12 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(BabyHelper), nameof(BabyHelper.applyParentsMeta))]
     static class Patch_LineageBirth
     {
-        static void Postfix(Actor pParent1, Actor pParent2, Actor pBaby) => Lineage.OnBirth(pParent1, pParent2, pBaby);
+        static void Postfix(Actor pParent1, Actor pParent2, Actor pBaby)
+        {
+            if (!Safety.On(Sys.Government)) return;
+            try { Lineage.OnBirth(pParent1, pParent2, pBaby); }
+            catch (Exception e) { Safety.Fail(Sys.Government, "出生传承", e); }
+        }
     }
 
     [HarmonyPatch(typeof(City), nameof(City.setLeader))]
@@ -66,13 +72,20 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(City __instance, Actor pActor)
         {
-            if (pActor != null && __instance.leader == pActor) Lineage.MarkOffice(pActor);
+            if (!Safety.On(Sys.Government)) return;
+            try { if (pActor != null && __instance.leader == pActor) Lineage.MarkOffice(pActor); }
+            catch (Exception e) { Safety.Fail(Sys.Government, "城主任职标记", e); }
         }
     }
 
     [HarmonyPatch(typeof(Kingdom), nameof(Kingdom.setKing))]
     static class Patch_LineageKing
     {
-        static void Postfix(Actor pActor) => Lineage.MarkOffice(pActor);
+        static void Postfix(Actor pActor)
+        {
+            if (!Safety.On(Sys.Government)) return;
+            try { Lineage.MarkOffice(pActor); }
+            catch (Exception e) { Safety.Fail(Sys.Government, "国王任职标记", e); }
+        }
     }
 }

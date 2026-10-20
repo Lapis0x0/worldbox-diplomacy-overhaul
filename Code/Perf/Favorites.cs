@@ -133,6 +133,7 @@ namespace DiplomacyOverhaul.Perf
         }
     }
 
+    [SafeBy("只把脏标记置为 true")]
     [HarmonyPatch]
     static class Favorites_Switch
     {

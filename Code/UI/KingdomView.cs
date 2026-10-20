@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using NeoModLoader.General;
@@ -62,25 +63,30 @@ namespace DiplomacyOverhaul
 
         static void Postfix(KingdomWindow __instance)
         {
-            Kingdom k = SelectedMetas.selected_kingdom;
-            if (k == null) return;
-            UpdateTitle(__instance, k);
-            UpdateRulerButton(__instance, k);
-            KingdomTabWindow.EnsureButtons(__instance);
-
-            Kingdom lord = Vassals.GetOverlord(k);
-            if (lord != null)
+            if (!Safety.On(Sys.Interface)) return;
+            try
             {
-                __instance.showStatRow("vd_row_overlord", lord.data.name, MetaType.Kingdom, lord.getID(), "iconKingdom");
-            }
+                Kingdom k = SelectedMetas.selected_kingdom;
+                if (k == null) return;
+                UpdateTitle(__instance, k);
+                UpdateRulerButton(__instance, k);
+                KingdomTabWindow.EnsureButtons(__instance);
 
-            List<Kingdom> vassals = Vassals.GetVassals(k);
-            if (vassals.Count > 0)
-            {
-                var names = new List<string>();
-                foreach (Kingdom v in vassals) names.Add(v.data.name);
-                __instance.showStatRow("vd_row_vassals", string.Join("、", names), MetaType.None, -1L, "iconKingdomList");
+                Kingdom lord = Vassals.GetOverlord(k);
+                if (lord != null)
+                {
+                    __instance.showStatRow("vd_row_overlord", lord.data.name, MetaType.Kingdom, lord.getID(), "iconKingdom");
+                }
+
+                List<Kingdom> vassals = Vassals.GetVassals(k);
+                if (vassals.Count > 0)
+                {
+                    var names = new List<string>();
+                    foreach (Kingdom v in vassals) names.Add(v.data.name);
+                    __instance.showStatRow("vd_row_vassals", string.Join("、", names), MetaType.None, -1L, "iconKingdomList");
+                }
             }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "王国窗口", e); }
         }
     }
 
@@ -90,17 +96,22 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(SelectedKingdom __instance, Kingdom pKingdom)
         {
-            foreach (StatsIconContainer c in __instance.stats_icons)
+            if (!Safety.On(Sys.Interface)) return;
+            try
             {
-                StatsIcon icon = c.getIconViaId("i_money");
-                if (icon == null) continue;
-                c.setIconValue("i_money", Treasury.Get(pKingdom));
-                if (icon.TryGetComponent(out TipButton tip))
+                foreach (StatsIconContainer c in __instance.stats_icons)
                 {
-                    tip.textOnClick = "vd_treasury";
-                    tip.textOnClickDescription = "vd_treasury_info";
+                    StatsIcon icon = c.getIconViaId("i_money");
+                    if (icon == null) continue;
+                    c.setIconValue("i_money", Treasury.Get(pKingdom));
+                    if (icon.TryGetComponent(out TipButton tip))
+                    {
+                        tip.textOnClick = "vd_treasury";
+                        tip.textOnClickDescription = "vd_treasury_info";
+                    }
                 }
             }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "选中王国国库", e); }
         }
     }
 
@@ -112,24 +123,29 @@ namespace DiplomacyOverhaul
         static void Prefix(StatsWindow __instance, string pId)
         {
             if (pId != "tribute") return;
-            if (__instance is KingdomWindow)
+            if (!Safety.On(Sys.Interface)) return;
+            try
             {
-                Kingdom k = SelectedMetas.selected_kingdom;
-                if (k == null) return;
-                __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
-                if (!Military.On) return;
-                if (Policies.Value(k, Policies.Arms) > 0) __instance.showStatRow("vd_arms_standard", LM.Get(Armory.TierKey(k)), null, MetaType.None, -1L, false, "iconReforge");
-                float penalty = Guard.Penalty(k);
-                if (penalty > 0f) __instance.showStatRow("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
+                if (__instance is KingdomWindow)
+                {
+                    Kingdom k = SelectedMetas.selected_kingdom;
+                    if (k == null) return;
+                    __instance.showStatRow("vd_treasury", Treasury.Get(k), "#FFD84A", MetaType.None, -1L, false, "iconMoney");
+                    if (!Military.On) return;
+                    if (Policies.Value(k, Policies.Arms) > 0) __instance.showStatRow("vd_arms_standard", LM.Get(Armory.TierKey(k)), null, MetaType.None, -1L, false, "iconReforge");
+                    float penalty = Guard.Penalty(k);
+                    if (penalty > 0f) __instance.showStatRow("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
+                }
+                else if (__instance is CityWindow)
+                {
+                    City c = SelectedMetas.selected_city;
+                    if (c == null || !Military.On) return;
+                    if (Guard.CountLocal(c) > 0) __instance.showStatRow("vd_arms_local_standard", LM.Get(Armory.TierKey(c)), null, MetaType.None, -1L, false, "iconReforge");
+                    float penalty = Treasury.Penalty(c);
+                    if (penalty > 0f) __instance.showStatRow("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
+                }
             }
-            else if (__instance is CityWindow)
-            {
-                City c = SelectedMetas.selected_city;
-                if (c == null || !Military.On) return;
-                if (Guard.CountLocal(c) > 0) __instance.showStatRow("vd_arms_local_standard", LM.Get(Armory.TierKey(c)), null, MetaType.None, -1L, false, "iconReforge");
-                float penalty = Treasury.Penalty(c);
-                if (penalty > 0f) __instance.showStatRow("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color, MetaType.None, -1L, true, "iconArmy");
-            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "王国、城市窗口国库行", e); }
         }
     }
 
@@ -147,15 +163,24 @@ namespace DiplomacyOverhaul
     {
         internal static City Current;
 
-        static void Prefix(TooltipData pData) => Current = pData?.city;
+        [SafeBy("只读一个字段存起来")]
+        static void Prefix(TooltipData pData)
+        {
+            Current = pData?.city;
+        }
 
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
             Current = null;
-            City c = pData?.city;
-            if (c == null) return;
-            float penalty = Treasury.Penalty(c);
-            if (penalty > 0f) pTooltip.addLineText("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                City c = pData?.city;
+                if (c == null) return;
+                float penalty = Treasury.Penalty(c);
+                if (penalty > 0f) pTooltip.addLineText("vd_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "城市提示框欠饷", e); }
         }
     }
 
@@ -166,14 +191,22 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(TileZone pZone, ref Color32 pColorInside, ref Color32 pColorOutside)
         {
-            if (World.world.getCachedMapMetaAsset()?.map_mode != MetaType.Kingdom) return;
-            Kingdom k = pZone?.city?.kingdom;
-            if (k == null) return;
-            Kingdom lord = Vassals.GetOverlord(k);
-            if (lord == null) return;
-            ColorAsset color = lord.getColor();
-            pColorOutside = WithAlpha(color.getColorMainSecond32(), pColorOutside.a);
-            if (Integration.IsProvince(k)) pColorInside = WithAlpha(color.getColorBorderInsideAlpha32(), pColorInside.a);
+            if (!Safety.On(Sys.Vassal)) return;
+            try
+            {
+                if (World.world.getCachedMapMetaAsset()?.map_mode != MetaType.Kingdom) return;
+                Kingdom k = pZone?.city?.kingdom;
+                if (k == null) return;
+                Kingdom lord = Vassals.GetOverlord(k);
+                if (lord == null) return;
+                ColorAsset color = lord.getColor();
+                Color32 outside = WithAlpha(color.getColorMainSecond32(), pColorOutside.a);
+                Color32 inside = pColorInside;
+                if (Integration.IsProvince(k)) inside = WithAlpha(color.getColorBorderInsideAlpha32(), pColorInside.a);
+                pColorOutside = outside;
+                pColorInside = inside;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸边界颜色", e); }
         }
 
         static Color32 WithAlpha(Color32 pColor, byte pAlpha)
@@ -189,16 +222,25 @@ namespace DiplomacyOverhaul
     {
         internal static Kingdom Current;
 
-        static void Prefix(TooltipData pData) => Current = pData?.kingdom;
+        [SafeBy("只读一个字段存起来")]
+        static void Prefix(TooltipData pData)
+        {
+            Current = pData?.kingdom;
+        }
 
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
             Current = null;
-            Kingdom k = pData?.kingdom;
-            if (k == null) return;
-            AllianceView.BlocStats(pTooltip, k);
-            if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
-            pTooltip.setTitle(Government.DisplayName(k), Government.TitleKey(k), k.getColor().color_text);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                Kingdom k = pData?.kingdom;
+                if (k == null) return;
+                AllianceView.BlocStats(pTooltip, k);
+                if (Government.Current(k) == null && !Vassals.IsVassal(k) && Cycle.Get(k) == CyclePhase.None) return;
+                pTooltip.setTitle(Government.DisplayName(k), Government.TitleKey(k), k.getColor().color_text);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "王国提示框", e); }
         }
     }
 
@@ -209,18 +251,23 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(Tooltip __instance, ref string pID)
         {
-            Kingdom k = Patch_KingdomTooltip.Current;
-            if (pID == "village_statistics_king")
+            if (!Safety.On(Sys.Interface)) return;
+            try
             {
-                pID = RulerTitles.Key(k ?? Patch_CityTooltipUnpaid.Current?.kingdom, pID);
-                return;
+                Kingdom k = Patch_KingdomTooltip.Current;
+                if (pID == "village_statistics_king")
+                {
+                    pID = RulerTitles.Key(k ?? Patch_CityTooltipUnpaid.Current?.kingdom, pID);
+                    return;
+                }
+                if (k == null || pID != "villages") return;
+                __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
+                if (!Military.On) return;
+                if (Policies.Value(k, Policies.Arms) > 0) __instance.addLineText("vd_arms_standard", LM.Get(Armory.TierKey(k)));
+                float penalty = Guard.Penalty(k);
+                if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
             }
-            if (k == null || pID != "villages") return;
-            __instance.addLineIntText("vd_treasury", Treasury.Get(k), "#FFD84A");
-            if (!Military.On) return;
-            if (Policies.Value(k, Policies.Arms) > 0) __instance.addLineText("vd_arms_standard", LM.Get(Armory.TierKey(k)));
-            float penalty = Guard.Penalty(k);
-            if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
+            catch (Exception e) { Safety.Fail(Sys.Interface, "王国提示框国库行", e); }
         }
     }
 
@@ -230,9 +277,17 @@ namespace DiplomacyOverhaul
     {
         internal static Kingdom Current;
 
-        static void Prefix(Kingdom pMetaObject) => Current = pMetaObject;
+        [SafeBy("只读一个字段存起来")]
+        static void Prefix(Kingdom pMetaObject)
+        {
+            Current = pMetaObject;
+        }
 
-        static void Postfix() => Current = null;
+        [SafeBy("只清一个字段")]
+        static void Postfix()
+        {
+            Current = null;
+        }
     }
 
     [HarmonyPatch(typeof(NameplateText), "getStringForNameplate")]
@@ -240,7 +295,12 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(ref string pName)
         {
-            if (Patch_KingdomNameplate.Current != null) pName = Government.DisplayName(Patch_KingdomNameplate.Current);
+            if (Patch_KingdomNameplate.Current == null || !Safety.On(Sys.Interface)) return;
+            try
+            {
+                pName = Government.DisplayName(Patch_KingdomNameplate.Current);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "王国名牌", e); }
         }
     }
 }

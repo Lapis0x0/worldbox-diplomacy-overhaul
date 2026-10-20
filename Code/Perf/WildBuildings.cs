@@ -17,6 +17,7 @@ namespace DiplomacyOverhaul.Perf
         }
     }
 
+    [SafeBy("只读两个静态开关")]
     [HarmonyPatch(typeof(WildKingdomsManager), nameof(WildKingdomsManager.beginChecksBuildings))]
     static class WildBuildings_Skip
     {
@@ -29,7 +30,9 @@ namespace DiplomacyOverhaul.Perf
     {
         static void Prefix()
         {
-            if (Opt.wild_buildings_lazy) WildBuildings.Ensure();
+            if (!Opt.wild_buildings_lazy) return;
+            try { WildBuildings.Ensure(); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.wild_buildings_lazy), e); }
         }
     }
 
@@ -38,7 +41,9 @@ namespace DiplomacyOverhaul.Perf
     {
         static void Prefix()
         {
-            if (Opt.wild_buildings_lazy) WildBuildings.Ensure();
+            if (!Opt.wild_buildings_lazy) return;
+            try { WildBuildings.Ensure(); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.wild_buildings_lazy), e); }
         }
     }
 }

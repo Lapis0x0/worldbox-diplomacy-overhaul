@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using NeoModLoader.General;
@@ -506,19 +507,24 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref ai.behaviours.BehResult __result)
         {
-            if (!Military.On) return true;
-            if (!Guard.IsMember(pActor))
+            if (!Safety.On(Sys.Military)) return true;
+            try
             {
-                if (Guard.Is(pActor.army)) pActor.removeFromArmy();
-                return true;
+                if (!Military.On) return true;
+                if (!Guard.IsMember(pActor))
+                {
+                    if (Guard.Is(pActor.army)) pActor.removeFromArmy();
+                    return true;
+                }
+                if (!pActor.isKingdomCiv()) return true;
+                __result = ai.behaviours.BehResult.Continue;
+                Army army = pActor.army;
+                if (Guard.Is(army) && Orders.KingdomOf(army) == pActor.kingdom) return false;
+                if (army != null) pActor.removeFromArmy();
+                Guard.Enlist(pActor);
+                return false;
             }
-            if (!pActor.isKingdomCiv()) return true;
-            __result = ai.behaviours.BehResult.Continue;
-            Army army = pActor.army;
-            if (Guard.Is(army) && Orders.KingdomOf(army) == pActor.kingdom) return false;
-            if (army != null) pActor.removeFromArmy();
-            Guard.Enlist(pActor);
-            return false;
+            catch (Exception e) { Safety.Fail(Sys.Military, "禁军补员", e); return true; }
         }
     }
 
@@ -528,16 +534,21 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
         {
-            if (!Military.On) return true;
-            __result = ai.behaviours.BehResult.Continue;
-            pCity.checkArmyExistence();
-            if (pCity.hasArmy()) return false;
-            var locals = new List<Actor>();
-            if (pCity._professions_dict.TryGetValue(UnitProfession.Warrior, out List<Actor> warriors))
-                foreach (Actor a in warriors)
-                    if (!Guard.IsMember(a)) locals.Add(a);
-            if (locals.Count > 0) World.world.armies.newArmy(locals.GetRandom(), pCity);
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On) return true;
+                __result = ai.behaviours.BehResult.Continue;
+                pCity.checkArmyExistence();
+                if (pCity.hasArmy()) return false;
+                var locals = new List<Actor>();
+                if (pCity._professions_dict.TryGetValue(UnitProfession.Warrior, out List<Actor> warriors))
+                    foreach (Actor a in warriors)
+                        if (!Guard.IsMember(a)) locals.Add(a);
+                if (locals.Count > 0) World.world.armies.newArmy(locals.GetRandom(), pCity);
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "地方军队长", e); return true; }
         }
     }
 
@@ -548,9 +559,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City __instance, Actor pActor)
         {
-            if (!Military.On || __instance.getResourcesAmount("gold") > 10 || __instance.isGettingCaptured() || __instance._timer_warrior > 0f) return true;
-            if (!pActor.isProfession(UnitProfession.Unit) || !__instance.hasEnoughFoodForArmy() || !Guard.WantsMember(__instance)) return true;
-            return !__instance.tryToMakeWarrior(pActor);
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On || __instance.getResourcesAmount("gold") > 10 || __instance.isGettingCaptured() || __instance._timer_warrior > 0f) return true;
+                if (!pActor.isProfession(UnitProfession.Unit) || !__instance.hasEnoughFoodForArmy() || !Guard.WantsMember(__instance)) return true;
+                return !__instance.tryToMakeWarrior(pActor);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "禁军征兵", e); return true; }
         }
     }
 
@@ -560,7 +576,12 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(City __instance, Actor pActor)
         {
-            if (Military.On) Guard.OnMadeWarrior(__instance, pActor);
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (Military.On) Guard.OnMadeWarrior(__instance, pActor);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "新兵分编", e); }
         }
     }
 
@@ -570,9 +591,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Army __instance)
         {
-            if (!Guard.Is(__instance) || __instance.data.custom_name) return true;
-            Guard.Name(__instance);
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Guard.Is(__instance) || __instance.data.custom_name) return true;
+                Guard.Name(__instance);
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "禁军改名", e); return true; }
         }
     }
 
@@ -583,7 +609,12 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(Army __instance)
         {
-            if (__instance._city == null && __instance._kingdom != null && __instance._kingdom.isRekt()) __instance._kingdom = null;
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (__instance._city == null && __instance._kingdom != null && __instance._kingdom.isRekt()) __instance._kingdom = null;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "禁军存档", e); }
         }
     }
 
@@ -594,7 +625,12 @@ namespace DiplomacyOverhaul
 
         static void Postfix()
         {
-            if (Military.On && Clock.Due(ref _last, 1.0)) Guard.Tick();
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (Military.On && Clock.Due(ref _last, 1.0)) Guard.Tick();
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "禁军调度", e); }
         }
     }
 }

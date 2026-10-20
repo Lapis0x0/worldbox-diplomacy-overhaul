@@ -155,6 +155,15 @@ namespace DiplomacyOverhaul.Perf
     [HarmonyPatch(typeof(SimObjectsZones), "checkBuildings")]
     static class SimZones_CheckBuildings
     {
-        static bool Prefix() => SimZones.CheckBuildings();
+        static bool Prefix()
+        {
+            try { return SimZones.CheckBuildings(); }
+            catch (System.Exception e)
+            {
+                SimZones.Invalidate();
+                Perf.Fail(nameof(Opt.sim_zones_buildings), e);
+                return true;
+            }
+        }
     }
 }

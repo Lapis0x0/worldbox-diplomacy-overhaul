@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ai.behaviours;
 using HarmonyLib;
@@ -234,10 +235,11 @@ namespace DiplomacyOverhaul
             pActor.addMoney(rest - toCity);
             int toKing = pKing != null ? (int)(tribute * KingShare) : 0;
             if (toKing > 0) pKing.addLoot(toKing);
+            // 钱分完马上清掉城主身上的战利品，后面记账出错也不会再交一遍
+            pActor.paidTax(pTaxRate, "fx_money_paid_tribute");
             Ledger.RecordTax(pActor.city, tribute);
             Ledger.Record(pActor.kingdom, Ledger.Flow.King, toKing);
             Income(pActor.kingdom, tribute - toKing);
-            pActor.paidTax(pTaxRate, "fx_money_paid_tribute");
         }
 
         // 每年发饷之前，各城城主把这一年攒下的税交上来。原版城主要碰上交税的决定、当时又正好在自己城里才交，
@@ -264,7 +266,10 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, Actor pKing, float pTaxRate)
         {
-            Treasury.PayTribute(pActor, pKing, pTaxRate);
+            if (!Safety.On(Sys.Economy)) return true;
+            try { Treasury.PayTribute(pActor, pKing, pTaxRate); }
+            // 钱可能已经分出去了，不再交给原版，免得交两遍
+            catch (Exception e) { Safety.Fail(Sys.Economy, "上缴税款", e); }
             return false;
         }
     }
@@ -275,14 +280,20 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City __instance, ref bool __result)
         {
-            if (!Military.On || Guard.CanRecruit(__instance)) return true;
-            __result = false;
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On || Guard.CanRecruit(__instance)) return true;
+                __result = false;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "征兵", e); return true; }
         }
     }
 
     // 国王发起密谋：够不够钱、花钱都看国库
     [HarmonyPatch(typeof(PlotAsset), nameof(PlotAsset.checkIsPossible))]
+    [SafeBy("只给一个静态字段赋值")]
     static class Patch_PlotCheck
     {
         static void Prefix(Actor pActor) => Treasury.PlotPayer = pActor;
@@ -290,6 +301,7 @@ namespace DiplomacyOverhaul
     }
 
     [HarmonyPatch(typeof(PlotManager), nameof(PlotManager.newPlot))]
+    [SafeBy("只给一个静态字段赋值")]
     static class Patch_NewPlot
     {
         static void Prefix(Actor pAuthor) => Treasury.PlotPayer = pAuthor;
@@ -301,9 +313,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor __instance, int pCost, ref bool __result)
         {
-            if (Treasury.PlotPayer != __instance || !__instance.isKing()) return true;
-            __result = Treasury.Get(__instance.kingdom) >= pCost;
-            return false;
+            if (!Safety.On(Sys.Economy)) return true;
+            try
+            {
+                if (Treasury.PlotPayer != __instance || !__instance.isKing()) return true;
+                __result = Treasury.Get(__instance.kingdom) >= pCost;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Economy, "国库查余额", e); return true; }
         }
     }
 
@@ -312,10 +329,21 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor __instance, int pCost)
         {
-            if (Treasury.PlotPayer != __instance || !__instance.isKing()) return true;
-            int taken = Treasury.Take(__instance.kingdom, pCost);
-            Ledger.Record(__instance.kingdom, Ledger.Flow.Plots, taken);
-            Ledger.Log(__instance.kingdom, "vd_ledger_plot", "", -taken);
+            if (!Safety.On(Sys.Economy)) return true;
+            int taken;
+            try
+            {
+                if (Treasury.PlotPayer != __instance || !__instance.isKing()) return true;
+                taken = Treasury.Take(__instance.kingdom, pCost);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Economy, "国库付钱", e); return true; }
+            // 钱已经从国库扣了，记账出错也不再交给原版，免得国王再付一遍
+            try
+            {
+                Ledger.Record(__instance.kingdom, Ledger.Flow.Plots, taken);
+                Ledger.Log(__instance.kingdom, "vd_ledger_plot", "", -taken);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Economy, "国库记账", e); }
             return false;
         }
     }

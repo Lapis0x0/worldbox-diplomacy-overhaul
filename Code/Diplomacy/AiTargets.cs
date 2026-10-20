@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using UnityPools;
@@ -16,11 +17,16 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Kingdom pKingdom, ListPool<Kingdom> __result)
         {
-            if (BlocFilter.Depth <= 0) return;
-            for (int i = __result.Count - 1; i >= 0; i--)
+            if (!Safety.On(Sys.Vassal)) return;
+            try
             {
-                if (Camp.Same(pKingdom, __result[i])) __result.RemoveAt(i);
+                if (BlocFilter.Depth <= 0) return;
+                for (int i = __result.Count - 1; i >= 0; i--)
+                {
+                    if (Camp.Same(pKingdom, __result[i])) __result.RemoveAt(i);
+                }
             }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "过滤中立王国", e); }
         }
     }
 
@@ -33,8 +39,13 @@ namespace DiplomacyOverhaul
         static bool Prefix(Kingdom pInitiatorKingdom, ref Kingdom __result)
         {
             BlocFilter.Depth++;
-            __result = Find(pInitiatorKingdom, Government.WarStrengthRatio(pInitiatorKingdom));
-            return false;
+            if (!Safety.On(Sys.Vassal)) return true;
+            try
+            {
+                __result = Find(pInitiatorKingdom, Government.WarStrengthRatio(pInitiatorKingdom));
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "挑战争目标", e); return true; }
         }
 
         static void Finalizer() => BlocFilter.Depth--;
@@ -70,15 +81,20 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Kingdom pKingdom, ref bool __result)
         {
-            if (Vassals.IsVassal(pKingdom))
+            if (!Safety.On(Sys.Vassal)) return true;
+            try
             {
-                __result = false;
+                if (Vassals.IsVassal(pKingdom))
+                {
+                    __result = false;
+                    return false;
+                }
+                int timeout = Government.WarTimeout(pKingdom);
+                if (timeout == SimGlobals.m.diplomacy_years_war_timeout) return true;
+                __result = Check(pKingdom, timeout);
                 return false;
             }
-            int timeout = Government.WarTimeout(pKingdom);
-            if (timeout == SimGlobals.m.diplomacy_years_war_timeout) return true;
-            __result = Check(pKingdom, timeout);
-            return false;
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "是否开战", e); return true; }
         }
 
         static bool Check(Kingdom pKingdom, int pTimeout)
@@ -99,19 +115,31 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Kingdom pKingdomStarter, ref Kingdom __result, out bool __state)
         {
-            __state = !Vassals.IsVassal(pKingdomStarter);
-            if (__state)
+            __state = false;
+            if (!Safety.On(Sys.Vassal)) return true;
+            try
             {
-                BlocFilter.Depth++;
-                return true;
+                bool notVassal = !Vassals.IsVassal(pKingdomStarter);
+                if (notVassal)
+                {
+                    BlocFilter.Depth++;
+                    __state = true;
+                    return true;
+                }
+                __result = null;
+                return false;
             }
-            __result = null;
-            return false;
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "结盟对象", e); return true; }
         }
 
         static void Postfix(ref Kingdom __result)
         {
-            if (Vassals.IsVassal(__result)) __result = null;
+            if (!Safety.On(Sys.Vassal)) return;
+            try
+            {
+                if (Vassals.IsVassal(__result)) __result = null;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "结盟对象", e); }
         }
 
         static void Finalizer(bool __state)
@@ -125,9 +153,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Kingdom pKingdom, ref bool __result)
         {
-            if (!Vassals.IsVassal(pKingdom)) return true;
-            __result = false;
-            return false;
+            if (!Safety.On(Sys.Vassal)) return true;
+            try
+            {
+                if (!Vassals.IsVassal(pKingdom)) return true;
+                __result = false;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "加入联盟", e); return true; }
         }
     }
 }

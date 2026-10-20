@@ -15,10 +15,14 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Kingdom pK1, Kingdom pK2, DiplomacyRelation __result)
         {
-            if (__result == null || (__result.kingdom1 != null && __result.kingdom2 != null)) return;
-            Kingdom a = pK1.id == __result.data.kingdom1_id ? pK1 : pK2;
-            __result.kingdom1 = a;
-            __result.kingdom2 = a == pK1 ? pK2 : pK1;
+            try
+            {
+                if (__result == null || (__result.kingdom1 != null && __result.kingdom2 != null)) return;
+                Kingdom a = pK1.id == __result.data.kingdom1_id ? pK1 : pK2;
+                __result.kingdom1 = a;
+                __result.kingdom2 = a == pK1 ? pK2 : pK1;
+            }
+            catch (Exception e) { Isolation.Report("补全关系的王国引用", e); }
         }
     }
 
@@ -109,19 +113,27 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Projectile __instance, ref AttackDataResult __result)
         {
-            Kingdom k = __instance.kingdom;
-            if (k == null || k.asset != null || __instance.isTargetReached()) return true;
-            BaseSimObject shooter = __instance.by_who;
-            Kingdom now = shooter != null && !shooter.isRekt() ? shooter.kingdom : null;
-            ProjectileGuard.Warn($"弹道 {__instance.asset?.id} 记下的国家已销毁，射手 {(shooter as Actor)?.asset?.id ?? shooter?.GetType().Name}"
-                + $"{(now == null ? "已不在" : now.asset == null ? "的国家也已销毁，按没射中处理" : " 的国家还在，改用它")}");
-            if (now != null && now.asset != null)
+            try
             {
-                __instance.kingdom = now;
+                Kingdom k = __instance.kingdom;
+                if (k == null || k.asset != null || __instance.isTargetReached()) return true;
+                BaseSimObject shooter = __instance.by_who;
+                Kingdom now = shooter != null && !shooter.isRekt() ? shooter.kingdom : null;
+                ProjectileGuard.Warn($"弹道 {__instance.asset?.id} 记下的国家已销毁，射手 {(shooter as Actor)?.asset?.id ?? shooter?.GetType().Name}"
+                    + $"{(now == null ? "已不在" : now.asset == null ? "的国家也已销毁，按没射中处理" : " 的国家还在，改用它")}");
+                if (now != null && now.asset != null)
+                {
+                    __instance.kingdom = now;
+                    return true;
+                }
+                __result = AttackDataResult.Miss;
+                return false;
+            }
+            catch (Exception e)
+            {
+                Isolation.Report("弹道的国家检查", e);
                 return true;
             }
-            __result = AttackDataResult.Miss;
-            return false;
         }
     }
 

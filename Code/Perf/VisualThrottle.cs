@@ -6,6 +6,7 @@ namespace DiplomacyOverhaul.Perf
 {
     // 国界：原版每次重画后把计时器设为 0.01 秒，等于每帧重画。改为 0.1 秒。
     // 切换显示模式、选中王国时原版会清零计时器立即重画，这一点不受影响
+    [SafeBy("只读写计时器字段")]
     [HarmonyPatch(typeof(ZoneCalculator), "redrawZones")]
     static class Throttle_Borders
     {
@@ -18,6 +19,7 @@ namespace DiplomacyOverhaul.Perf
     }
 
     // 右下角统计面板的计数（野兽、病患、建筑、植物）：原版计时器 0.1，按固定步长 0.02 递减，即每 5 帧重数全部单位和建筑。改为每 25 帧
+    [SafeBy("只读写计时器字段")]
     [HarmonyPatch(typeof(MapStats), nameof(MapStats.updateStatsForPanel))]
     static class Throttle_Panel
     {

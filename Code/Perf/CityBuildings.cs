@@ -201,14 +201,20 @@ namespace DiplomacyOverhaul.Perf
 
         static void Postfix(CityManager __instance)
         {
-            if (Opt.verify && Opt.city_buildings_partial) CityBuildings.VerifyAfter(__instance);
+            if (!(Opt.verify && Opt.city_buildings_partial)) return;
+            try { CityBuildings.VerifyAfter(__instance); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
     }
 
     [HarmonyPatch(typeof(CityManager), nameof(CityManager.setDirtyBuildings))]
     static class CityBuildings_SetDirty
     {
-        static void Prefix(City pCity) => CityBuildings.Mark(pCity);
+        static void Prefix(City pCity)
+        {
+            try { CityBuildings.Mark(pCity); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
+        }
     }
 
     // BuildingZonesSystem 会清掉区域的脏标记，先把脏区域所属的城市记下来
@@ -217,7 +223,9 @@ namespace DiplomacyOverhaul.Perf
     {
         static void Prefix()
         {
-            if (Opt.city_buildings_partial && BuildingZonesSystem._dirty) CityBuildings.ScanDirtyZones();
+            if (!Opt.city_buildings_partial) return;
+            try { if (BuildingZonesSystem._dirty) CityBuildings.ScanDirtyZones(); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
     }
 
@@ -227,14 +235,19 @@ namespace DiplomacyOverhaul.Perf
     {
         static void Prefix(TileZone __instance)
         {
-            if (__instance.city != null) CityBuildings.Mark(__instance.city);
+            try { if (__instance.city != null) CityBuildings.Mark(__instance.city); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
 
         static void Postfix(City pCity)
         {
             if (pCity == null || !Opt.city_buildings_partial) return;
-            CityBuildings.Mark(pCity);
-            World.world.cities.setDirtyBuildings(pCity);
+            try
+            {
+                CityBuildings.Mark(pCity);
+                World.world.cities.setDirtyBuildings(pCity);
+            }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
     }
 
@@ -243,7 +256,11 @@ namespace DiplomacyOverhaul.Perf
     [HarmonyPatch(typeof(City), "updateCityStatus")]
     static class CityBuildings_CityStatus
     {
-        static void Postfix(City __instance) => CityBuildings.Mark(__instance);
+        static void Postfix(City __instance)
+        {
+            try { CityBuildings.Mark(__instance); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
+        }
     }
 
     [HarmonyPatch(typeof(City), nameof(City.setKingdom))]
@@ -252,15 +269,23 @@ namespace DiplomacyOverhaul.Perf
         static void Postfix(City __instance)
         {
             if (!Opt.city_buildings_partial) return;
-            CityBuildings.Mark(__instance);
-            World.world.cities.setDirtyBuildings(__instance);
+            try
+            {
+                CityBuildings.Mark(__instance);
+                World.world.cities.setDirtyBuildings(__instance);
+            }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
     }
 
     [HarmonyPatch(typeof(Building), nameof(Building.setState))]
     static class CityBuildings_State
     {
-        static void Postfix(Building __instance) => CityBuildings.MarkBuilding(__instance);
+        static void Postfix(Building __instance)
+        {
+            try { CityBuildings.MarkBuilding(__instance); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
+        }
     }
 
     [HarmonyPatch(typeof(Building), nameof(Building.setAnimationState))]
@@ -268,7 +293,8 @@ namespace DiplomacyOverhaul.Perf
     {
         static void Postfix(Building __instance, BuildingAnimationState pState)
         {
-            if (pState == BuildingAnimationState.OnRemove) CityBuildings.MarkBuilding(__instance);
+            try { if (pState == BuildingAnimationState.OnRemove) CityBuildings.MarkBuilding(__instance); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
     }
 
@@ -278,7 +304,8 @@ namespace DiplomacyOverhaul.Perf
     {
         static void Prefix(Building __instance)
         {
-            if (__instance.isAlive()) CityBuildings.MarkBuilding(__instance);
+            try { if (__instance.isAlive()) CityBuildings.MarkBuilding(__instance); }
+            catch (System.Exception e) { Perf.Fail(nameof(Opt.city_buildings_partial), e); }
         }
     }
 }

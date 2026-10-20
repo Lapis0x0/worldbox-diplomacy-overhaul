@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using UnityPools;
 
@@ -34,14 +35,23 @@ namespace DiplomacyOverhaul
         {
             // 先记下原主和是不是被攻占的首都，分封可能改掉接手的国家
             __state = (__instance.kingdom, pCaptured && __instance.isCapitalCity());
-            if (!pCaptured) return true;
-            return !Feudal.TryConquest(__instance, ref pNewSetKingdom);
+            if (!pCaptured || !Safety.On(Sys.Vassal)) return true;
+            try { return !Feudal.TryConquest(__instance, ref pNewSetKingdom); }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "城市换国家·分封", e); return true; }
         }
 
         static void Postfix(City __instance, bool pCaptured, (Kingdom from, bool capital) __state)
         {
-            Cycle.OnCityChanged(__state.from, __instance.kingdom, __state.capital);
-            Guard.OnCityChanged(__instance, pCaptured);
+            if (Safety.On(Sys.Cycle))
+            {
+                try { Cycle.OnCityChanged(__state.from, __instance.kingdom, __state.capital); }
+                catch (Exception e) { Safety.Fail(Sys.Cycle, "城市换国家·周期", e); }
+            }
+            if (Safety.On(Sys.Military))
+            {
+                try { Guard.OnCityChanged(__instance, pCaptured); }
+                catch (Exception e) { Safety.Fail(Sys.Military, "城市换国家·禁军", e); }
+            }
         }
     }
 
@@ -51,8 +61,11 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(Kingdom pKingdom)
         {
-            Vassals.OnKingdomRemoved(pKingdom);
-            ProjectileGuard.OnKingdomRemoved(pKingdom);
+            // 释放附庸是清理，附庸系统停用了也要做，免得别处读到指向已移除国家的宗主
+            try { Vassals.OnKingdomRemoved(pKingdom); }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "王国移除·释放附庸", e); }
+            try { ProjectileGuard.OnKingdomRemoved(pKingdom); }
+            catch (Exception e) { Isolation.Report("王国移除·弹道检查", e); }
         }
     }
 
@@ -63,12 +76,28 @@ namespace DiplomacyOverhaul
         // 在原版结算胜负之前：结束后双方名单还在，但独立战争的结局可能已经改了附庸关系
         static void Prefix(War pWar, WarWinner pWinner)
         {
-            if (pWar == null || !pWar.isAlive() || pWar.hasEnded() || pWar.isTotalWar()) return;
-            Cycle.OnWarEnded(pWar, pWinner);
-            Integration.OnWarEnded(pWar, pWinner);
+            bool skip;
+            try { skip = pWar == null || !pWar.isAlive() || pWar.hasEnded() || pWar.isTotalWar(); }
+            catch (Exception e) { Isolation.Report("结束战争·判断", e); return; }
+            if (skip) return;
+            if (Safety.On(Sys.Cycle))
+            {
+                try { Cycle.OnWarEnded(pWar, pWinner); }
+                catch (Exception e) { Safety.Fail(Sys.Cycle, "结束战争·周期", e); }
+            }
+            if (Safety.On(Sys.Vassal))
+            {
+                try { Integration.OnWarEnded(pWar, pWinner); }
+                catch (Exception e) { Safety.Fail(Sys.Vassal, "结束战争·并入", e); }
+            }
         }
 
-        static void Postfix(War pWar, WarWinner pWinner) => Independence.OnWarEnded(pWar, pWinner);
+        static void Postfix(War pWar, WarWinner pWinner)
+        {
+            if (!Safety.On(Sys.Vassal)) return;
+            try { Independence.OnWarEnded(pWar, pWinner); }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "结束战争·独立", e); }
+        }
     }
 
     // 王国特质的提示：各特质组在原版属性栏里补上自己的数值，组之间互不重叠
@@ -77,8 +106,16 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
-            MandateTooltip.Show(pTooltip, pData);
-            IntegrationTooltip.Show(pTooltip, pData);
+            if (Safety.On(Sys.Cycle))
+            {
+                try { MandateTooltip.Show(pTooltip, pData); }
+                catch (Exception e) { Safety.Fail(Sys.Cycle, "特质提示·天命", e); }
+            }
+            if (Safety.On(Sys.Vassal))
+            {
+                try { IntegrationTooltip.Show(pTooltip, pData); }
+                catch (Exception e) { Safety.Fail(Sys.Vassal, "特质提示·并入", e); }
+            }
         }
     }
 
@@ -88,8 +125,16 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor pActor, ListPool<PlotAsset> pPotPlots)
         {
-            PeaceTalks.RemoveVanillaStopWar(pPotPlots);
-            Motives.Filter(pActor, pPotPlots);
+            if (Safety.On(Sys.Peace))
+            {
+                try { PeaceTalks.RemoveVanillaStopWar(pPotPlots); }
+                catch (Exception e) { Safety.Fail(Sys.Peace, "密谋池·去掉原版停战", e); }
+            }
+            if (Safety.On(Sys.Vassal))
+            {
+                try { Motives.Filter(pActor, pPotPlots); }
+                catch (Exception e) { Safety.Fail(Sys.Vassal, "密谋池·动机", e); }
+            }
         }
     }
 }

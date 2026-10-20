@@ -1,3 +1,4 @@
+using System;
 using ai.behaviours;
 using HarmonyLib;
 
@@ -94,6 +95,11 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(CityBehCheckLeader), "checkFindLeader")]
     static class Patch_FindLeader
     {
-        static bool Prefix(City pCity) => Offices.FindLeader(pCity);
+        static bool Prefix(City pCity)
+        {
+            if (!Safety.On(Sys.Government)) return true;
+            try { return Offices.FindLeader(pCity); }
+            catch (Exception e) { Safety.Fail(Sys.Government, "挑选城主", e); return true; }
+        }
     }
 }

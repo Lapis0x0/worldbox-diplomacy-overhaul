@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using NeoModLoader.General;
@@ -165,9 +166,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(PlayerControl __instance, ref bool __result)
         {
-            if (!Military.On || !MapBox.isRenderMiniMap()) return true;
-            __result = Check(__instance);
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On || !MapBox.isRenderMiniMap()) return true;
+                __result = Check(__instance);
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "缩远框选", e); return true; }
         }
 
         static bool Check(PlayerControl pc)
@@ -198,7 +204,12 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(ref MetaType __result)
         {
-            if (Military.On && __result.isNone() && !World.world.isAnyPowerSelected() && BoxCommand.HasBoxSelection()) __result = MetaType.City;
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (Military.On && __result.isNone() && !World.world.isAnyPowerSelected() && BoxCommand.HasBoxSelection()) __result = MetaType.City;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "框选城市视图", e); }
         }
     }
 
@@ -207,7 +218,15 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(HotkeyLibrary), "escapeAction")]
     static class Patch_BoxEscape
     {
-        static bool Prefix() => !Military.On || !BoxCommand.Escape();
+        static bool Prefix()
+        {
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                return !Military.On || !BoxCommand.Escape();
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "框选取消", e); return true; }
+        }
     }
 
     // 缩远时框选结束：选军队而不是选单位
@@ -216,15 +235,20 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(PlayerControl __instance)
         {
-            if (!Military.On) return true;
-            if (!MapBox.isRenderMiniMap())
+            if (!Safety.On(Sys.Military)) return true;
+            try
             {
-                // 拉近时是原版框选单位，之前缩远框选的军队作废
-                BoxCommand.Clear();
-                return true;
+                if (!Military.On) return true;
+                if (!MapBox.isRenderMiniMap())
+                {
+                    // 拉近时是原版框选单位，之前缩远框选的军队作废
+                    BoxCommand.Clear();
+                    return true;
+                }
+                BoxCommand.SelectInBox(__instance.square_selection_position_current, __instance.getMousePos());
+                return false;
             }
-            BoxCommand.SelectInBox(__instance.square_selection_position_current, __instance.getMousePos());
-            return false;
+            catch (Exception e) { Safety.Fail(Sys.Military, "框选军队", e); return true; }
         }
     }
 
@@ -235,7 +259,12 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(ref bool __result)
         {
-            if (Military.On && __result && MapBox.isRenderMiniMap()) __result = false;
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (Military.On && __result && MapBox.isRenderMiniMap()) __result = false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "框选镜头", e); }
         }
     }
 
@@ -245,11 +274,16 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(PlayerControl __instance, ref bool __result)
         {
-            if (!Military.On || !InputHelpers.mouseSupported || !InputHelpers.GetMouseButtonUp(1)) return true;
-            if (MoveCamera.camera_drag_activated || __instance.already_used_camera_drag) return true;
-            if (!BoxCommand.RightClick(__instance.getMouseTilePosCachedFrame())) return true;
-            __result = true;
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On || !InputHelpers.mouseSupported || !InputHelpers.GetMouseButtonUp(1)) return true;
+                if (MoveCamera.camera_drag_activated || __instance.already_used_camera_drag) return true;
+                if (!BoxCommand.RightClick(__instance.getMouseTilePosCachedFrame())) return true;
+                __result = true;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "军队右键下令", e); return true; }
         }
     }
 }

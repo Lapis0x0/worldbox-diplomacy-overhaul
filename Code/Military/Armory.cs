@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using ai.behaviours;
@@ -455,17 +456,28 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref BehResult __result)
         {
-            if (!Military.On) return true;
-            __result = BehResult.Stop;
-            if (!pActor.hasEquipment()) return false;
-            foreach (ActorEquipmentSlot slot in pActor.equipment)
+            if (!Military.On || !Safety.On(Sys.Military)) return true;
+            try
             {
-                Item item = slot.getItem();
-                if (!item.needRepair() || Patch_Repair.Maintained(pActor, item)) continue;
-                int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
-                if (pActor.money >= cost) __result = BehResult.Continue;
+                BehResult result = BehResult.Stop;
+                if (pActor.hasEquipment())
+                {
+                    foreach (ActorEquipmentSlot slot in pActor.equipment)
+                    {
+                        Item item = slot.getItem();
+                        if (!item.needRepair() || Patch_Repair.Maintained(pActor, item)) continue;
+                        int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
+                        if (pActor.money >= cost) result = BehResult.Continue;
+                    }
+                }
+                __result = result;
+                return false;
             }
-            return false;
+            catch (Exception e)
+            {
+                Safety.Fail(Sys.Military, "检查要不要修装备", e);
+                return true;
+            }
         }
     }
 
@@ -477,21 +489,33 @@ namespace DiplomacyOverhaul
 
         static bool Prefix(Actor pActor, ref BehResult __result)
         {
-            if (!Military.On) return true;
-            __result = BehResult.Continue;
+            if (!Military.On || !Safety.On(Sys.Military)) return true;
             bool repaired = false;
-            foreach (ActorEquipmentSlot slot in pActor.equipment)
+            try
             {
-                Item item = slot.getItem();
-                if (!item.needRepair() || Maintained(pActor, item)) continue;
-                int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
-                if (!pActor.hasEnoughMoney(cost)) continue;
-                pActor.spendMoney(cost);
-                item.fullRepair();
-                repaired = true;
+                foreach (ActorEquipmentSlot slot in pActor.equipment)
+                {
+                    Item item = slot.getItem();
+                    if (!item.needRepair() || Maintained(pActor, item)) continue;
+                    int cost = (int)(item.getAsset().cost_gold * SimGlobals.m.item_repair_cost_multiplier);
+                    if (!pActor.hasEnoughMoney(cost)) continue;
+                    pActor.spendMoney(cost);
+                    item.fullRepair();
+                    repaired = true;
+                }
+                if (repaired) pActor.setStatsDirty();
+                __result = BehResult.Continue;
+                return false;
             }
-            if (repaired) pActor.setStatsDirty();
-            return false;
+            catch (Exception e)
+            {
+                Safety.Fail(Sys.Military, "修装备", e);
+                // 已经修了一部分就不再交给原版，免得再扣一遍钱
+                if (!repaired) return true;
+                pActor.setStatsDirty();
+                __result = BehResult.Continue;
+                return false;
+            }
         }
     }
 }

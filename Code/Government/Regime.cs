@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ai;
 using ai.behaviours;
@@ -399,11 +400,23 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Kingdom pKingdom, ref BehResult __result)
         {
-            if (pKingdom.data.timer_new_king > 0f) return true;
-            if (pKingdom.hasKing() && pKingdom.king.isAlive()) return true;
-            if (!Government.IsRepublic(pKingdom) || !Regime.TryElect(pKingdom)) return true;
-            __result = BehResult.Continue;
-            return false;
+            if (!Safety.On(Sys.Government)) return true;
+            try
+            {
+                if (pKingdom.data.timer_new_king > 0f) return true;
+                if (pKingdom.hasKing() && pKingdom.king.isAlive()) return true;
+                if (!Government.IsRepublic(pKingdom) || !Regime.TryElect(pKingdom)) return true;
+                __result = BehResult.Continue;
+                return false;
+            }
+            catch (Exception e)
+            {
+                Safety.Fail(Sys.Government, "共和国选举执政", e);
+                // 执政已经选出来就不再交给原版另立国王
+                if (!pKingdom.hasKing() || !pKingdom.king.isAlive()) return true;
+                __result = BehResult.Continue;
+                return false;
+            }
         }
     }
 
@@ -411,13 +424,29 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(KingdomBehCheckKing), "checkKingdomChaos")]
     static class Patch_KingdomChaos
     {
-        static bool Prefix(Kingdom pMainKingdom) => !Regime.TryRepublicOnExtinction(pMainKingdom);
+        static bool Prefix(Kingdom pMainKingdom)
+        {
+            if (!Safety.On(Sys.Government)) return true;
+            bool republic = Government.IsRepublic(pMainKingdom);
+            try { return !Regime.TryRepublicOnExtinction(pMainKingdom); }
+            catch (Exception e)
+            {
+                Safety.Fail(Sys.Government, "绝嗣改共和国", e);
+                // 已经改成共和国就不再交给原版分裂国家
+                return republic || !Government.IsRepublic(pMainKingdom);
+            }
+        }
     }
 
     // 共和国执政不会让自己的家族成为王室
     [HarmonyPatch(typeof(Kingdom), nameof(Kingdom.trySetRoyalClan))]
     static class Patch_RoyalClan
     {
-        static bool Prefix(Kingdom __instance) => !Government.IsRepublic(__instance);
+        static bool Prefix(Kingdom __instance)
+        {
+            if (!Safety.On(Sys.Government)) return true;
+            try { return !Government.IsRepublic(__instance); }
+            catch (Exception e) { Safety.Fail(Sys.Government, "共和国不设王室", e); return true; }
+        }
     }
 }

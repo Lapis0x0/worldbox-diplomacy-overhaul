@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ai.behaviours;
 using HarmonyLib;
@@ -65,11 +66,16 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Kingdom pKingdom, ref Actor __result)
         {
-            if (SuccessionTool.getKingFromRoyalClan(pKingdom) != null) return true;
-            Actor heir = Succession.TryInherit(pKingdom);
-            if (heir == null) return true;
-            __result = heir;
-            return false;
+            if (!Safety.On(Sys.Government)) return true;
+            try
+            {
+                if (SuccessionTool.getKingFromRoyalClan(pKingdom) != null) return true;
+                Actor heir = Succession.TryInherit(pKingdom);
+                if (heir == null) return true;
+                __result = heir;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Government, "继承", e); return true; }
         }
     }
 }

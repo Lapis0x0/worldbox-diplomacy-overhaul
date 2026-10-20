@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using life.taxi;
@@ -595,11 +596,16 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor, ref ai.behaviours.BehResult __result)
         {
-            if (!Military.On) return true;
-            if (!Orders.TakeRallyTile(pActor, out WorldTile tile) && !Orders.TakeStationTile(pActor, out tile)) return true;
-            pActor.beh_tile_target = tile;
-            __result = ai.behaviours.BehResult.Continue;
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On) return true;
+                if (!Orders.TakeRallyTile(pActor, out WorldTile tile) && !Orders.TakeStationTile(pActor, out tile)) return true;
+                pActor.beh_tile_target = tile;
+                __result = ai.behaviours.BehResult.Continue;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "军队找路", e); return true; }
         }
     }
 
@@ -609,9 +615,14 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(Actor pActor)
         {
-            if (!Military.On) return true;
-            TaxiRequest current = TaxiManager.getRequestForActor(pActor);
-            return current == null || current.isState(TaxiRequestState.Finished);
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On) return true;
+                TaxiRequest current = TaxiManager.getRequestForActor(pActor);
+                return current == null || current.isState(TaxiRequestState.Finished);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "军队摆渡", e); return true; }
         }
     }
 
@@ -622,13 +633,18 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor pActor, ai.behaviours.BehResult __result)
         {
-            if (!Military.On || __result != ai.behaviours.BehResult.Continue || pActor.hasArmy() || !pActor.city.hasArmy() || Guard.IsMember(pActor)) return;
-            Army army = pActor.city.army;
-            Actor captain = army.getCaptain();
-            if (captain == null || captain.isRekt() || captain.isInsideSomething()) return;
-            if (captain.current_tile.zone_city?.kingdom != pActor.kingdom) return;
-            if (!captain.current_tile.isSameIsland(pActor.current_tile)) return;
-            pActor.setArmy(army);
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (!Military.On || __result != ai.behaviours.BehResult.Continue || pActor.hasArmy() || !pActor.city.hasArmy() || Guard.IsMember(pActor)) return;
+                Army army = pActor.city.army;
+                Actor captain = army.getCaptain();
+                if (captain == null || captain.isRekt() || captain.isInsideSomething()) return;
+                if (captain.current_tile.zone_city?.kingdom != pActor.kingdom) return;
+                if (!captain.current_tile.isSameIsland(pActor.current_tile)) return;
+                pActor.setArmy(army);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "跨城补员", e); }
         }
     }
 
@@ -639,7 +655,12 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor __instance, ref bool __result)
         {
-            if (Military.On && __result && __instance.isWarrior() && __instance.hasArmy() && Orders.HasStation(__instance.army)) __result = false;
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (Military.On && __result && __instance.isWarrior() && __instance.hasArmy() && Orders.HasStation(__instance.army)) __result = false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "驻扎纪律", e); }
         }
     }
 
@@ -650,15 +671,20 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City __instance, ref bool __result)
         {
-            if (!Military.On) return true;
-            if (Guard.Acting != null || (__instance.hasArmy() && Orders.IsForced(__instance.army)))
+            if (!Safety.On(Sys.Military)) return true;
+            try
             {
-                __result = true;
+                if (!Military.On) return true;
+                if (Guard.Acting != null || (__instance.hasArmy() && Orders.IsForced(__instance.army)))
+                {
+                    __result = true;
+                    return false;
+                }
+                if (!__instance.hasArmy() || !LocalAI.Conservative(__instance.kingdom)) return true;
+                __result = LocalAI.Sends(__instance);
                 return false;
             }
-            if (!__instance.hasArmy() || !LocalAI.Conservative(__instance.kingdom)) return true;
-            __result = LocalAI.Sends(__instance);
-            return false;
+            catch (Exception e) { Safety.Fail(Sys.Military, "出兵门槛", e); return true; }
         }
     }
 
@@ -668,15 +694,25 @@ namespace DiplomacyOverhaul
     {
         static bool Prefix(City pCity, ref ai.behaviours.BehResult __result)
         {
-            if (!Military.On || !pCity.hasArmy() || !Orders.HasStation(pCity.army)) return true;
-            Orders.KeepStation(pCity.army);
-            __result = ai.behaviours.BehResult.Continue;
-            return false;
+            if (!Safety.On(Sys.Military)) return true;
+            try
+            {
+                if (!Military.On || !pCity.hasArmy() || !Orders.HasStation(pCity.army)) return true;
+                Orders.KeepStation(pCity.army);
+                __result = ai.behaviours.BehResult.Continue;
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "驻扎选目标", e); return true; }
         }
 
         static void Postfix(City pCity)
         {
-            if (Military.On && pCity.hasArmy()) Orders.CheckForced(pCity.army);
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                if (Military.On && pCity.hasArmy()) Orders.CheckForced(pCity.army);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "进攻命令解除", e); }
         }
     }
 }

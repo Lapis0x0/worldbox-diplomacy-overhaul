@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using UnityEngine;
 
@@ -121,11 +122,16 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(TileZone __instance, ref Alliance __result)
         {
-            if (__result != null) return;
-            Kingdom k = __instance.city?.kingdom;
-            if (k == null) return;
-            Kingdom root = Vassals.Root(k);
-            if (root != k) __result = root.getAlliance();
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                if (__result != null) return;
+                Kingdom k = __instance.city?.kingdom;
+                if (k == null) return;
+                Kingdom root = Vassals.Root(k);
+                if (root != k) __result = root.getAlliance();
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "联盟地块", e); }
         }
     }
 
@@ -159,31 +165,40 @@ namespace DiplomacyOverhaul
 
         static bool Prefix(NameplateLibrary __instance, NameplateManager pManager, NameplateAsset pAsset)
         {
-            foreach (Alliance alliance in World.world.alliances)
+            if (!Safety.On(Sys.Interface)) return true;
+            try
             {
-                Kingdom best = null;
+                foreach (Alliance alliance in World.world.alliances)
+                {
+                    Kingdom best = null;
+                    foreach (Kingdom k in World.world.kingdoms)
+                    {
+                        if (Vassals.Root(k).getAlliance() != alliance || !InCamera(k)) continue;
+                        if (best == null || best.power < k.power) best = k;
+                    }
+                    if (best == null) continue;
+                    NameplateText plate = pManager.prepareNext(pAsset, alliance);
+                    plate.showTextAlliance(alliance, best.capital);
+                    CampText(plate, alliance, alliance.name, best.capital.city_center);
+                }
+
+                int count = 0;
                 foreach (Kingdom k in World.world.kingdoms)
                 {
-                    if (Vassals.Root(k).getAlliance() != alliance || !InCamera(k)) continue;
-                    if (best == null || best.power < k.power) best = k;
+                    if (Vassals.IsVassal(k) || k.hasAlliance() || !InCamera(k)) continue;
+                    if (count >= pAsset.max_nameplate_count) break;
+                    count++;
+                    NameplateText plate = pManager.prepareNext(__instance._plate_kingdom, k);
+                    plate.showTextKingdom(k, k.capital.city_center);
+                    if (Vassals.HasVassals(k)) CampText(plate, k, Government.DisplayName(k), k.capital.city_center);
                 }
-                if (best == null) continue;
-                NameplateText plate = pManager.prepareNext(pAsset, alliance);
-                plate.showTextAlliance(alliance, best.capital);
-                CampText(plate, alliance, alliance.name, best.capital.city_center);
+                return false;
             }
-
-            int count = 0;
-            foreach (Kingdom k in World.world.kingdoms)
+            catch (Exception e)
             {
-                if (Vassals.IsVassal(k) || k.hasAlliance() || !InCamera(k)) continue;
-                if (count >= pAsset.max_nameplate_count) break;
-                count++;
-                NameplateText plate = pManager.prepareNext(__instance._plate_kingdom, k);
-                plate.showTextKingdom(k, k.capital.city_center);
-                if (Vassals.HasVassals(k)) CampText(plate, k, Government.DisplayName(k), k.capital.city_center);
+                Safety.Fail(Sys.Interface, "联盟名牌", e);
+                return true;
             }
-            return false;
         }
     }
 
@@ -193,10 +208,15 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
-            Alliance alliance = pData?.alliance;
-            if (alliance == null) return;
-            AllianceView.SetIcon(pTooltip, "i_population", Camp.Population(alliance));
-            AllianceView.SetIcon(pTooltip, "i_army", Camp.Warriors(alliance));
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                Alliance alliance = pData?.alliance;
+                if (alliance == null) return;
+                AllianceView.SetIcon(pTooltip, "i_population", Camp.Population(alliance));
+                AllianceView.SetIcon(pTooltip, "i_army", Camp.Warriors(alliance));
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "联盟提示", e); }
         }
     }
 }

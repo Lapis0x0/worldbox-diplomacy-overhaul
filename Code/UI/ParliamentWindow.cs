@@ -804,17 +804,22 @@ namespace DiplomacyOverhaul
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
             if (pData == null || pData.tip_name != ParliamentWindow.TipName || ParliamentWindow.TipEffects == null) return;
-            foreach (var (key, value) in ParliamentWindow.TipEffects) pTooltip.addLineText(key, value);
-            VoteResult vote = ParliamentWindow.TipVote;
-            if (vote != null && vote.Total > 0)
+            if (!Safety.On(Sys.Interface)) return;
+            try
             {
-                bool passes = Parliament.Passes(ParliamentWindow.TipBill, vote);
-                pTooltip.addLineText("vd_tip_votes", vote.yes + " : " + vote.no);
-                pTooltip.addLineText("vd_tip_vote", LM.Get(passes ? "vd_parliament_will_pass" : "vd_parliament_will_fail"),
-                    "#" + ColorUtility.ToHtmlStringRGB(passes ? ParliamentWindow.YesText : ParliamentWindow.NoText));
+                foreach (var (key, value) in ParliamentWindow.TipEffects) pTooltip.addLineText(key, value);
+                VoteResult vote = ParliamentWindow.TipVote;
+                if (vote != null && vote.Total > 0)
+                {
+                    bool passes = Parliament.Passes(ParliamentWindow.TipBill, vote);
+                    pTooltip.addLineText("vd_tip_votes", vote.yes + " : " + vote.no);
+                    pTooltip.addLineText("vd_tip_vote", LM.Get(passes ? "vd_parliament_will_pass" : "vd_parliament_will_fail"),
+                        "#" + ColorUtility.ToHtmlStringRGB(passes ? ParliamentWindow.YesText : ParliamentWindow.NoText));
+                }
+                else if (ParliamentWindow.TipEffects.Count == 0) return;
+                pTooltip.showStatValues();
             }
-            else if (ParliamentWindow.TipEffects.Count == 0) return;
-            pTooltip.showStatValues();
+            catch (Exception e) { Safety.Fail(Sys.Interface, "政策选项提示框", e); }
         }
     }
 
@@ -822,6 +827,14 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(PowerButtonSelector), "updateSelectedUnitCancelButton")]
     static class Patch_SelectedCancelButton
     {
-        static void Postfix() => ParliamentWindow.UpdateSide();
+        static void Postfix()
+        {
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                ParliamentWindow.UpdateSide();
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "议会按钮", e); }
+        }
     }
 }

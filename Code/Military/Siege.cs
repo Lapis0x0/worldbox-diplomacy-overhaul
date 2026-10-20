@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using UnityEngine;
 
@@ -83,16 +84,21 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Actor pActor, ai.behaviours.BehResult __result)
         {
-            if (!Military.On || __result != ai.behaviours.BehResult.Continue) return;
-            City target = pActor.city?.target_attack_zone?.city;
-            if (target == null || pActor.current_tile.zone.city != target) return;
-            WorldTile tile = Siege.NearestDefender(pActor, target);
-            if (tile == null)
+            if (!Safety.On(Sys.Military)) return;
+            try
             {
-                WorldTile center = target.getTile();
-                if (center != null && center.isSameIsland(pActor.current_tile)) tile = center;
+                if (!Military.On || __result != ai.behaviours.BehResult.Continue) return;
+                City target = pActor.city?.target_attack_zone?.city;
+                if (target == null || pActor.current_tile.zone.city != target) return;
+                WorldTile tile = Siege.NearestDefender(pActor, target);
+                if (tile == null)
+                {
+                    WorldTile center = target.getTile();
+                    if (center != null && center.isSameIsland(pActor.current_tile)) tile = center;
+                }
+                if (tile != null) pActor.beh_tile_target = tile;
             }
-            if (tile != null) pActor.beh_tile_target = tile;
+            catch (Exception e) { Safety.Fail(Sys.Military, "破城清剿", e); }
         }
     }
 
@@ -102,13 +108,24 @@ namespace DiplomacyOverhaul
         // 原版每 0.1 秒结算一次：入口处计时器已到点说明这一帧会结算
         static void Prefix(City __instance, out float __state)
         {
-            __state = __instance._timer_capture <= 0f ? __instance._capture_ticks : -1f;
+            __state = -1f;
+            if (!Safety.On(Sys.Military)) return;
+            try
+            {
+                __state = __instance._timer_capture <= 0f ? __instance._capture_ticks : -1f;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "破城", e); }
         }
 
         static void Postfix(City __instance, float pElapsed, float __state)
         {
-            if (__state < 0f || !Military.On || __instance.isRekt()) return;
-            Siege.Overwhelm(__instance, __state, pElapsed);
+            if (__state < 0f || !Safety.On(Sys.Military)) return;
+            try
+            {
+                if (!Military.On || __instance.isRekt()) return;
+                Siege.Overwhelm(__instance, __state, pElapsed);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Military, "破城", e); }
         }
     }
 }

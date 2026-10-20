@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using HarmonyLib;
@@ -490,14 +491,24 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(War __result)
         {
-            if (__result != null) PeaceTalks.RecordStart(__result);
+            if (!Safety.On(Sys.Peace)) return;
+            try
+            {
+                if (__result != null) PeaceTalks.RecordStart(__result);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Peace, "记录开战", e); }
         }
     }
 
     [HarmonyPatch(typeof(War), nameof(War.update))]
     static class Patch_WarUpdate
     {
-        static void Postfix(War __instance) => PeaceTalks.YearlyCheck(__instance);
+        static void Postfix(War __instance)
+        {
+            if (!Safety.On(Sys.Peace)) return;
+            try { PeaceTalks.YearlyCheck(__instance); }
+            catch (Exception e) { Safety.Fail(Sys.Peace, "和谈检查", e); }
+        }
     }
 
     [HarmonyPatch(typeof(WarWindow), nameof(WarWindow.showStatsRows))]
@@ -505,19 +516,24 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(WarWindow __instance)
         {
-            War war = SelectedMetas.selected_war;
-            if (war == null || war.isTotalWar()) return;
-            if (war.hasEnded())
+            if (!Safety.On(Sys.Peace)) return;
+            try
             {
-                string treaty = PeaceTalks.TreatyText(war);
-                if (treaty != null) __instance.showStatRow("vd_row_treaty", treaty, MetaType.None, -1L, "iconWar");
-                return;
+                War war = SelectedMetas.selected_war;
+                if (war == null || war.isTotalWar()) return;
+                if (war.hasEnded())
+                {
+                    string treaty = PeaceTalks.TreatyText(war);
+                    if (treaty != null) __instance.showStatRow("vd_row_treaty", treaty, MetaType.None, -1L, "iconWar");
+                    return;
+                }
+                string score = PeaceTalks.ScoreText(war, out string color);
+                if (color != null) __instance.showStatRow("vd_row_war_score", score, color, MetaType.None, -1L, pColorText: true, "iconAttackRate");
+                else __instance.showStatRow("vd_row_war_score", score, MetaType.None, -1L, "iconAttackRate");
+                Kingdom talks = PeaceTalks.TalksBy(war);
+                if (talks != null) __instance.showStatRow("vd_row_peace_talks", talks.data.name, MetaType.Kingdom, talks.getID(), "iconKingdom");
             }
-            string score = PeaceTalks.ScoreText(war, out string color);
-            if (color != null) __instance.showStatRow("vd_row_war_score", score, color, MetaType.None, -1L, pColorText: true, "iconAttackRate");
-            else __instance.showStatRow("vd_row_war_score", score, MetaType.None, -1L, "iconAttackRate");
-            Kingdom talks = PeaceTalks.TalksBy(war);
-            if (talks != null) __instance.showStatRow("vd_row_peace_talks", talks.data.name, MetaType.Kingdom, talks.getID(), "iconKingdom");
+            catch (Exception e) { Safety.Fail(Sys.Peace, "战争窗口", e); }
         }
     }
 
@@ -526,22 +542,27 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Tooltip pTooltip, TooltipData pData)
         {
-            War war = pData?.war;
-            if (war == null || war.isTotalWar()) return;
-            if (war.hasEnded())
+            if (!Safety.On(Sys.Peace)) return;
+            try
             {
-                string treaty = PeaceTalks.TreatyText(war);
-                if (treaty == null) return;
+                War war = pData?.war;
+                if (war == null || war.isTotalWar()) return;
+                if (war.hasEnded())
+                {
+                    string treaty = PeaceTalks.TreatyText(war);
+                    if (treaty == null) return;
+                    pTooltip.addLineBreak();
+                    pTooltip.addLineText("vd_row_treaty", treaty);
+                    string paid = PeaceTalks.PaidText(war);
+                    if (paid != null) pTooltip.addLineText("vd_row_paid", paid);
+                    return;
+                }
                 pTooltip.addLineBreak();
-                pTooltip.addLineText("vd_row_treaty", treaty);
-                string paid = PeaceTalks.PaidText(war);
-                if (paid != null) pTooltip.addLineText("vd_row_paid", paid);
-                return;
+                pTooltip.addLineText("vd_row_war_score", PeaceTalks.ScoreText(war, out string color), color);
+                Kingdom talks = PeaceTalks.TalksBy(war);
+                if (talks != null) pTooltip.addLineText("vd_row_peace_talks", talks.data.name, talks.getColor().color_text);
             }
-            pTooltip.addLineBreak();
-            pTooltip.addLineText("vd_row_war_score", PeaceTalks.ScoreText(war, out string color), color);
-            Kingdom talks = PeaceTalks.TalksBy(war);
-            if (talks != null) pTooltip.addLineText("vd_row_peace_talks", talks.data.name, talks.getColor().color_text);
+            catch (Exception e) { Safety.Fail(Sys.Peace, "战争提示", e); }
         }
     }
 }

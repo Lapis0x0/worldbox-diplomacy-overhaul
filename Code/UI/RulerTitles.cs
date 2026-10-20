@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -41,16 +42,21 @@ namespace DiplomacyOverhaul
         };
         static void Postfix(KingdomWindow __instance)
         {
-            Kingdom k = SelectedMetas.selected_kingdom;
-            LocalizedText title = __instance.transform.Find(Title)?.GetComponent<LocalizedText>();
-            string key = RulerTitles.Key(k, "king");
-            if (title != null && title.key != key) title.setKeyAndUpdate(key);
-            Sprite crown = SpriteTextureLoader.getSprite(RulerTitles.CrownIcon(k));
-            foreach (string path in Crowns)
+            if (!Safety.On(Sys.Interface)) return;
+            try
             {
-                Image icon = __instance.transform.Find(path)?.GetComponent<Image>();
-                if (icon != null && crown != null && icon.sprite != crown) icon.sprite = crown;
+                Kingdom k = SelectedMetas.selected_kingdom;
+                LocalizedText title = __instance.transform.Find(Title)?.GetComponent<LocalizedText>();
+                string key = RulerTitles.Key(k, "king");
+                if (title != null && title.key != key) title.setKeyAndUpdate(key);
+                Sprite crown = SpriteTextureLoader.getSprite(RulerTitles.CrownIcon(k));
+                foreach (string path in Crowns)
+                {
+                    Image icon = __instance.transform.Find(path)?.GetComponent<Image>();
+                    if (icon != null && crown != null && icon.sprite != crown) icon.sprite = crown;
+                }
             }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "领袖卡片", e); }
         }
     }
 
@@ -61,9 +67,14 @@ namespace DiplomacyOverhaul
         static void Prefix(StatsWindow __instance, ref string pTitle)
         {
             if (pTitle != "king") return;
-            Kingdom k = __instance is KingdomWindow ? SelectedMetas.selected_kingdom
-                : __instance is CityWindow ? SelectedMetas.selected_city?.kingdom : null;
-            pTitle = RulerTitles.Key(k, pTitle);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                Kingdom k = __instance is KingdomWindow ? SelectedMetas.selected_kingdom
+                    : __instance is CityWindow ? SelectedMetas.selected_city?.kingdom : null;
+                pTitle = RulerTitles.Key(k, pTitle);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "领袖一栏", e); }
         }
     }
 
@@ -73,7 +84,13 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(ref string pSubTitle, TooltipData pData)
         {
-            if (pSubTitle == "village_statistics_king") pSubTitle = RulerTitles.Key(pData?.actor?.kingdom, pSubTitle);
+            if (pSubTitle != "village_statistics_king") return;
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                pSubTitle = RulerTitles.Key(pData?.actor?.kingdom, pSubTitle);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "单位提示副标题", e); }
         }
     }
 
@@ -83,7 +100,13 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(Actor pActor, ref string pLocaleKey)
         {
-            if (pLocaleKey == "titled_king") pLocaleKey = RulerTitles.Titled(pActor?.kingdom, "vd_titled", pLocaleKey);
+            if (pLocaleKey != "titled_king") return;
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                pLocaleKey = RulerTitles.Titled(pActor?.kingdom, "vd_titled", pLocaleKey);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "底部信息栏领袖", e); }
         }
     }
 
@@ -94,9 +117,14 @@ namespace DiplomacyOverhaul
     {
         static void Prefix(StatsRowsContainer __instance, ref string pId)
         {
-            string template = pId == "kingdom_statistics_king_ruled" ? "vd_title_ruled" : pId == "past_kings" ? "vd_title_past" : null;
-            if (template == null || __instance.GetComponentInParent<KingdomWindow>() == null) return;
-            pId = RulerTitles.Titled(SelectedMetas.selected_kingdom, template, pId);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                string template = pId == "kingdom_statistics_king_ruled" ? "vd_title_ruled" : pId == "past_kings" ? "vd_title_past" : null;
+                if (template == null || __instance.GetComponentInParent<KingdomWindow>() == null) return;
+                pId = RulerTitles.Titled(SelectedMetas.selected_kingdom, template, pId);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "领袖行", e); }
         }
     }
 
@@ -107,9 +135,17 @@ namespace DiplomacyOverhaul
     {
         internal static Kingdom Current;
 
-        static void Prefix(TooltipData pData) => Current = pData?.city?.kingdom;
+        [SafeBy("只读几个字段存起来")]
+        static void Prefix(TooltipData pData)
+        {
+            Current = pData?.city?.kingdom;
+        }
 
-        static void Postfix() => Current = null;
+        [SafeBy("只清一个字段")]
+        static void Postfix()
+        {
+            Current = null;
+        }
     }
 
     [HarmonyPatch(typeof(LoyaltyAsset), nameof(LoyaltyAsset.getTranslationKey))]
@@ -117,9 +153,16 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(ref string __result)
         {
-            Kingdom k = Patch_RulerLoyaltyTip.Current;
-            if (__result == "loyalty_king") __result = RulerTitles.Titled(k, "vd_title_leadership", __result);
-            else if (__result == "loyalty_king_ruled") __result = RulerTitles.Titled(k, "vd_title_rule", __result);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                Kingdom k = Patch_RulerLoyaltyTip.Current;
+                string result = __result;
+                if (result == "loyalty_king") result = RulerTitles.Titled(k, "vd_title_leadership", result);
+                else if (result == "loyalty_king_ruled") result = RulerTitles.Titled(k, "vd_title_rule", result);
+                __result = result;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "忠诚明细领袖项", e); }
         }
     }
 
@@ -129,9 +172,17 @@ namespace DiplomacyOverhaul
     {
         internal static bool Active;
 
-        static void Prefix() => Active = true;
+        [SafeBy("只设一个标记")]
+        static void Prefix()
+        {
+            Active = true;
+        }
 
-        static void Postfix() => Active = false;
+        [SafeBy("只清一个标记")]
+        static void Postfix()
+        {
+            Active = false;
+        }
     }
 
     [HarmonyPatch(typeof(OpinionAsset), nameof(OpinionAsset.getTranslationKey))]
@@ -140,7 +191,12 @@ namespace DiplomacyOverhaul
         static void Postfix(ref string __result)
         {
             if (!Patch_RulerOpinionTip.Active || __result != "opinion_kings_mood") return;
-            __result = RulerTitles.Titled(SelectedMetas.selected_kingdom, "vd_title_mood", __result);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                __result = RulerTitles.Titled(SelectedMetas.selected_kingdom, "vd_title_mood", __result);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "好感明细领袖项", e); }
         }
     }
 }

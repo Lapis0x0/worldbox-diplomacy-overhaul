@@ -107,7 +107,7 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 开发时启动后检查：模组的每个前缀、后缀补丁都要自己兜住异常（方法体里有 try），
+        // 开发时启动后检查：模组的每个前缀、后缀补丁都要自己兜住异常（方法体里有 catch；foreach、using 生成的 finally 不算），
         // 或者标上 [SafeBy] 说明为什么不需要。不合格的写进日志
         public static void Audit(Harmony pHarmony)
         {
@@ -128,7 +128,7 @@ namespace DiplomacyOverhaul
 
         static bool Guarded(MethodInfo pMethod) =>
             pMethod.IsDefined(typeof(SafeByAttribute)) || (pMethod.DeclaringType?.IsDefined(typeof(SafeByAttribute)) ?? false)
-            || (pMethod.GetMethodBody()?.ExceptionHandlingClauses.Count ?? 0) > 0;
+            || (pMethod.GetMethodBody()?.ExceptionHandlingClauses.Any(c => c.Flags == ExceptionHandlingClauseOptions.Clause) ?? false);
     }
 
     // 补丁不需要自己兜住异常的理由：异常在它调用的地方已经兜住，或者它只读一两个字段不会出错

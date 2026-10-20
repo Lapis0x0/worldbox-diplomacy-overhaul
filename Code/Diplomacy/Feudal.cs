@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
@@ -314,6 +315,11 @@ namespace DiplomacyOverhaul
     [HarmonyPatch(typeof(DiplomacyHelpersRebellion), nameof(DiplomacyHelpersRebellion.startRebellion))]
     static class Patch_FeudalRebellion
     {
-        static bool Prefix(Actor pActor, Plot pPlot) => !Feudal.TryRebellion(pActor, pPlot);
+        static bool Prefix(Actor pActor, Plot pPlot)
+        {
+            if (!Safety.On(Sys.Vassal)) return true;
+            try { return !Feudal.TryRebellion(pActor, pPlot); }
+            catch (Exception e) { Safety.Fail(Sys.Vassal, "封臣叛乱", e); return true; }
+        }
     }
 }

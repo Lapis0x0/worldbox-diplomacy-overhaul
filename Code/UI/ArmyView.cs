@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using NeoModLoader.General;
 
@@ -30,11 +31,24 @@ namespace DiplomacyOverhaul
     {
         internal static Army Current;
 
-        static void Prefix(TooltipData pData) => Current = pData?.army;
+        [SafeBy("只读一个字段存起来")]
+        static void Prefix(TooltipData pData)
+        {
+            Current = pData?.army;
+        }
 
         static void Postfix(Tooltip pTooltip)
         {
-            if (Current != null) Patch_ArmyTooltipLine.Add(pTooltip);
+            if (!Safety.On(Sys.Interface))
+            {
+                Current = null;
+                return;
+            }
+            try
+            {
+                if (Current != null) Patch_ArmyTooltipLine.Add(pTooltip);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "军队提示框", e); }
             Current = null;
         }
     }
@@ -44,7 +58,12 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(Tooltip __instance, string pID)
         {
-            if (pID == "captain" && Patch_ArmyTooltip.Current != null) Add(__instance);
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                if (pID == "captain" && Patch_ArmyTooltip.Current != null) Add(__instance);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "军队提示框命令行", e); }
         }
 
         internal static void Add(Tooltip pTooltip)
@@ -61,8 +80,13 @@ namespace DiplomacyOverhaul
     {
         static void Postfix(ArmyWindow __instance)
         {
-            string text = ArmyOrderText.Of(SelectedMetas.selected_army, out string color);
-            if (text != null) __instance.showStatRow(ArmyOrderText.Key, text, color, MetaType.None, -1L, true, "iconArmy");
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                string text = ArmyOrderText.Of(SelectedMetas.selected_army, out string color);
+                if (text != null) __instance.showStatRow(ArmyOrderText.Key, text, color, MetaType.None, -1L, true, "iconArmy");
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "军队窗口命令行", e); }
         }
     }
 }
