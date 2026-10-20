@@ -50,7 +50,7 @@ After that, the government changes only through the historical events below and 
 
 ## Consuls of Republics
 
-- **Election**: The consul is elected by parliament. There are at most three candidates: the current consul, plus the ablest city lords from other clans. Each clan gives all of its seats to the candidate closest to its own stance. The candidate with the most votes wins.
+- **Election**: The consul is elected by parliament. There are at most three candidates: the current consul, plus the city lords from other clans with the best mix of ability and renown, with renown weighing more. Each clan gives all of its seats to the candidate closest to its own stance. The candidate with the most votes wins.
 - **Term**: 12 years. After that a new election is held. A consul can be re-elected without limit. If the consul dies, an election is held at once.
 - The capital's seats belong to the consul's clan, so the sitting consul has the advantage at re-election.
 - A republic has no royal house and does not split apart when a line dies out.

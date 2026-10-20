@@ -57,7 +57,19 @@ namespace DiplomacyOverhaul
             return n;
         }
 
-        // 按眼下的议会选一次：现任执政一定参选，其余是别家能力最高的城主，每个家族一位，共三位；
+        // 候选人的分量：能力加声望。声望按平方根算，每 1 点平方根算 4 点能力：多数城主的声望在 10 到 90 之间，
+        // 拉开的差距比能力大，名气大的城主更容易成为候选人；当了几十年城主、打过很多仗的老将也不会碾压所有人
+        const float RenownWeight = 4f;
+
+        // 先存进局部变量：写成一个表达式时，游戏里运行出来少了能力这一项
+        public static float Standing(Actor pActor)
+        {
+            int ability = Ability(pActor);
+            float renown = RenownWeight * Mathf.Sqrt(Mathf.Max(0, pActor.renown));
+            return ability + renown;
+        }
+
+        // 按眼下的议会选一次：现任执政一定参选，其余是别家分量（能力加声望）最高的城主，每个家族一位，共三位；
         // 每个氏族把议席投给立场离自己最近的候选人，得票最多的当选。没有候选人时返回 null
         public static Election Vote(Kingdom pKingdom)
         {
@@ -75,10 +87,10 @@ namespace DiplomacyOverhaul
                 Actor a = city.leader;
                 if (a == null || !a.isAlive() || a == incumbent || !a.hasClan() || !a.isUnitFitToRule()) continue;
                 if (!byClan.ContainsKey(a.clan) || e.candidates.Exists(c => c.clan.clan == a.clan)) continue;
-                if (!best.TryGetValue(a.clan, out Actor b) || Ability(a) > Ability(b)) best[a.clan] = a;
+                if (!best.TryGetValue(a.clan, out Actor b) || Standing(a) > Standing(b)) best[a.clan] = a;
             }
             var others = new List<Actor>(best.Values);
-            others.Sort((x, y) => Ability(y).CompareTo(Ability(x)));
+            others.Sort((x, y) => Standing(y).CompareTo(Standing(x)));
             for (int i = 0; i < others.Count && e.candidates.Count < Candidates; i++)
                 e.candidates.Add(new Candidate { actor = others[i], clan = byClan[others[i].clan] });
             if (e.candidates.Count == 0) return null;

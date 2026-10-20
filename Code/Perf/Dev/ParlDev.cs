@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DiplomacyOverhaul.Perf
@@ -54,7 +55,27 @@ namespace DiplomacyOverhaul.Perf
                 if (e == null) { Dev.Log("  ! no candidates"); return; }
                 Dev.Log($"  [{target.id}] {target.data.name} republic={Government.IsRepublic(target)} years={Regime.YearsToElection(target)}");
                 foreach (Candidate c in e.candidates)
-                    Dev.Log($"    {(c == e.winner ? "*" : " ")} {c.actor.getName()} ({c.clan.clan.name}) ability={Regime.Ability(c.actor)} incumbent={c.incumbent} votes={c.votes}");
+                    Dev.Log($"    {(c == e.winner ? "*" : " ")} {c.actor.getName()} ({c.clan.clan.name}) ability={Regime.Ability(c.actor)} renown={c.actor.renown} standing={Regime.Standing(c.actor):F0} incumbent={c.incumbent} votes={c.votes}");
+                return;
+            }
+            if (mode == "renown")
+            {
+                // parl renown：各国城主（和国王）的声望、能力分布
+                var renown = new List<int>();
+                var ability = new List<int>();
+                foreach (City c in World.world.cities)
+                {
+                    Actor l = c.leader;
+                    if (l == null || !l.isAlive()) continue;
+                    renown.Add(l.renown);
+                    ability.Add((int)(l.stats["diplomacy"] + l.stats["warfare"] + l.stats["stewardship"]));
+                }
+                foreach (Kingdom k in World.world.kingdoms)
+                    if (k.isAlive() && k.hasKing()) Dev.Log($"  king {k.data.name}: renown={k.king.renown}");
+                renown.Sort(); ability.Sort();
+                string Q(List<int> l) => l.Count == 0 ? "-" : $"min={l[0]} p25={l[l.Count / 4]} p50={l[l.Count / 2]} p75={l[l.Count * 3 / 4]} max={l[l.Count - 1]} n={l.Count}";
+                Dev.Log("  leaders renown " + Q(renown));
+                Dev.Log("  leaders ability " + Q(ability));
                 return;
             }
             if (mode == "bill")
