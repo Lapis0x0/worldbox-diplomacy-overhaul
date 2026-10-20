@@ -97,13 +97,40 @@ namespace DiplomacyOverhaul
             return map.TryGetValue(pCity, out int count) ? count : 0;
         }
 
+        // 每月开头把军队按队长所在的区块和紧挨着的区块归到城市下，压城只看归在这座城下的军队。
+        // 这一个月的结算里队长不会挪地方（合并编队时留下的那支保留原队长）
+        static readonly Dictionary<City, List<Army>> _near = new Dictionary<City, List<Army>>();
+
+        static void IndexNear(List<Army> pAll)
+        {
+            _near.Clear();
+            foreach (Army a in pAll)
+            {
+                Actor lead = a.getCaptain();
+                if (lead == null || lead.isRekt()) continue;
+                TileZone zone = lead.current_tile?.zone;
+                if (zone == null) continue;
+                AddNear(zone.city, a);
+                foreach (TileZone z in zone.neighbours_all) AddNear(z.city, a);
+            }
+        }
+
+        // 同一支军队连着加，几个区块属于同一座城时只记一次
+        static void AddNear(City pCity, Army pArmy)
+        {
+            if (pCity == null) return;
+            if (!_near.TryGetValue(pCity, out List<Army> list)) _near[pCity] = list = new List<Army>();
+            if (list.Count == 0 || list[list.Count - 1] != pArmy) list.Add(pArmy);
+        }
+
         // 敌军压城：交战国的军队，队长站在这座城里、或在紧挨着的区块里
-        internal static int Pressure(City pCity, List<Army> pAll)
+        internal static int Pressure(City pCity)
         {
             Kingdom owner = pCity.kingdom;
             if (owner == null || !owner.isAlive()) return 0;
+            if (!_near.TryGetValue(pCity, out List<Army> armies)) return 0;
             int sum = 0;
-            foreach (Army a in pAll)
+            foreach (Army a in armies)
             {
                 Kingdom k = Orders.KingdomOf(a);
                 if (k == null || !k.isAlive() || !k.isEnemy(owner)) continue;
@@ -129,6 +156,7 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             _defenders.Clear();
+            _near.Clear();
             if (!Military.On) return;
             var all = new List<Army>();
             var byKingdom = new Dictionary<Kingdom, List<Army>>();
@@ -142,10 +170,11 @@ namespace DiplomacyOverhaul
                 if (!byKingdom.TryGetValue(k, out List<Army> list)) byKingdom[k] = list = new List<Army>();
                 list.Add(a);
             }
+            IndexNear(all);
             Transport.Quiet = true;
             try
             {
-                foreach (var kv in byKingdom) Update(kv.Key, kv.Value, all);
+                foreach (var kv in byKingdom) Update(kv.Key, kv.Value);
                 LocalAI.UpdateAll(all);
             }
             finally
@@ -154,19 +183,19 @@ namespace DiplomacyOverhaul
             }
         }
 
-        static void Update(Kingdom pKingdom, List<Army> pGroups, List<Army> pAll)
+        static void Update(Kingdom pKingdom, List<Army> pGroups)
         {
             MergeIdle(pGroups);
             var idle = new List<Army>();
             foreach (Army g in pGroups)
-                if (Keep(pKingdom, g, pAll)) continue;
+                if (Keep(pKingdom, g)) continue;
                 else idle.Add(g);
 
             // 告急的城：本国和附庸的城，敌军多于守军。都城排最前，其余按人口
             var threatened = new List<(City city, int enemy)>();
             foreach (City c in OwnAndVassalCities(pKingdom))
             {
-                int enemy = Pressure(c, pAll);
+                int enemy = Pressure(c);
                 if (enemy > Defenders(c)) threatened.Add((c, enemy));
             }
             threatened.Sort((a, b) =>
@@ -207,7 +236,7 @@ namespace DiplomacyOverhaul
         }
 
         // 编队手上的任务还没完就继续；返回 false 表示这支编队这个月可以接新任务
-        static bool Keep(Kingdom pKingdom, Army g, List<Army> pAll)
+        static bool Keep(Kingdom pKingdom, Army g)
         {
             int task = Task(g);
             switch (task)
@@ -231,7 +260,7 @@ namespace DiplomacyOverhaul
                         return true;
                     }
                     if (g.countUnits() < Start(g) * BrokenShare) return Rest(pKingdom, g);
-                    if (Pressure(city, pAll) > 0)
+                    if (Pressure(city) > 0)
                     {
                         g.data.set(KeySince, (float)World.world.getCurWorldTime());
                         return true;

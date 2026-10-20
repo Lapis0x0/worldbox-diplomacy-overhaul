@@ -46,10 +46,10 @@ namespace DiplomacyOverhaul
                 if (!byKingdom.TryGetValue(k, out List<Army> list)) byKingdom[k] = list = new List<Army>();
                 list.Add(a);
             }
-            foreach (var kv in byKingdom) Update(kv.Key, kv.Value, pAll);
+            foreach (var kv in byKingdom) Update(kv.Key, kv.Value);
         }
 
-        static void Update(Kingdom pKingdom, List<Army> pArmies, List<Army> pAll)
+        static void Update(Kingdom pKingdom, List<Army> pArmies)
         {
             bool war = World.world.wars.hasWars(pKingdom);
             var frontier = war ? Frontier(pKingdom) : null;
@@ -77,7 +77,7 @@ namespace DiplomacyOverhaul
 
                 City home = a.getCity();
                 // 本城被敌军压着：回家守
-                if (GuardAI.Pressure(home, pAll) > 0)
+                if (GuardAI.Pressure(home) > 0)
                 {
                     if (Orders.GetGarrison(a) != home) Orders.MoveArmy(a, home);
                     SetTask(a, TaskStation);

@@ -61,13 +61,24 @@ namespace DiplomacyOverhaul
         const int LoyalOpinion = 50;
         static OpinionAsset _taxOpinion;
 
+        // 风险只看宗主和档位，和哪一股势力在算无关。算一遍要把每个附庸的好感重算一次，
+        // 而议会算忠诚、表决时每股势力都要问一遍，所以每帧每个宗主只算一次
+        static readonly Dictionary<long, (int frame, float[] risk)> _tributeRisk = new Dictionary<long, (int, float[])>();
+
         public static int TributeBest(Kingdom pLord, Actor pVoice)
         {
+            int count = Policies.Get(Policies.VassalTax).count;
+            int frame = Time.frameCount;
+            if (!_tributeRisk.TryGetValue(pLord.id, out var cached) || cached.frame != frame)
+            {
+                cached = (frame, TributeRisk(pLord, count));
+                _tributeRisk[pLord.id] = cached;
+            }
             float gain = TributeGainOf(pVoice), best = float.MinValue;
             int bestOption = 0;
-            for (int o = 0; o < Policies.Get(Policies.VassalTax).count; o++)
+            for (int o = 0; o < count; o++)
             {
-                float value = gain * o - TributeRisk(pLord, o);
+                float value = gain * o - cached.risk[o];
                 if (value > best) { best = value; bestOption = o; }
             }
             return bestOption;
@@ -85,17 +96,24 @@ namespace DiplomacyOverhaul
             return gain;
         }
 
-        static float TributeRisk(Kingdom pLord, int pOption)
+        // 各档的风险。附庸对宗主除贡赋以外的好感和档位无关，每个附庸只取一次
+        static float[] TributeRisk(Kingdom pLord, int pCount)
         {
-            float resentful = 0f;
+            var resentful = new float[pCount];
             foreach (Kingdom v in Vassals.GetVassals(pLord))
             {
                 KingdomOpinion opinion = World.world.diplomacy.getOpinion(v, pLord);
                 int others = opinion.total - (opinion.results.TryGetValue(_taxOpinion, out int tax) ? tax : 0);
-                int shortfall = LoyalOpinion - (others + Policies.VassalTaxOpinionOf(pOption));
-                if (shortfall > 0) resentful += shortfall / 100f * Vassals.Power(v);
+                int power = Vassals.Power(v);
+                for (int o = 0; o < pCount; o++)
+                {
+                    int shortfall = LoyalOpinion - (others + Policies.VassalTaxOpinionOf(o));
+                    if (shortfall > 0) resentful[o] += shortfall / 100f * power;
+                }
             }
-            return TributeRiskWeight * resentful / Vassals.Power(pLord);
+            int lord = Vassals.Power(pLord);
+            for (int o = 0; o < pCount; o++) resentful[o] = TributeRiskWeight * resentful[o] / lord;
+            return resentful;
         }
 
         public static void Init()

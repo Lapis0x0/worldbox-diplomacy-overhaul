@@ -454,21 +454,39 @@ namespace DiplomacyOverhaul
         }
 
         // 从 pFrom 改成 pTo，离理想位置近了多少；掌权家族再减去把地方逼反的风险
-        public static float Gain(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pClan, Policy pPolicy, int pFrom, int pTo)
+        public static float Gain(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pClan, Policy pPolicy, int pFrom, int pTo,
+            RiskMemo pRisks = null)
         {
             float ideal = Ideal(pKingdom, pClan, pPolicy);
             float gain = Mathf.Abs(pPolicy.Center(pFrom) - ideal) - Mathf.Abs(pPolicy.Center(pTo) - ideal);
-            if (pClan.ruling) gain -= UnrestRisk(pKingdom, pClans, pPolicy, pTo);
+            if (pClan.ruling) gain -= pRisks != null ? pRisks.Get(pKingdom, pClans, pPolicy, pTo) : UnrestRisk(pKingdom, pClans, pPolicy, pTo);
             return gain;
         }
 
-        public static VoteResult Vote(Kingdom pKingdom, Bill pBill, List<ParliamentClan> pClans)
+        // 一次起草里每股势力都要把每个选项表决一遍，而逼反地方的风险只看改哪项政策、改成哪一档，
+        // 和谁提案无关：同一次起草里每个选项只算一次
+        public class RiskMemo
+        {
+            readonly Dictionary<(Policy, int), float> _risks = new Dictionary<(Policy, int), float>();
+
+            public float Get(Kingdom pKingdom, List<ParliamentClan> pClans, Policy pPolicy, int pOption)
+            {
+                if (!_risks.TryGetValue((pPolicy, pOption), out float risk))
+                {
+                    risk = UnrestRisk(pKingdom, pClans, pPolicy, pOption);
+                    _risks[(pPolicy, pOption)] = risk;
+                }
+                return risk;
+            }
+        }
+
+        public static VoteResult Vote(Kingdom pKingdom, Bill pBill, List<ParliamentClan> pClans, RiskMemo pRisks = null)
         {
             var result = new VoteResult();
             int current = pBill.policy.Get(pKingdom);
             foreach (ParliamentClan pc in pClans)
             {
-                bool yes = Gain(pKingdom, pClans, pc, pBill.policy, current, pBill.option) > Inertia;
+                bool yes = Gain(pKingdom, pClans, pc, pBill.policy, current, pBill.option, pRisks) > Inertia;
                 result.votes[pc.Key] = yes;
                 if (yes) result.yes += pc.seats;
                 else result.no += pc.seats;
@@ -576,7 +594,7 @@ namespace DiplomacyOverhaul
         }
 
         // 提案人能提的每一项改动
-        public static List<Option> Options(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer)
+        public static List<Option> Options(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer, RiskMemo pRisks = null)
         {
             var list = new List<Option>();
             int total = TotalSeats(pClans);
@@ -588,11 +606,11 @@ namespace DiplomacyOverhaul
                 {
                     if (o == current) continue;
                     var bill = new Bill { policy = p, option = o, proposer = pProposer.clan.id };
-                    VoteResult vote = Vote(pKingdom, bill, pClans);
+                    VoteResult vote = Vote(pKingdom, bill, pClans, pRisks);
                     list.Add(new Option
                     {
                         bill = bill,
-                        gain = Gain(pKingdom, pClans, pProposer, p, current, o),
+                        gain = Gain(pKingdom, pClans, pProposer, p, current, o, pRisks),
                         margin = total > 0 ? (float)vote.yes / total - p.threshold : 0f
                     });
                 }
@@ -609,11 +627,11 @@ namespace DiplomacyOverhaul
 
         // 一股势力最想提的议案和它的分量（收益乘通过的把握）：能过的优先，过不了的只有收益大得多时才提
         static (Bill bill, float score) Best(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer,
-            Dictionary<string, int> pRejected, int pYear)
+            Dictionary<string, int> pRejected, int pYear, RiskMemo pRisks)
         {
             var best = new List<Bill>();
             float bestScore = 0f;
-            foreach (Option opt in Options(pKingdom, pClans, pProposer))
+            foreach (Option opt in Options(pKingdom, pClans, pProposer, pRisks))
             {
                 if (opt.gain <= Inertia) continue;
                 if (opt.margin <= 0f && pRejected.TryGetValue(RejectedKey(opt.bill), out int when) && pYear - when < RejectedYears) continue;
@@ -635,10 +653,11 @@ namespace DiplomacyOverhaul
             Dictionary<string, int> rejected = Rejected(pKingdom);
             int year = Date.getCurrentYear();
             var drafts = new List<(Bill bill, float weight)>();
+            var risks = new RiskMemo();
             float total = 0f;
             foreach (ParliamentClan pc in pClans)
             {
-                var (bill, score) = Best(pKingdom, pClans, pc, rejected, year);
+                var (bill, score) = Best(pKingdom, pClans, pc, rejected, year, risks);
                 if (bill == null) continue;
                 float w = pc.seats * Salience(pc) * score;
                 drafts.Add((bill, w));
@@ -655,7 +674,7 @@ namespace DiplomacyOverhaul
         }
 
         public static Bill DraftBy(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer) =>
-            Best(pKingdom, pClans, pProposer, Rejected(pKingdom), Date.getCurrentYear()).bill;
+            Best(pKingdom, pClans, pProposer, Rejected(pKingdom), Date.getCurrentYear(), new RiskMemo()).bill;
 
         static string RejectedKey(Bill pBill) => pBill.policy.id + "=" + pBill.option;
 
