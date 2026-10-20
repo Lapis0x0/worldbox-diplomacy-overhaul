@@ -7,6 +7,7 @@ Each kingdom's troops are divided into two parts. The **Guard** is paid for by t
 - All troops in the capital belong to the Guard. In other cities, the Army policy decides what share is drafted into the Guard, and the rest are local troops.
 - Guard soldiers are still registered in their home city and are only assigned to serve in the Guard. Each month, every city adjusts its Guard headcount toward its quota. Extra troops go back to the local army, and shortfalls are filled from local troops.
 - Each Guard unit has at most 100 soldiers and is named "Kingdom Guard I", "Kingdom Guard II", and so on. New recruits join the nearest unit that is not full. Small units stationed in the same city merge.
+- On the map, a Guard army's flag has a gold border and a gold star on dark cloth. Local armies use the vanilla flag.
 - When a city is taken by an enemy, the Guard troops it supplied scatter on the spot. Taking an enemy city therefore weakens the enemy's Guard.
 
 ### How the Kingdom Deploys the Guard

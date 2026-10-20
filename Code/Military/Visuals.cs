@@ -39,7 +39,16 @@ namespace DiplomacyOverhaul
             if (armies != null) armies.draw_call = DrawArmyFlags;
         }
 
-        static readonly Sprite FlagSprite = SpriteTextureLoader.getSprite("civ/icons/minimap_flag");
+        // 地图上的军旗：地方军用原版的旗，禁军是金边深色布加一颗金星，遮罩颜色和锚点与原版相同
+        static readonly Sprite LocalFlag = SpriteTextureLoader.getSprite("civ/icons/minimap_flag");
+        static readonly Sprite GuardFlag = GuardFlagSprite();
+
+        static Sprite GuardFlagSprite()
+        {
+            Sprite ours = SpriteTextureLoader.getSprite("ui/Icons/vd_flag_guard");
+            if (ours == null) return LocalFlag;
+            return Sprite.Create(ours.texture, ours.textureRect, new Vector2(0.5f, LocalFlag.pivot.y / LocalFlag.rect.height), LocalFlag.pixelsPerUnit);
+        }
 
         // 玩家下过令的军队，旗帜上的人数按命令着色：进攻红，驻扎、扎营绿
         static readonly Color CountAttack = new Color(1f, 0.45f, 0.4f);
@@ -89,7 +98,7 @@ namespace DiplomacyOverhaul
                         !commanded ? Color.white : Orders.IsForced(army) ? CountAttack : CountStation);
                 else sprite.text.gameObject.SetActive(false);
                 if (!pAsset.group_system.is_within_active_index) num++;
-                sprite.setSprite(DynamicSprites.getIcon(FlagSprite, kingdom.getColor()));
+                sprite.setSprite(DynamicSprites.getIcon(Guard.Is(army) ? GuardFlag : LocalFlag, kingdom.getColor()));
             }
         }
 
