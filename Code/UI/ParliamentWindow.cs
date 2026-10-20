@@ -411,7 +411,7 @@ namespace DiplomacyOverhaul
                     owners[s] = pc.Key;
                 }
             }
-            SeatClicks(area, seats, owners, size);
+            PointClicks(area, seats, owners, size);
 
             var bySeats = new Dictionary<Faction, int>();
             foreach (ParliamentClan pc in pClans) bySeats[pc.faction] = (bySeats.TryGetValue(pc.faction, out int n) ? n : 0) + pc.seats;
@@ -425,11 +425,16 @@ namespace DiplomacyOverhaul
             Text(area, LM.Get(FactionKey(top)) + " " + topSeats, 0f, ah - 24f, aw, 18f, 14, FactionColor(top), TextAnchor.MiddleCenter);
         }
 
-        // 点半圆里的议席，选中它所属的氏族：找离点击位置最近的议席
-        static void SeatClicks(RectTransform pArea, List<Vector3> pSeats, long[] pOwners, float pSize)
+        // 点议席或坐标点，选中它所属的氏族：找离点击位置最近、且在 pSize 范围内的点
+        static void PointClicks(RectTransform pArea, List<Vector3> pSeats, long[] pOwners, float pSize)
         {
-            Image hit = pArea.gameObject.AddComponent<Image>();
-            hit.color = new Color(0f, 0f, 0f, 0f);
+            Image hit = pArea.GetComponent<Image>();
+            if (hit == null)
+            {
+                hit = pArea.gameObject.AddComponent<Image>();
+                hit.color = new Color(0f, 0f, 0f, 0f);
+            }
+            hit.raycastTarget = true;
             var trigger = pArea.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
             var click = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerClick };
             click.callback.AddListener(data =>
@@ -461,13 +466,18 @@ namespace DiplomacyOverhaul
             Text(slot, LM.Get("vd_parliament_radical"), 4f, cy - 9f, 30f, 8f, 5, Muted, TextAnchor.MiddleLeft);
             Text(slot, LM.Get("vd_parliament_conservative"), pW - 34f, cy - 9f, 30f, 8f, 5, Muted, TextAnchor.MiddleRight);
             float rx = pW / 2f - 8f, ry = pH / 2f - 12f;
+            var points = new List<Vector3>();
+            var owners = new long[pClans.Count];
             foreach (ParliamentClan pc in pClans)
             {
                 float size = 3f + Mathf.Sqrt(pc.seats) * 0.45f;
                 float x = cx - pc.x * rx, y = cy - pc.y * ry;
+                owners[points.Count] = pc.Key;
+                points.Add(new Vector3(x, y));
                 Dimmable(pc, Swatch(slot, x - size / 2f, y - size / 2f, size, FactionColor(pc.faction), 1f), 0.3f);
                 if (pc.ruling) Dimmable(pc, Icon(slot, "ui/Icons/iconCrown", x - 5f, y - size / 2f - 10f, 10f), 0.3f);
             }
+            PointClicks(slot, points, owners, 8f);
         }
 
         static void Dimmable(ParliamentClan pClan, RectTransform pTarget, float pAlpha)
