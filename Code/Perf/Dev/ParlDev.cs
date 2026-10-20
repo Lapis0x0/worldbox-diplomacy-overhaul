@@ -198,7 +198,7 @@ namespace DiplomacyOverhaul.Perf
             }
             if (mode == "regime")
             {
-                // parl regime：各个政制名称有几个国家在用，从来没人用的也列出来
+                // parl regime：各个政制名称有几个国家在用（国名后面是领袖的称呼），从来没人用的也列出来
                 var used = new System.Collections.Generic.Dictionary<string, List<string>>();
                 foreach (Kingdom k in World.world.kingdoms)
                 {
@@ -207,7 +207,7 @@ namespace DiplomacyOverhaul.Perf
                     if (r == null) continue;
                     string key = RegimeNames.Key(r, Government.IsRepublic(k));
                     if (!used.TryGetValue(key, out List<string> list)) used[key] = list = new List<string>();
-                    list.Add(k.data.name);
+                    list.Add(k.data.name + "（" + Government.RulerTitle(k) + "）");
                 }
                 foreach (RegimeNames.Rule r in RegimeNames.Rules)
                 {

@@ -105,6 +105,17 @@ namespace DiplomacyOverhaul
             return LocalizedTextManager.stringExists(key) ? key : "vd_parliament_seats";
         }
 
+        // 领袖在这种政制下的叫法：国王、皇帝、执政换成配了的称号（天子、大汗、盟主等），没配的照旧。
+        // key 是名字的 key 加 _ruler（王国、共和国）或 _ruler_empire（帝国）。护国公和附庸的称呼不换
+        public static string RulerKey(Kingdom pKingdom, string pBase)
+        {
+            if (pBase != "vd_ruler_king" && pBase != "vd_ruler_emperor" && pBase != "vd_ruler_consul") return pBase;
+            Rule r = Of(pKingdom);
+            if (r == null) return pBase;
+            string key = Key(r, Government.IsRepublic(pKingdom)) + (pBase == "vd_ruler_emperor" ? "_ruler_empire" : "_ruler");
+            return LocalizedTextManager.stringExists(key) ? key : pBase;
+        }
+
         static bool HasName(Rule pRule, bool pRepublic) => LocalizedTextManager.stringExists(Key(pRule, pRepublic));
 
         // 国家现在命中的规则；议会关着时没有

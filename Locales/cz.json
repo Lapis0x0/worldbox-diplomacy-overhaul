@@ -584,5 +584,19 @@
   "vd_ledger_vassal_joined": "$name$称臣",
   "vd_ledger_became_vassal": "向$name$称臣",
   "vd_ledger_vassal_left": "$name$不再是附庸",
-  "vd_ledger_left_lord": "脱离$name$"
+  "vd_ledger_left_lord": "脱离$name$",
+  "vd_regime_princes_monarchy_ruler_empire": "大汗",
+  "vd_regime_principate_monarchy_ruler_empire": "元首",
+  "vd_regime_composite_monarchy_ruler_empire": "万王之王",
+  "vd_regime_jimi_monarchy_ruler_empire": "天可汗",
+  "vd_regime_conquest_monarchy_ruler": "可汗",
+  "vd_regime_conquest_monarchy_ruler_empire": "大汗",
+  "vd_regime_militarism_republic_ruler": "独裁官",
+  "vd_regime_enlightened_republic_ruler": "哲人王",
+  "vd_regime_fragmented_republic_ruler": "盟主",
+  "vd_regime_jimi_republic_ruler": "盟主",
+  "vd_regime_appanage_republic_ruler": "盟主",
+  "vd_regime_feudalism_republic_ruler": "盟主",
+  "vd_regime_tributary_republic_ruler": "盟主",
+  "vd_regime_patrimonial_republic_ruler": "首席元老"
 }

@@ -584,5 +584,19 @@
   "vd_ledger_vassal_joined": "$name$ becomes a vassal",
   "vd_ledger_became_vassal": "Becomes a vassal of $name$",
   "vd_ledger_vassal_left": "$name$ is no longer a vassal",
-  "vd_ledger_left_lord": "Breaks away from $name$"
+  "vd_ledger_left_lord": "Breaks away from $name$",
+  "vd_regime_princes_monarchy_ruler_empire": "Great Khan",
+  "vd_regime_principate_monarchy_ruler_empire": "Princeps",
+  "vd_regime_composite_monarchy_ruler_empire": "King of Kings",
+  "vd_regime_jimi_monarchy_ruler_empire": "Heavenly Khagan",
+  "vd_regime_conquest_monarchy_ruler": "Khan",
+  "vd_regime_conquest_monarchy_ruler_empire": "Great Khan",
+  "vd_regime_militarism_republic_ruler": "Dictator",
+  "vd_regime_enlightened_republic_ruler": "Philosopher King",
+  "vd_regime_fragmented_republic_ruler": "Hegemon",
+  "vd_regime_jimi_republic_ruler": "Hegemon",
+  "vd_regime_appanage_republic_ruler": "Hegemon",
+  "vd_regime_feudalism_republic_ruler": "Hegemon",
+  "vd_regime_tributary_republic_ruler": "Hegemon",
+  "vd_regime_patrimonial_republic_ruler": "Princeps Senatus"
 }

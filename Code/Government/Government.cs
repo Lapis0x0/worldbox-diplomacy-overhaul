@@ -147,8 +147,11 @@ namespace DiplomacyOverhaul
             return customKey;
         }
 
-        // 领袖的称呼按显示的政体取；还没判定政体的按大类
-        public static string RulerKey(Kingdom pKingdom)
+        // 领袖的称呼按显示的政体取，还没判定政体的按大类；国王、皇帝、执政再按政制换成更贴切的叫法（见 RegimeNames.RulerKey），
+        // 护国公和附庸的称呼不换
+        public static string RulerKey(Kingdom pKingdom) => RegimeNames.RulerKey(pKingdom, BaseRulerKey(pKingdom));
+
+        static string BaseRulerKey(Kingdom pKingdom)
         {
             switch (Current(pKingdom)?.id)
             {
