@@ -30,8 +30,9 @@ start() {
       done
       echo "✗ 模组已加载，但没等到世界就绪" >&2; return 1
     fi
-    if grep -q "error CS" "$log"; then
-      echo "✗ 模组编译失败：" >&2; grep "error CS" "$log" | head -20 >&2; return 1
+    # 只看本模组的编译结果，别的模组编译失败不影响
+    if grep -q "Failed to compile mod 外交大修" "$log"; then
+      echo "✗ 模组编译失败：" >&2; grep -A20 "Failed to compile mod 外交大修" "$log" | grep "error CS" | head -20 >&2; return 1
     fi
   done
   echo "✗ 启动超时" >&2; return 1
