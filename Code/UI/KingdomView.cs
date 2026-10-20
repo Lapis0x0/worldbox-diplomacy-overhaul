@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 王国在界面上的样子：王国窗口、悬停提示、地图名牌上的称号，领袖的称呼，地图上附庸的边界颜色。
+    // 王国在界面上的样子：王国窗口、悬停提示、地图名牌上的称号，地图上附庸的边界颜色。领袖的称呼见 RulerTitles
     // 王国窗口和悬停提示是原版两处不同的代码，改称号两处都要改
 
     // 王国窗口：标题下方的"王国"换成政体名（附庸接上宗主名），并显示宗主 / 附庸
@@ -202,7 +202,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 王国、城市提示：「国王」一行按政体换成领袖的称呼。
+    // 王国、城市提示：「国王」一行按政体换成领袖的称呼（见 RulerTitles）。
     // 王国提示：「领袖财富」后面接一行国库，插在原版的城市数一行前面
     [HarmonyPatch(typeof(Tooltip), nameof(Tooltip.addLineText))]
     static class Patch_KingdomTooltipTreasury
@@ -212,8 +212,7 @@ namespace DiplomacyOverhaul
             Kingdom k = Patch_KingdomTooltip.Current;
             if (pID == "village_statistics_king")
             {
-                Kingdom owner = k ?? Patch_CityTooltipUnpaid.Current?.kingdom;
-                if (owner != null && !owner.isNeutral()) pID = Government.RulerKey(owner);
+                pID = RulerTitles.Key(k ?? Patch_CityTooltipUnpaid.Current?.kingdom, pID);
                 return;
             }
             if (k == null || pID != "villages") return;
@@ -222,102 +221,6 @@ namespace DiplomacyOverhaul
             if (Policies.Value(k, Policies.Arms) > 0) __instance.addLineText("vd_arms_standard", LM.Get(Armory.TierKey(k)));
             float penalty = Guard.Penalty(k);
             if (penalty > 0f) __instance.addLineText("vd_guard_unpaid", UnpaidText.Of(penalty), UnpaidText.Color);
-        }
-    }
-
-    // 王国窗口、城市窗口的「国王」一栏按政体换成领袖的称呼
-    [HarmonyPatch(typeof(StatsWindow), "tryToShowActor")]
-    static class Patch_RulerRow
-    {
-        static void Prefix(StatsWindow __instance, ref string pTitle)
-        {
-            if (pTitle != "king") return;
-            Kingdom k = __instance is KingdomWindow ? SelectedMetas.selected_kingdom
-                : __instance is CityWindow ? SelectedMetas.selected_city?.kingdom : null;
-            if (k != null && !k.isNeutral()) pTitle = Government.RulerKey(k);
-        }
-    }
-
-    // 单位提示：领袖的副标题「国王」按政体换成领袖的称呼
-    [HarmonyPatch(typeof(TooltipLibrary), "showActor")]
-    static class Patch_RulerTooltip
-    {
-        static void Prefix(ref string pSubTitle, TooltipData pData)
-        {
-            Kingdom k = pData?.actor?.kingdom;
-            if (pSubTitle == "village_statistics_king" && k != null && !k.isNeutral()) pSubTitle = Government.RulerKey(k);
-        }
-    }
-
-    // 底部信息栏选中王国时，领袖一栏原版用「国王 $unit$」，按政体换成领袖的称呼
-    [HarmonyPatch(typeof(SelectedMetaUnitElement), nameof(SelectedMetaUnitElement.show))]
-    static class Patch_RulerSelected
-    {
-        static void Prefix(Actor pActor, ref string pLocaleKey)
-        {
-            Kingdom k = pActor?.kingdom;
-            if (pLocaleKey != "titled_king" || k == null || k.isNeutral()) return;
-            pLocaleKey = Government.TitledKey(k, "vd_titled");
-        }
-    }
-
-    // 王国窗口的「国王在位(年)」「历代国王」两行按政体换成领袖的称呼。这两行走的是 StatsWindow 较短的重载，
-    // 直接调行容器，所以挂在行容器上
-    [HarmonyPatch(typeof(StatsRowsContainer), "showStatRow")]
-    static class Patch_RulerStatRows
-    {
-        static void Prefix(StatsRowsContainer __instance, ref string pId)
-        {
-            string template = pId == "kingdom_statistics_king_ruled" ? "vd_title_ruled" : pId == "past_kings" ? "vd_title_past" : null;
-            if (template == null || __instance.GetComponentInParent<KingdomWindow>() == null) return;
-            Kingdom k = SelectedMetas.selected_kingdom;
-            if (k != null && !k.isNeutral()) pId = Government.TitledKey(k, template);
-        }
-    }
-
-    // 城市忠诚明细的「国王领导能力」「国王统治」，外交好感明细的「国王情绪」按政体换成领袖的称呼。
-    // 明细逐项取 asset 的翻译 key，asset 不知道是哪个国家，由外层的提示记下
-    [HarmonyPatch(typeof(TooltipLibrary), "showLoyalty")]
-    static class Patch_RulerLoyaltyTip
-    {
-        internal static Kingdom Current;
-
-        static void Prefix(TooltipData pData) => Current = pData?.city?.kingdom;
-
-        static void Postfix() => Current = null;
-    }
-
-    [HarmonyPatch(typeof(LoyaltyAsset), nameof(LoyaltyAsset.getTranslationKey))]
-    static class Patch_RulerLoyaltyKey
-    {
-        static void Postfix(ref string __result)
-        {
-            Kingdom k = Patch_RulerLoyaltyTip.Current;
-            if (k == null || k.isNeutral()) return;
-            if (__result == "loyalty_king") __result = Government.TitledKey(k, "vd_title_leadership");
-            else if (__result == "loyalty_king_ruled") __result = Government.TitledKey(k, "vd_title_rule");
-        }
-    }
-
-    // 外交好感明细：显示的是选中国家对这个国家的看法，「国王情绪」是选中国家的君主
-    [HarmonyPatch(typeof(TooltipLibrary), "showKingdomOpinion")]
-    static class Patch_RulerOpinionTip
-    {
-        internal static bool Active;
-
-        static void Prefix() => Active = true;
-
-        static void Postfix() => Active = false;
-    }
-
-    [HarmonyPatch(typeof(OpinionAsset), nameof(OpinionAsset.getTranslationKey))]
-    static class Patch_RulerOpinionKey
-    {
-        static void Postfix(ref string __result)
-        {
-            Kingdom k = SelectedMetas.selected_kingdom;
-            if (!Patch_RulerOpinionTip.Active || __result != "opinion_kings_mood" || k == null || k.isNeutral()) return;
-            __result = Government.TitledKey(k, "vd_title_mood");
         }
     }
 

@@ -561,8 +561,6 @@
   "vd_treasury_last_year": "Last year",
   "vd_treasury_no_record": "The books close at the end of the year",
   "vd_treasury_idle": "No gold moved through the treasury last year",
-  "vd_treasury_king": "King",
-  "vd_treasury_consul": "Consul",
   "vd_treasury_other_cities": "$count$ other cities",
   "vd_treasury_cities": "Cities",
   "vd_treasury_tribute": "Vassal Tribute",

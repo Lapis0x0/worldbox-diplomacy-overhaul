@@ -561,8 +561,6 @@
   "vd_treasury_last_year": "去年",
   "vd_treasury_no_record": "国库的账年底才结",
   "vd_treasury_idle": "去年国库没有进出",
-  "vd_treasury_king": "国王",
-  "vd_treasury_consul": "执政",
   "vd_treasury_other_cities": "其余 $count$ 城",
   "vd_treasury_cities": "各城",
   "vd_treasury_tribute": "附庸贡赋",

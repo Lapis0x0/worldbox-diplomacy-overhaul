@@ -136,11 +136,11 @@ namespace DiplomacyOverhaul
             Side(pParent, bands, pAccount.Outgoing, scale, ny + kingH, true);
             graphic.SetBands(bands);
 
-            // 中间条：上段国王（共和国是执政）的份，下段国库，连成一根
+            // 中间条：上段是领袖（国王、执政等）的份，下段国库，连成一根
             if (kingH > 0.5f)
             {
                 Rect(pParent, NL, ny, NR - NL, kingH, KingColor);
-                Text(pParent, LM.Get(Government.IsRepublic(_kingdom) ? "vd_treasury_consul" : "vd_treasury_king"), NL - 30f, ny - 10f, NR - NL + 60f, 9f, 6, KingColor, TextAnchor.MiddleCenter);
+                Text(pParent, Government.RulerTitle(_kingdom), NL - 30f, ny - 10f, NR - NL + 60f, 9f, 6, KingColor, TextAnchor.MiddleCenter);
             }
             Rect(pParent, NL, ny + kingH, NR - NL, nodeH - kingH, TreasuryColor);
             Text(pParent, LM.Get("vd_treasury"), NL - 30f, ny + nodeH + 1f, NR - NL + 60f, 9f, 6, TreasuryColor, TextAnchor.MiddleCenter);
