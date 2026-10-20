@@ -67,6 +67,7 @@ namespace DiplomacyOverhaul
             if (ScrollWindow._all_windows.TryGetValue(WindowId, out ScrollWindow old) && old != null)
             {
                 if (old.gameObject.activeSelf) ScrollWindow.hideAllEvent(false);
+                WindowHistory.list.RemoveAll(h => h.window == old || h.window == null);
                 Object.Destroy(old.gameObject);
             }
             ScrollWindow._all_windows.Remove(WindowId);

@@ -53,6 +53,8 @@ namespace DiplomacyOverhaul
             {
                 // 开着的窗口直接拆掉会让原版的窗口切换卡住，先关掉
                 if (old.gameObject.activeSelf) ScrollWindow.hideAllEvent(false);
+                // 原版的窗口历史还记着旧窗口，拆掉后再切页签会在历史里碰到已销毁的窗口而报错
+                WindowHistory.list.RemoveAll(h => h.window == old || h.window == null);
                 Object.Destroy(old.gameObject);
             }
             ScrollWindow._all_windows.Remove(id);
