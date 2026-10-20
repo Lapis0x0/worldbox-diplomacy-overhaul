@@ -1,0 +1,7 @@
+The first image is a pixel-art icon for the game WorldBox: a golden olive wreath with a small purple-magenta gem at the front center. The second image shows original WorldBox icons, including the golden crown, for the right size and amount of detail.
+
+Redraw exactly this golden olive wreath, keeping its design, its gold palette, the purple gem and its WorldBox pixel-art style, but draw it SMALLER and simpler, about the same size as the original golden crown (around 16 to 18 pixels wide on a 28x28 grid): fewer leaves on each branch, each leaf two or three chunky pixels, the gem small at the front.
+
+Make a 2x2 sheet with 4 versions of this icon, each centered in its own equal square cell, each icon only about 30% of its cell width, with the same chunky pixel size as the original, so each icon has fewer, bigger pixels. Version 1 and 2: as described. Version 3: a little taller, the two branches rising higher at the back. Version 4: the same wreath without the small golden olives, only leaves and the gem.
+
+Chunky square pixels on a strict grid, limited palette, bright yellow highlights, orange mid-tones, warm brown shadows, dark brown outline on the shadow side, no anti-aliasing, no gradients, no text. Background flat uniform medium grey (#808080), no labels.

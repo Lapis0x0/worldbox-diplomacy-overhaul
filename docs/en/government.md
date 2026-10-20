@@ -20,7 +20,7 @@ The government is shown as a kingdom trait. It also appears after the kingdom na
 
 Becoming a vassal only changes the title. It reverts automatically on independence. For provinces and hereditary provinces, see [Vassals](vassals.md#provinces).
 
-Everywhere vanilla says "King", the ruler's actual title is used: windows, tooltips, loyalty and opinion breakdowns, and the world log messages for accession and death. If you don't want the government shown after kingdom names, turn it off in the settings.
+Everywhere vanilla says "King", the ruler's actual title is used: windows, tooltips, loyalty and opinion breakdowns, and the world log messages for accession and death. In a republic, the crowns in the kingdom window and on the parliament chart become golden olive wreaths. If you don't want the government shown after kingdom names, turn it off in the settings.
 
 ## Government Temperament
 

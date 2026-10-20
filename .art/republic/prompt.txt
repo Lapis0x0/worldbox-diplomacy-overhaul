@@ -1,0 +1,12 @@
+The first image shows two original pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x): the golden crown that marks a monarchy, and a green laurel wreath with a gold medal. The second image shows more original WorldBox icons for style.
+
+Match the ORIGINAL WorldBox look closely, not a generic mobile-game look: objects seen slightly from the side in 3/4 view, warm shading with a dark outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid, limited palette, no anti-aliasing, no gradients, no text.
+
+The crown marks a kingdom ruled by a king. Draw a 2x2 sheet of 4 alternative icons to replace the crown for a REPUBLIC ruled by elected citizens, using an OLIVE BRANCH, the classic symbol of a republic and of civic honor:
+
+1. An olive wreath shaped like a circlet worn on the head, seen in the same 3/4 view and at the same size as the golden crown: two olive branches with small grey-green leaves curving around and meeting at the front, a few dark purple-black olives among the leaves.
+2. A single olive branch lying diagonally from lower left to upper right, a brown twig with pairs of narrow grey-green leaves and three dark purple-black olives.
+3. Two olive branches crossed at their stems like an X, tied with a small red ribbon where they cross, a few dark olives.
+4. Alternative: an olive wreath like version 1, tied at the bottom with a small red ribbon whose two ends hang down.
+
+Olive leaves are narrow and pointed, muted grey-green with lighter tips, clearly different from the bright green laurel in the reference. Each icon centered in its own equal square cell, compact, each object about 40% of its cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no shadows on the background, no borders, no labels.

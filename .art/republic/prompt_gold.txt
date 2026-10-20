@@ -1,0 +1,12 @@
+The first image shows two original pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x): the golden crown that marks a monarchy, and a laurel wreath. The second image shows more original WorldBox icons for style.
+
+Match the ORIGINAL WorldBox look closely, not a generic mobile-game look: objects seen slightly from the side in 3/4 view, warm orange and brown shading with a dark brown outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid, limited palette, no anti-aliasing, no gradients, no text.
+
+The crown marks a kingdom ruled by a king. Draw a 2x2 sheet of 4 alternative icons to replace the crown for a REPUBLIC: a GOLDEN OLIVE WREATH, a circlet of olive leaves made entirely of gold, like a golden civic crown worn by a Roman or Greek leader. Use EXACTLY the same gold palette as the original crown in the reference (bright yellow highlights, orange mid-tones, warm brown shadows, dark brown outline), seen in the same 3/4 view and at the same size as the crown, so it reads as the republic's version of the crown.
+
+1. A golden olive wreath circlet: two golden olive branches with narrow pointed golden leaves curving around and meeting at the front, a few small round golden olives among the leaves.
+2. The same golden olive wreath with one small purple-magenta gem set at the front center where the branches meet, echoing the gem of the original crown.
+3. A golden olive wreath whose leaves point upward along the top edge, so its silhouette is close to the crown's, still clearly made of olive leaves.
+4. Alternative: a golden olive wreath like version 1, slightly thicker and fuller, with the leaves overlapping more densely.
+
+Each icon centered in its own equal square cell, compact, each object about 40% of its cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no shadows on the background, no borders, no labels.

@@ -36,6 +36,8 @@
 
 国王、皇帝、执政再按[政制](parliament.md#政制名称)换成更贴切的叫法，实时跟着政制变；护国公和附庸的称呼不换，议会关掉时不换。见 `RegimeNames.RulerKey`，配了哪些见政制名称一节。
 
+共和国（含自治领）王国窗口里旗帜上方、领袖卡片标题两边和议会坐标图里执政家族的皇冠换成金橄榄冠（`vd_gov_wreath`，见 `RulerTitles.CrownIcon`）。
+
 王国窗口概览的领袖卡片、王国窗口和城市窗口的领袖一栏，王国、城市、单位的悬停提示，底部信息栏，选举与任命窗口、国库页都用这个称呼。原版写着「国王」的地方也换掉了：王国窗口的「在位(年)」「历代」两行和查看领袖的按钮，城市忠诚明细的「领导能力」「统治」，外交好感明细的「情绪」，以及新君即位、出走、逝世、被杀和当选、连任的世界日志。
 
 ### 手动设置
@@ -175,6 +177,6 @@
 - `KingdomBehCheckKing.checkKingdomChaos`：原版绝嗣分裂的入口，在这里改制或重新选举。
 - `Kingdom.trySetRoyalClan`：共和国跳过，不立王室。
 - `TooltipLibrary.showKingdom`、`KingdomWindow.showStatsRows`、`NameplateText`：国名和副标题。
-- `KingdomWindow.showTopPartInformation`（概览领袖卡片的标题，界面里写死的 key `king`）、`StatsWindow.tryToShowActor`、`StatsRowsContainer.showStatRow`、`Tooltip.addLineText`、`TooltipLibrary.showActor`、`SelectedMetaUnitElement.show`、`LoyaltyAsset.getTranslationKey`、`OpinionAsset.getTranslationKey`：原版写死的「国王」换成领袖的称呼。原版的国王日志（`king_new`、`king_left`、`king_dead`、`king_killed`）换成模组的文案，见 `WorldLogs.Retitle`。
+- `KingdomWindow.showTopPartInformation`（概览领袖卡片的标题，界面里写死的 key `king`；共和国把旗帜上方和卡片标题两边的皇冠换成金橄榄冠）、`StatsWindow.tryToShowActor`、`StatsRowsContainer.showStatRow`、`Tooltip.addLineText`、`TooltipLibrary.showActor`、`SelectedMetaUnitElement.show`、`LoyaltyAsset.getTranslationKey`、`OpinionAsset.getTranslationKey`：原版写死的「国王」换成领袖的称呼。原版的国王日志（`king_new`、`king_left`、`king_dead`、`king_killed`）换成模组的文案，见 `WorldLogs.Retitle`。
 
 旧版的「城邦」已经取消，存档里的城邦特质在下一次判定时换掉。

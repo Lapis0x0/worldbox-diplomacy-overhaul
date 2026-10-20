@@ -231,7 +231,7 @@ namespace DiplomacyOverhaul
             });
             built |= Build(_clans, clanKey + republic, () => ClanList(clans));
 
-            var pk = new System.Text.StringBuilder(clanKey);
+            var pk = new System.Text.StringBuilder(clanKey).Append(republic).Append('|');
             foreach (ParliamentClan pc in clans) pk.Append(pc.x.ToString("F2")).Append(',').Append(pc.y.ToString("F2")).Append('|');
             built |= Build(_compass, pk.ToString(), () => Compass(clans, LeftX + ListW + 4f, ListY, LeftW - ListW - 4f, ListRows * (RowH + 2f) - 2f));
 
@@ -511,7 +511,7 @@ namespace DiplomacyOverhaul
                 owners[points.Count] = pc.Key;
                 points.Add(new Vector3(x, y));
                 Dimmable(pc, Swatch(slot, x - size / 2f, y - size / 2f, size, FactionColor(pc.faction), 1f), 0.3f);
-                if (pc.ruling) Dimmable(pc, Icon(slot, "ui/Icons/iconCrown", x - 5f, y - size / 2f - 10f, 10f), 0.3f);
+                if (pc.ruling) Dimmable(pc, Icon(slot, RulerTitles.CrownIcon(_kingdom), x - 5f, y - size / 2f - 10f, 10f), 0.3f);
             }
             PointClicks(slot, points, owners, 8f);
         }

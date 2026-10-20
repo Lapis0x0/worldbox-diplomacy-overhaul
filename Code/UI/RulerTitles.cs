@@ -1,11 +1,13 @@
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DiplomacyOverhaul
 {
     // 领袖的称呼：原版界面里写着「国王」的地方，按国家的政体换成领袖的称呼（国王、皇帝、执政、护国公、公爵、亲王、总督）。
     // 称呼由 Government.RulerKey 决定，含称呼的文案模板用 Government.TitledKey 注册。
     // 原版的挂点都在这个文件里；模组自己的界面直接用 Government.RulerTitle。
+    // 领袖的冠也在这里：共和国用金橄榄冠（王国窗口旗帜上方、领袖卡片标题两边、议会坐标图里执政家族的点上）。
     // 已覆盖：王国窗口概览的领袖卡片标题、王国窗口和城市窗口的「国王」一栏、「国王在位(年)」「历代国王」、
     // 王国和城市提示的「国王」一行（KingdomView 的 Patch_KingdomTooltipTreasury 调 Key）、单位提示的副标题、
     // 底部信息栏选中王国时的领袖一栏、王国窗口「查看领袖」按钮的提示（KingdomView）、城市忠诚明细和外交好感明细里的国王项、世界日志（WorldLogs 里的 $title$）
@@ -15,23 +17,40 @@ namespace DiplomacyOverhaul
         public static string Key(Kingdom pKingdom, string pVanilla) =>
             pKingdom != null && pKingdom.isAlive() && !pKingdom.isNeutral() ? Government.RulerKey(pKingdom) : pVanilla;
 
+        // 领袖的冠：君主国是原版的皇冠，共和国（含自治领）是金橄榄冠
+        public static string CrownIcon(Kingdom pKingdom) =>
+            pKingdom != null && pKingdom.isAlive() && Government.IsRepublic(pKingdom) ? "ui/Icons/vd_gov_wreath" : "ui/Icons/iconCrown";
+
         // 含 $title$ 的模板按这个国家的称呼注册成 key；国家无效或是中立时保留原版的
         public static string Titled(Kingdom pKingdom, string pTemplate, string pVanilla) =>
             pKingdom != null && pKingdom.isAlive() && !pKingdom.isNeutral() ? Government.TitledKey(pKingdom, pTemplate) : pVanilla;
     }
 
-    // 王国窗口概览最下面的领袖卡片：标题是界面里写死的 key「king」
+    // 王国窗口概览最下面的领袖卡片：标题是界面里写死的 key「king」，两边各一顶小皇冠；
+    // 旗帜上方也有一顶皇冠（顶部和滚动后吸顶的两份）。共和国的皇冠换成金橄榄冠
     [HarmonyPatch(typeof(KingdomWindow), "showTopPartInformation")]
     static class Patch_RulerCard
     {
-        const string Path = "Background/Scroll View/Viewport/Content/content_king/Title";
-
+        const string Content = "Background/Scroll View/Viewport/Content/";
+        const string Title = Content + "content_king/Title";
+        static readonly string[] Crowns =
+        {
+            Title + "/Icon", Title + "/Icon (1)",
+            Content + "TopElements/BannerBackground/Kingdom Icon",
+            "Background/Scroll View/Viewport/Header/header_top/BannerBackground/Kingdom Icon"
+        };
         static void Postfix(KingdomWindow __instance)
         {
-            LocalizedText title = __instance.transform.Find(Path)?.GetComponent<LocalizedText>();
-            if (title == null) return;
-            string key = RulerTitles.Key(SelectedMetas.selected_kingdom, "king");
-            if (title.key != key) title.setKeyAndUpdate(key);
+            Kingdom k = SelectedMetas.selected_kingdom;
+            LocalizedText title = __instance.transform.Find(Title)?.GetComponent<LocalizedText>();
+            string key = RulerTitles.Key(k, "king");
+            if (title != null && title.key != key) title.setKeyAndUpdate(key);
+            Sprite crown = SpriteTextureLoader.getSprite(RulerTitles.CrownIcon(k));
+            foreach (string path in Crowns)
+            {
+                Image icon = __instance.transform.Find(path)?.GetComponent<Image>();
+                if (icon != null && crown != null && icon.sprite != crown) icon.sprite = crown;
+            }
         }
     }
 
