@@ -38,6 +38,8 @@ namespace DiplomacyOverhaul
         const float ExpectBase = 40f, ExpectAggression = 100f, ExpectYear = 4f, ExpectLosses = 40f;
         // 档位
         const float TierReparations = 20f, TierCession = 50f, TierSubmission = 80f;
+        const int MinYears = 3;           // 开战至少这么多年才和谈
+        const int ReparationRate = 20;    // 赔款拿走败方仓库的百分比
         const int CessionExtraRate = 10;  // 让出附庸档的赔款比例再加这么多
         const float CedeChance = 0.5f, CedeChanceMax = 0.9f;
         // 战败之耻
@@ -195,7 +197,7 @@ namespace DiplomacyOverhaul
             foreach (War war in k.getWars())
             {
                 if (!Eligible(war) || !IsMain(war, k) || !war.getAsset().can_end_with_plot) continue;
-                if (!pForced && war.getAge() < Settings.PeaceMinYears) continue;
+                if (!pForced && war.getAge() < MinYears) continue;
                 if (Running(war)) continue;
                 float m = WarMotive(war, k, pActor);
                 if (m > bestMotive) { best = war; bestMotive = m; }
@@ -246,7 +248,7 @@ namespace DiplomacyOverhaul
             pWar.data.get(KeyLastCheck, out float last, -1f);
             if (last >= 0 && now - last < Clock.YearLength) return;
             pWar.data.set(KeyLastCheck, (float)now);
-            if (pWar.getAge() < Settings.PeaceMinYears || Running(pWar)) return;
+            if (pWar.getAge() < MinYears || Running(pWar)) return;
 
             foreach (Kingdom k in new[] { pWar.main_attacker, pWar.main_defender })
             {
@@ -296,7 +298,7 @@ namespace DiplomacyOverhaul
                 return;
             }
 
-            int rate = Settings.PeaceReparations + (pTreaty == Treaty.Reparations ? 0 : CessionExtraRate);
+            int rate = ReparationRate + (pTreaty == Treaty.Reparations ? 0 : CessionExtraRate);
             pWar.data.set(KeyTreatyPaid, Reparations(loser, winner, rate));
 
             Kingdom lord = Vassals.Root(winner);

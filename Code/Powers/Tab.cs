@@ -54,7 +54,7 @@ namespace DiplomacyOverhaul
 
             // 设置 | 附庸 | 战争与和平 | 城镇管理
             PowerButtonCreator.AddButtonToTab(PowerButtonCreator.CreateSimpleButton(
-                "vd_settings", () => NeoModLoader.ui.ModConfigureWindow.ShowWindow(Settings.Config),
+                "vd_settings", SettingsWindow.Open,
                 SpriteTextureLoader.getSprite("ui/Icons/iconOptions")), tab);
             AddSeparator(tab);
             AddPower(tab, Powers.MakeVassal, "ui/Icons/vd_power_make_vassal");

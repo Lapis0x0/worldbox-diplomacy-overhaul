@@ -20,6 +20,7 @@ namespace DiplomacyOverhaul.Perf
     //   camera reset | camera <x> <y> <zoom>
     //   opt <字段名|all> <on|off>
     //   debugopt <选项> <on|off>   切换原版调试菜单的选项（DebugOption 的名字）
+    //   settings                 打开模组设置窗口
     //   setting <分组> <设置项> <值>   改模组设置，如 setting vd_group_perf vd_perf_enabled false
     //   measure <标签> <秒> [detail] [mono]   测帧时间；detail 同时打开原版 Bench 分项计时，
     //                           mono 给所有脚本的 Update/LateUpdate 计时（都有额外开销）
@@ -136,6 +137,9 @@ namespace DiplomacyOverhaul.Perf
                 case "debugopt":
                     DebugConfig.setOption((DebugOption)Enum.Parse(typeof(DebugOption), a[1]), a[2] == "on");
                     Log($"  {a[1]} = {DebugConfig.isOn((DebugOption)Enum.Parse(typeof(DebugOption), a[1]))}");
+                    break;
+                case "settings":
+                    SettingsWindow.Open();
                     break;
                 case "setting":
                     // 和玩家在设置里改一样：直接改 ModConfig 里的值

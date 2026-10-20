@@ -6,6 +6,8 @@ namespace DiplomacyOverhaul
     public static class Vassals
     {
         public const string KeyOverlord = "vd_overlord_id";
+        // 附庸对宗主的好感固定加这么多
+        const int OverlordOpinion = 30;
         // 独立战争：记在 WarData 上，结束时据此判断是否重新成为附庸
         public const string KeyWarLord = "vd_indep_lord";
         public const string KeyWarRebel = "vd_indep_rebel";
@@ -20,7 +22,7 @@ namespace DiplomacyOverhaul
             {
                 id = "opinion_vd_overlord",
                 translation_key = "opinion_vd_overlord",
-                calc = (pMain, pTarget) => GetOverlord(pMain) == pTarget ? Settings.OpinionBonus : 0
+                calc = (pMain, pTarget) => GetOverlord(pMain) == pTarget ? OverlordOpinion : 0
             });
         }
 

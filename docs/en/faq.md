@@ -34,7 +34,7 @@ In vanilla, as long as one defender is in the city, progress is stuck at 5%. Now
 
 **How did a republic become an empire?**
 
-An ambitious consul of a large republic at its Prime may crown himself or herself emperor. If you don't want such events, turn off "Governments change with history" in the settings. See [Governments and Rulers](government.md#republic-crowns-an-emperor).
+An ambitious consul of a large republic at its Prime may crown himself or herself emperor. If you don't want such events, turn off "Historic upheavals" in the settings. See [Governments and Rulers](government.md#republic-crowns-an-emperor).
 
 **My attack order was gone after I loaded a save. Why?**
 

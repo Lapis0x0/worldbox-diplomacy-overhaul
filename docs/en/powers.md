@@ -33,22 +33,19 @@ You can also box-select armies and right-click to give orders without holding a 
 
 ## Settings
 
-Open them with the settings button at the far left of the tab.
+Open them with the settings button at the far left of the tab. Each system has one switch, and changes apply at once.
 
-| Group | Setting | Default |
+| Section | Switch | What it controls |
 |---|---|---|
-| Vassals | Vassal opinion bonus toward overlord | 30 |
-| | Vassals start to resent their overlord below this opinion | 0 |
-| | Overlord counts as declining below this % of vassal power | 120 |
-| | Large kingdoms grant cities as vassals and weak neighbours submit | On |
-| Peace talks | Warring sides negotiate and sign a treaty based on how the war went | On |
-| | Minimum years of war before peace talks | 3 |
-| | Reparations take this % of the loser's stockpiles | 20 |
-| Government | Update government as the realm grows or becomes a vassal (manual picks are kept) | On |
-| | Show government type with kingdom names | On |
-| | Governments change with history: extinct royal lines, republics crowning emperors, coups in times of collapse | On |
-| Dynastic Cycle | Great realms go through renewal, prime, decline and collapse | On |
-| | Restoration plot success chance (%) | 30 |
-| Performance | Skip redundant work in the base game for smoother play without changing outcomes | On |
+| Diplomacy | Grants and submission | Great realms grant cities, weak neighbours submit |
+| | Peace talks | Long wars end in treaties based on how they went; off restores the vanilla peace negotiation |
+| Domestic | Dynastic cycle | Great realms rise, peak, decline and collapse |
+| | Government follows power | Government changes with strength and vassalage; manual picks are kept |
+| | Historic upheavals | Extinct royal lines, republics crowning emperors, coups |
+| Display | Government in names | For example, Duchy of Coimbra |
+| Performance | Optimize base game | Does not change outcomes |
+
+All switches are on by default, and "Defaults" turns them all back on.
+
 
 The performance optimizations raise the frame rate on large maps by about 20%, and game results are exactly the same as in vanilla. If you run into strange problems, try turning it off.

@@ -11,6 +11,8 @@ namespace DiplomacyOverhaul
         const float Progress = 120f;
         // 管理 + 智力每高出这个值 1 点，成功率 +1%，最多 ±10%
         const int AverageAbility = 16;
+        // 成功率的基准值（百分比）
+        const int BaseChance = 30;
         const int AbilitySwing = 10;
 
         public static PlotAsset plot_restoration;
@@ -57,11 +59,11 @@ namespace DiplomacyOverhaul
 
         static bool InDecline(Kingdom pKingdom) => pKingdom != null && Cycle.Get(pKingdom) == CyclePhase.Decline;
 
-        // 成功率：设置的基准值，按管理 + 智力上下浮动
+        // 成功率：基准值按管理 + 智力上下浮动
         static int Chance(Actor pActor)
         {
             int swing = Mathf.Clamp(pActor.stewardship + pActor.intelligence - AverageAbility, -AbilitySwing, AbilitySwing);
-            return Mathf.Clamp(Settings.RestorationChance + swing, 0, 100);
+            return Mathf.Clamp(BaseChance + swing, 0, 100);
         }
 
         // 动机：危机感 × 性格。天命 60 起越低越想挽救，跌到 20（大叛乱线）到顶

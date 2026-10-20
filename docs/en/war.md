@@ -18,7 +18,7 @@ Each war has a war score, shown in the war window and in tooltips, for example "
 
 ## When They Talk
 
-After 3 years of war (adjustable in the settings), the kings of both sides can start "Peace Talks":
+After 3 years of war, the kings of both sides can start "Peace Talks":
 
 - **The side ahead**: Wants to talk once the war score reaches what it expects. Warlike kings expect more and insist on fighting until the other side submits. The longer the war and the more of its own people have died, the less it expects.
 - **The side behind**: The further behind it is and the longer the war has gone on, the more it wants to talk.
@@ -36,7 +36,7 @@ The vanilla "peace negotiation" plot no longer appears. Turn peace talks off in 
 | 50 to 80 | Larger reparations, and vassals ceded |
 | 80 or more | Larger reparations, submission, and vassals ceded |
 
-- **Reparations**: The loser hands over part of the gold in its treasury and in every city's stockpile (20% by default, adjustable in the settings). All of it goes into the winner's treasury.
+- **Reparations**: The loser hands over part of the gold in its treasury and in every city's stockpile (20%). All of it goes into the winner's treasury.
 - **Ceding vassals**: Each of the loser's vassals is checked in turn. Those that border the winner may switch to the winner. The better the winner's king is at diplomacy and the more ambitious, the easier it is to take them over. A winner in Decline cannot take them.
 - **Submission**: The loser becomes a vassal of the winner and starts Resentful. Vassals the winner did not take over become independent.
 

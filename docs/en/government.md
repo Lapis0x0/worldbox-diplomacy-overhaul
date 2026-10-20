@@ -65,7 +65,7 @@ The third tab on the left of the kingdom window.
 
 ## How Governments Change
 
-When "Governments change with history" is on in the settings (the default), the events below can happen. All of them are recorded in the world log. Parliament can also change the government, but it needs three quarters of the seats. See [Parliament and Policies](parliament.md#domestic).
+When "Historic upheavals" is on in the settings (the default), the events below can happen. All of them are recorded in the world log. Parliament can also change the government, but it needs three quarters of the seats. See [Parliament and Policies](parliament.md#domestic).
 
 ### Inheriting the Throne
 

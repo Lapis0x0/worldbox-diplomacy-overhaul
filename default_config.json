@@ -1,30 +1,6 @@
 {
   "vd_group_vassal": [
     {
-      "Id": "vd_opinion_bonus",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconKingdom",
-      "IntVal": 30,
-      "MinIntVal": 0,
-      "MaxIntVal": 200
-    },
-    {
-      "Id": "vd_rebel_opinion",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconPlot",
-      "IntVal": 0,
-      "MinIntVal": -200,
-      "MaxIntVal": 100
-    },
-    {
-      "Id": "vd_rebel_power_ratio",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconWar",
-      "IntVal": 120,
-      "MinIntVal": 50,
-      "MaxIntVal": 300
-    },
-    {
       "Id": "vd_feudal_enabled",
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconVillages",
@@ -37,22 +13,6 @@
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconWar",
       "BoolVal": true
-    },
-    {
-      "Id": "vd_peace_min_years",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconClock",
-      "IntVal": 3,
-      "MinIntVal": 1,
-      "MaxIntVal": 30
-    },
-    {
-      "Id": "vd_peace_reparations",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconMoney",
-      "IntVal": 20,
-      "MinIntVal": 0,
-      "MaxIntVal": 80
     }
   ],
   "vd_group_government": [
@@ -81,14 +41,6 @@
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconFireSkull",
       "BoolVal": true
-    },
-    {
-      "Id": "vd_restoration_chance",
-      "Type": "INT_SLIDER",
-      "IconPath": "ui/Icons/iconFlowerBud",
-      "IntVal": 30,
-      "MinIntVal": 0,
-      "MaxIntVal": 100
     }
   ],
   "vd_group_perf": [

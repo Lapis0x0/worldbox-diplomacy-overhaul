@@ -2,35 +2,43 @@ using NeoModLoader.api;
 
 namespace DiplomacyOverhaul
 {
-    // 模组设置；ModConfig 由外壳在启动和热重载时传入
+    // 模组设置：只有各系统的开关。ModConfig 由外壳在启动和热重载时传入，改了马上存盘
     public static class Settings
     {
         public static ModConfig Config;
 
-        public static int OpinionBonus => Int("vd_group_vassal", "vd_opinion_bonus", 30);
-        public static int RebelOpinion => Int("vd_group_vassal", "vd_rebel_opinion", 0);
-        public static int RebelPowerRatio => Int("vd_group_vassal", "vd_rebel_power_ratio", 120);
-        public static bool FeudalEnabled => Bool("vd_group_vassal", "vd_feudal_enabled", true);
-        public static bool PeaceEnabled => Bool("vd_group_peace", "vd_peace_enabled", true);
-        public static int PeaceMinYears => Int("vd_group_peace", "vd_peace_min_years", 3);
-        public static int PeaceReparations => Int("vd_group_peace", "vd_peace_reparations", 20);
-        public static bool CycleEnabled => Bool("vd_group_cycle", "vd_cycle_enabled", true);
-        public static int RestorationChance => Int("vd_group_cycle", "vd_restoration_chance", 30);
-        public static bool GovernmentAutoEnabled => Bool("vd_group_government", "vd_gov_auto_enabled", true);
-        public static bool GovernmentNameEnabled => Bool("vd_group_government", "vd_gov_name_enabled", true);
-        public static bool GovernmentEventsEnabled => Bool("vd_group_government", "vd_gov_events_enabled", true);
-        public static bool PerfEnabled => Bool("vd_group_perf", "vd_perf_enabled", true);
+        public const string GroupVassal = "vd_group_vassal";
+        public const string GroupPeace = "vd_group_peace";
+        public const string GroupGovernment = "vd_group_government";
+        public const string GroupCycle = "vd_group_cycle";
+        public const string GroupPerf = "vd_group_perf";
 
-        static int Int(string pGroup, string pId, int pDefault)
-        {
-            try { return Config[pGroup][pId].IntVal; }
-            catch { return pDefault; }
-        }
+        public static bool FeudalEnabled => Get(GroupVassal, "vd_feudal_enabled");
+        public static bool PeaceEnabled => Get(GroupPeace, "vd_peace_enabled");
+        public static bool CycleEnabled => Get(GroupCycle, "vd_cycle_enabled");
+        public static bool GovernmentAutoEnabled => Get(GroupGovernment, "vd_gov_auto_enabled");
+        public static bool GovernmentNameEnabled => Get(GroupGovernment, "vd_gov_name_enabled");
+        public static bool GovernmentEventsEnabled => Get(GroupGovernment, "vd_gov_events_enabled");
+        public static bool PerfEnabled => Get(GroupPerf, "vd_perf_enabled");
 
-        static bool Bool(string pGroup, string pId, bool pDefault)
+        // 开关默认都是开的
+        public static bool Get(string pGroup, string pId)
         {
             try { return Config[pGroup][pId].BoolVal; }
-            catch { return pDefault; }
+            catch { return true; }
+        }
+
+        public static void Set(string pGroup, string pId, bool pValue)
+        {
+            try
+            {
+                Config[pGroup][pId].SetValue(pValue);
+                Config.Save();
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogWarning("[外交大修] 保存设置失败：" + pGroup + "/" + pId + " " + e.Message);
+            }
         }
     }
 }

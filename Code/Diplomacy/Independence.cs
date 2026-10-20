@@ -7,6 +7,10 @@ namespace DiplomacyOverhaul
     public static class Independence
     {
         public static PlotAsset plot_independence;
+        // 宗主实力不到附庸的这么多（百分比）时，附庸认为宗主已经衰落
+        const float DeclineRatio = 120f;
+        // 好感低于这个值，附庸开始心生怨恨
+        const int GrudgeOpinion = 0;
 
         public static void Init()
         {
@@ -31,7 +35,7 @@ namespace DiplomacyOverhaul
                     CyclePhase phase = Cycle.Get(lord);
                     if (phase == CyclePhase.Decline || phase == CyclePhase.Collapse) return true;
                     // 宗主实力 < 附庸实力 × 比例 时，才认为宗主已经衰落；整合度越高，比例越低（行省约一半）
-                    float ratio = Settings.RebelPowerRatio * (1f - Integration.Get(k) / 200f);
+                    float ratio = DeclineRatio * (1f - Integration.Get(k) / 200f);
                     return Vassals.Power(lord) * 100 < Vassals.Power(k) * ratio;
                 },
                 try_to_start_advanced = (pActor, pAsset, pForced) =>
@@ -70,7 +74,7 @@ namespace DiplomacyOverhaul
             Kingdom lord = Vassals.GetOverlord(k);
             if (lord == null) return 0f;
             int opinion = World.world.diplomacy.getOpinion(k, lord).total;
-            float grudge = Mathf.Clamp((Settings.RebelOpinion - opinion) / 50f, 0f, 2f);
+            float grudge = Mathf.Clamp((GrudgeOpinion - opinion) / 50f, 0f, 2f);
             if (grudge <= 0f) return 0f;
             float integration = Integration.Get(k);
             grudge *= 1.2f - integration / 100f;

@@ -89,7 +89,7 @@ Once a year, the overlord and its provinces also tidy up their borders: an encla
 
 A vassal's opinion of its overlord includes these items, which you can see in the vanilla opinion breakdown:
 
-- **Loyal to overlord**: A fixed bonus (adjustable in the settings).
+- **Loyal to overlord**: A fixed bonus.
 - **Overlord's fortunes**: A bonus when the overlord is at Prime and a penalty in Decline, larger as the Mandate drops.
 - **Weak overlord**: A penalty when the overlord has fewer than 6 cities of its own.
 - **Common Enemies** (vanilla): Counted only for a war where the vassal itself was attacked and the overlord came to help.

@@ -46,6 +46,7 @@ namespace DiplomacyOverhaul
             BoxCommand.Init();
             ParliamentWindow.Init();
             ElectionWindow.Init();
+            SettingsWindow.Init();
             ModTab.Build();
         }
 
