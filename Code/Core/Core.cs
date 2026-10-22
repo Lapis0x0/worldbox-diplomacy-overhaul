@@ -13,7 +13,7 @@ namespace DiplomacyOverhaul
     // 所以 Start 必须能在已经注册过资源、已经建过 Tab 的游戏里重复执行。
     public static class Core
     {
-        const string HarmonyId = "shizhiyun.diplomacy_overhaul";
+        const string HarmonyId = "lapis0x0.diplomacy_overhaul";
 
         static Harmony _harmony;
 

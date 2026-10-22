@@ -13,7 +13,7 @@ namespace DiplomacyOverhaul.Perf
     // Bench 本身有开销，所以比较优化前后的总帧耗时要用不带 detail 的测量
     public static class Measure
     {
-        const string ProfileHarmonyId = "shizhiyun.worldbox_performance.profile";
+        const string ProfileHarmonyId = "lapis0x0.worldbox_performance.profile";
 
         public static bool Running { get; private set; }
         static string _label;
