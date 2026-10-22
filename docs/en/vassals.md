@@ -16,7 +16,8 @@ A vassal is a kingdom that is subordinate to another kingdom, its overlord. A va
 - If the overlord is attacked, all vassals join the defense.
 - If the overlord attacks, each vassal decides by its Integration whether to join. Provinces always join.
 - If a vassal is attacked, the overlord comes to help.
-- When the overlord leaves a war, its vassals leave with it. A vassal is never dragged into a war the overlord is not in.
+- If a city rebels inside a vassal, the vassal fights to put it down. The overlord decides by the vassal's Integration whether to send troops. For a province it always does.
+- When the overlord leaves a war, its vassals leave with it. Apart from putting down rebellions, a vassal is never dragged into a war the overlord is not in.
 
 If an overlord and its vassal end up on opposite sides of the same war (for example, you use a power to make the overlord attack its vassal), the vassal relationship ends at once.
 

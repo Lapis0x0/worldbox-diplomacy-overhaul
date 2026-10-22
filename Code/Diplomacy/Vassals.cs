@@ -179,12 +179,18 @@ namespace DiplomacyOverhaul
             return MakeVassal(lord, pNew, Integration.Granted);
         }
 
-        // 附庸的战争状态与宗主保持一致：只参加宗主参加的战争，并且站在同一边；宗主在攻方的仗按整合度决定参不参加
+        // 附庸的战争状态与宗主保持一致：只参加宗主参加的战争，并且站在同一边；宗主在攻方的仗按整合度决定参不参加。
+        // 附庸平定自己境内的叛乱除外
         public static void SyncWars(Kingdom pVassal, Kingdom pLord)
         {
             foreach (War war in new List<War>(pVassal.getWars()))
             {
                 if (war.hasEnded() || war.isTotalWar()) continue;
+                if (IsOwnRebellion(war, pVassal))
+                {
+                    SupportSuppression(war, pVassal, pLord);
+                    continue;
+                }
                 bool sameSide = (war.isAttacker(pVassal) && war.isAttacker(pLord))
                                 || (war.isDefender(pVassal) && war.isDefender(pLord));
                 if (!sameSide) war.removeFromWar(pVassal, true);
@@ -195,6 +201,17 @@ namespace DiplomacyOverhaul
                 if (war.isAttacker(pLord)) { if (Integration.JoinsOffensive(war, pVassal)) war.joinAttackers(pVassal); }
                 else if (war.isDefender(pLord)) war.joinDefenders(pVassal);
             }
+        }
+
+        // 附庸境内的叛乱：原版叛乱战争里，失去城市的国家是主攻方
+        public static bool IsOwnRebellion(War pWar, Kingdom pVassal) =>
+            pWar.getAsset() == WarTypeLibrary.rebellion && pWar.isMainAttacker(pVassal);
+
+        // 宗主出兵帮附庸平叛：同附庸跟随宗主进攻，按整合度的概率，每场战争只掷一次，行省一定出兵
+        public static void SupportSuppression(War pWar, Kingdom pVassal, Kingdom pLord)
+        {
+            if (pWar.hasKingdom(pLord) || !Integration.JoinsOffensive(pWar, pVassal)) return;
+            pWar.joinAttackers(pLord);
         }
 
         public static void SyncAllWars()

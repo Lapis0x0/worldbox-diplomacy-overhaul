@@ -4,7 +4,8 @@ using HarmonyLib;
 
 namespace DiplomacyOverhaul
 {
-    // 宗主参战 → 附庸跟随同一方（宗主在攻方时按整合度决定）；附庸被打 → 宗主加入防守方
+    // 宗主参战 → 附庸跟随同一方（宗主在攻方时按整合度决定）；附庸被打 → 宗主加入防守方；
+    // 附庸平叛 → 宗主按整合度加入攻方
     // 宗主和附庸出现在同一场战争的对立两边时，附庸关系立即解除（神力宣战、背叛、附庸互攻……）
     static class Betrayal
     {
@@ -36,6 +37,8 @@ namespace DiplomacyOverhaul
                 {
                     if (!__instance.hasKingdom(v) && Integration.JoinsOffensive(__instance, v)) __instance.joinAttackers(v);
                 }
+                Kingdom lord = Vassals.GetOverlord(pKingdom);
+                if (lord != null && Vassals.IsOwnRebellion(__instance, pKingdom)) Vassals.SupportSuppression(__instance, pKingdom, lord);
             }
             catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸随宗主进攻", e); }
         }

@@ -274,7 +274,7 @@ namespace DiplomacyOverhaul
 
         // ---------- 战争 ----------
 
-        // 宗主主动开的仗（宗主在攻方）：按整合度的概率参战，行省一定参战。
+        // 宗主主动开的仗（宗主在攻方）：按整合度的概率参战，行省一定参战。附庸平叛时宗主出不出兵也用它。
         // 每个附庸对每场战争的结果固定，不会反复进出
         public static bool JoinsOffensive(War pWar, Kingdom pVassal)
         {
