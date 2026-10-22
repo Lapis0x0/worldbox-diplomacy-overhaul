@@ -4,31 +4,74 @@ English | [中文](README.zh-CN.md)
 
 <img src="preview.png" alt="Diplomacy Overhaul" width="320">
 
-Deeper diplomacy and warfare for WorldBox: vassals, independence and peace talks, parliaments and elections, governments and how they change, dynastic cycles and great rebellions, treasuries and a central guard, plus a set of powers for directing diplomacy and armies yourself.
+**Diplomacy Overhaul** adds politics, vassals and warfare to WorldBox that run on their own.
+
+An expanding kingdom may grant its frontier to royal relatives and press its neighbors into submission. Families inside the kingdom sit in parliament and decide its policies, and the dynasty rises or falls with its wars and the mood of its cities. A republic may turn into an empire, and a kingdom at the height of its power may break apart in rebellion.
+
+You can watch all of this unfold on its own, or step in yourself.
 
 - Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
 - Requires: [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
 - Fully localized in English and Chinese; follows the game's language setting
 
-## Features
+## More Than Conquest and Collapse
 
-- Vassals: overlords and vassals fight side by side. Large kingdoms grant rebel cities and lands they can't govern to vassals or royal relatives, and send envoys to pressure weak neighbors into submission. Vassals have integration: loyal ones become Provinces, royal fiefs become Hereditary Provinces, overlords absorb Provinces once they can govern them, and restless vassals plot for independence
-- Parliament and policies: families win seats from the cities they hold, vote on bills by their stance, and enact domestic, military and diplomatic policies. A kingdom's regime is named after its mix of policies, and its parliament is called differently under each; a family's stance can be set in the clan editor. Republics elect their leader in parliament; the Elections & Offices window shows candidates, the line of succession and each family's lands
-- Governments: monarchies as Kingdoms or Empires; Republics, Merchant Republics and Military Republics; vassals are Duchies or Dominions. Rulers are titled by government: King, Emperor, Consul, Duke and more. New nations pick a government from their culture, and each government has its own leanings in war and rule
-- Changing governments: republican leaders are elected and stand again when their term ends; a monarchy whose royal line dies out may become a republic instead of splitting; an ambitious leader of a great republic at its prime may proclaim an empire; generals may seize power when a dynasty collapses
-- Dynastic cycles: a great power's Mandate of Heaven rises and falls with its cities, ruler, vassals and wars, and affects how well its armies fight. Problems pile up, and putting down a great rebellion leaves old wounds. Dynasties go through Renewal, Prime, Decline and Collapse; in decline vassals drift away and cities grow unstable, and a strong ruler can plot a Restoration
-- Great Rebellion: uprisings break out across the realm at once and vassals declare independence; triggered when the capital falls or the Mandate runs out
-- Treasury and central guard: city governors send taxes to the national treasury, and cities pay for their own troops from their own gold. Troops from the capital and those sent up by other cities form a central guard, paid by the treasury and commanded by the kingdom, while local armies hold the borders. Unpaid armies fight worse, and long arrears lead to layoffs. The Treasury page in the kingdom window shows where the money flows and the ledger
-- War: when a war has gone far enough, both sides hold peace talks and settle by the results with peace, reparations, ceding vassals or submission. Besieging armies hunt down defenders and can storm a city outright with overwhelming numbers
-- Army command: box-select armies and right-click to attack foreign cities, garrison your own or friendly cities, or camp in the field; boats are arranged automatically across the sea
-- City management: transfer cities, annex kingdoms
-- Performance: removes redundant calculations in vanilla, about 20% higher frame rate on large maps with identical results
+Great powers no longer have to rule everything directly. They grant newly won lands they can't govern, and cities taken back from rebels, to vassals, and send envoys to demand that weak neighbors submit. Overlords and vassals go to war together, expanding or holding off enemies side by side; when a rebellion breaks out inside a vassal, the overlord sends troops to help.
 
-Everything lives in the Diplomacy Overhaul tab at the bottom, and values can be tuned from the settings button in that tab, where each module can also be turned off. Data is stored in vanilla saves, so it works with existing worlds.
+Vassal ties change over time. A vassal that has been loyal for long enough may grow into a Province of its overlord and finally be absorbed into direct rule; a fief held by a royal relative may become a Hereditary Province. A vassal that no longer wants to serve may plot for independence.
 
-See the [player guide](docs/en/README.md) for how each system works. Full rules and implementation notes are in the [developer docs](docs/dev/README.md) (Chinese).
+## Kingdoms Have Politics
 
-## Manual installation
+Every kingdom has a parliament. Families win seats from the cities they hold, vote by their own stance, and set the kingdom's domestic, military and diplomatic policies. Each mix of policies forms a different **regime**, the system the kingdom actually runs by, and the parliament takes a matching name.
+
+<img src="docs/images/parliament.png" alt="Parliament window" width="720">
+
+A kingdom can be a Kingdom or an Empire, or a Republic, Merchant Republic or Military Republic. A new nation's government follows the leanings of its culture, and an existing one does not stay fixed.
+
+Republics elect their leader at regular intervals. When a royal line dies out, a monarchy may become a republic instead of splitting apart; an ambitious leader of a republic at its prime may proclaim an empire, and generals may seize power from a collapsing dynasty.
+
+You can follow the policy votes in parliament, see candidates, the line of succession and family lands in the Elections & Offices window, and set a family's political stance directly in the clan editor.
+
+<img src="docs/images/election.png" alt="Elections & Offices window" width="720">
+
+## The Rise and Fall of Dynasties
+
+Even mighty kingdoms go through cycles of rise and decline.
+
+A great power holds the **Mandate of Heaven**, which reflects the mood of its cities, its ruler, its vassals and the course of its wars, and affects how well its armies fight. While its rule is secure, the kingdom climbs toward its prime; as problems pile up, cities grow restless, vassals drift away, and the dynasty slides into decline.
+
+When the capital falls or the Mandate runs out, a Great Rebellion may sweep the realm: many cities rise at once and vassals declare independence. Even after the rebellion is put down, the problems that built up over the years don't disappear overnight.
+
+Decline is not the end, though. A capable ruler may plot a Restoration and try to turn the dynasty's fortunes around.
+
+## War, Treasury and Armies
+
+Wars end according to how they went. Once a war has gone far enough, both sides hold peace talks and settle with peace, reparations, ceded vassals or submission. Besieging armies hunt down defenders and can storm a city outright when they vastly outnumber them.
+
+Military power now rests on finances. City governors send taxes to the national treasury, while each city pays for its local troops from its own funds. Soldiers from the capital and those sent up by other cities form the **central guard**, paid by the treasury and commanded by the kingdom, while local armies hold the borders.
+
+War costs money. Unpaid armies fight worse, and troops that go unpaid for too long may be disbanded. The kingdom's treasury ledger shows where the money comes from and where it goes.
+
+<img src="docs/images/treasury.png" alt="Treasury page" width="720">
+
+## Step In Yourself
+
+Besides watching kingdoms develop on their own, you can box-select armies and right-click to order them to attack enemy cities, garrison your own or friendly cities, or camp in the field. Boats are arranged automatically for crossings by sea.
+
+The mod also adds a set of powers: make one kingdom a vassal of another, split a city off as a vassal, incite a vassal to independence, push a dynasty through its cycle, or start a Great Rebellion yourself. You can also send a kingdom's entire army against a city, transfer cities, or annex kingdoms.
+
+## Settings and Compatibility
+
+Everything is in the **Diplomacy Overhaul** tab at the bottom of the screen. Each module can be turned on or off separately, and values can be tuned in the settings.
+
+- **Existing saves**: the mod's data is stored in vanilla saves, so it works with existing worlds.
+- **Mobile**: works on mobile platforms that NeoModLoader runs on.
+- **Performance**: removes redundant calculations in vanilla for about 20% higher frame rate on large maps, with identical results.
+- **Error protection**: when a patch throws an exception, it is isolated and the affected module is switched off, so errors can't bring the game down.
+
+See the [player guide](docs/en/README.md) for how each system works.
+
+## Manual Installation
 
 If you don't use the Workshop:
 
@@ -41,13 +84,7 @@ To update, delete the old `DiplomacyOverhaul` folder before extracting the new o
 
 ## Development
 
-- Put (or symlink) the repository at `worldbox/Mods/DiplomacyOverhaul`. NML compiles the sources under `Code/` at startup; `bin/`, `obj/` and files starting with `.` are not compiled or uploaded
-- Local build check: `dotnet build` (needs the .NET SDK; references assemblies from the game directory)
-- Hot reload: with the game running, run `tools/hot-reload.sh` and changes take effect within a second or two without restarting
-  - Changes to `Core/Main.cs`, `Core/DevReload.cs`, `mod.json` and `default_config.json` still need a restart
-  - `Core.Start` must be safe to run repeatedly: register assets with `Core.Upsert`; tab buttons are cleared and rebuilt
-- Release: bump the version in `mod.json`, write this version's Chinese and English notes in `CHANGELOG.md` and commit, then run `tools/release.sh`. The script checks the working tree, version, locale files and build, then tags and pushes; GitHub Actions creates the Release with the package attached (`tools/package.sh` can also package on its own)
-- Upload to the Workshop: run `tools/workshop.sh`, which uses SteamCMD to upload the files in the release package along with this version's change notes, leaving the title and description alone. It needs `brew install --cask steamcmd`, your Steam account name in `bin/steam_user`, and a one-time login in a terminal with `steamcmd +login <account> +quit`. The NML upload window (click the cover 8 times in the mod list and wait 3 seconds) also works, but its change-note box has a length limit and truncates long notes
+Full rules, implementation notes and the local development workflow are in the [developer docs](docs/dev/README.md) (Chinese).
 
 ## License
 

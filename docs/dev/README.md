@@ -26,6 +26,16 @@
 - **钱有去处。** 城主上缴的钱进国库，城市用自己仓库的金子养兵，多余的上缴；国王发起密谋、战败赔款都动国库，见[国库与军饷](economy.md)。
 - **国策由氏族决定。** 各氏族按占的城分得议席，按立场表决税收、分封、政体、海军、战和、对待附庸和宗主的政策；扩张后地方氏族坐大，能和王室分庭抗礼。
 
+## 本地开发
+
+- 把仓库放进（或软链接到）`worldbox/Mods/DiplomacyOverhaul`，NML 启动时会编译 `Code/` 下的源码；`bin/`、`obj/` 和以 `.` 开头的文件不会被编译或上传
+- 本地编译检查：`dotnet build`（需要 .NET SDK，引用游戏目录里的程序集）
+- 热重载：游戏开着时运行 `tools/hot-reload.sh`，改动会在一两秒内生效，不用重启游戏
+  - 改 `Core/Main.cs`、`Core/DevReload.cs`、`mod.json`、`default_config.json` 仍需重启
+  - `Core.Start` 必须能重复执行：资源用 `Core.Upsert` 注册，Tab 按钮会被清掉重建
+- 发版：改 `mod.json` 的版本号，在 `CHANGELOG.md` 写好这个版本的中英文说明并提交，然后运行 `tools/release.sh`。脚本检查工作区、版本号、语言文件和编译后打 tag 推送，GitHub Actions 自动建 Release 并附上发布包（`tools/package.sh` 也可以单独打包）
+- 上传创意工坊：运行 `tools/workshop.sh`，用 SteamCMD 上传发布包里的文件和这个版本的更新说明，标题和简介不动。需要 `brew install --cask steamcmd`，把 Steam 账号名写进 `bin/steam_user`，第一次先在终端里 `steamcmd +login <账号名> +quit` 登录。也可以在 NML 模组列表里连点封面 8 次后等 3 秒打开上传窗口，但更新说明框有长度限制，长的说明会被截断
+
 ## 代码结构
 
 | 目录 | 内容 |
