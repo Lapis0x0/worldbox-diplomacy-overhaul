@@ -229,4 +229,4 @@
 | `Camp.cs` | 阵营的判定和人口、兵力统计 |
 | `AllianceView.cs` | 联盟地图 |
 
-原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`BehTryNewPlot.fillRandomPlots`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`TooltipLibrary.showAlliance`、`MetaTypeLibrary.alliance` 的地图回调。
+原版挂点：`DiplomacyHelpers.getWarTarget` / `getAllianceTarget` / `isWarNeeded`、`Alliance.canJoin`、`BehTryNewPlot.fillRandomPlots`、`War.joinAttackers` / `joinDefenders` / `removeFromWar`、`WarManager.endWar`、`DiplomacyHelpersRebellion.startRebellion`、`City.joinAnotherKingdom`、`KingdomManager.removeObject`、`NameplateLibrary.actionAlliance`、`TooltipLibrary.showAlliance`、`MetaTypeLibrary.alliance` 的地图回调、`ZoneCalculator.checkFadeAndSelectionColors`（附庸和行省的地图配色，在原版淡出和选中高亮之前换色，并排在其他模组前面，平滑边界这类接管边界绘制的模组记下的也是换过的颜色）。

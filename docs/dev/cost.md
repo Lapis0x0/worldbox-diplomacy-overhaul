@@ -29,7 +29,7 @@
 | 城市 AI（`CityBehCheckAttackZone`、`CityBehCheckArmy`、`CityBehCheckLeader.checkFindLeader`）、`City.isOkToSendArmy` | `Orders.cs`、`Guard.cs`、`Offices.cs` | 每座城的决策节奏 |
 | `KingdomBehCheckKing` | `Regime.cs`、`Succession.cs` | 每个王国的决策节奏 |
 | `ArmyManager.update` | `Guard.cs` | 每帧；`Guard.Tick` 每秒一次，所有军队在同一帧 |
-| `ZoneCalculator.applyMetaColorsToZone`、`TileZone.getAllianceOnZone` | `KingdomView.cs`、`AllianceView.cs` | 地图染色时每个区块一次 |
+| `ZoneCalculator.checkFadeAndSelectionColors`、`TileZone.getAllianceOnZone` | `KingdomView.cs`、`AllianceView.cs` | 地图染色时每个区块一次（不管要不要重画） |
 | `NameplateText.getStringForNameplate`、`NameplateLibrary.actionAlliance` | `KingdomView.cs`、`AllianceView.cs` | 屏幕上每个名牌 |
 
 ### 计算回调

@@ -185,11 +185,14 @@ namespace DiplomacyOverhaul
     }
 
     // 地图：附庸国的边界线使用宗主国的颜色；行省连填充也用宗主国的颜色，看上去是宗主版图的一部分，
-    // 和宗主之间仍留一条边界线。只换颜色、保留原来的透明度，选中别国时的淡出照常
-    [HarmonyPatch(typeof(ZoneCalculator), "applyMetaColorsToZone")]
+    // 和宗主之间仍留一条边界线。只换颜色、保留原来的透明度（清空填充的模式下填充仍是透明的）。
+    // 在原版处理淡出和选中高亮之前换，淡出照常；排在其他模组前面，接管边界绘制的模组（如平滑边界）
+    // 在这一步记下的也是换过的颜色
+    [HarmonyPatch(typeof(ZoneCalculator), "checkFadeAndSelectionColors")]
     static class Patch_ZoneBorder
     {
-        static void Prefix(TileZone pZone, ref Color32 pColorInside, ref Color32 pColorOutside)
+        [HarmonyPriority(Priority.First + 1)]
+        static void Prefix(TileZone pZone, ref Color32 pColorBorderInside, ref Color32 pColorBorderOut)
         {
             if (!Safety.On(Sys.Vassal)) return;
             try
@@ -200,11 +203,8 @@ namespace DiplomacyOverhaul
                 Kingdom lord = Vassals.GetOverlord(k);
                 if (lord == null) return;
                 ColorAsset color = lord.getColor();
-                Color32 outside = WithAlpha(color.getColorMainSecond32(), pColorOutside.a);
-                Color32 inside = pColorInside;
-                if (Integration.IsProvince(k)) inside = WithAlpha(color.getColorBorderInsideAlpha32(), pColorInside.a);
-                pColorOutside = outside;
-                pColorInside = inside;
+                pColorBorderOut = WithAlpha(color.getColorMainSecond32(), pColorBorderOut.a);
+                if (Integration.IsProvince(k)) pColorBorderInside = WithAlpha(color.getColorBorderInsideAlpha32(), pColorBorderInside.a);
             }
             catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸边界颜色", e); }
         }
