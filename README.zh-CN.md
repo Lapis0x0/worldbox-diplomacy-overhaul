@@ -12,6 +12,7 @@
 
 - Steam 创意工坊：https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
 - 依赖：[NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+- 玩家指南：[各章节一览](#玩家指南)
 
 ## 不再只是吞并与分裂
 
@@ -68,7 +69,23 @@
 - **性能优化**：减少原版的重复计算，大地图上帧率可提高约 20%，不改变原版的计算结果。
 - **错误保护**：补丁出现异常时会自动隔离并按模块熔断，避免错误拖垮游戏。
 
-详细的功能说明与操作方法，请参阅[玩家指南](docs/zh/README.md)。
+## 玩家指南
+
+每个系统怎么玩、关键数值是多少，见[玩家指南](docs/zh/README.md)，也可以直接跳到对应章节：
+
+| 指南 | 内容 |
+|---|---|
+| [政体与领袖](docs/zh/government.md) | 君主制和共和国、各种称号、执政选举、改制、称帝、夺权 |
+| [议会与政策](docs/zh/parliament.md) | 家族怎么分议席、四个派系、每项政策的效果、怎么提案和表决 |
+| [王朝兴衰](docs/zh/cycle.md) | 天命、新生到崩溃的四个阶段、中兴、大叛乱 |
+| [附庸](docs/zh/vassals.md) | 附庸从哪来、整合度和行省、附庸为什么会独立 |
+| [战争与和谈](docs/zh/war.md) | 国家什么时候开战、战果、和约、攻城 |
+| [指挥军队](docs/zh/commands.md) | 玩家怎么给军队下令：进攻、驻扎、扎营 |
+| [禁军与地方军](docs/zh/armies.md) | 国家怎么调度军队、禁军和地方军的分工、军械 |
+| [国库与军饷](docs/zh/treasury.md) | 钱从哪来、到哪去、欠饷会怎样 |
+| [密谋](docs/zh/plots.md) | 模组新增的密谋和国王什么时候会发起 |
+| [神力与设置](docs/zh/powers.md) | Tab 里的每个神力和设置开关 |
+| [常见问题](docs/zh/faq.md) | 「为什么会这样」 |
 
 ## 手动安装
 

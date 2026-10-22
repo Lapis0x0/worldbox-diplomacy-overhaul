@@ -12,6 +12,7 @@ You can watch all of this unfold on its own, or step in yourself.
 
 - Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3817246294
 - Requires: [NeoModLoader](https://github.com/WorldBoxOpenMods/ModLoader)
+- Player guide: [all chapters](#player-guide)
 - Fully localized in English and Chinese; follows the game's language setting
 
 ## More Than Conquest and Collapse
@@ -69,7 +70,23 @@ Everything is in the **Diplomacy Overhaul** tab at the bottom of the screen. Eac
 - **Performance**: removes redundant calculations in vanilla for about 20% higher frame rate on large maps, with identical results.
 - **Error protection**: when a patch throws an exception, it is isolated and the affected module is switched off, so errors can't bring the game down.
 
-See the [player guide](docs/en/README.md) for how each system works.
+## Player Guide
+
+The [player guide](docs/en/README.md) explains how each system plays and its key numbers. Jump straight to a chapter:
+
+| Guide | Contents |
+|---|---|
+| [Governments and Rulers](docs/en/government.md) | Monarchy and republic, titles, consul elections, changes of government, crowning an emperor, seizing power |
+| [Parliament and Policies](docs/en/parliament.md) | How clans get seats, the four factions, the effect of every policy, how bills are proposed and voted on |
+| [Rise and Fall of Dynasties](docs/en/cycle.md) | Mandate of Heaven, the four phases from Renewal to Collapse, Restoration, Great Rebellion |
+| [Vassals](docs/en/vassals.md) | Where vassals come from, Integration and provinces, why vassals break away |
+| [War and Peace Talks](docs/en/war.md) | When kingdoms go to war, war score, treaties, sieges |
+| [Commanding Armies](docs/en/commands.md) | Giving orders to armies as the player: attack, garrison, camp |
+| [Guard and Local Armies](docs/en/armies.md) | How a kingdom deploys its armies, the split between Guard and local armies, armament |
+| [Treasury and Pay](docs/en/treasury.md) | Where money comes from, where it goes, what happens when pay is missed |
+| [Plots](docs/en/plots.md) | The plots added by the mod and when kings start them |
+| [Powers and Settings](docs/en/powers.md) | Every power and setting in the tab |
+| [FAQ](docs/en/faq.md) | "Why did this happen?" |
 
 ## Manual Installation
 
