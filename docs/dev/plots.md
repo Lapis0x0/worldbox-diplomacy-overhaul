@@ -50,4 +50,5 @@
 原版挂点：
 
 - `BehTryNewPlot.fillRandomPlots`：原版把可行的密谋放进池子之后按动机筛掉。
-- `BehCheckPlotBase.isBasePlotCheckOk`：叛乱密谋的城市重新满意时判定不再继续（`Succession.cs`）。
+- `BehCheckPlotBase.isBasePlotCheckOk`：叛乱密谋的城市重新满意时判定不再继续（`Succession.cs`）。原版 AI 发起的密谋也记作强制（`PlotManager.tryStartPlot` 默认 `pForced = true`），`plot.data.forced` 分不出玩家。
+- `PlotsEditor.addAugmentation`：玩家在密谋编辑器里发起的密谋记 `vd_plot_by_player`，叛乱平息不管这种。

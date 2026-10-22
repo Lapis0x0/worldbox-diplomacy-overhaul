@@ -81,20 +81,41 @@ namespace DiplomacyOverhaul
 
     // 叛乱密谋在城市重新满意时中止。原版只在发起时看城市满不满意，
     // 王位空缺时全国忠诚度骤降立起来的密谋，新君上任、人心安定后照样会执行。
-    // 强制发起的不中止，和原版发动叛乱时强制的不看满意度一致
+    // 原版 AI 发起的密谋也记作强制（tryStartPlot 默认 pForced = true），分不出玩家，
+    // 所以玩家在密谋编辑器里发起的另记一个标记，这种不中止
     [HarmonyPatch(typeof(BehCheckPlotBase), "isBasePlotCheckOk")]
     static class Patch_RebellionCalmed
     {
+        internal const string KeyByPlayer = "vd_plot_by_player";
+
         static void Postfix(Actor pActor, ref bool __result)
         {
             if (!__result || !Safety.On(Sys.Government)) return;
             try
             {
                 Plot plot = pActor.plot;
-                if (!plot.isSameType(PlotsLibrary.rebellion) || plot.data.forced) return;
+                if (!plot.isSameType(PlotsLibrary.rebellion)) return;
+                plot.data.get(KeyByPlayer, out bool byPlayer, false);
+                if (byPlayer) return;
                 if (pActor.hasCity() && pActor.city.isHappy()) __result = false;
             }
             catch (Exception e) { Safety.Fail(Sys.Government, "叛乱密谋平息", e); }
+        }
+    }
+
+    // 玩家在密谋编辑器里给单位发起的密谋
+    [HarmonyPatch(typeof(PlotsEditor), "addAugmentation")]
+    static class Patch_PlotByPlayer
+    {
+        static void Postfix(PlotsEditor __instance, bool __result)
+        {
+            if (!__result || !Safety.On(Sys.Government)) return;
+            try
+            {
+                Actor actor = __instance.getCurrentActor();
+                if (actor != null && actor.hasPlot()) actor.plot.data.set(Patch_RebellionCalmed.KeyByPlayer, true);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Government, "记下玩家发起的密谋", e); }
         }
     }
 }

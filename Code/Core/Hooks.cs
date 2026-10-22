@@ -132,8 +132,12 @@ namespace DiplomacyOverhaul
             }
             if (Safety.On(Sys.Vassal))
             {
-                try { Motives.Filter(pActor, pPotPlots); }
-                catch (Exception e) { Safety.Fail(Sys.Vassal, "密谋池·动机", e); }
+                try
+                {
+                    Vassals.RemoveAlliancePlots(pActor, pPotPlots);
+                    Motives.Filter(pActor, pPotPlots);
+                }
+                catch (Exception e) { Safety.Fail(Sys.Vassal, "密谋池·附庸与动机", e); }
             }
         }
     }

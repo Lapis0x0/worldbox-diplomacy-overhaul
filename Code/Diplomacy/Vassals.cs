@@ -56,6 +56,14 @@ namespace DiplomacyOverhaul
 
         public static bool IsVassal(Kingdom pKingdom) => GetOverlord(pKingdom) != null;
 
+        // 附庸不能结盟：联盟密谋不放进附庸国王的密谋池。原版 AI 发起密谋都按强制算，
+        // 加入联盟时跳过 canJoin 先把密谋建出来，下一次检查才作废
+        public static void RemoveAlliancePlots(Actor pActor, ListPool<PlotAsset> pPool)
+        {
+            if (!IsVassal(pActor.kingdom)) return;
+            pPool.RemoveAll(p => p == PlotsLibrary.alliance_create || p.id == "alliance_join");
+        }
+
         public static List<Kingdom> GetVassals(Kingdom pLord)
         {
             var list = new List<Kingdom>();
