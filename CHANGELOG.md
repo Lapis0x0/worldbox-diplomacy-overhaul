@@ -2,6 +2,28 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.10.1
+
+### 中文
+
+1. 优化附庸贡赋与税收集权的平衡，加重高额贡赋对附庸关系、集权税制对地方忠诚的负面影响
+2. 优化议会和调整国策时的性能表现
+3. 修复大国召开议会时主线程长时间阻塞、交战中弹道异常导致画面与操作无响应的问题，并引入异常隔离与按系统熔断机制
+4. 修复君主驾崩或执政出缺期间各城忠诚度骤降引发的叛乱密谋，在新君主或新执政上任、人心回稳后仍照常执行，导致叛乱集中爆发的问题
+5. 修复附庸国境内叛乱爆发后战争很快自动结束、叛军直接独立的问题；宗主现在会按整合度出兵协助附庸平叛
+6. 修复附庸国领袖反复发起并立即作废联盟密谋的问题
+7. 修复与「平滑边界」等接管地图边界绘制的模组同时使用时，附庸与行省的宗主配色失效的问题
+
+### English
+
+1. Rebalanced vassal tribute and tax centralization: heavy tribute now hurts vassal relations, and centralized taxation hurts local loyalty, more severely
+2. Improved performance of parliament sessions and policy changes
+3. Fixed the main thread stalling for long periods when large kingdoms convene parliament, and abnormal projectiles in battle freezing the screen and input; introduced exception isolation and per-system circuit breakers
+4. Fixed rebellion plots, started while city loyalty collapsed during the interregnum after a monarch's death or a ruler leaving office, still going ahead after the new monarch or ruler took office and loyalty recovered, causing waves of rebellions
+5. Fixed rebellions inside a vassal ending in peace shortly after breaking out, letting the rebels gain independence outright; the overlord now sends troops by Integration to help the vassal put the rebellion down
+6. Fixed vassal rulers repeatedly starting alliance plots that were immediately cancelled
+7. Fixed overlord colors for vassals and provinces not showing when used together with mods that take over map border drawing, such as Smooth Borders
+
 ## 0.10.0
 
 ### 中文
