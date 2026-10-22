@@ -4,6 +4,8 @@ In vanilla, a king considers a plot about once every year or two: all the plots 
 
 The mod adds several plots and gives every plot a **motive**. Conditions decide whether a plot can be started, and the motive decides how much the king wants to start it. The more urgent the situation and the better the king's personality fits, the more likely he or she is to start it. In the vanilla plot editor you can make a king start a plot regardless of motive.
 
+A city leader's rebellion plot is abandoned once the city is content again. When a monarch dies or a republic's ruler leaves office, loyalty drops across the kingdom; rebellion plots started then mostly fall apart once the new ruler takes over and loyalty recovers. Rebellions forced in the plot editor are not affected.
+
 ## New Plots
 
 | Plot | Who starts it | When they want it | Personalities that favor it |

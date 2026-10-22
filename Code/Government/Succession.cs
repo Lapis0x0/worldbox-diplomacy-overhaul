@@ -78,4 +78,23 @@ namespace DiplomacyOverhaul
             catch (Exception e) { Safety.Fail(Sys.Government, "继承", e); return true; }
         }
     }
+
+    // 叛乱密谋在城市重新满意时中止。原版只在发起时看城市满不满意，
+    // 王位空缺时全国忠诚度骤降立起来的密谋，新君上任、人心安定后照样会执行。
+    // 强制发起的不中止，和原版发动叛乱时强制的不看满意度一致
+    [HarmonyPatch(typeof(BehCheckPlotBase), "isBasePlotCheckOk")]
+    static class Patch_RebellionCalmed
+    {
+        static void Postfix(Actor pActor, ref bool __result)
+        {
+            if (!__result || !Safety.On(Sys.Government)) return;
+            try
+            {
+                Plot plot = pActor.plot;
+                if (!plot.isSameType(PlotsLibrary.rebellion) || plot.data.forced) return;
+                if (pActor.hasCity() && pActor.city.isHappy()) __result = false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Government, "叛乱密谋平息", e); }
+        }
+    }
 }
