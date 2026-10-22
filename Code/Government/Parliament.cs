@@ -736,7 +736,7 @@ namespace DiplomacyOverhaul
         const float DissentPerUnit = 12f;
         const int WorstLoyalty = -100;
         // 削藩：每 1 扣这么多（开发命令 parl grievance 可以改，做对照实验用）
-        internal static float GrievancePerUnit = 40f;
+        internal static float GrievancePerUnit = 60f;
 
         public static (int dissent, int grievance) Loyalty(Kingdom pKingdom, ParliamentClan pClan, Policy pChanged = null, int pOption = -1)
         {

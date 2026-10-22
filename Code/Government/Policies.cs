@@ -391,7 +391,7 @@ namespace DiplomacyOverhaul
 
         // 附庸贡赋（宗主的）：附庸国库的进账交给宗主的比例，和附庸对宗主的好感
         static readonly float[] VassalTaxRates = { 0f, 0.25f, 0.5f, 0.75f };
-        static readonly int[] VassalTaxOpinions = { 15, 0, -30, -50 };
+        static readonly int[] VassalTaxOpinions = { 20, 0, -60, -100 };
 
         // 原版没有附庸上贡：议会关掉时不上贡，也没有贡赋带来的好感变化
         public static float VassalTaxRate(Kingdom pLord) => Settings.ParliamentEnabled ? VassalTaxRates[Value(pLord, VassalTax)] : 0f;
