@@ -43,7 +43,8 @@ namespace DiplomacyOverhaul
                 } },
                 new Card { title = "vd_settings_display", icon = "ui/Icons/iconKingdom", rows = new[]
                 {
-                    (Settings.GroupGovernment, "vd_gov_name_enabled")
+                    (Settings.GroupGovernment, "vd_gov_name_enabled"),
+                    (Settings.GroupParliament, "vd_policy_log_enabled")
                 } },
                 new Card { title = "vd_settings_perf", icon = "ui/Icons/iconClock", rows = new[]
                 {

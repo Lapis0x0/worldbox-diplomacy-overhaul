@@ -107,8 +107,9 @@ namespace DiplomacyOverhaul
             return string.IsNullOrEmpty(value) ? null : value;
         }
 
-        // pTexts 与 pColors 一一对应，名字按所属国家的颜色显示；pUnit 存活时点消息镜头跟着它
-        public static void Add(string pId, Vector2 pLocation, Actor pUnit, string[] pTexts, Kingdom[] pColors)
+        // pTexts 与 pColors 一一对应，名字按所属国家的颜色显示；pUnit 存活时点消息镜头跟着它。
+        // pPopup 为 false 时只记进世界历史，不在左上角弹出
+        public static void Add(string pId, Vector2 pLocation, Actor pUnit, string[] pTexts, Kingdom[] pColors, bool pPopup = true)
         {
             var message = new WorldLogMessage(AssetManager.world_log_library.get(pId),
                 pTexts.Length > 0 ? pTexts[0] : null, pTexts.Length > 1 ? pTexts[1] : null, pTexts.Length > 2 ? pTexts[2] : null)
@@ -120,7 +121,8 @@ namespace DiplomacyOverhaul
             if (pColors.Length > 0) message.color_special1 = pColors[0].getColor().getColorText();
             if (pColors.Length > 1) message.color_special2 = pColors[1].getColor().getColorText();
             if (pColors.Length > 2) message.color_special3 = pColors[2].getColor().getColorText();
-            message.add();
+            if (pPopup) message.add();
+            else db.DBInserter.insertLog(message);
         }
     }
 }

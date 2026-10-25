@@ -155,6 +155,8 @@
   "vd_group_parliament": "议会",
   "vd_parliament_enabled": "议会与政策",
   "vd_parliament_enabled Description": "氏族按议席表决国家的各项政策",
+  "vd_policy_log_enabled": "推行政策提示",
+  "vd_policy_log_enabled Description": "国家推行政策时在左上角提示",
   "vd_group_military": "军事",
   "vd_military_enabled": "军队大修",
   "vd_military_enabled Description": "禁军、国家指挥、攻城、军械与军饷",

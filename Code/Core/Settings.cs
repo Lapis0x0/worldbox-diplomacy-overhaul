@@ -26,6 +26,7 @@ namespace DiplomacyOverhaul
         public static bool GovernmentEventsEnabled => Get(GroupGovernment, "vd_gov_events_enabled");
         public static bool PerfEnabled => Get(GroupPerf, "vd_perf_enabled");
         public static bool ParliamentEnabled => Get(GroupParliament, KeyParliament);
+        public static bool PolicyLogEnabled => Get(GroupParliament, "vd_policy_log_enabled");
         public static bool MilitaryEnabled => Get(GroupMilitary, KeyMilitary);
 
         // 政策每次读取都要看议会开关，读过的值记下来，改的时候一起改

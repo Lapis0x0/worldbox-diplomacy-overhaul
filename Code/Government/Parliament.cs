@@ -784,7 +784,8 @@ namespace DiplomacyOverhaul
             ClearBill(pKingdom);
             _modifiers.Remove(pKingdom.id);
             WorldLogs.Add(WorldLogs.PolicyEnacted, Location(pKingdom), pKingdom.king,
-                new[] { pKingdom.data.name, LM.Get(pBill.policy.OptionName(pKingdom, pBill.option)) }, new[] { pKingdom, pKingdom });
+                new[] { pKingdom.data.name, LM.Get(pBill.policy.OptionName(pKingdom, pBill.option)) }, new[] { pKingdom, pKingdom },
+                Settings.PolicyLogEnabled);
         }
 
         // 交付表决：现在就按议席投票，通过就生效；不管通不通过，议案都撤下

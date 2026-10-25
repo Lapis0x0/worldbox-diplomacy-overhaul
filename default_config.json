@@ -57,6 +57,12 @@
       "Type": "SWITCH",
       "IconPath": "ui/Icons/iconKings",
       "BoolVal": true
+    },
+    {
+      "Id": "vd_policy_log_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconKings",
+      "BoolVal": true
     }
   ],
   "vd_group_military": [

@@ -155,6 +155,8 @@
   "vd_group_parliament": "Parlamento",
   "vd_parliament_enabled": "Parlamento e políticas",
   "vd_parliament_enabled Description": "Clãs votam nas políticas do reino de acordo com seus assentos",
+  "vd_policy_log_enabled": "Avisos de políticas",
+  "vd_policy_log_enabled Description": "Aviso no canto superior esquerdo quando um reino adota uma política",
   "vd_group_military": "Militar",
   "vd_military_enabled": "Reformulação militar",
   "vd_military_enabled Description": "Guarda real, comando, cercos, armamentos e soldos",

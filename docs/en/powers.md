@@ -45,6 +45,7 @@ Open them with the settings button at the far left of the tab. Each system has o
 | | Historic upheavals | Extinct royal lines, republics crowning emperors, coups |
 | Military | Military overhaul | Royal guard, national command, orders and box selection, sieges, arms and pay; off means armies behave as in vanilla and the army command powers are removed |
 | Display | Government in names | For example, Duchy of Coimbra |
+| | Policy notices | Notice in the top left when a realm enacts a policy. When off, it is only recorded in world history |
 | Performance | Optimize base game | Does not change outcomes |
 
 All switches are on by default, and "Defaults" turns them all back on.

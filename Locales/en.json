@@ -155,6 +155,8 @@
   "vd_group_parliament": "Parliament",
   "vd_parliament_enabled": "Parliament and policies",
   "vd_parliament_enabled Description": "Clans vote on the realm's policies by seats",
+  "vd_policy_log_enabled": "Policy notices",
+  "vd_policy_log_enabled Description": "Notice in the top left when a realm enacts a policy",
   "vd_group_military": "Military",
   "vd_military_enabled": "Military overhaul",
   "vd_military_enabled Description": "Royal guard, command, sieges, arms and pay",

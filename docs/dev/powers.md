@@ -47,5 +47,6 @@
 | | 历史事件改制 | `vd_group_government` / `vd_gov_events_enabled` | 开 |
 | 军事 | 军队大修 | `vd_group_military` / `vd_military_enabled` | 开 |
 | 显示 | 国名显示政体 | `vd_group_government` / `vd_gov_name_enabled` | 开 |
+| | 推行政策提示 | `vd_group_parliament` / `vd_policy_log_enabled` | 开 |
 | 性能 | 优化原版计算 | `vd_group_perf` / `vd_perf_enabled` | 开 |
 
