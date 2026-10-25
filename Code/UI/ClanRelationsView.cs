@@ -54,7 +54,8 @@ namespace DiplomacyOverhaul
             var rivals = new List<(ParliamentClan clan, int value)>();
             foreach (ParliamentClan other in clans)
             {
-                if (other.Key == self.Key) continue;
+                // 同一氏族的王室和宗室在议会里是两股，但家族窗口看的是整个家族，不列自己
+                if (other.clan == self.clan) continue;
                 // 按双方好感的平均分：恩怨多记在吃亏的一方，两家的窗口里看到的也一致
                 int v = (Relations.Value(self, other) + Relations.Value(other, self)) / 2;
                 if (v >= Threshold) friends.Add((other, v));
