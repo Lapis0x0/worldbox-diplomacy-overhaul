@@ -11,6 +11,9 @@ namespace DiplomacyOverhaul
         // 叛军最终占走原国家非首都城市的比例
         const int TakenPercent = 60;
 
+        // 原版「叛乱」世界法则关掉时，王朝周期不再自发引发大叛乱；神力照常可用
+        public static bool LawOn => WorldLawLibrary.world_law_rebellions.isEnabled();
+
         // 返回叛乱的城市数和造反的附庸数之和；为 0 表示什么都没发生
         public static int Trigger(Kingdom pKingdom)
         {

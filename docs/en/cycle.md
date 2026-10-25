@@ -96,6 +96,8 @@ A Great Rebellion is triggered when the Mandate falls below 20, when the capital
 
 The kingdom then enters Collapse, and a notice appears at the top of the screen.
 
+With the Rebellions world law turned off, no Great Rebellion breaks out on its own: a dynasty that hits bottom stays in Decline. The **Great Rebellion** power still works.
+
 ## Small Overlords
 
 After a Great Rebellion an overlord often has only a few cities left but keeps its vassals. An overlord with fewer than 6 cities cannot keep its vassals down: the Mandate takes a penalty ("Overextended"), vassal opinion drops ("Weak overlord"), and Integration slips each year. An overlord with only three or four cities will lose its vassals one by one over a few decades. Once the overlord grows back to 6 cities, this pressure disappears.

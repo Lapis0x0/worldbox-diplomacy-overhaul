@@ -418,7 +418,7 @@ namespace DiplomacyOverhaul
                             WorldLogs.Add(WorldLogs.Restored, pKingdom.hasCapital() ? pKingdom.capital.last_city_center : Vector2.zero, king,
                                 new[] { king.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
                     }
-                    else if (m < RebellionBelow) GreatRebellion.Trigger(pKingdom);
+                    else if (m < RebellionBelow && GreatRebellion.LawOn) GreatRebellion.Trigger(pKingdom);
                     break;
             }
         }
@@ -498,7 +498,7 @@ namespace DiplomacyOverhaul
             if (pNew != null && pNew.isAlive()) AddMandate(pNew, CityGained);
             if (pOld == null || !pOld.isAlive()) return;
             AddMandate(pOld, CityLost + (pCapitalCaptured ? CapitalLost : 0f));
-            if (pCapitalCaptured && Get(pOld) == CyclePhase.Decline) GreatRebellion.Trigger(pOld);
+            if (pCapitalCaptured && Get(pOld) == CyclePhase.Decline && GreatRebellion.LawOn) GreatRebellion.Trigger(pOld);
         }
 
         // 战争分出胜负：胜方 +5，败方 -10，议和不变
