@@ -8,11 +8,15 @@ namespace DiplomacyOverhaul
     // 只有一个系统用到的补丁留在那个系统的文件里
 
     // 每帧开头
-    [SafeBy("只弹熔断提示")]
+    [SafeBy("只弹提示")]
     [HarmonyPatch(typeof(MapBox), "Update")]
     static class Hook_FrameStart
     {
-        static void Prefix() => Safety.Tick();
+        static void Prefix()
+        {
+            Safety.Tick();
+            Isolation.Tick();
+        }
     }
 
     // 新世界或读档前会清空世界
@@ -24,6 +28,7 @@ namespace DiplomacyOverhaul
         {
             Cycle.ResetSession();
             Safety.Reset();
+            Isolation.Reset();
         }
     }
 

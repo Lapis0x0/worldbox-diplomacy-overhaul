@@ -54,8 +54,10 @@ namespace DiplomacyOverhaul.Perf
     //   bench stress <附庸数>      城市最多的国家把最小的几个国家收为附庸、吞并其余所有国家，造一个大帝国（tools/perf-check.sh 用）
     //   bench run                 直接调用议会、好感、各定期结算系统等重函数计时，每项一行 @bench <名字> <毫秒>
     //   bench arrow [stale|restore|null]   射一支箭，把它记下的国家换成已销毁的国家，检查弹道兜底（变体见 BenchDev.Arrow）
-    //   safety [fail <系统> [次数] | reset | throw on|off]   各系统熔断状态；fail 模拟某个系统的补丁出错，reset 全部恢复；
-    //                           throw 让第一座城的原版更新每帧抛异常，检查原版每帧更新的兜底
+    //   safety [fail <系统> [次数] | reset | throw on|off | throw kingdom on|off]   各系统熔断状态；fail 模拟某个系统的补丁出错，reset 全部恢复；
+    //                           throw 让第一座城的原版更新每帧抛异常，检查原版每帧更新的兜底；
+    //                           throw kingdom 让第一个国家检查国王时每次都抛异常，检查逐个国家的兜底
+    //   kings [kill]             没有国王（执政）的国家，最后一行 @kings <无主数>/<国家数>；kill 先让所有国王死去
     //   check                    巡检对象之间的关系（附庸、城市、单位、军队、弹道、战争指向的国家都还在），每条违规一行 @violation（tools/soak.sh 用）
     //   year                     写一行 @year <当前年份>
     //   end <token>              写一行 @done <token>，脚本据此判断结束
@@ -260,6 +262,7 @@ namespace DiplomacyOverhaul.Perf
                 case "bench": BenchDev.Run(a); break;
                 case "check": CheckDev.Run(); break;
                 case "year": Log("@year " + Date.getCurrentYear()); break;
+                case "kings": Kings(a.Length > 1 && a[1] == "kill"); break;
                 case "safety":
                     // safety fail <系统> [次数]：模拟这个系统的补丁出错，检查熔断；safety reset：全部恢复
                     if (a.Length > 2 && a[1] == "fail")
@@ -269,12 +272,33 @@ namespace DiplomacyOverhaul.Perf
                         for (int i = 0; i < n; i++) Safety.Fail(sys, "开发命令模拟", new InvalidOperationException("safety fail"));
                     }
                     else if (a.Length > 1 && a[1] == "reset") Safety.Reset();
+                    else if (a.Length > 3 && a[1] == "throw" && a[2] == "kingdom") Dev_ThrowInKingdomAI.On = a[3] == "on";
                     else if (a.Length > 2 && a[1] == "throw") Dev_ThrowInCity.On = a[2] == "on";
                     Log("  " + string.Join(" ", Enum.GetValues(typeof(Sys)).Cast<Sys>().Select(s => s + "=" + (Safety.On(s) ? "on" : "off"))));
                     break;
                 case "end": Log("@done " + (a.Length > 1 ? a[1] : "")); break;
                 default: Log("! unknown command"); break;
             }
+        }
+
+        // 没有国王（执政）的国家：几座城、首都有没有城主、离上次检查国王的计时
+        static void Kings(bool pKill)
+        {
+            if (pKill)
+            {
+                foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+                    if (k.isAlive() && k.isCiv() && k.hasKing()) k.king.dieSimpleNone();
+            }
+            int total = 0, empty = 0;
+            foreach (Kingdom k in World.world.kingdoms)
+            {
+                if (!k.isAlive() || !k.isCiv()) continue;
+                total++;
+                if (k.hasKing()) continue;
+                empty++;
+                Log($"  {k.data.name} 城 {k.countCities()} 首都城主 {(k.hasCapital() && k.capital.hasLeader() ? "有" : "无")} timer_new_king {k.data.timer_new_king:0.0}");
+            }
+            Log($"@kings {empty}/{total}");
         }
 
         static void Load(string pSource)
@@ -384,6 +408,21 @@ namespace DiplomacyOverhaul.Perf
         static void Prefix(City __instance)
         {
             if (On && __instance == World.world.cities.list[0]) throw new InvalidOperationException("safety throw");
+        }
+    }
+
+    // 第一个国家检查国王时每次都抛异常，检查逐个国家的兜底：其他国家照常检查国王
+    [SafeBy("故意抛异常，只在开发时启用")]
+    [HarmonyPatch(typeof(ai.behaviours.KingdomBehCheckKing), nameof(ai.behaviours.KingdomBehCheckKing.execute))]
+    static class Dev_ThrowInKingdomAI
+    {
+        public static bool On;
+
+        static bool Prepare() => Dev.Enabled;
+
+        static void Prefix(Kingdom pKingdom)
+        {
+            if (On && pKingdom == World.world.kingdoms.list[0]) throw new InvalidOperationException("safety throw kingdom");
         }
     }
 }

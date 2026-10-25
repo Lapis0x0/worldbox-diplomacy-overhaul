@@ -630,6 +630,7 @@
   "vd_regime_tributary_republic_ruler": "盟主",
   "vd_regime_patrimonial_republic_ruler": "首席元老",
   "vd_safety_off": "外交大修的「$system$」功能出错，本局已暂停",
+  "vd_isolation_persistent": "外交大修：游戏里有一处更新反复出错，部分功能可能已停止运转，请把游戏日志发给作者",
   "vd_sys_economy": "国库",
   "vd_sys_interface": "界面显示"
 }

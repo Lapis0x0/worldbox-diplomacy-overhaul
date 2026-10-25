@@ -100,11 +100,15 @@
 
 ### 原版这一侧：每一环各自兜底
 
-原版和模组漏掉的异常都在这里截住，出错只丢掉这一环这一帧的结果，后面照常更新。每处错误按位置、异常类型和堆栈第一行去重，日志里只记一次完整堆栈，前缀 `[外交大修]`。
+原版和模组漏掉的异常都在这里截住，出错只丢掉这一环这一帧的结果，后面照常更新。日志前缀 `[外交大修]`。
+
+每处错误按位置和异常类型记账（不取堆栈，持续出错时每次取堆栈比抛异常本身还贵）：第一次记完整堆栈；同一处 60 秒内出错 10 次算持续出错，再记一次堆栈，并在屏幕上提示玩家一次（每局最多一次，读档或新建世界后重新计）。持续出错通常是某个对象卡在出错的状态里，背后的系统已经停摆，只靠日志玩家察觉不到。
 
 - **单位**：校验任务、决策、执行 AI 这三步（`BatchActors.b4_checkTaskVerifier`、`b6_0_updateDecision`、`b6_updateAI`，循环由 `Guard.cs` 接管）逐个单位兜住异常。出错的单位停下手头的事（`cancelAllBeh`）；同一个单位再出错，先离开军队再停下。任务和军队对不上是这类错误最常见的来源。
 - **批处理任务**：`Batch.runUpdater` 挂 Finalizer，单位、建筑等任何批处理任务出错，只丢掉这个任务这一帧的结果。`Batch<T>` 对引用类型共用一份代码，补丁挂在 `Batch<Actor>` 上，所有批次都生效。
-- **城市、战争**：原版逐个对象调 `City.update`、`War.update`，兜在对象上，一座城出错不影响其他城。
+- **逐个对象的更新**：原版逐个对象更新时，一个对象出错，排在它后面的对象这一帧全被跳过，出错的条件不变就永远轮不到。这些都兜在对象上（`Patch_IsolateObjects`）：城市 `City.update`、战争 `War.update`、国家 `Kingdom.updateCiv`、联盟 `Alliance.update`、家族 `Clan.checkMembersForNewChief`、军队 `Army.checkCaptainExistence`、密谋 `Plot.updateProgress` 和 `updateAnimations`、状态效果 `Status.update` 和 `updateAnimationFrame`。会卡在出错状态里的对象顺手停下：
+  - 国家：`updateCiv` 跑王国 AI（检查首都、检查国王）。原版 AI 出错时那一步不前进，下一帧还是它，排在后面的国家永远不再检查国王，王位空了就一直空着。出错的国家放弃当前任务，歇 5 秒再重新挑任务
+  - 密谋取消，状态效果结束
 - **子系统**：`MapBox` 的城市、单位、建筑、世界行为、地图图层更新，军队、国家、外交、亚种、密谋、家族、联盟、战争、状态效果各自的 `update`，都挂 Finalizer。
 - **模拟和画面**：整个模拟步骤（`updateSimulation`）再兜一层，模拟出错不影响之后的玩家操作（`PlayerControl.updateControls`）、名牌（`NameplateManager.update`）和渲染（`renderStuff`），这三处也各自兜住。
 - **并行任务**（属性重算）不经过 `runUpdater`，并行阶段里模组自己的补丁（单位伤害倍数、属性池）各自兜住异常。

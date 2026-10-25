@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using HarmonyLib;
+using NeoModLoader.General;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace DiplomacyOverhaul
 {
@@ -32,8 +35,23 @@ namespace DiplomacyOverhaul
     // 最常见的不一致来源）；其他任务出错只丢掉它这一帧。同一处错误只记一次日志
     public static class Isolation
     {
-        static readonly HashSet<string> _reported = new HashSet<string>();
+        // 同一处 1 分钟内出错这么多次算持续出错：多半是某个对象卡在出错的状态里，每次更新都出错
+        const int PersistCount = 10;
+        const double PersistWindowSeconds = 60;
+
+        class Spot
+        {
+            public double windowStart;
+            public int count;
+            public bool persistent;
+        }
+
+        // 按位置和异常类型记账，不取堆栈：持续出错时每次都取一遍堆栈，比抛异常本身还贵
+        static readonly Dictionary<string, Spot> _spots = new Dictionary<string, Spot>();
         static readonly Dictionary<long, int> _failures = new Dictionary<long, int>();
+        static readonly Stopwatch _clock = Stopwatch.StartNew();
+        static bool _tipped;
+        static bool _pendingTip;
 
         public static void ActorFailed(Actor pActor, string pStep, Exception pError)
         {
@@ -49,16 +67,59 @@ namespace DiplomacyOverhaul
             catch (Exception e) { Report($"单位 {pActor.asset?.id} 出错后的恢复", e); }
         }
 
-        public static void Report(string pWhere, Exception pError)
+        // 每处错误第一次记完整堆栈；持续出错时再记一次，并在屏幕上提示玩家一次（每局一次），
+        // 免得某个系统悄悄停摆几百年没人察觉。pSubject 是出错的对象，只写进日志，不参与记账
+        public static void Report(string pWhere, Exception pError, string pSubject = null)
         {
-            string trace = pError.StackTrace ?? "";
-            int end = trace.IndexOf('\n');
-            string key = pWhere + "|" + pError.GetType().Name + "|" + (end < 0 ? trace : trace.Substring(0, end));
-            lock (_reported)
+            string key = pWhere + "|" + pError.GetType().Name;
+            double now = _clock.Elapsed.TotalSeconds;
+            bool first = false, persistent = false;
+            int count;
+            lock (_spots)
             {
-                if (!_reported.Add(key)) return;
+                if (!_spots.TryGetValue(key, out Spot spot))
+                {
+                    spot = new Spot { windowStart = now };
+                    _spots[key] = spot;
+                    first = true;
+                }
+                if (now - spot.windowStart > PersistWindowSeconds)
+                {
+                    spot.windowStart = now;
+                    spot.count = 0;
+                }
+                count = ++spot.count;
+                if (!spot.persistent && spot.count >= PersistCount)
+                {
+                    spot.persistent = persistent = true;
+                    if (!_tipped) _tipped = _pendingTip = true;
+                }
             }
-            Debug.LogError($"[外交大修] {pWhere} 出错，已跳过，其余照常更新：{pError}");
+            string subject = pSubject == null ? "" : $"（{pSubject}）";
+            if (first) Debug.LogError($"[外交大修] {pWhere}{subject} 出错，已跳过，其余照常更新：{pError}");
+            if (persistent) Debug.LogError($"[外交大修] {pWhere}{subject} 持续出错，{PersistWindowSeconds} 秒内 {count} 次：{pError}");
+        }
+
+        // 每帧开头（主线程）
+        public static void Tick()
+        {
+            lock (_spots)
+            {
+                if (!_pendingTip) return;
+                _pendingTip = false;
+            }
+            WorldTip.showNow(LM.Get("vd_isolation_persistent"), false, "top");
+        }
+
+        // 读档、新建世界前
+        public static void Reset()
+        {
+            lock (_spots)
+            {
+                _spots.Clear();
+                _tipped = _pendingTip = false;
+            }
+            _failures.Clear();
         }
     }
 
@@ -160,7 +221,7 @@ namespace DiplomacyOverhaul
 
     // 原版每帧的更新没有异常保护：模拟里一个子系统抛异常，这一帧排在它后面的子系统、之后的玩家操作和渲染全被跳过，
     // 条件不变就每帧如此，画面停住。这里给每一环兜底：出错只丢掉这一环这一帧的结果。
-    // 城市和战争逐个对象更新，兜在对象上，一座城出错不影响其他城；其余兜在子系统上；整个模拟步骤再兜一层，
+    // 逐个对象更新的兜在对象上（见 Patch_IsolateObjects）；这里兜在子系统上；整个模拟步骤再兜一层，
     // 模拟出错不影响之后的玩家操作和渲染
     [HarmonyPatch]
     static class Patch_IsolateFrame
@@ -172,8 +233,6 @@ namespace DiplomacyOverhaul
             foreach (Type manager in new[] { typeof(ArmyManager), typeof(KingdomManager), typeof(DiplomacyManager), typeof(SubspeciesManager), typeof(PlotManager),
                          typeof(ClanManager), typeof(AllianceManager), typeof(WarManager), typeof(StatusManager) })
                 yield return AccessTools.Method(manager, "update", new[] { typeof(float) });
-            yield return AccessTools.Method(typeof(City), nameof(City.update));
-            yield return AccessTools.Method(typeof(War), nameof(War.update));
             yield return AccessTools.Method(typeof(NameplateManager), "update");
             yield return AccessTools.Method(typeof(PlayerControl), "updateControls");
         }
@@ -182,6 +241,66 @@ namespace DiplomacyOverhaul
         {
             if (__exception != null) Isolation.Report($"原版 {__originalMethod.DeclaringType?.Name}.{__originalMethod.Name}", __exception);
             return null;
+        }
+    }
+
+    // 原版逐个对象更新时也没有异常保护：一个对象出错，这一帧排在它后面的对象全被跳过；出错的条件不变就每帧如此，
+    // 排在后面的对象永远不再更新。这里兜在每个对象上，出错只丢掉这个对象这一帧的结果。
+    // 会卡在出错状态里的对象顺手停下：国家放弃 AI 当前的任务，歇几秒再重新挑（原版 AI 出错时不前进，
+    // 下一帧还是同一步，排在后面的国家永远不再检查国王）；密谋取消；状态效果结束
+    [HarmonyPatch]
+    static class Patch_IsolateObjects
+    {
+        const float KingdomRest = 5f;
+
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(City), nameof(City.update));
+            yield return AccessTools.Method(typeof(War), nameof(War.update));
+            yield return AccessTools.Method(typeof(Kingdom), nameof(Kingdom.updateCiv));
+            yield return AccessTools.Method(typeof(Alliance), nameof(Alliance.update));
+            yield return AccessTools.Method(typeof(Clan), nameof(Clan.checkMembersForNewChief));
+            yield return AccessTools.Method(typeof(Army), nameof(Army.checkCaptainExistence));
+            yield return AccessTools.Method(typeof(Plot), nameof(Plot.updateProgress));
+            yield return AccessTools.Method(typeof(Plot), nameof(Plot.updateAnimations));
+            yield return AccessTools.Method(typeof(Status), nameof(Status.update));
+            yield return AccessTools.Method(typeof(Status), nameof(Status.updateAnimationFrame));
+        }
+
+        static Exception Finalizer(Exception __exception, object __instance, MethodBase __originalMethod)
+        {
+            if (__exception == null) return null;
+            Isolation.Report($"原版 {__originalMethod.DeclaringType?.Name}.{__originalMethod.Name}", __exception, Describe(__instance));
+            try
+            {
+                switch (__instance)
+                {
+                    case Kingdom k:
+                        k.ai?.setTaskBehFinished();
+                        k.timer_action = KingdomRest;
+                        break;
+                    case Plot p:
+                        World.world.plots.cancelPlot(p);
+                        break;
+                    case Status st:
+                        st.finish();
+                        break;
+                }
+            }
+            catch (Exception e) { Isolation.Report($"原版 {__originalMethod.DeclaringType?.Name} 出错后的恢复", e); }
+            return null;
+        }
+
+        static string Describe(object pObject)
+        {
+            switch (pObject)
+            {
+                case Kingdom k: return k.data?.name;
+                case City c: return c.data?.name;
+                case Plot p: return p.getAsset()?.id;
+                case Status st: return st.asset?.id;
+                default: return null;
+            }
         }
     }
 

@@ -630,6 +630,7 @@
   "vd_regime_tributary_republic_ruler": "Hegêmona",
   "vd_regime_patrimonial_republic_ruler": "Príncipe do Senado",
   "vd_safety_off": "Diplomacy Overhaul: \"$system$\" encontrou erros e foi pausado nesta sessão",
+  "vd_isolation_persistent": "Diplomacy Overhaul: uma parte do jogo continua falhando ao atualizar e alguns recursos podem ter parado de funcionar. Envie o log do jogo ao autor",
   "vd_sys_economy": "Tesouro",
   "vd_sys_interface": "Interface"
 }
