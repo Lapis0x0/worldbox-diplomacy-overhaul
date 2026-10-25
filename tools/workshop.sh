@@ -34,7 +34,10 @@ content="$stage/DiplomacyOverhaul"
 vdf="$stage/item.vdf"
 CONTENT="$content" PREVIEW="$content/preview.png" NOTES="$notes" APP="$app_id" ITEM="$item_id" python3 - > "$vdf" <<'PY'
 import os
-def q(s): return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+import re
+# SteamCMD 解析 VDF 不认反斜杠转义，遇到直引号就当字符串结束：说明里的直引号成对换成弯引号
+def curly(s): return re.sub(r'"([^"\n]*)"', '\u201c\\1\u201d', s).replace('"', '\u201d')
+def q(s): return '"' + curly(s) + '"'
 fields = [("appid", os.environ["APP"]), ("publishedfileid", os.environ["ITEM"]),
           ("contentfolder", os.environ["CONTENT"]), ("previewfile", os.environ["PREVIEW"]),
           ("changenote", os.environ["NOTES"])]
