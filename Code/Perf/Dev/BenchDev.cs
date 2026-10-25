@@ -108,6 +108,7 @@ namespace DiplomacyOverhaul.Perf
             // 议会：起草、表决、政策生效后重算忠诚
             Report("parl.clans", Best(() => Parliament.Clans(k)));
             Report("parl.draft", Best(() => Parliament.Draft(k, clans)));
+            Report("parl.relations", Best(() => Relations.Matrix(clans)));
             double vote = 0;
             foreach (Policy p in Policies.All)
             {

@@ -145,17 +145,30 @@ Under the kingdom name in the parliament window is a line naming the kingdom's r
 ## How Parliament Works
 
 - Each kingdom holds a parliament every 4 to 6 years, and votes on one bill. The bill is drafted at the previous session. In the parliament window you can see which clan proposed it and how many years until the vote.
-- **Each policy is voted on by itself**: Every clan has an option it wants on each policy. If the bill moves that policy closer to what the clan wants, it votes yes. Otherwise it votes no. Votes are counted by seats, and a majority passes the bill. The other policies do not affect this vote.
+- **Each policy is voted on by itself**: Every clan has an option it wants on each policy. If the bill moves that policy closer to what the clan wants, it votes yes. Otherwise it votes no. Votes are counted by seats, and a majority passes the bill. The other policies do not affect this vote, but the proposer does: a clan will back a friend's bill even if it gains a little less than it would like, and may vote down a rival's bill even when it would gain.
 - **Circumstances, not just stance**: Which option a clan wants depends on its stance, and also on its circumstances and interests:
   - Clans with many ports want sea power, inland clans want land power.
   - Clans that govern foreign residents fear unrest and want Local Customs.
   - When troops and money move to the center, the royal house gains and local clans lose.
   - Warlike or hotheaded chiefs want expansion and more arms, peaceful chiefs want fewer wars. In wartime everyone wants more arms.
   - The overlord's clans want more Vassal Tribute, but not when vassals are strong or already discontented.
-- **Drafting**: The more discontented a clan is and the more seats it has, the more likely it is to be the proposer. The proposer picks the policy that suits it best and is most likely to pass. If nobody wants a change, there is no bill this time.
+- **Drafting**: The more discontented a clan is and the more seats it has, the more likely it is to be the proposer. The proposer picks the policy that suits it best and is most likely to pass, and issues its friends support are more likely to pass. If nobody wants a change, there is no bill this time.
 - **The royal house's worries**: The ruling clan estimates whether a bill would push the provinces into revolt. At Prime the provinces are calm and the royal house is comfortable taking power. In Decline the provinces are already shaky and it dares not push too hard.
 
 When a bill passes, the world log records "kingdom adopts policy".
+
+## Between Clans
+
+Clans in the same parliament have opinions of each other, one way at a time: what A thinks of B is separate from what B thinks of A. Opinions come from:
+
+- **Politics**: Clans with similar stances get along, opposed ones do not.
+- **Heads are best friends**, **Marriage**: The two chiefs are best friends, or a chief's partner belongs to the other clan.
+- **Favors**: A clan that votes yes out of goodwill, though it would not have otherwise, earns the proposer's gratitude. A clan that gains from a bill is grateful to its proposer.
+- **Grudges**: A clan that loses from a bill resents its proposer. A clan whose no vote sinks a bill earns the proposer's resentment.
+
+Favors fade in about ten years, grudges last twenty or thirty. When a chief is replaced, most of the old favors and grudges carry over. The royal house is a clan too and keeps its own score: a crown that keeps curbing the provinces drifts further from the local clans.
+
+In the clan window, the row above Overview shows the clans it gets along with (left) and the ones it is at odds with (right) in its parliament. Hover over a banner to see both sides' opinions and the breakdown.
 
 ## Local Discontent
 

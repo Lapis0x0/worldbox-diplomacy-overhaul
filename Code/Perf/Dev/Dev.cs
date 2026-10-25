@@ -28,6 +28,7 @@ namespace DiplomacyOverhaul.Perf
     //   probe <类型.方法> ...     detail 测量时额外计时这些方法（同名重载都算），不带参数则清空
     //   shot <名字>              截图到 bin/dev/shots/<名字>.png
     //   fav <items|units> <数量>  随机设一些收藏（走玩家切换收藏的同一个方法）
+    //   uitree <窗口 id> [深度]    打印窗口的节点层级：名字、是否激活、组件、位置和尺寸、文字
     //   gcinfo                   打印 GC 模式和托管堆大小
     //   heap <标签> [行数]        遍历托管堆，按类型统计个数和大小（很慢）
     //   gc                       强制完整回收，打印回收前后的占用（得到活对象的大小）
@@ -45,6 +46,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl election [国家]       打开选举与任命窗口
     //   parl vote [国家]           按眼下的议会选一次执政，只打印候选人（能力、声望、分量）和票数，不生效
     //   parl renown              各国国王的声望，城主声望和能力的分布
+    //   parl rel [国家] [open <氏族名>]   各股势力两两之间的好感和明细；open 打开那个家族的窗口
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
@@ -212,6 +214,11 @@ namespace DiplomacyOverhaul.Perf
                     float shot_until = Time.realtimeSinceStartup + 1f;
                     _blocker = () => Time.realtimeSinceStartup >= shot_until;
                     break;
+                case "uitree":
+                    // uitree <窗口 id> [深度]：打印窗口的节点层级（名字、是否激活、组件、位置和尺寸）
+                    if (ScrollWindow._all_windows.TryGetValue(a[1], out ScrollWindow uw) && uw != null) UiTree(uw.transform, 0, a.Length > 2 ? int.Parse(a[2]) : 8);
+                    else Log("  ! no window " + a[1]);
+                    break;
                 case "allocprobe":
                     try
                     {
@@ -292,6 +299,17 @@ namespace DiplomacyOverhaul.Perf
                 Log($"  loaded in {Time.realtimeSinceStartup - started:F1}s units={World.world.units.Count}");
                 return true;
             };
+        }
+
+        static void UiTree(Transform pNode, int pDepth, int pMax)
+        {
+            var rt = pNode as RectTransform;
+            string comps = string.Join(",", pNode.GetComponents<Component>().Where(c => c != null && !(c is Transform)).Select(c => c.GetType().Name));
+            string box = rt != null ? $" pos={rt.anchoredPosition} size={rt.rect.size}" : "";
+            var text = pNode.GetComponent<UnityEngine.UI.Text>();
+            Log($"{new string(' ', 2 + pDepth * 2)}{pNode.name}{(pNode.gameObject.activeSelf ? "" : " (off)")} [{comps}]{box}{(text != null ? " \"" + text.text + "\"" : "")}");
+            if (pDepth >= pMax) return;
+            foreach (Transform c in pNode) UiTree(c, pDepth + 1, pMax);
         }
 
         static void Camera(string[] a)

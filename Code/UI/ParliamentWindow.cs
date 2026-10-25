@@ -713,7 +713,7 @@ namespace DiplomacyOverhaul
         static Clan ProposerClan(Bill pBill)
         {
             if (pBill.proposer < 0) return null;
-            Clan clan = World.world.clans.get(pBill.proposer);
+            Clan clan = World.world.clans.get(ParliamentClan.ClanIdOf(pBill.proposer));
             return clan != null && !clan.isRekt() ? clan : null;
         }
 

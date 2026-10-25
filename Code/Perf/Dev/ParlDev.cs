@@ -80,6 +80,32 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"  {pc.clan.name} traits=[{traits}] stance=({pc.x:F2},{pc.y:F2}) {pc.faction}");
                 return;
             }
+            if (mode == "rel")
+            {
+                // parl rel [国家] [open <氏族名>]：各股势力两两之间的好感和明细；open 打开那个家族的窗口
+                Kingdom target = Find(a.Length > 2 ? a[2] : null);
+                if (target == null) { Dev.Log("parl rel [国家] [open <氏族名>]"); return; }
+                var clans = Parliament.Clans(target);
+                if (a.Length > 4 && a[3] == "open")
+                {
+                    ParliamentClan pick = clans.FirstOrDefault(c => c.clan.name.Contains(a[4])) ?? clans.First();
+                    SelectedMetas.selected_clan = pick.clan;
+                    ScrollWindow.showWindow("clan");
+                    return;
+                }
+                Dev.Log($"  {target.data.name} year={Date.getCurrentYear()}");
+                foreach (ParliamentClan from in clans)
+                {
+                    Dev.Log($"  {from.clan.name}{(from.ruling ? "[王室]" : from.cadet ? "[宗室]" : "")} ({from.x:F2},{from.y:F2}) voice={from.voice?.getName()}");
+                    foreach (ParliamentClan to in clans)
+                    {
+                        if (to == from) continue;
+                        Relations.Opinion o = Relations.Of(from, to);
+                        Dev.Log($"    → {to.clan.name}{(to.cadet ? "[宗室]" : "")}: {o.Total} (政见 {o.ideology} 挚友 {o.friend} 联姻 {o.marriage} 恩情 {o.favor} 积怨 {o.grudge})");
+                    }
+                }
+                return;
+            }
             if (mode == "election")
             {
                 Kingdom target = Find(a.Length > 2 ? a[2] : null);
