@@ -7,16 +7,25 @@ using Object = UnityEngine.Object;
 namespace DiplomacyOverhaul
 {
     // 家族窗口「概览」上面一行：同一个议会里交好的家族（左）和交恶的家族（右），照原版王国窗口「战争 / 外交」那一行。
-    // 那一行从原版王国窗口的预制件里复制，拆掉原版的外交组件，自己往两格里放家族旗帜
+    // 那一行从原版王国窗口的预制件里复制，拆掉原版的外交组件，自己往两格里放家族旗帜。
+    // 悬停旗帜用自己的提示：原版家族提示的样子，只留标题和旗帜，下面是双方的好感和明细
     [HarmonyPatch(typeof(ClanWindow), "showStatsRows")]
     static class ClanRelationsView
     {
         const string RowName = "vd_clan_relations";
+        const string TipId = "vd_clan_relation";
         // 好感到这么多才算交好、交恶
         const int Threshold = 10;
+        const string Good = "#43FF43", Bad = "#FB2C21";
 
         // 正在悬停的旗帜：窗口里的家族、旗帜上的家族
-        internal static ParliamentClan TipSelf, TipOther;
+        static ParliamentClan _tipSelf, _tipOther;
+
+        public static void Init()
+        {
+            // 原版按提示 id 各建一个实例，藏起这个实例里的图标和特质不影响原版的家族提示
+            Core.Upsert(AssetManager.tooltips, new TooltipAsset { id = TipId, prefab_id = "tooltips/tooltip_clan", callback = ShowTip });
+        }
 
         static void Postfix(ClanWindow __instance)
         {
@@ -111,9 +120,9 @@ namespace DiplomacyOverhaul
                     tip.setDefaultScale(scale);
                     tip.setHoverAction(() =>
                     {
-                        TipSelf = self;
-                        TipOther = target;
-                        Tooltip.show(banner, "clan", new TooltipData { clan = target.clan });
+                        _tipSelf = self;
+                        _tipOther = target;
+                        Tooltip.show(banner, TipId, new TooltipData { clan = target.clan });
                     });
                 }
                 if (banner.TryGetComponent(out UiButtonHoverAnimation hover))
@@ -161,24 +170,24 @@ namespace DiplomacyOverhaul
                 if (c.leader != null && c.leader.clan == pClan) return true;
             return false;
         }
-    }
 
-    // 悬停家族关系里的旗帜：原版家族提示下面加上双方的好感和明细
-    [HarmonyPatch(typeof(TooltipLibrary), "showClan")]
-    static class Patch_ClanRelationTip
-    {
-        const string Good = "#43FF43", Bad = "#FB2C21";
+        // ---------- 悬停提示 ----------
 
-        static void Postfix(Tooltip pTooltip, TooltipData pData)
+        static void ShowTip(Tooltip pTooltip, string pType, TooltipData pData)
         {
-            ParliamentClan self = ClanRelationsView.TipSelf, other = ClanRelationsView.TipOther;
-            if (self == null || other == null || pData?.clan != other.clan) return;
-            // 只给这一次悬停加，别处显示同一个家族的提示时不带
-            ClanRelationsView.TipSelf = ClanRelationsView.TipOther = null;
             if (!Safety.On(Sys.Interface)) return;
             try
             {
-                pTooltip.addLineBreak();
+                ParliamentClan self = _tipSelf, other = _tipOther;
+                Clan clan = pData?.clan;
+                if (clan == null || self == null || other == null || other.clan != clan) return;
+                pTooltip.setSpeciesIcon(clan.getActorAsset().getSpriteIcon());
+                pTooltip.setTitle(clan.name, "clan", clan.getColor().color_text);
+                foreach (ClanBanner b in pTooltip.transform.FindAllRecursive<ClanBanner>()) b.load(clan);
+                foreach (Transform c in pTooltip.transform)
+                {
+                    if (c.GetComponent<UnityEngine.UI.GridLayoutGroup>() != null || c.GetComponent<TooltipClanTraitsRow>() != null) c.gameObject.SetActive(false);
+                }
                 Lines(pTooltip, "vd_rel_theirs", Relations.Of(other, self));
                 pTooltip.addLineBreak();
                 Lines(pTooltip, "vd_rel_ours", Relations.Of(self, other));
