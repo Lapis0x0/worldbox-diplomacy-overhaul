@@ -42,7 +42,7 @@ The kingdom equips the Guard, and each city equips its own local troops, with st
 
 | | Guard | Local troops |
 |---|---|---|
-| Who pays | The treasury, following parliament's [Fiscal Priority](parliament.md#military) policy | The city's stockpile |
+| Who pays | The treasury, following parliament's [Fiscal Priority](parliament.md#domestic) policy | The city's stockpile |
 | Reserved first | The treasury's [reserve](treasury.md#where-money-goes) | Two years of local troop pay and building costs |
 | Gear traits | More than civilian-made gear | More than civilian-made gear, fewer than the Guard |
 | Materials | Bought from the kingdom's cities, and from caravans if not available | Only from the city's stockpile |

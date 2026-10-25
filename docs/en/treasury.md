@@ -30,7 +30,7 @@ Unpaid local troops are shown in the city window and city tooltip. Unpaid Guard 
 | Treasury | The Guard's pay and armament, public works, plots started by the king, reparations after a lost war |
 | King's personal wealth | His or her own equipment (vanilla) |
 
-- **Reserve**: The treasury first sets aside a reserve: two years of Guard pay in peacetime, doubled during a war, and half again when bordering a much stronger neighbor. Armament and public works only spend money beyond the reserve. How much each may spend at most is set by parliament's [Fiscal Priority](parliament.md#military); whatever is not spent stays in the treasury.
+- **Reserve**: The treasury first sets aside a reserve: two years of Guard pay in peacetime, doubled during a war, and half again when bordering a much stronger neighbor. Armament and public works only spend money beyond the reserve. How much each may spend at most is set by parliament's [Fiscal Priority](parliament.md#domestic); whatever is not spent stays in the treasury.
 - **Plots**: When a king starts a plot, the money comes from the treasury. Whether the plot is affordable also depends on the treasury.
 - **Reparations**: After a lost war, the treasury and every city stockpile hand over gold at the same ratio. It goes to the winner's treasury. See [War and Peace Talks](war.md#treaties).
 

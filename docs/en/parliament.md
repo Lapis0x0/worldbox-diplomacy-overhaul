@@ -65,6 +65,15 @@ The lord's clan decides who holds the city's seats, so Appointments reshapes par
 
 Elven kingdoms start with Tax Farming, sheep kingdoms start with Central Collection, and all others start with Shared Revenue. This policy replaces vanilla's Low Tribute and High Tribute traits.
 
+**Fiscal Priority**: How much of the money beyond the treasury's reserve may go to the Guard's equipment and to [public works](treasury.md#public-works). Both spend only when needed, and the rest stays in the treasury. For equipment see [Armament](armies.md#armament). Local clans want public works, since the buildings go up in their cities; the royal family leans toward the Guard; in wartime, clans with many front-line cities want arms too.
+
+| Option | Effect |
+|---|---|
+| Public Works Only | Spare money all goes to public works. The Guard forges its own gear, as in vanilla |
+| Public Works First | Most spare money goes to public works. Missing gear is issued, no upgrades |
+| Balanced Funding | Split evenly between public works and arms. Once most of the Guard is equipped, the material goes up one tier |
+| Armament Only | Spare money all goes to equipping the Guard |
+
 **Cultural Policy**:
 
 | Option | Effect |
@@ -93,15 +102,6 @@ Elven kingdoms start with Tax Farming, sheep kingdoms start with Central Collect
 | Sea Power | 4 | -15% |
 
 Transports carry cannons and bombard the coast. They are also how armies cross the sea.
-
-**Fiscal Priority**: How much of the money beyond the treasury's reserve may go to the Guard's equipment and to [public works](treasury.md#public-works). Both spend only when needed, and the rest stays in the treasury. For equipment see [Armament](armies.md#armament). Local clans want public works, since the buildings go up in their cities; the royal family leans toward the Guard; in wartime, clans with many front-line cities want arms too.
-
-| Option | Effect |
-|---|---|
-| Public Works Only | Spare money all goes to public works. The Guard forges its own gear, as in vanilla |
-| Public Works First | Most spare money goes to public works. Missing gear is issued, no upgrades |
-| Balanced Funding | Split evenly between public works and arms. Once most of the Guard is equipped, the material goes up one tier |
-| Armament Only | Spare money all goes to equipping the Guard |
 
 ### Diplomacy
 

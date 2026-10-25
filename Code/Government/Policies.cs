@@ -171,7 +171,7 @@ namespace DiplomacyOverhaul
         {
             All.Clear();
             _byId.Clear();
-            // 内政按 政体 → 选官 → 领地 → 税收 → 教化 排，界面照这个顺序显示
+            // 内政按 政体 → 选官 → 领地 → 税收 → 财政重心 → 教化 排，界面照这个顺序显示
             Add(new Policy
             {
                 id = Form, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, count = 2, icon = "ui/Icons/iconKings",
@@ -205,13 +205,21 @@ namespace DiplomacyOverhaul
             });
             Add(new Policy
             {
+                id = Arms, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge", load = 0.5f,
+                shown = _ => Military.On,
+                // 禁军是中央的兵，营建修在地方的城里；自家城缺得多的更想营建，前线城多的打仗时要军备
+                lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + Crown(pc)
+                    - WorksNeed * Works.NeedGap(k, pc) + ArmsFront * Works.FrontShare(k, pc)
+            });
+            Add(new Policy
+            {
                 id = Customs, tab = PolicyTab.Domestic, axis = PolicyAxis.Central, icon = "ui/Icons/iconCulture",
                 lean = (k, pc) => -CustomsForeign * pc.foreign + (pc.ruling ? CustomsUnify * Parliament.KingdomForeign(k) : 0f)
             });
             Add(new Policy
             {
                 id = Army, tab = PolicyTab.Military, axis = PolicyAxis.Central, count = 4, icon = "ui/Icons/iconArmy", crown = true,
-                // 军事三项随军队大修一起关掉
+                // 兵制、海军方针和内政里的财政重心随军队大修一起关掉
                 shown = _ => Military.On,
                 lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + Crown(pc)
             });
@@ -221,14 +229,6 @@ namespace DiplomacyOverhaul
                 id = Navy, tab = PolicyTab.Military, axis = PolicyAxis.Radical, icon = "ui/Icons/iconBoat", load = 0f,
                 shown = _ => Military.On,
                 lean = (k, pc) => NavyCoast * (pc.coast - 0.5f)
-            });
-            Add(new Policy
-            {
-                id = Arms, tab = PolicyTab.Military, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge", load = 0.5f,
-                shown = _ => Military.On,
-                // 禁军是中央的兵，营建修在地方的城里；自家城缺得多的更想营建，前线城多的打仗时要军备
-                lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + Crown(pc)
-                    - WorksNeed * Works.NeedGap(k, pc) + ArmsFront * Works.FrontShare(k, pc)
             });
             Add(new Policy
             {
