@@ -1,0 +1,9 @@
+Reference image 1 is a screenshot of a policy row in a WorldBox (pixel-art god game) mod window. The policy "国家政体" (form of government) is currently set to "共和制" (republic), and the player has made it a permanent CHARTER article that parliament cannot change. Right now this is only shown by a small gold "宪章" (charter) label and a gold padlock icon. Reference image 2 shows the vanilla game's button sprites (red selected button, grey button, red button with gold corners) and the vanilla padlock icon, enlarged with nearest-neighbour scaling.
+
+Redraw the same UI strip four times, stacked vertically as four separate rows, each a different design for how a "charter" (constitutional article) option looks. Keep the window background, the tabs, the "君主制" grey button and the layout exactly the same as reference 1; only change the "共和制" buttons (both the small one in the header and the big one in the expanded row) and replace the padlock:
+1. The button becomes aged parchment (warm cream/tan) with a gold pixel border, dark brown text, and a small red wax seal stamp in place of the padlock.
+2. The button keeps the red base but gets a thick gold frame with gold corner studs like the vanilla gold-cornered button, and a red wax seal with gold rim instead of the padlock.
+3. The button looks like a small unrolled parchment scroll (curled ends left and right) with dark brown text and a wax seal hanging from a ribbon.
+4. Parchment button with gold border and a tiny rolled scroll icon tied with a red ribbon in place of the padlock.
+
+Style: exactly match the vanilla WorldBox UI pixel-art: chunky square pixels on a strict grid at the same pixel scale as the reference screenshot, limited palette, dark outlines, no anti-aliasing, no gradients, no glow. Keep the Chinese text as in the reference. No extra labels or captions.

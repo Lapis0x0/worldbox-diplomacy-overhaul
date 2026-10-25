@@ -1,0 +1,7 @@
+Reference image 1 shows two pixel-art icons we have chosen: on the left, a gold parchment scroll (charter) with a small crown and text lines and a gold closed padlock on its bottom-right corner, meaning "this policy is enshrined in the charter"; on the right, the same gold scroll with a grey padlock. Reference image 2 shows tiny vanilla-style padlock icons (gold = locked, white = unlocked) enlarged, for style.
+
+Keep the left icon exactly as it is. Redraw only the right icon ("not enshrined yet") so that it clearly looks inactive and is NOT gold: a white / light grey parchment scroll with the same small crown and text lines drawn in grey, and a light grey OPEN padlock (shackle raised and unlocked) on its corner. Same shape, same size, same pixel grid as the left icon.
+
+Draw the pair side by side, left = gold enshrined (unchanged), right = new white/grey version. Repeat the pair once more below with a slight variation of the grey version.
+
+Style: exactly the same chunky pixel grid and pixel size as reference 1, thick dark brown 1-pixel outline, limited palette, no anti-aliasing, no gradients, no readable text. Each icon about 12% of the image width. Flat uniform medium grey (#808080) background, no labels.

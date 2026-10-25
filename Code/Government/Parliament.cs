@@ -543,7 +543,7 @@ namespace DiplomacyOverhaul
             pBill.option >= 0 && pBill.option < pBill.policy.count && pBill.policy.CanPropose(pKingdom)
             && pBill.policy.Get(pKingdom) != pBill.option && (pBill.player || !Locked(pKingdom, pBill.policy));
 
-        // 玩家锁定的政策：议会不起草改动它的议案，玩家自己改了选项就解锁
+        // 玩家写入宪章（锁定）的政策：议会不起草改动它的议案，玩家自己改了选项就移出
         public static bool Locked(Kingdom pKingdom, Policy pPolicy)
         {
             pKingdom.data.get(KeyLockPrefix + pPolicy.id, out bool locked, false);
@@ -552,8 +552,16 @@ namespace DiplomacyOverhaul
 
         public static void SetLocked(Kingdom pKingdom, Policy pPolicy, bool pLocked)
         {
-            if (pLocked) pKingdom.data.set(KeyLockPrefix + pPolicy.id, true);
-            else pKingdom.data.removeBool(KeyLockPrefix + pPolicy.id);
+            if (!pLocked)
+            {
+                pKingdom.data.removeBool(KeyLockPrefix + pPolicy.id);
+                return;
+            }
+            if (Locked(pKingdom, pPolicy)) return;
+            pKingdom.data.set(KeyLockPrefix + pPolicy.id, true);
+            WorldLogs.Add(WorldLogs.Charter, Location(pKingdom), pKingdom.king,
+                new[] { pKingdom.data.name, LM.Get(pPolicy.OptionName(pKingdom, pPolicy.Get(pKingdom))) }, new[] { pKingdom, pKingdom },
+                Settings.PolicyLogEnabled);
         }
 
         public static void SetBill(Kingdom pKingdom, Bill pBill)

@@ -31,6 +31,7 @@ namespace DiplomacyOverhaul
         public const string Usurped = "vd_log_usurped";                  // $ruler$ 篡夺 $kingdom$ 王位，建立新王朝
         public const string Junta = "vd_log_junta";                      // $kingdom$ 的将领们夺取政权，$ruler$ 执政
         public const string PolicyEnacted = "vd_log_policy";             // $kingdom$ 推行$policy$
+        public const string Charter = "vd_log_charter";                  // $kingdom$ 将$policy$写入宪章
 
         public static void Init()
         {
@@ -59,6 +60,7 @@ namespace DiplomacyOverhaul
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
             Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
+            Register(Charter, ParliamentWindow.IconPath, Toolbox.color_log_good, "$kingdom$", "$policy$");
             Retitle("king_new", "$kingdom$", "$king$");
             Retitle("king_left", "$kingdom$", "$king$");
             Retitle("king_dead", "$kingdom$", "$king$");

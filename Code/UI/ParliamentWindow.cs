@@ -587,17 +587,23 @@ namespace DiplomacyOverhaul
                     : Box(slot, 0f, 0f, RightW - 8f, 22f);
                 RectTransform icon = Icon(head, p.icon, 5f, 4f, 14f);
                 if (!p.active) icon.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.4f);
-                Text(head, LM.Get(p.id), 23f, 0f, 90f, 22f, 7, p.active ? Ink : Muted, TextAnchor.MiddleLeft);
+                string policyName = LM.Get(p.id);
+                Text(head, policyName, 23f, 0f, 90f, 22f, 7, p.active ? Ink : Muted, TextAnchor.MiddleLeft);
                 int current = p.Get(_kingdom);
                 string currentName = LM.Get(p.OptionName(_kingdom, current));
                 bool locked = Parliament.Locked(_kingdom, p);
-                // 锁定的政策在现行选项里带一把锁
-                float lockW = locked ? LockW + 2f : 0f;
-                float pillW = Measure(currentName, 6) + 14f + lockW;
+                // 写入宪章的政策，名字后面跟卷轴图标和金色小字
+                if (locked)
+                {
+                    float cx = 23f + Measure(policyName, 7) + 3f;
+                    UiKit.Picture(head, SpriteTextureLoader.getSprite(CharterIcon), cx, 3.5f, 14f, 15f);
+                    Text(head, LM.Get("vd_policy_charter"), cx + 16f, 0f, 40f, 22f, 6, Gold, TextAnchor.MiddleLeft);
+                }
+                float pillW = Measure(currentName, 6) + 14f;
                 RectTransform pill = Sliced(head, p.active ? "ui/special/special_buttonRed" : "ui/special/special_buttonGray",
                     RightW - 30f - pillW, 4f, pillW, 14f);
-                Text(pill, currentName, 0f, 0f, pillW - lockW, 14f, 6, p.active ? Color.white : Muted, TextAnchor.MiddleCenter);
-                if (locked) LockIconAt(pill, LockIcon, pillW - LockW - 5f, (14f - LockH) / 2f);
+                if (locked) Charter(pill);
+                Text(pill, currentName, 0f, 0f, pillW, 14f, 6, p.active ? Color.white : Muted, TextAnchor.MiddleCenter);
                 if (p.active) Text(head, open ? "▲" : "▼", RightW - 24f, 0f, 12f, 22f, 6, Muted, TextAnchor.MiddleCenter);
                 if (open)
                 {
@@ -613,6 +619,7 @@ namespace DiplomacyOverhaul
                         bool lockable = o == lockOption && p.CanPropose(_kingdom);
                         float textW = lockable ? ow - LockW - 7f : ow;
                         Text(ob, LM.Get(p.OptionName(_kingdom, o)), 0f, 0f, textW, 15f, 6, Color.white, TextAnchor.MiddleCenter);
+                        if (locked && isCurrent) Charter(ob);
                         if (bill != null && bill.policy == p && bill.option == o) Frame(ob, -1.5f);
                         OptionTip(ob, policy, option);
                         if (lockable) LockButton(ob, policy, option, ow, locked && isCurrent);
@@ -624,12 +631,31 @@ namespace DiplomacyOverhaul
 
         const string LockIcon = "ui/Icons/vd_lock";
         const string UnlockIcon = "ui/Icons/vd_unlock";
+        const string CharterIcon = "ui/Icons/vd_charter";
         const float LockW = 9f, LockH = 9f;
+
+        // 写入宪章的现行选项换成原版红底金包角按钮（special_buttonRedGodly 裁成长条）。
+        // NML 载入的图没有九宫格边距，照原版的像素密度补上
+        static Sprite _charter;
+        static void Charter(RectTransform pButton)
+        {
+            if (_charter == null)
+            {
+                Sprite raw = SpriteTextureLoader.getSprite("ui/special/vd_charter_button");
+                Sprite red = SpriteTextureLoader.getSprite("ui/special/special_buttonRed");
+                if (raw == null || red == null) return;
+                _charter = Sprite.Create(raw.texture, raw.rect, new Vector2(0.5f, 0.5f), red.pixelsPerUnit, 0, SpriteMeshType.FullRect,
+                    new Vector4(8f, 8f, 8f, 7f));
+            }
+            Image img = pButton.GetComponent<Image>();
+            img.sprite = _charter;
+            img.type = Image.Type.Sliced;
+        }
 
         static void LockIconAt(RectTransform pParent, string pSprite, float pX, float pY) =>
             UiKit.Picture(pParent, SpriteTextureLoader.getSprite(pSprite), pX, pY, LockW, LockH);
 
-        // 选中的那一档右端的锁：锁上后议会不再提议改这项政策。点议案那一档上的锁，直接颁布再锁上
+        // 选中的那一档右端的锁：锁上就是写入宪章，议会不再提议改这项政策。点议案那一档上的锁，直接颁布再写入
         static void LockButton(RectTransform pOption, Policy pPolicy, int pOptionIndex, float pW, bool pLocked)
         {
             bool enact = pPolicy.Get(_kingdom) != pOptionIndex;

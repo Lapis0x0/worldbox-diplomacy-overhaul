@@ -173,7 +173,7 @@ Falling city loyalty also drags down the [dynastic cycle](cycle.md).
 - **Vote now**: Hold the vote immediately instead of waiting for the next session.
 - **Decree**: Skip the vote and put the bill into effect. Cities of the clans that oppose it become unhappy.
 - **Withdraw**: Remove the current bill, whoever proposed it.
-- **Lock a policy**: Expand a policy and click the lock at the right end of the selected option; it turns gold. Parliament will no longer propose changing that policy, though clans can still resent it. Clicking the lock on the option of your own bill decrees it at once and locks it. Picking another option unlocks it.
+- **Write into the charter**: Expand a policy and click the lock at the right end of the selected option; it turns gold and the charter mark appears after the policy name. Parliament then has no right to propose changing that policy, though clans can still resent it. Clicking the lock on the option of your own bill decrees it at once and writes it into the charter. Picking another option strikes it from the charter.
 
 If you don't want parliament, turn off "Parliament and policies" in the settings. Policies stop having any effect, city tribute follows the vanilla tribute traits, vassals pay no tribute, and clans no longer resent policies. Republics still elect their consuls.
 
