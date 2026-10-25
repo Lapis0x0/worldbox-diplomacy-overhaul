@@ -18,6 +18,7 @@
 | 军队、攻城的行为（`BehCheckCityActorArmyGroup`、`BehFindRandomTile`、`BehCityActorCheckAttack`） | `Orders.cs`、`Guard.cs`、`Siege.cs` | 每个执行这一步行为的单位，行为之间有随机等待 |
 | `DiplomacyManager.getRelation` | `Compat.cs` | 原版到处调，每次拼一个字符串作键 |
 | `ProjectileManager.updateProjectiles`、`Projectile.checkHitOnNearbyUnits` | `Compat.cs` | 每支飞行中的箭每帧 |
+| `BehGenerateLootFromHouse.execute` | `Buildings.cs`（市场） | 每个居民每次回家生钱，几千人口的世界每秒上百次 |
 
 ### 每帧、每座城或每个王国
 
@@ -28,6 +29,7 @@
 | `War.update` | `PeaceTalks.cs` | 每场战争每帧 |
 | 城市 AI（`CityBehCheckAttackZone`、`CityBehCheckArmy`、`CityBehCheckLeader.checkFindLeader`）、`City.isOkToSendArmy` | `Orders.cs`、`Guard.cs`、`Offices.cs` | 每座城的决策节奏 |
 | `KingdomBehCheckKing` | `Regime.cs`、`Succession.cs` | 每个王国的决策节奏 |
+| `City.getArmyMaxMultiplier`、`City.getLimitOfBuildingsType`、`CityBehCheckFarms.behFindTileForFarm`、`BuildingTower.checkTargets` | `Buildings.cs` | 城市的征兵和建造判定（建造每城 5 秒 × 约 15 项）、城市状态重算、每座箭塔装填；兵额倍数还被屏幕上的城市名牌读 |
 | `ArmyManager.update` | `Guard.cs` | 每帧；`Guard.Tick` 每秒一次，所有军队在同一帧 |
 | `ZoneCalculator.checkFadeAndSelectionColors`、`TileZone.getAllianceOnZone` | `KingdomView.cs`、`AllianceView.cs` | 地图染色时每个区块一次（不管要不要重画） |
 | `NameplateText.getStringForNameplate`、`NameplateLibrary.actionAlliance` | `KingdomView.cs`、`AllianceView.cs` | 屏幕上每个名牌 |
@@ -47,7 +49,7 @@
 
 | 节奏 | 内容 |
 |---|---|
-| 每年 | 政体、国运、整合度、同化、国库、军械、议会（到期的国家开会：表决、生效、起草下一期） |
+| 每年 | 政体、国运、整合度、同化、国库、军械、营建、议会（到期的国家开会：表决、生效、起草下一期） |
 | 每月 | 附庸战争同步、禁军名额、禁军 AI、地方军 AI |
 
 ### 界面
@@ -105,3 +107,6 @@
 | `NearestDefender(` | 遍历守方全国单位 | 只给队长用 |
 | `NearestIntruder(` | 遍历所有交战国的全部单位 | — |
 | `LM.AddToCurrentLocale(` | 拼字符串、改语言表 | 不放在每帧的路径上 |
+| `StrongestNeighbor(` | 遍历本国每座城的邻城 | 一轮算一次往下传 |
+| `Reserve(` | 内部调 `StrongestNeighbor` | 同上 |
+| `NeedGap(`、`FrontShare(` | 遍历这股势力的城，读营建每年存的缓存 | 议会理想位置里用，每股势力每项政策一次；不要放进按城的循环 |

@@ -25,7 +25,7 @@ Saves made before installing the mod work as they are. Missing data is filled in
 | [War and Peace Talks](war.md) | When kingdoms go to war, war score, treaties, sieges |
 | [Commanding Armies](commands.md) | Giving orders to armies as the player: attack, garrison, camp |
 | [Guard and Local Armies](armies.md) | How a kingdom deploys its armies, the split between Guard and local armies, armament |
-| [Treasury and Pay](treasury.md) | Where money comes from, where it goes, what happens when pay is missed |
+| [Treasury, Pay and Public Works](treasury.md) | Where money comes from, where it goes, what happens when pay is missed, what buildings do and public works |
 | [Plots](plots.md) | The plots added by the mod and when kings start them |
 | [Powers and Settings](powers.md) | Every power and setting in the tab |
 | [FAQ](faq.md) | "Why did this happen?" |
@@ -36,6 +36,6 @@ Saves made before installing the mod work as they are. Missing data is filled in
 - **Vassals are the basic unit of diplomacy.** Surrender, grants of land, and submission all create vassals. An overlord and its vassals enter and leave wars together. When the dynasty declines, vassals drift away. In a Great Rebellion they break away in numbers.
 - **Wars end by negotiation.** When a war is nearly decided, the two sides talk. Depending on the war score, the loser pays reparations, cedes vassals, or submits.
 - **Clans decide policy.** Clans get seats in proportion to the cities they hold. They vote on taxation, army organization, land grants, and foreign policy. As a kingdom expands, local clans can grow strong enough to rival the royal house.
-- **Money has somewhere to go.** City lords send money to the treasury. The treasury pays for the Guard, starts plots, and pays reparations.
+- **Money has somewhere to go.** City lords send money to the treasury. The treasury pays for the Guard, funds public works, starts plots, and pays reparations.
 
 For exact numbers and formulas, see the [developer docs](../dev/README.md) (in Chinese).

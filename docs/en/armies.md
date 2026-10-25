@@ -42,8 +42,8 @@ The kingdom equips the Guard, and each city equips its own local troops, with st
 
 | | Guard | Local troops |
 |---|---|---|
-| Who pays | The treasury, following parliament's [Armament](parliament.md#military) policy | The city's stockpile |
-| Reserved first | Two years of Guard pay | Two years of local troop pay and building costs |
+| Who pays | The treasury, following parliament's [Fiscal Priority](parliament.md#military) policy | The city's stockpile |
+| Reserved first | The treasury's [reserve](treasury.md#where-money-goes) | Two years of local troop pay and building costs |
 | Gear traits | More than civilian-made gear | More than civilian-made gear, fewer than the Guard |
 | Materials | Bought from the kingdom's cities, and from caravans if not available | Only from the city's stockpile |
 
@@ -53,7 +53,7 @@ The kingdom equips the Guard, and each city equips its own local troops, with st
 - **Repair**: The kingdom and cities pay to repair the gear they issued. In peacetime this costs almost nothing.
 - **Recycling**: Replaced gear is melted down for part of its cost back. Gear left by soldiers who died defending a city is reclaimed by the city.
 
-The kingdom window shows the Guard's current standard, and the city window shows the local troops' standard. Under Self-Equipped, the Guard is not issued gear and forges its own as in vanilla.
+The kingdom window shows the Guard's current standard, and the city window shows the local troops' standard. Under Public Works Only, the Guard is not issued gear and forges its own as in vanilla.
 
 ## Pay
 

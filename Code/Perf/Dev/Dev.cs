@@ -49,6 +49,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl rel [国家] [open <氏族名>]   各股势力两两之间的好感和明细；open 打开那个家族的窗口
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
+    //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
     //   bench stress <附庸数>      城市最多的国家把最小的几个国家收为附庸、吞并其余所有国家，造一个大帝国（tools/perf-check.sh 用）
     //   bench run                 直接调用议会、好感、各定期结算系统等重函数计时，每项一行 @bench <名字> <毫秒>
@@ -255,6 +256,7 @@ namespace DiplomacyOverhaul.Perf
                 case "parl": ParlDev.Run(a); break;
                 case "arms": ArmsDev.Run(a); break;
                 case "treasury": TreasuryDev.Run(a); break;
+                case "works": WorksDev.Run(a); break;
                 case "bench": BenchDev.Run(a); break;
                 case "check": CheckDev.Run(); break;
                 case "year": Log("@year " + Date.getCurrentYear()); break;

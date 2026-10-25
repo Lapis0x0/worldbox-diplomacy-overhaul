@@ -94,14 +94,14 @@ Elven kingdoms start with Tax Farming, sheep kingdoms start with Central Collect
 
 Transports carry cannons and bombard the coast. They are also how armies cross the sea.
 
-**Armament**: How much spare money the treasury spends each year on standard equipment for the Guard. See [Armament](armies.md#armament).
+**Fiscal Priority**: How much of the money beyond the treasury's reserve may go to the Guard's equipment and to [public works](treasury.md#public-works). Both spend only when needed, and the rest stays in the treasury. For equipment see [Armament](armies.md#armament). Local clans want public works, since the buildings go up in their cities; the royal family leans toward the Guard; in wartime, clans with many front-line cities want arms too.
 
 | Option | Effect |
 |---|---|
-| Self-Equipped | No equipment is issued. The Guard forges its own, as in vanilla |
-| Replacements Only | Missing gear is issued. No upgrades |
-| Regular Funding | Missing gear is issued. Once most of the Guard is equipped, the material goes up one tier |
-| Armament First | As above, and all spare money is used to buy equipment |
+| Public Works Only | Spare money all goes to public works. The Guard forges its own gear, as in vanilla |
+| Public Works First | Most spare money goes to public works. Missing gear is issued, no upgrades |
+| Balanced Funding | Split evenly between public works and arms. Once most of the Guard is equipped, the material goes up one tier |
+| Armament Only | Spare money all goes to equipping the Guard |
 
 ### Diplomacy
 

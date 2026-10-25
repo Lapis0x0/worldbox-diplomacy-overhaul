@@ -23,6 +23,27 @@ namespace DiplomacyOverhaul
         const float PenaltyRecover = 0.1f;        // 付清后每年恢复多少
         const float DisbandShare = 0.25f;         // 每年解甲欠饷士兵的几分之一
 
+        // 储备：军械和营建都只花储备以外的钱。基础是两年禁军军饷（没有禁军时按城数留底），
+        // 打仗时加倍，挨着比自己强得多的邻国时多留一半
+        public const int ReserveYears = 2;
+        const int ReservePerCity = 10;
+        const float WarReserve = 2f, ThreatReserve = 1.5f;
+        const float ThreatRatio = 1.5f;   // 邻国实力超过本国几倍算威胁
+
+        public static int Reserve(Kingdom pKingdom) =>
+            Reserve(pKingdom, !World.world.wars.hasWars(pKingdom) && GuardAI.StrongestNeighbor(pKingdom, out float power) != null && Threatened(pKingdom, power));
+
+        // 已经知道受不受威胁时用这个，免得再找一遍最强邻国
+        public static int Reserve(Kingdom pKingdom, bool pThreatened)
+        {
+            float reserve = Mathf.Max(Guard.KingdomMembers(pKingdom) * PayPerWarrior * ReserveYears, ReservePerCity * pKingdom.countCities());
+            if (World.world.wars.hasWars(pKingdom)) reserve *= WarReserve;
+            else if (pThreatened) reserve *= ThreatReserve;
+            return Mathf.CeilToInt(reserve);
+        }
+
+        public static bool Threatened(Kingdom pKingdom, float pNeighborPower) => pNeighborPower > Vassals.Power(pKingdom) * ThreatRatio;
+
         public static int Get(Kingdom pKingdom)
         {
             pKingdom.data.get(Key, out int v, 0);

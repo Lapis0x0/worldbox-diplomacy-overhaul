@@ -105,6 +105,15 @@ namespace DiplomacyOverhaul
             }
         }
 
+        // 营建修在 pFrom 的城里：它欠出钱的掌权家族一份人情
+        public const float WorksFavor = 10f;
+
+        public static void Owe(ParliamentClan pFrom, ParliamentClan pTo, float pFavor)
+        {
+            if (pFrom == null || pTo == null || pFrom.Key == pTo.Key) return;
+            Add(pFrom, pTo, pFavor, 0f);
+        }
+
         static void Add(ParliamentClan pFrom, ParliamentClan pTo, float pFavor, float pGrudge)
         {
             Dictionary<long, Memory> memories = Load(pFrom);

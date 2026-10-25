@@ -32,7 +32,8 @@ namespace DiplomacyOverhaul
                     (Settings.GroupParliament, Settings.KeyParliament),
                     (Settings.GroupCycle, "vd_cycle_enabled"),
                     (Settings.GroupGovernment, "vd_gov_auto_enabled"),
-                    (Settings.GroupGovernment, "vd_gov_events_enabled")
+                    (Settings.GroupGovernment, "vd_gov_events_enabled"),
+                    (Settings.GroupEconomy, Settings.KeyBuildings)
                 } }
             },
             new[]

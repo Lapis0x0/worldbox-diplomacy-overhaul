@@ -206,7 +206,7 @@ namespace DiplomacyOverhaul
 
             static readonly Color CityMain = Hex("#e8a634"), CityRest = Hex("#c98a2a");
             static readonly Color Tribute = Hex("#3b8fd0"), Reparations = Hex("#4fa44a"), Drawdown = Hex("#8a8f7d");
-            static readonly Color Guard = Hex("#c4452a"), Arms = Hex("#a33a22"), Plots = Hex("#8a4fc4");
+            static readonly Color Guard = Hex("#c4452a"), Arms = Hex("#a33a22"), Plots = Hex("#8a4fc4"), Works = Hex("#3fae9a");
             static readonly Color Overlord = Hex("#5a7fb0"), ReparationsPaid = Hex("#7a8f3a"), Saved = Hex("#ffb52e");
             const int CitiesShown = 3;
 
@@ -234,6 +234,7 @@ namespace DiplomacyOverhaul
                 a.King = Mathf.Min(Ledger.LastYear(pKingdom, Ledger.Flow.King), tax);
                 a.Add(a.Outgoing, LM.Get("vd_treasury_guard"), Ledger.LastYear(pKingdom, Ledger.Flow.Guard), Guard);
                 a.Add(a.Outgoing, LM.Get("vd_treasury_arms"), Ledger.LastYear(pKingdom, Ledger.Flow.Arms), Arms);
+                a.Add(a.Outgoing, LM.Get("vd_treasury_works"), Ledger.LastYear(pKingdom, Ledger.Flow.Works), Works);
                 a.Add(a.Outgoing, LM.Get("vd_treasury_plots"), Ledger.LastYear(pKingdom, Ledger.Flow.Plots), Plots);
                 a.Add(a.Outgoing, LM.Get("vd_treasury_overlord"), Ledger.LastYear(pKingdom, Ledger.Flow.Overlord), Overlord);
                 a.Add(a.Outgoing, LM.Get("vd_treasury_reparations_paid"), Ledger.LastYear(pKingdom, Ledger.Flow.ReparationsPaid), ReparationsPaid);

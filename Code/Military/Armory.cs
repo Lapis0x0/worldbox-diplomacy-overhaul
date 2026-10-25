@@ -24,7 +24,6 @@ namespace DiplomacyOverhaul
         const string FlagLocal = "vd_arms_local";         // item.data：城市造的装备
         const int RoleMelee = 1, RoleArcher = 2;
 
-        const int ReserveYears = 2;          // 先留出几年的军饷
         const int CityBuildReserve = 100;    // 城市再留一栋最贵的建筑的钱（原版要 100 金子）
         const float CityBudgetRate = 0.5f;   // 城市拿储备以外的几成置办
         const int OfficialTries = 3;         // 国家造的装备抽几次词条（原版民间打造是 1 次）
@@ -46,7 +45,7 @@ namespace DiplomacyOverhaul
             public int amount, price, import, value;
         }
 
-        const int MetalPrice = 2, MetalImport = 5;
+        internal const int MetalPrice = 2, MetalImport = 5;
 
         static readonly Tier[] Tiers =
         {
@@ -151,7 +150,7 @@ namespace DiplomacyOverhaul
                     {
                         kingdom = k,
                         members = Members(k),
-                        reserve = Mathf.CeilToInt(Guard.KingdomMembers(k) * Treasury.PayPerWarrior * ReserveYears),
+                        reserve = Treasury.Reserve(k),
                         capacity = k.getCities().Sum(c => Guard.Quota(c)),
                         rate = BudgetRates[option],
                         upgrades = option > Replacements
@@ -163,7 +162,7 @@ namespace DiplomacyOverhaul
                         city = city,
                         members = LocalMembers(city),
                         capacity = city.getMaxWarriors() - Guard.Quota(city),
-                        reserve = Mathf.CeilToInt(Guard.CountLocal(city) * Treasury.PayPerWarrior * ReserveYears) + CityBuildReserve,
+                        reserve = Mathf.CeilToInt(Guard.CountLocal(city) * Treasury.PayPerWarrior * Treasury.ReserveYears) + CityBuildReserve,
                         rate = CityBudgetRate,
                         upgrades = true
                     });

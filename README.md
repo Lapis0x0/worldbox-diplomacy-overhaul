@@ -51,6 +51,8 @@ Wars end according to how they went. Once a war has gone far enough, both sides 
 
 Military power now rests on finances. City governors send taxes to the national treasury, while each city pays for its local troops from its own funds. Soldiers from the capital and those sent up by other cities form the **central guard**, paid by the treasury and commanded by the kingdom, while local armies hold the borders.
 
+Buildings matter now: markets make cities richer, temples keep them loyal, and barracks let them field more troops. With money to spare, the kingdom funds **public works** in its cities, and parliament decides whether spare funds lean toward public works or the Guard's arms.
+
 War costs money. Unpaid armies fight worse, and troops that go unpaid for too long may be disbanded. The kingdom's treasury ledger shows where the money comes from and where it goes.
 
 <img src="docs/images/treasury.png" alt="Treasury page" width="720">
@@ -83,7 +85,7 @@ The [player guide](docs/en/README.md) explains how each system plays and its key
 | [War and Peace Talks](docs/en/war.md) | When kingdoms go to war, war score, treaties, sieges |
 | [Commanding Armies](docs/en/commands.md) | Giving orders to armies as the player: attack, garrison, camp |
 | [Guard and Local Armies](docs/en/armies.md) | How a kingdom deploys its armies, the split between Guard and local armies, armament |
-| [Treasury and Pay](docs/en/treasury.md) | Where money comes from, where it goes, what happens when pay is missed |
+| [Treasury, Pay and Public Works](docs/en/treasury.md) | Where money comes from, where it goes, what happens when pay is missed, what buildings do and public works |
 | [Plots](docs/en/plots.md) | The plots added by the mod and when kings start them |
 | [Powers and Settings](docs/en/powers.md) | Every power and setting in the tab |
 | [FAQ](docs/en/faq.md) | "Why did this happen?" |

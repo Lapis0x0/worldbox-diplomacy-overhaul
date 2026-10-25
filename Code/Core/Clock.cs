@@ -31,6 +31,9 @@ namespace DiplomacyOverhaul
             // 军饷发完再结年账，去年的账里有这一年的军饷
             Run(Sys.Economy, "Ledger", Ledger.CloseYear);
             Run(Sys.Military, "Armory", Armory.UpdateAll);
+            Run(Sys.Economy, "Buildings", Buildings.UpdateAll);
+            // 军械先花，营建用剩下的
+            Run(Sys.Economy, "Works", Works.UpdateAll);
             Run(Sys.Parliament, "Parliament", Parliament.UpdateAll);
         }
 

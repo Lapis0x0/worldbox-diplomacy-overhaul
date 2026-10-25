@@ -79,7 +79,7 @@ namespace DiplomacyOverhaul
                     if ((pCulture != null && a.culture != pCulture) || (pReligion != null && a.religion != pReligion)
                         || (pLanguage != null && a.language != pLanguage)) pending.Add(a);
                 }
-                int count = Mathf.CeilToInt(pending.Count * pShare);
+                int count = Mathf.Min(pending.Count, Mathf.CeilToInt(pending.Count * pShare * Buildings.AssimilationFactor(city)));
                 for (int i = 0; i < count; i++)
                 {
                     int j = Randy.randomInt(i, pending.Count);

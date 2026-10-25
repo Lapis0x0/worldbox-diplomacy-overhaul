@@ -415,20 +415,28 @@ namespace DiplomacyOverhaul
         }
 
         // 最强邻国方向的边境城市：挨着最强的、不同阵营的邻国的本国城市里，离那个国家都城最近的一座
-        static City Border(Kingdom pKingdom)
+        internal static City Border(Kingdom pKingdom) => Border(pKingdom, StrongestNeighbor(pKingdom, out _));
+
+        // 最强的、不同阵营的邻国（城市接壤）
+        internal static Kingdom StrongestNeighbor(Kingdom pKingdom, out float pPower)
         {
             Kingdom strongest = null;
-            float power = 0f;
+            pPower = 0f;
             foreach (City c in pKingdom.getCities())
                 foreach (City n in c.neighbours_cities)
                 {
                     Kingdom k = n.kingdom;
                     if (k == null || k == pKingdom || !k.isCiv() || Camp.Same(k, pKingdom)) continue;
                     float p = Vassals.Power(k);
-                    if (p <= power) continue;
+                    if (p <= pPower) continue;
                     strongest = k;
-                    power = p;
+                    pPower = p;
                 }
+            return strongest;
+        }
+
+        internal static City Border(Kingdom pKingdom, Kingdom strongest)
+        {
             if (strongest == null) return null;
             Vector2 toward = strongest.capital != null ? strongest.capital.city_center : Vector2.zero;
             City best = null;

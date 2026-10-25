@@ -33,6 +33,7 @@ namespace DiplomacyOverhaul
             Cycle.Init();
             Assimilation.Init();
             Treasury.Init();
+            Buildings.Init();
             Parliament.Init();
             Politics.Init();
             Restoration.Init();

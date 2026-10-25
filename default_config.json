@@ -72,5 +72,13 @@
       "IconPath": "ui/Icons/iconWar",
       "BoolVal": true
     }
+  ],
+  "vd_group_economy": [
+    {
+      "Id": "vd_buildings_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconMoney",
+      "BoolVal": true
+    }
   ]
 }

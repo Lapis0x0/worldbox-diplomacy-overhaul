@@ -17,7 +17,8 @@ namespace DiplomacyOverhaul
             Guard,            // 禁军军饷
             Arms,             // 禁军军械（扣掉退回的）
             Plots,            // 国王发起密谋
-            ReparationsPaid   // 战败赔出去的
+            ReparationsPaid,  // 战败赔出去的
+            Works             // 营建
         }
 
         static readonly int Count = System.Enum.GetValues(typeof(Flow)).Length;
@@ -56,6 +57,12 @@ namespace DiplomacyOverhaul
         {
             pKingdom.data.get(KeyLast + (int)pFlow, out int v, 0);
             return Mathf.Max(0, v);
+        }
+
+        public static int ThisYear(Kingdom pKingdom, Flow pFlow)
+        {
+            pKingdom.data.get(KeyThis + (int)pFlow, out int v, 0);
+            return v;
         }
 
         public static int LastYear(City pCity)

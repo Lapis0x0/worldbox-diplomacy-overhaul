@@ -143,7 +143,8 @@ namespace DiplomacyOverhaul
         // 海军：临海城越多越要海权
         const float NavyCoast = 1.2f;
         // 军械：打仗时都想多拨
-        const float ArmsWar = 0.3f;
+        const float WorksNeed = 1f;
+        const float ArmsFront = 0.6f;
         // 附庸政策：诚实、温和、和平的觉得强制同化不地道
         const float VassalsMild = 0.2f;
 
@@ -225,7 +226,9 @@ namespace DiplomacyOverhaul
             {
                 id = Arms, tab = PolicyTab.Military, axis = PolicyAxis.Radical, count = 4, icon = "ui/Icons/iconReforge", load = 0.5f,
                 shown = _ => Military.On,
-                lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + (World.world.wars.hasWars(k) ? ArmsWar : 0f)
+                // 禁军是中央的兵，营建修在地方的城里；自家城缺得多的更想营建，前线城多的打仗时要军备
+                lean = (k, pc) => (Is(pc, "militarist") ? PersonalityLean : 0f) + Crown(pc)
+                    - WorksNeed * Works.NeedGap(k, pc) + ArmsFront * Works.FrontShare(k, pc)
             });
             Add(new Policy
             {
@@ -448,6 +451,7 @@ namespace DiplomacyOverhaul
                     break;
                 case Arms:
                     rows.Add(("vd_eff_arms_budget", Percent(Armory.BudgetRate(pOption))));
+                    if (Buildings.On) rows.Add(("vd_eff_works_budget", Percent(1f - Armory.BudgetRate(pOption))));
                     break;
                 case VassalTax:
                     rows.Add(("vd_eff_vassal_tax", Percent(VassalTaxRates[pOption])));
