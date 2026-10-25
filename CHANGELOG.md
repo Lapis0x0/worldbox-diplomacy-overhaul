@@ -2,6 +2,28 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.11.0
+
+### 中文
+
+1. 引入「营建」机制，为市场、神庙、兵营等原版建筑赋予实际效果，由国库出资在各城建造建筑
+2. 「军械拨款」改为「财政重心」并移入内政，决定国库资金在营建与禁军军备之间的分配
+3. 引入「家族好感」机制，家族间会积累人情与积怨并影响议会决策
+4. 引入「宪章」机制，玩家锁定的政策改为写入国家宪章，议会无权再提议更改
+5. 新增「推行政策提示」设置项，可关闭国家推行政策时左上角弹出的提示
+6. 新增巴西葡萄牙语翻译
+7. 修复关闭「叛乱」世界法则后，衰落的王朝仍会自发爆发大叛乱的问题
+
+### English
+
+1. Introduced Public Works: markets, temples, barracks and other vanilla buildings now have real effects, and the treasury funds construction in cities
+2. Armament is now Fiscal Priority and has moved to Domestic, deciding how treasury funds are split between public works and the Guard's arms
+3. Introduced Clan Relations: clans build up favors and grudges with each other that sway parliament's decisions
+4. Introduced Charters: policies locked by the player are now written into the national charter, and parliament can no longer propose changing them
+5. Added a "Policy notices" setting to turn off the top-left popup when a kingdom enacts a policy
+6. Added Brazilian Portuguese translation
+7. Fixed declining dynasties still breaking out into Great Rebellions on their own after the Rebellion world law was turned off
+
 ## 0.10.1
 
 ### 中文
