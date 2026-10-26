@@ -75,7 +75,7 @@ namespace DiplomacyOverhaul
         const int MinInterval = 4;
         const int MaxInterval = 6;
         // 改档的好处（离理想位置近了多少）要超过这么多才赞成：现状有惯性
-        const float Inertia = 0.1f;
+        internal const float Inertia = 0.1f;
 
         static Vector2 Location(Kingdom pKingdom) => pKingdom.hasCapital() ? pKingdom.capital.last_city_center : Vector2.zero;
 
@@ -461,11 +461,21 @@ namespace DiplomacyOverhaul
         public static float Gain(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pClan, Policy pPolicy, int pFrom, int pTo,
             RiskMemo pRisks = null)
         {
-            float ideal = Ideal(pKingdom, pClan, pPolicy);
-            float gain = Mathf.Abs(pPolicy.Center(pFrom) - ideal) - Mathf.Abs(pPolicy.Center(pTo) - ideal);
+            float gain = StanceGain(pKingdom, pClan, pPolicy, pFrom, pTo);
             if (pClan.ruling) gain -= pRisks != null ? pRisks.Get(pKingdom, pClans, pPolicy, pTo) : UnrestRisk(pKingdom, pClans, pPolicy, pTo);
             return gain;
         }
+
+        // 只看立场：新的一档离理想位置近了多少
+        public static float StanceGain(Kingdom pKingdom, ParliamentClan pClan, Policy pPolicy, int pFrom, int pTo)
+        {
+            float ideal = Ideal(pKingdom, pClan, pPolicy);
+            return Mathf.Abs(pPolicy.Center(pFrom) - ideal) - Mathf.Abs(pPolicy.Center(pTo) - ideal);
+        }
+
+        // 看在提案人面上多投的那一点；提案人自己和玩家的议案没有
+        public static float Favor(ParliamentClan pClan, ParliamentClan pProposer) =>
+            pProposer != null && pProposer != pClan ? Relations.VoteWeight * Relations.Value(pClan, pProposer) / 100f : 0f;
 
         // 一次起草里每股势力都要把每个选项表决一遍，而逼反地方的风险只看改哪项政策、改成哪一档，
         // 和谁提案无关：同一次起草里每个选项只算一次
@@ -495,8 +505,7 @@ namespace DiplomacyOverhaul
                 ParliamentClan pc = pClans[i];
                 float gain = Gain(pKingdom, pClans, pc, pBill.policy, current, pBill.option, pRisks);
                 result.gains[i] = gain;
-                float swayed = proposer != null && proposer != pc ? gain + Relations.VoteWeight * Relations.Value(pc, proposer) / 100f : gain;
-                bool yes = swayed > Inertia;
+                bool yes = gain + Favor(pc, proposer) > Inertia;
                 result.votes[pc.Key] = yes;
                 if (yes) result.yes += pc.seats;
                 else result.no += pc.seats;
@@ -513,7 +522,7 @@ namespace DiplomacyOverhaul
         const int SafeLoyalty = 50;
         const float UnrestWeight = 15f;
 
-        static float UnrestRisk(Kingdom pKingdom, List<ParliamentClan> pClans, Policy pPolicy, int pOption)
+        internal static float UnrestRisk(Kingdom pKingdom, List<ParliamentClan> pClans, Policy pPolicy, int pOption)
         {
             int total = TotalSeats(pClans);
             if (total <= 0) return 0f;

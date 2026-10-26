@@ -671,16 +671,42 @@ namespace DiplomacyOverhaul
                 new TooltipData { tip_name = pLocked ? "vd_policy_unlock" : "vd_policy_lock", tip_description = enact ? "vd_policy_lock_enact_info" : "vd_policy_lock_info" }));
         }
 
-        // 鼠标移上去时显示提示，移开时收起
+        // 鼠标移上去时显示提示，移开时收起。不用 EventTrigger：它把拖动和滚轮也吃掉，放在滚动列表里列表就滚不动了
+        // UiKit 画的色块默认不接射线，透明的悬停区要打开
         static void HoverTip(RectTransform pTarget, Action pShow)
         {
-            var trigger = pTarget.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
-            var enter = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerEnter };
-            enter.callback.AddListener(_ => pShow());
-            trigger.triggers.Add(enter);
-            var exit = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerExit };
-            exit.callback.AddListener(_ => Tooltip.hideTooltip());
-            trigger.triggers.Add(exit);
+            Graphic graphic = pTarget.GetComponent<Graphic>();
+            if (graphic != null) graphic.raycastTarget = true;
+            pTarget.gameObject.AddComponent<HoverPointer>().show = pShow;
+        }
+
+        // 一股势力为什么这样投：政见、掌权家族顾虑的地方稳定、对提案人的好感，减去维持现状的惯性，合计大于 0 就赞成。都乘 100 取整
+        static void VoteTip(RectTransform pTarget, List<ParliamentClan> pClans, Bill pBill, ParliamentClan pClan, ParliamentClan pProposer)
+        {
+            int current = pBill.policy.Get(_kingdom);
+            float stance = Parliament.StanceGain(_kingdom, pClan, pBill.policy, current, pBill.option);
+            float stability = pClan.ruling ? -Parliament.UnrestRisk(_kingdom, pClans, pBill.policy, pBill.option) : 0f;
+            float favor = Parliament.Favor(pClan, pProposer);
+            var lines = new List<(string, string, string)> { WhyLine("vd_vote_why_stance", stance) };
+            if (pClan.ruling) lines.Add(WhyLine("vd_vote_why_stability", stability));
+            if (pProposer != null && pProposer != pClan) lines.Add(WhyLine("vd_vote_why_favor", favor));
+            lines.Add(WhyLine("vd_vote_why_status_quo", -Parliament.Inertia));
+            lines.Add(WhyLine("vd_vote_why_total", stance + stability + favor - Parliament.Inertia));
+            LM.AddToCurrentLocale(VoteTipName, pClan.clan.name + (pClan.cadet ? " " + LM.Get("vd_parliament_cadet") : ""));
+            TipName = VoteTipName;
+            TipEffects = new List<(string, string)>();
+            TipLines = lines;
+            TipBill = null;
+            TipVote = null;
+            Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = VoteTipName });
+        }
+
+        const string VoteTipName = "vd_vote_why";
+
+        static (string, string, string) WhyLine(string pKey, float pValue)
+        {
+            int v = Mathf.RoundToInt(pValue * 100f);
+            return (pKey, v > 0 ? "+" + v : v.ToString(), v > 0 ? "#8FE07A" : v < 0 ? "#FF8F7A" : null);
         }
 
         // 共和国的说明里没有王冠，换成国库
@@ -755,6 +781,7 @@ namespace DiplomacyOverhaul
             y += 18f;
 
             List<ParliamentClan> list = RulingFirst(pClans);
+            ParliamentClan proposer = Parliament.Proposer(pClans, pBill);
             const float rowH = 11f;
             // 按钮贴着窗口底部，名单占满中间
             float buttonsY = H - 30f;
@@ -770,6 +797,9 @@ namespace DiplomacyOverhaul
                 Text(votes, pc.seats.ToString(), RightW - 82f, ry, 28f, rowH, 6, Gold, TextAnchor.MiddleRight);
                 Icon(votes, yes ? "ui/Icons/iconMoodHappy" : "ui/Icons/iconMoodAngry", RightW - 50f, ry + 1.5f, 8f);
                 Text(votes, LM.Get(yes ? "vd_parliament_yes" : "vd_parliament_no"), RightW - 40f, ry, 30f, rowH, 6, yes ? YesText : NoText, TextAnchor.MiddleRight);
+                ParliamentClan clan = pc;
+                RectTransform hover = UiKit.Rect(votes, 0f, ry, RightW - 8f, rowH, new Color(0f, 0f, 0f, 0f));
+                HoverTip(hover, () => VoteTip(hover, pClans, pBill, clan, proposer));
                 ry += rowH;
             }
             y = buttonsY;
@@ -805,6 +835,8 @@ namespace DiplomacyOverhaul
         // 正在悬停的政策选项和它的数字行，由 Patch_PolicyTip 加进原版提示
         internal static string TipName;
         internal static List<(string key, string value)> TipEffects;
+        // 带颜色的数字行：议案名单里一股势力的投票明细
+        internal static List<(string key, string value, string color)> TipLines;
         // 提出这一档时议会的表决预测；现行选项没有
         internal static Bill TipBill;
         internal static VoteResult TipVote;
@@ -816,6 +848,7 @@ namespace DiplomacyOverhaul
             {
                 TipName = pPolicy.OptionName(_kingdom, pOption);
                 TipEffects = Policies.Effects(_kingdom, pPolicy, pOption);
+                TipLines = null;
                 TipBill = pPolicy.Get(_kingdom) != pOption ? new Bill { policy = pPolicy, option = pOption } : null;
                 TipVote = TipBill != null ? Parliament.Vote(_kingdom, TipBill, Parliament.Clans(_kingdom)) : null;
                 Tooltip.show(pTarget.gameObject, "tip", new TooltipData { tip_name = TipName, tip_description = DescriptionKey(pPolicy, pOption) });
@@ -834,6 +867,12 @@ namespace DiplomacyOverhaul
             try
             {
                 foreach (var (key, value) in ParliamentWindow.TipEffects) pTooltip.addLineText(key, value);
+                if (ParliamentWindow.TipLines != null)
+                {
+                    foreach (var (key, value, color) in ParliamentWindow.TipLines) pTooltip.addLineText(key, value, color);
+                    pTooltip.showStatValues();
+                    return;
+                }
                 VoteResult vote = ParliamentWindow.TipVote;
                 if (vote != null && vote.Total > 0)
                 {
@@ -847,6 +886,16 @@ namespace DiplomacyOverhaul
             }
             catch (Exception e) { Safety.Fail(Sys.Interface, "政策选项提示框", e); }
         }
+    }
+
+    // 只接鼠标进出：拖动和滚轮照样传给外面的滚动列表
+    public class HoverPointer : MonoBehaviour, UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler
+    {
+        public Action show;
+
+        public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e) => show?.Invoke();
+
+        public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e) => Tooltip.hideTooltip();
     }
 
     // 左下角的王国取消按钮显示或收起时，右下角的议会按钮跟着
