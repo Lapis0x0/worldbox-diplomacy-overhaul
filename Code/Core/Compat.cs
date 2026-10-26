@@ -52,6 +52,7 @@ namespace DiplomacyOverhaul
         static readonly Stopwatch _clock = Stopwatch.StartNew();
         static bool _tipped;
         static bool _pendingTip;
+        static string _tipMod;
 
         public static void ActorFailed(Actor pActor, string pStep, Exception pError)
         {
@@ -68,7 +69,8 @@ namespace DiplomacyOverhaul
         }
 
         // 每处错误第一次记完整堆栈；持续出错时再记一次，并在屏幕上提示玩家一次（每局一次），
-        // 免得某个系统悄悄停摆几百年没人察觉。pSubject 是出错的对象，只写进日志，不参与记账
+        // 免得某个系统悄悄停摆几百年没人察觉。pSubject 是出错的对象，只写进日志，不参与记账。
+        // 异常是从别的模组的代码里抛出来的，日志和提示里写上那个模组
         public static void Report(string pWhere, Exception pError, string pSubject = null)
         {
             string key = pWhere + "|" + pError.GetType().Name;
@@ -90,25 +92,39 @@ namespace DiplomacyOverhaul
                 }
                 count = ++spot.count;
                 if (!spot.persistent && spot.count >= PersistCount)
-                {
                     spot.persistent = persistent = true;
-                    if (!_tipped) _tipped = _pendingTip = true;
+            }
+            if (!first && !persistent) return;
+            string mod = Culprit.Of(pError);
+            if (persistent)
+            {
+                lock (_spots)
+                {
+                    if (!_tipped)
+                    {
+                        _tipped = _pendingTip = true;
+                        _tipMod = mod;
+                    }
                 }
             }
             string subject = pSubject == null ? "" : $"（{pSubject}）";
-            if (first) Debug.LogError($"[外交大修] {pWhere}{subject} 出错，已跳过，其余照常更新：{pError}");
-            if (persistent) Debug.LogError($"[外交大修] {pWhere}{subject} 持续出错，{PersistWindowSeconds} 秒内 {count} 次：{pError}");
+            string from = mod == null ? "" : $"出错的代码在模组 {mod} 里，";
+            if (first) Debug.LogError($"[外交大修] {pWhere}{subject} 出错，{from}已跳过，其余照常更新：{pError}");
+            if (persistent) Debug.LogError($"[外交大修] {pWhere}{subject} 持续出错，{from}{PersistWindowSeconds} 秒内 {count} 次：{pError}");
         }
 
         // 每帧开头（主线程）
         public static void Tick()
         {
+            string mod;
             lock (_spots)
             {
                 if (!_pendingTip) return;
                 _pendingTip = false;
+                mod = _tipMod;
             }
-            WorldTip.showNow(LM.Get("vd_isolation_persistent"), false, "top");
+            string text = mod == null ? LM.Get("vd_isolation_persistent") : LM.Get("vd_isolation_persistent_mod").Replace("$mod$", mod);
+            WorldTip.showNow(text, false, "top");
         }
 
         // 读档、新建世界前
@@ -118,8 +134,74 @@ namespace DiplomacyOverhaul
             {
                 _spots.Clear();
                 _tipped = _pendingTip = false;
+                _tipMod = null;
             }
             _failures.Clear();
+        }
+    }
+
+    // 找出异常是从哪个模组的代码里抛出来的。只看抛出的那一帧：从栈顶往下跳过运行时和 Unity 的帧
+    // （它们只是在哪儿炸的，比如模组查字典查不到，栈顶是 Dictionary），落到的第一帧属于别的模组才算数；
+    // 落在原版、本模组、NML 或认不出来的帧上就不说，宁可不写也不冤枉别人。
+    // 只在第一次和判定持续出错时调用，那两次本来就要把堆栈拼成字符串
+    static class Culprit
+    {
+        static readonly Dictionary<Assembly, string> _names = new Dictionary<Assembly, string>();
+
+        public static string Of(Exception pError)
+        {
+            try
+            {
+                StackFrame[] frames = new StackTrace(pError, false).GetFrames();
+                if (frames == null) return null;
+                foreach (StackFrame frame in frames)
+                {
+                    // 被 Harmony 补丁过的原版方法在栈里是一个动态方法，换回原方法才知道归谁
+                    MethodBase method = Harmony.GetMethodFromStackframe(frame);
+                    Type type = method?.DeclaringType;
+                    if (type == null) return null;
+                    Assembly asm = type.Assembly;
+                    string name = asm.GetName().Name;
+                    if (IsRuntime(name)) continue;
+                    if (asm == typeof(Culprit).Assembly || name.StartsWith("Assembly-CSharp") || name == "NeoModLoader") return null;
+                    return NameOf(asm, type);
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        // 运行时、Unity 和 Harmony 都是被调用的库，异常从它们里面出来，要算到调用它们的那一帧上
+        static bool IsRuntime(string pName)
+        {
+            return pName == "mscorlib" || pName == "netstandard" || pName == "System" || pName.StartsWith("System.")
+                || pName.StartsWith("Mono.") || pName == "UnityEngine" || pName.StartsWith("UnityEngine.")
+                || pName == "0Harmony" || pName.StartsWith("MonoMod");
+        }
+
+        // NML 从源码编译的模组，程序集名就是模组的 UID；直接加载 dll 的模组按入口类所在的程序集认。
+        // 都对不上（比如 BepInEx 模组）就用命名空间，一般也认得出是哪个模组
+        static string NameOf(Assembly pAsm, Type pType)
+        {
+            lock (_names)
+            {
+                if (_names.TryGetValue(pAsm, out string cached)) return cached;
+                string asmName = pAsm.GetName().Name;
+                string name = null;
+                foreach (NeoModLoader.api.IMod mod in NeoModLoader.WorldBoxMod.LoadedMods)
+                {
+                    NeoModLoader.api.ModDeclare decl = mod?.GetDeclaration();
+                    if (decl == null) continue;
+                    if (decl.UID == asmName || mod.GetType().Assembly == pAsm)
+                    {
+                        name = decl.Name;
+                        break;
+                    }
+                }
+                if (string.IsNullOrEmpty(name)) name = pType.Namespace ?? asmName;
+                _names[pAsm] = name;
+                return name;
+            }
         }
     }
 

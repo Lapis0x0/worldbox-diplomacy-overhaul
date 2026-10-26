@@ -104,6 +104,8 @@
 
 每处错误按位置和异常类型记账（不取堆栈，持续出错时每次取堆栈比抛异常本身还贵）：第一次记完整堆栈；同一处 60 秒内出错 10 次算持续出错，再记一次堆栈，并在屏幕上提示玩家一次（每局最多一次，读档或新建世界后重新计）。持续出错通常是某个对象卡在出错的状态里，背后的系统已经停摆，只靠日志玩家察觉不到。
 
+写日志时顺带认出异常来自哪个模组（`Culprit`）。只看抛出异常的那一帧：从栈顶往下跳过运行时、Unity 和 Harmony 的帧（`mscorlib`、`System.*`、`UnityEngine.*`、`0Harmony`，比如模组查字典查不到，栈顶是 `Dictionary`）。被 Harmony 补丁过的方法在栈里是动态方法，要换回原方法再判断。落到的第一帧属于别的模组时，日志和屏幕提示里写上模组名：NML 从源码编译的模组，程序集名就是 UID，按 `WorldBoxMod.LoadedMods` 反查显示名；查不到就用类型的命名空间。落在原版、本模组、NML 或认不出的帧上就不写。别的模组把状态弄坏、原版之后才出错的情况，栈里没有它，认不出来。这一步只在写日志的那两次执行，不增加每次出错的开销。
+
 - **单位**：校验任务、决策、执行 AI 这三步（`BatchActors.b4_checkTaskVerifier`、`b6_0_updateDecision`、`b6_updateAI`，循环由 `Guard.cs` 接管）逐个单位兜住异常。出错的单位停下手头的事（`cancelAllBeh`）；同一个单位再出错，先离开军队再停下。任务和军队对不上是这类错误最常见的来源。
 - **批处理任务**：`Batch.runUpdater` 挂 Finalizer，单位、建筑等任何批处理任务出错，只丢掉这个任务这一帧的结果。`Batch<T>` 对引用类型共用一份代码，补丁挂在 `Batch<Actor>` 上，所有批次都生效。
 - **逐个对象的更新**：原版逐个对象更新时，一个对象出错，排在它后面的对象这一帧全被跳过，出错的条件不变就永远轮不到。这些都兜在对象上（`Patch_IsolateObjects`）：城市 `City.update`、战争 `War.update`、国家 `Kingdom.updateCiv`、联盟 `Alliance.update`、家族 `Clan.checkMembersForNewChief`、军队 `Army.checkCaptainExistence`、密谋 `Plot.updateProgress` 和 `updateAnimations`、状态效果 `Status.update` 和 `updateAnimationFrame`。会卡在出错状态里的对象顺手停下：

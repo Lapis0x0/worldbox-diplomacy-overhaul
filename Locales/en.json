@@ -631,6 +631,7 @@
   "vd_regime_patrimonial_republic_ruler": "Princeps Senatus",
   "vd_safety_off": "Diplomacy Overhaul: \"$system$\" ran into errors and is paused for this session",
   "vd_isolation_persistent": "Diplomacy Overhaul: part of the game keeps failing to update and some features may have stopped working. Please send the game log to the author",
+  "vd_isolation_persistent_mod": "Diplomacy Overhaul: part of the game keeps failing to update, and the failing code is in the mod $mod$. Some features may have stopped working. Please send the game log to that mod's author",
   "vd_sys_economy": "Treasury",
   "vd_sys_interface": "Interface"
 }
