@@ -24,7 +24,7 @@ namespace DiplomacyOverhaul
     }
 
     // 补丁和原版之间的边界：模组的代码不能把异常抛进原版。原版的每帧更新没有异常保护，
-    // 抛进去的异常会跳过这一帧剩下的更新，条件不变就每帧如此（见 docs/dev/README.md 的「异常隔离」）。
+    // 抛进去的异常会跳过这一帧剩下的更新，条件不变就每帧如此（见 docs/dev/isolation.md）。
     //
     // 补丁的写法：先问 Safety.On，系统停用了就照原版；自己的逻辑包在 try 里，出错交给 Safety.Fail 并照原版：
     //
