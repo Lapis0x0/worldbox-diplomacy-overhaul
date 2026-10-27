@@ -9,7 +9,7 @@ A vassal is a kingdom that is subordinate to another kingdom, its overlord. A va
 - An overlord cannot also be someone's vassal, and a kingdom that has vassals cannot become someone's vassal.
 - When an overlord is destroyed, all its vassals are freed.
 
-**Groups and blocs**: An overlord and its vassals form a group. Add the overlord's allies and it is a bloc. Kingdoms in the same bloc never go to war with each other. When the AI picks a rival, it counts the strength of the whole bloc, so attacking a vassal means facing its overlord and the overlord's allies. The alliance map is also shown by bloc.
+**Blocs**: An overlord, its vassals, and the overlord's allies form a bloc. Kingdoms in the same bloc never go to war with each other. When the AI picks a rival, it counts the strength of the whole bloc, so attacking a vassal means facing its overlord and the overlord's allies. The alliance map is also shown by bloc.
 
 ### Wars Are Shared
 
