@@ -158,7 +158,8 @@
 | `RulerTitles.cs` | 领袖的称呼：原版写着「国王」的各处挂点集中在这里，模组自己的界面用 `Government.RulerTitle` |
 | `Regime.cs` | 共和国选举和任期、王室绝嗣、称帝、夺权 |
 | `Succession.cs` | 入继大统 |
-| `ElectionWindow.cs` | 选举与任命窗口 |
+| `ElectionWindow.cs` | 选举与任命窗口：外框、执政选举、王位继承 |
+| `ElectionWindow.Fiefs.cs` | 选举与任命窗口右边的封疆图 |
 
 `kingdom.data` 里的键：
 

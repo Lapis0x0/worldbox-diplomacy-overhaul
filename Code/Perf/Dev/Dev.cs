@@ -101,6 +101,14 @@ namespace DiplomacyOverhaul.Perf
             if (ms > SpikeMs) Log($"@spike {pName} {ms:F1}ms");
         }
 
+        // 开发命令里的国家参数：id 或国名；不给时是城市最多的国家
+        internal static Kingdom FindKingdom(string pKey)
+        {
+            if (pKey == null) return World.world.kingdoms.OrderByDescending(k => k.countCities()).FirstOrDefault();
+            if (long.TryParse(pKey, out long id)) return World.world.kingdoms.get(id);
+            return World.world.kingdoms.FirstOrDefault(k => k.data.name == pKey);
+        }
+
         public static void Log(string pLine)
         {
             Debug.Log("[perf] " + pLine);

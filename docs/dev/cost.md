@@ -17,7 +17,7 @@
 | `Actor.isAbleToSkipPriorityLevels` | `Orders.cs` | 每次决策 |
 | 军队、攻城的行为（`BehCheckCityActorArmyGroup`、`BehFindRandomTile`、`BehCityActorCheckAttack`） | `Orders.cs`、`Guard.cs`、`Siege.cs` | 每个执行这一步行为的单位，行为之间有随机等待 |
 | `DiplomacyManager.getRelation` | `Compat.cs` | 原版到处调，每次拼一个字符串作键 |
-| `ProjectileManager.updateProjectiles`、`Projectile.checkHitOnNearbyUnits` | `Compat.cs` | 每支飞行中的箭每帧 |
+| `ProjectileManager.updateProjectiles`、`Projectile.checkHitOnNearbyUnits` | `Isolation.cs`、`Compat.cs` | 每支飞行中的箭每帧 |
 | `BehGenerateLootFromHouse.execute` | `Buildings.cs`（市场） | 每个居民每次回家生钱，几千人口的世界每秒上百次 |
 
 ### 每帧、每座城或每个王国
@@ -25,7 +25,7 @@
 | 原版方法 | 补丁 | 说明 |
 |---|---|---|
 | `City.updateCapture` | `Siege.cs` | 每座城每 0.1 秒 |
-| `City.update`、`War.update` 和各子系统的 `update` | `Compat.cs`（异常兜底） | 每帧每座城、每场战争、每个子系统，只挂 Finalizer |
+| `City.update`、`War.update` 和各子系统的 `update` | `Isolation.cs` | 每帧每座城、每场战争、每个子系统，只挂 Finalizer |
 | `War.update` | `PeaceTalks.cs` | 每场战争每帧 |
 | 城市 AI（`CityBehCheckAttackZone`、`CityBehCheckArmy`、`CityBehCheckLeader.checkFindLeader`）、`City.isOkToSendArmy` | `Orders.cs`、`Guard.cs`、`Offices.cs` | 每座城的决策节奏 |
 | `KingdomBehCheckKing` | `Regime.cs`、`Succession.cs` | 每个王国的决策节奏 |

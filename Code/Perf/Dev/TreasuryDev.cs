@@ -1,4 +1,3 @@
-using System.Linq;
 
 namespace DiplomacyOverhaul.Perf
 {
@@ -25,7 +24,7 @@ namespace DiplomacyOverhaul.Perf
                 return;
             }
             bool open = mode == "open";
-            Kingdom k = Find(open ? (a.Length > 2 ? a[2] : null) : mode);
+            Kingdom k = Dev.FindKingdom(open ? (a.Length > 2 ? a[2] : null) : mode);
             if (k == null) { Dev.Log("  no kingdom"); return; }
             if (open)
             {
@@ -41,13 +40,6 @@ namespace DiplomacyOverhaul.Perf
             }
             foreach (City c in k.getCities()) Dev.Log($"    city {c.name}: last={Ledger.LastYear(c)} leader={(c.leader != null ? c.leader.getName() + " loot=" + c.leader.loot : "-")}");
             foreach (Ledger.Entry e in Ledger.Entries(k)) Dev.Log($"    log {e.year} {e.key} {e.name} {e.amount}");
-        }
-
-        static Kingdom Find(string pKey)
-        {
-            if (pKey == null) return World.world.kingdoms.OrderByDescending(k => k.countCities()).FirstOrDefault();
-            if (long.TryParse(pKey, out long id)) return World.world.kingdoms.get(id);
-            return World.world.kingdoms.FirstOrDefault(k => k.data.name == pKey);
         }
     }
 }
