@@ -49,7 +49,7 @@ Decline is not the end, though. A capable ruler may plot a Restoration and try t
 
 Wars end according to how they went. Once a war has gone far enough, both sides hold peace talks and settle with peace, reparations, ceded vassals or submission. Besieging armies hunt down defenders and can storm a city outright when they vastly outnumber them.
 
-Military power now rests on finances. City governors send taxes to the national treasury, while each city pays for its local troops from its own funds. Soldiers from the capital and those sent up by other cities form the **central guard**, paid by the treasury and commanded by the kingdom, while local armies hold the borders.
+Military power now rests on finances. City governors send taxes to the national treasury, while each city pays for its local troops from its own funds. Soldiers from the capital and those sent up by other cities form the **central guard**, paid by the treasury and commanded by the kingdom; in peacetime part of it guards the capital while the rest takes turns patrolling the frontier. Local armies hold the borders.
 
 Buildings matter now: markets make cities richer, temples keep them loyal, and barracks let them field more troops. With money to spare, the kingdom funds **public works** in its cities, and parliament decides whether spare funds lean toward public works or the Guard's arms.
 

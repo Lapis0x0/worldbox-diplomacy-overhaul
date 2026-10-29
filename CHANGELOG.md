@@ -2,6 +2,28 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.12.0
+
+### 中文
+
+1. 引入禁军的边境巡逻与换防机制，并修复禁军分散成多支未满员编队的问题
+2. 新增宗主王国窗口的附庸栏，按整合度排列附庸，悬停可查看附庸信息
+3. 新增议案投票明细，悬停议案中的家族可查看其投赞成或反对的原因
+4. 优化年度结算机制，降低主线程负载
+5. 优化异常隔离的错误报告，异常源自其他模组时在日志和持续出错提示中标明出错模组
+6. 修复与部分性能优化模组冲突时，长期运行后大部分国家可能王位空缺、无法继位的问题，并引入逐对象的异常隔离与持续出错提示
+7. 修复王族家族窗口的家族关系中将自家宗室列为其他家族、显示为与自身交好的问题
+
+### English
+
+1. Introduced border patrols and garrison rotation for the Guard, and fixed the Guard splitting into several understrength units
+2. Added a Vassals row to the overlord's kingdom window, listing vassals by integration; hover to see vassal details
+3. Added a vote breakdown for bills: hover a clan on a bill to see why it voted for or against
+4. Optimized the annual settlement to reduce main-thread load
+5. Improved fault-isolation error reports: when an exception comes from another mod, the log and the persistent error notice name that mod
+6. Fixed a conflict with some performance-optimization mods that could leave most kingdoms' thrones vacant with no succession after long sessions, and introduced per-object fault isolation with persistent error notices
+7. Fixed the royal clan's Clan Relations listing its own cadet branch as another clan that is friendly to itself
+
 ## 0.11.0
 
 ### 中文
