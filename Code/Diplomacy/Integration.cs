@@ -95,6 +95,9 @@ namespace DiplomacyOverhaul
             return value < 0f ? Tribute : value;
         }
 
+        // 整合度所在档次的特质 id
+        public static string TraitId(Kingdom pKingdom) => TraitIds[Tier(Get(pKingdom))];
+
         public static bool IsHereditary(Kingdom pKingdom)
         {
             if (pKingdom?.data == null) return false;

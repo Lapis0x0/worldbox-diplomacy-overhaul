@@ -76,8 +76,8 @@ namespace DiplomacyOverhaul
             row.SetActive(true);
         }
 
-        // 原版王国窗口预制件里的「外交」那一行，复制到一个没激活的节点下，原版组件不会初始化，拆掉后再挂进家族窗口
-        static GameObject Template(Transform pParent)
+        // 原版王国窗口预制件里的「外交」那一行，复制到一个没激活的节点下，原版组件不会初始化，拆掉后再挂进 pParent（附庸那一行也用）
+        internal static GameObject Template(Transform pParent)
         {
             var prefab = (ScrollWindow)Resources.Load("windows/kingdom", typeof(ScrollWindow));
             Transform source = prefab != null ? prefab.transform.FindRecursive("content_relations") : null;

@@ -50,6 +50,7 @@ namespace DiplomacyOverhaul
             ParliamentWindow.Init();
             ElectionWindow.Init();
             ClanRelationsView.Init();
+            VassalsView.Init();
             TreasuryWindow.Init();
             SettingsWindow.Init();
             ModTab.Build();

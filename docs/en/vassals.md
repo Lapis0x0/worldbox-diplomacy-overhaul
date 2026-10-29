@@ -4,7 +4,7 @@ A vassal is a kingdom that is subordinate to another kingdom, its overlord. A va
 
 ## Overlords and Vassals
 
-- The kingdom window has an "Overlord" or "Vassals" row. A vassal's subtitle reads "Duchy · overlord name".
+- A vassal's kingdom window has an "Overlord" row, and its subtitle reads "Duchy · overlord name". An overlord's kingdom window gets a "Vassals" row below Diplomacy, ordered from most to least integrated. Hover a banner to see its integration, opinion of the overlord, and last year's tribute.
 - On the map, a vassal's border line uses the overlord's color. A province uses the overlord's color for its fill too.
 - An overlord cannot also be someone's vassal, and a kingdom that has vassals cannot become someone's vassal.
 - When an overlord is destroyed, all its vassals are freed.

@@ -30,6 +30,8 @@
   "vd_treasury_info": "打仗需要三样东西：钱、钱，还是钱。——特里武尔齐奥",
   "vd_row_overlord": "宗主",
   "vd_row_vassals": "附庸",
+  "vd_vassal_opinion": "对宗主好感",
+  "vd_vassal_tribute": "去年贡赋",
   "opinion_vd_overlord": "效忠宗主",
   "plot_vd_independence": "独立密谋",
   "plot_vd_independence_info": "$initiator_kingdom$ 密谋脱离宗主 $target_kingdom$，发动独立战争",

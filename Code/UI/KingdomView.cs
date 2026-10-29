@@ -9,7 +9,7 @@ namespace DiplomacyOverhaul
     // 王国在界面上的样子：王国窗口、悬停提示、地图名牌上的称号，地图上附庸的边界颜色。领袖的称呼见 RulerTitles
     // 王国窗口和悬停提示是原版两处不同的代码，改称号两处都要改
 
-    // 王国窗口：标题下方的"王国"换成政体名（附庸接上宗主名），并显示宗主 / 附庸
+    // 王国窗口：标题下方的"王国"换成政体名（附庸接上宗主名），概览里显示宗主。宗主的附庸那一行见 VassalsView
     [HarmonyPatch(typeof(KingdomWindow), "showStatsRows")]
     static class Patch_KingdomWindow
     {
@@ -78,13 +78,7 @@ namespace DiplomacyOverhaul
                     __instance.showStatRow("vd_row_overlord", lord.data.name, MetaType.Kingdom, lord.getID(), "iconKingdom");
                 }
 
-                List<Kingdom> vassals = Vassals.GetVassals(k);
-                if (vassals.Count > 0)
-                {
-                    var names = new List<string>();
-                    foreach (Kingdom v in vassals) names.Add(v.data.name);
-                    __instance.showStatRow("vd_row_vassals", string.Join("、", names), MetaType.None, -1L, "iconKingdomList");
-                }
+                VassalsView.Show(__instance, k);
             }
             catch (Exception e) { Safety.Fail(Sys.Interface, "王国窗口", e); }
         }

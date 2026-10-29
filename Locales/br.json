@@ -30,6 +30,8 @@
   "vd_treasury_info": "Para fazer a guerra, são necessárias três coisas: dinheiro, dinheiro e mais dinheiro. — Trivulzio",
   "vd_row_overlord": "Suserano",
   "vd_row_vassals": "Vassalos",
+  "vd_vassal_opinion": "Opinião sobre o suserano",
+  "vd_vassal_tribute": "Tributo no ano passado",
   "opinion_vd_overlord": "Lealdade ao suserano",
   "plot_vd_independence": "Conspiração pela independência",
   "plot_vd_independence_info": "$initiator_kingdom$ conspira para se libertar de $target_kingdom$ e iniciar uma guerra de independência",

@@ -32,6 +32,8 @@ namespace DiplomacyOverhaul.Perf
     //   uitree <窗口 id|res:资源路径> [深度]   打印窗口或预制件的节点层级：名字、是否激活、组件、位置和尺寸、文字
     //   uihit <窗口 id> <节点路径>   在节点中心做一次界面点击检测，列出挡在那里的东西
     //   uiclick <窗口 id> <节点路径> 对节点发一次点击，打印点完之后开着的窗口
+    //   uihover <窗口 id> <节点路径> 鼠标移到节点上，看悬停提示
+    //   uiopen <窗口 id>        打开窗口，内容是当前选中的对象（先 uiselect）
     //   gcinfo                   打印 GC 模式和托管堆大小
     //   heap <标签> [行数]        遍历托管堆，按类型统计个数和大小（很慢）
     //   gc                       强制完整回收，打印回收前后的占用（得到活对象的大小）
@@ -328,12 +330,23 @@ namespace DiplomacyOverhaul.Perf
                     }
                     else Log("  ! no node " + a[1] + " " + (a.Length > 2 ? a[2] : ""));
                     break;
+                case "uihover":
+                    // uihover <窗口 id> <节点路径>：鼠标移到这个节点上，用来看悬停提示。路径可以带空格（Scroll View）
+                    if (ScrollWindow._all_windows.TryGetValue(a[1], out ScrollWindow hoverWin) && hoverWin != null && hoverWin.transform.Find(string.Join(" ", a.Skip(2))) is Transform hovered)
+                        UnityEngine.EventSystems.ExecuteEvents.Execute(hovered.gameObject, new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current),
+                            UnityEngine.EventSystems.ExecuteEvents.pointerEnterHandler);
+                    else Log("  ! no node " + a[1] + " " + (a.Length > 2 ? a[2] : ""));
+                    break;
                 case "uihideall":
                     ScrollWindow.hideAllEvent(false);
                     break;
                 case "uiselect":
                     // uiselect <国家>：和在地图上点选一个王国一样
                     MetaType.Kingdom.getAsset().selectAndInspect(FindKingdom(a.Length > 1 ? a[1] : null), pCheckNameplate: false);
+                    break;
+                case "uiopen":
+                    // uiopen <窗口 id>：打开窗口，看的是当前选中的对象（先 uiselect）
+                    ScrollWindow.showWindow(a[1]);
                     break;
                 case "uiside":
                     // 点右下角的议会按钮
