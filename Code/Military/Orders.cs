@@ -220,6 +220,13 @@ namespace DiplomacyOverhaul
             Actor captain = pArmy?.getCaptain();
             if (captain == null || captain.isRekt() || captain.is_inside_boat || captain.isFighting()) return;
             City garrison = GetGarrison(pArmy);
+            // 驻地在海对面：上船，不往驻地走
+            WorldTile dest = garrison != null ? garrison.getTile() : GetHold(pArmy);
+            if (dest != null && !captain.current_tile.isSameIsland(dest))
+            {
+                Transport.Board(pArmy, dest);
+                return;
+            }
             if (garrison != null)
             {
                 // 敌军进城：不管队长在走还是在等，重新出发去打最近的那个（敌人会动，每次都重新挑）

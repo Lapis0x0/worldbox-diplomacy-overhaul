@@ -11,7 +11,7 @@ namespace DiplomacyOverhaul
     // 救援：本国或附庸的城被敌军编队压着、敌军多于守军时去救；敌军走了再待一个月；途中城丢了就转出征夺回。
     // 休整：打残了在最近的本国城市驻扎补员，补到出发时八成再出来。
     // 待命：有仗打但兵力不够，在离目标最近的本国城市等。待命的编队随时可以接新任务。
-    // 没仗打：一支驻守都城，满员的去边境巡逻，不满员的回都城补员并编；驻守都城满十年，和巡逻最久的那支换防
+    // 没仗打：一支驻守都城，半编以上的去边境巡逻，不到半编的回都城补员并编；驻守都城满十年，和巡逻最久的那支换防
     public static class GuardAI
     {
         const int TaskAttack = 1, TaskRescue = 2, TaskRest = 3, TaskStandby = 4;
@@ -33,7 +33,7 @@ namespace DiplomacyOverhaul
         const int RotateYears = 10;         // 驻守都城几年后换防
         const int PatrolMonths = 6;         // 在一个巡逻点停几个月
         const int TravelMonths = 12;        // 走了这么久还没到就放弃这个目的地
-        const float ReturnShare = 0.5f;     // 巡逻的编队人数掉到几成回都城补员
+        const float PatrolShare = 0.5f;     // 人数到几成去巡逻，不到就回都城补员
         const int PointSpacing = 24;        // 巡逻点之间至少隔几格
 
         static int Task(Army a)
@@ -386,12 +386,13 @@ namespace DiplomacyOverhaul
             return value / (Defenders(c) + 1f) / dist;
         }
 
-        // 编队所在大陆上本国有港口：别的大陆上的城也走得到（跨海要坐船）
+        // 编队所在大陆上本国有港口：别的大陆上的城也走得到（跨海要坐船）。
+        // 港口建在水面上，按原版的 Docks.getIsland 看它所在城市的大陆
         static bool HasPort(Kingdom pKingdom, WorldTile pFrom)
         {
             foreach (City own in pKingdom.getCities())
                 foreach (Building b in own.buildings)
-                    if (b.component_docks != null && !b.isRekt() && b.current_tile.isSameIsland(pFrom)) return true;
+                    if (b.component_docks != null && !b.isRekt() && b.component_docks.getIsland() == pFrom.region.island) return true;
             return false;
         }
 
@@ -407,13 +408,12 @@ namespace DiplomacyOverhaul
 
         // ---------- 没仗打：驻守都城、巡逻边境、换防 ----------
 
-        // 一支驻守都城；满员的去巡逻接壤邻国的边境，不满员的（巡逻的掉到一半以下）回都城补员、并编；
-        // 驻守都城满十年，和巡逻最久的那支换防：那支到了都城，原来驻守的才出发去巡逻
+        // 一支驻守都城；半编以上的去巡逻阵营的边境，不到半编的回都城补员、并编，并不进去的留在都城当后备；
+        // 驻守都城满十年，和巡逻最久的那支换防：那支到了都城，原来驻守的才出发去巡逻。在别的大陆上的坐船来回
         static void Peace(Kingdom pKingdom, List<Army> pIdle)
         {
             City capital = pKingdom.capital;
-            WorldTile home = capital == null || capital.isRekt() ? null : capital.getTile();
-            if (home == null)
+            if (capital == null || capital.isRekt() || capital.getTile() == null)
             {
                 foreach (Army g in pIdle)
                     if (!(Task(g) == TaskStandby && Orders.HasStation(g))) Standby(pKingdom, g, Position(g));
@@ -434,7 +434,7 @@ namespace DiplomacyOverhaul
                 duty = relief;
                 relief = null;
             }
-            if (duty == null) duty = PickDuty(pIdle, capital, home);
+            if (duty == null) duty = PickDuty(pIdle, capital);
             if (duty != null) Garrison(duty, capital, now);
 
             var done = new HashSet<Army> { duty };
@@ -445,8 +445,7 @@ namespace DiplomacyOverhaul
                 {
                     // 换防：来换防的接手都城，原来驻守的去巡逻（人太少就留下补员）
                     Garrison(relief, capital, now);
-                    if (duty.countUnits() < Guard.GroupCap * ReturnShare || !StartPatrol(pKingdom, duty, patrols, now))
-                        Standby(pKingdom, duty, capital.city_center);
+                    if (duty.countUnits() < Guard.GroupCap * PatrolShare || !StartPatrol(pKingdom, duty, patrols, now)) Reserve(duty, capital);
                     duty = relief;
                     relief = null;
                 }
@@ -460,11 +459,10 @@ namespace DiplomacyOverhaul
             foreach (Army g in pIdle)
             {
                 if (done.Contains(g)) continue;
-                bool patrolling = Task(g) == TaskPatrol;
-                bool fit = g.countUnits() >= (patrolling ? Guard.GroupCap * ReturnShare : Guard.GroupCap);
-                if (fit && ((patrolling && Patrol(pKingdom, g, now)) || StartPatrol(pKingdom, g, patrols, now))) continue;
-                // 不满员，或没有边境可巡：回都城；不在都城那块大陆的就在最近的本国城市等
-                Standby(pKingdom, g, Tile(g).isSameIsland(home) ? capital.city_center : Position(g));
+                bool fit = g.countUnits() >= Guard.GroupCap * PatrolShare;
+                if (fit && ((Task(g) == TaskPatrol && Patrol(g, now)) || StartPatrol(pKingdom, g, patrols, now))) continue;
+                // 不到半编，或没有边境可巡：回都城
+                Reserve(g, capital);
             }
 
             // 驻守满期：调巡逻最久、人数还够的那支来换防
@@ -475,7 +473,7 @@ namespace DiplomacyOverhaul
             float nextSince = float.MaxValue;
             foreach (Army g in pIdle)
             {
-                if (Task(g) != TaskPatrol || g.countUnits() < Guard.GroupCap * ReturnShare || !Tile(g).isSameIsland(home)) continue;
+                if (Task(g) != TaskPatrol || g.countUnits() < Guard.GroupCap * PatrolShare) continue;
                 g.data.get(KeyDuty, out float s, now);
                 if (s >= nextSince) continue;
                 next = g;
@@ -486,14 +484,13 @@ namespace DiplomacyOverhaul
             SetTask(next, TaskRelieve, capital);
         }
 
-        // 没有驻守都城的编队：先挑已经在都城的，再挑不在巡逻的，再挑人多的；只在都城那块大陆上挑
-        static Army PickDuty(List<Army> pIdle, City pCapital, WorldTile pHome)
+        // 没有驻守都城的编队：先挑已经在都城的，再挑不在巡逻的，再挑人多的
+        static Army PickDuty(List<Army> pIdle, City pCapital)
         {
             Army best = null;
             int bestScore = int.MinValue;
             foreach (Army g in pIdle)
             {
-                if (!Tile(g).isSameIsland(pHome)) continue;
                 int score = g.countUnits();
                 if (Tile(g).zone_city == pCapital) score += 2000;
                 if (Task(g) != TaskPatrol) score += 1000;
@@ -514,6 +511,14 @@ namespace DiplomacyOverhaul
             if (fresh) g.data.set(KeyDuty, pNow);
         }
 
+        // 回都城待命补员；已经在就不动
+        static void Reserve(Army g, City pCapital)
+        {
+            if (Task(g) == TaskStandby && Orders.GetGarrison(g) == pCapital) return;
+            Orders.MoveArmy(g, pCapital);
+            SetTask(g, TaskStandby, pCapital);
+        }
+
         static long Sector(Army g)
         {
             g.data.get(KeySector, out long id, -1L);
@@ -526,57 +531,84 @@ namespace DiplomacyOverhaul
             pMap[pKey] = n + pAdd;
         }
 
-        // 去巡逻：挑一个防区（邻国越强、已经在巡的编队越少越先挑），从离编队最近的巡逻点走起
+        // 动身去巡逻（第一次出发，或在一个巡逻点停满、该换地方了）：挑一次防区，
+        // 按「邻国实力 ÷（本国已经在巡的编队 + 1）÷ 离都城的距离」打分；本国在编队所在大陆上有港口时，海对面的防区也算。
+        // 挑到的还是原来的防区就走下一个点，换了防区就从离编队最近的点走起
         static bool StartPatrol(Kingdom pKingdom, Army g, Dictionary<long, int> pPatrols, float pNow)
         {
             WorldTile from = Tile(g);
+            bool port = HasPort(pKingdom, from);
+            bool patrolling = Task(g) == TaskPatrol;
+            long current = patrolling ? Sector(g) : -1;
+            Vector2 home = pKingdom.capital.city_center;
             long best = -1;
             float bestScore = -1f;
+            WorldTile bestAnchor = null;
             foreach (KeyValuePair<long, List<WorldTile>> kv in Sectors(pKingdom))
             {
                 Kingdom other = World.world.kingdoms.get(kv.Key);
-                if (other == null || !other.isAlive() || !kv.Value.Exists(t => t.isSameIsland(from))) continue;
+                if (other == null || !other.isAlive()) continue;
+                WorldTile anchor = null;
+                float dist = float.MaxValue;
+                foreach (WorldTile t in kv.Value)
+                {
+                    if (!port && !t.isSameIsland(from)) continue;
+                    float d = Toolbox.SquaredDistVec2Float(t.posV, home);
+                    if (d >= dist) continue;
+                    anchor = t;
+                    dist = d;
+                }
+                if (anchor == null) continue;
                 pPatrols.TryGetValue(kv.Key, out int n);
-                if (Task(g) == TaskPatrol && Sector(g) == kv.Key) n--;
-                float score = (Vassals.Power(other) + 1f) / (n + 1);
-                if (score <= bestScore) continue;
+                if (kv.Key == current) n--;
+                float score = (Vassals.Power(other) + 1f) / (n + 1) / Mathf.Max(10f, Mathf.Sqrt(dist));
+                if (score < bestScore || (score == bestScore && kv.Key != current)) continue;
                 best = kv.Key;
                 bestScore = score;
+                bestAnchor = anchor;
             }
             if (best < 0) return false;
-            if (Task(g) == TaskPatrol) Count(pPatrols, Sector(g), -1);
+            if (best == current)
+            {
+                List<WorldTile> same = Points(pKingdom, best, Orders.GetHold(g) ?? from);
+                if (same.Count > 0)
+                {
+                    g.data.get(KeyStep, out int step, 0);
+                    GoTo(g, same, step + 1, pNow);
+                    return true;
+                }
+            }
+            if (patrolling) Count(pPatrols, current, -1);
             else g.data.set(KeyDuty, pNow);
             Count(pPatrols, best, 1);
             g.data.set(KeySector, best);
-            List<WorldTile> points = Points(pKingdom, best, from);
-            int step = 0;
-            float bestDist = float.MaxValue;
+            List<WorldTile> points = Points(pKingdom, best, bestAnchor);
+            int start = 0;
+            float nearest = float.MaxValue;
             for (int i = 0; i < points.Count; i++)
             {
                 float d = Toolbox.SquaredDistVec2Float(points[i].posV, Position(g));
-                if (d >= bestDist) continue;
-                step = i;
-                bestDist = d;
+                if (d >= nearest) continue;
+                start = i;
+                nearest = d;
             }
-            GoTo(g, points, step, pNow);
+            GoTo(g, points, start, pNow);
             return true;
         }
 
-        // 巡逻中：到了巡逻点停半年，再去下一个；防区没了返回 false
-        static bool Patrol(Kingdom pKingdom, Army g, float pNow)
+        // 巡逻中：在路上，或在巡逻点还没停满半年，返回 true；该动身了（没有扎营地、停满了、走太久没到）返回 false，
+        // 由 StartPatrol 重新挑防区。坐船途中编队还不在目的地那块大陆上，所以这里不看大陆
+        static bool Patrol(Army g, float pNow)
         {
-            List<WorldTile> points = Points(pKingdom, Sector(g), Tile(g));
-            if (points.Count == 0) return false;
-            g.data.get(KeyStep, out int step, 0);
+            if (Orders.GetHold(g) == null) return false;
             g.data.get(KeyArrived, out float arrived, -1f);
-            if (Orders.GetHold(g) == null) GoTo(g, points, step, pNow);
-            else if (arrived < 0f)
+            if (arrived < 0f)
             {
-                if (Orders.AtStation(g)) g.data.set(KeyArrived, pNow);
-                else if (Since(g) >= TravelMonths * Clock.MonthLength) GoTo(g, points, step + 1, pNow);
+                if (!Orders.AtStation(g)) return Since(g) < TravelMonths * Clock.MonthLength;
+                g.data.set(KeyArrived, pNow);
+                return true;
             }
-            else if (pNow - arrived >= PatrolMonths * Clock.MonthLength) GoTo(g, points, step + 1, pNow);
-            return true;
+            return pNow - arrived < PatrolMonths * Clock.MonthLength;
         }
 
         // 巡逻点来回走：0、1、…、n-1、n-2、…、1、0、…
@@ -592,20 +624,20 @@ namespace DiplomacyOverhaul
             g.data.removeFloat(KeyArrived);
         }
 
-        // 一个防区里和编队在同一块大陆上的巡逻点
-        static List<WorldTile> Points(Kingdom pKingdom, long pSector, WorldTile pFrom)
+        // 一个防区里和 pAt 在同一块大陆上的巡逻点
+        static List<WorldTile> Points(Kingdom pKingdom, long pSector, WorldTile pAt)
         {
             var list = new List<WorldTile>();
             if (!Sectors(pKingdom).TryGetValue(pSector, out List<WorldTile> all)) return list;
             foreach (WorldTile t in all)
-                if (t.isSameIsland(pFrom)) list.Add(t);
+                if (t.isSameIsland(pAt)) list.Add(t);
             return list;
         }
 
-        // 防区：每个接壤、不同阵营的邻国一个，巡逻点是本国挨着它的边境区块，隔开一段挑出来、顺着边境排好。
-        // 每个国家每年、或城市数变了才重算
-        static readonly Dictionary<long, (int cities, Dictionary<long, List<WorldTile>> sectors)> _sectors =
-            new Dictionary<long, (int, Dictionary<long, List<WorldTile>>)>();
+        // 防区以阵营为边界：阵营（本国、宗主、附庸、盟友）对外接壤的每个国家一个，巡逻点是阵营里挨着它的边境区块，
+        // 隔开一段挑出来、顺着边境排好。按阵营缓存，每年、或阵营的城市数变了才重算
+        static readonly Dictionary<NanoObject, (int cities, List<Kingdom> members, Dictionary<long, List<WorldTile>> sectors)> _sectors =
+            new Dictionary<NanoObject, (int, List<Kingdom>, Dictionary<long, List<WorldTile>>)>();
         static int _sectorsYear = -1;
 
         static Dictionary<long, List<WorldTile>> Sectors(Kingdom pKingdom)
@@ -616,30 +648,42 @@ namespace DiplomacyOverhaul
                 _sectors.Clear();
                 _sectorsYear = year;
             }
-            int cities = pKingdom.countCities();
-            if (_sectors.TryGetValue(pKingdom.id, out var cached) && cached.cities == cities) return cached.sectors;
+            NanoObject camp = Camp.Of(pKingdom);
+            if (_sectors.TryGetValue(camp, out var cached) && cached.cities == CountCities(cached.members)) return cached.sectors;
 
+            var members = new List<Kingdom>();
+            foreach (Kingdom k in World.world.kingdoms)
+                if (k.isAlive() && k.isCiv() && Camp.Of(k) == camp) members.Add(k);
             var zones = new Dictionary<long, List<TileZone>>();
-            var camps = new Dictionary<Kingdom, bool>();
-            foreach (City c in pKingdom.getCities())
-                foreach (TileZone z in c.zones)
-                {
-                    if (!Orders.CanHold(z.centerTile)) continue;
-                    foreach (TileZone n in z.neighbours_all)
+            var foreign = new Dictionary<Kingdom, bool>();
+            foreach (Kingdom member in members)
+                foreach (City c in member.getCities())
+                    foreach (TileZone z in c.zones)
                     {
-                        Kingdom other = n.city?.kingdom;
-                        if (other == null || other == pKingdom || !other.isAlive() || !other.isCiv()) continue;
-                        if (!camps.TryGetValue(other, out bool same)) camps[other] = same = Camp.Same(other, pKingdom);
-                        if (same || !Orders.CanHold(n.centerTile) || !n.centerTile.isSameIsland(z.centerTile)) continue;
-                        if (!zones.TryGetValue(other.id, out List<TileZone> list)) zones[other.id] = list = new List<TileZone>();
-                        if (list.Count == 0 || list[list.Count - 1] != z) list.Add(z);
+                        if (!Orders.CanHold(z.centerTile)) continue;
+                        foreach (TileZone n in z.neighbours_all)
+                        {
+                            Kingdom other = n.city?.kingdom;
+                            if (other == null || other == member || !other.isAlive() || !other.isCiv()) continue;
+                            if (!foreign.TryGetValue(other, out bool outside)) foreign[other] = outside = Camp.Of(other) != camp;
+                            if (!outside || !Orders.CanHold(n.centerTile) || !n.centerTile.isSameIsland(z.centerTile)) continue;
+                            if (!zones.TryGetValue(other.id, out List<TileZone> list)) zones[other.id] = list = new List<TileZone>();
+                            if (list.Count == 0 || list[list.Count - 1] != z) list.Add(z);
+                        }
                     }
-                }
 
             var sectors = new Dictionary<long, List<WorldTile>>();
             foreach (KeyValuePair<long, List<TileZone>> kv in zones) sectors[kv.Key] = Route(kv.Value);
-            _sectors[pKingdom.id] = (cities, sectors);
+            _sectors[camp] = (CountCities(members), members, sectors);
             return sectors;
+        }
+
+        static int CountCities(List<Kingdom> pMembers)
+        {
+            int n = 0;
+            foreach (Kingdom k in pMembers)
+                if (k.isAlive()) n += k.countCities();
+            return n;
         }
 
         // 边境区块隔开 PointSpacing 格挑出巡逻点，从离中心最远的一头起，每次走到最近的下一个
@@ -696,6 +740,19 @@ namespace DiplomacyOverhaul
                 default:
                     return null;
             }
+        }
+
+        // 开发命令 mil guard：各防区（邻国）在都城那块大陆上的巡逻点数 / 全部巡逻点数
+        internal static string DescribeSectors(Kingdom pKingdom)
+        {
+            var parts = new List<string>();
+            foreach (KeyValuePair<long, List<WorldTile>> kv in Sectors(pKingdom))
+            {
+                WorldTile home = pKingdom.capital?.getTile();
+                int same = home == null ? 0 : kv.Value.FindAll(t => t.isSameIsland(home)).Count;
+                parts.Add($"{World.world.kingdoms.get(kv.Key)?.name ?? kv.Key.ToString()}:{same}/{kv.Value.Count}");
+            }
+            return parts.Count == 0 ? "-" : string.Join(" ", parts);
         }
 
         // 开发命令 mil guard：一支编队的人数、任务、所在的城、防区和巡逻走到哪

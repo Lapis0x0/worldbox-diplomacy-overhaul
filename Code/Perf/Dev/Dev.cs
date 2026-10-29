@@ -179,7 +179,14 @@ namespace DiplomacyOverhaul.Perf
                 case "mil" when a.Length > 1 && a[1] == "guard":
                     foreach (Kingdom k in World.world.kingdoms.Where(k => k.isAlive() && k.isCiv()).OrderByDescending(k => k.countCities()).Take(a.Length > 2 ? int.Parse(a[2]) : 8))
                     {
-                        Log($"  {k.name} cities={k.countCities()} capital={k.capital?.name ?? "-"} war={World.world.wars.hasWars(k)}");
+                        Log($"  {k.name} cities={k.countCities()} capital={k.capital?.name ?? "-"} war={World.world.wars.hasWars(k)} ports={k.getCities().Sum(c => c.buildings.Count(b => b.component_docks != null && !b.isRekt()))} sectors={GuardAI.DescribeSectors(k)}");
+                        foreach (City c in k.getCities())
+                        {
+                            var near = new List<string>();
+                            foreach (City n in c.neighbours_cities)
+                                if (n.kingdom != k) near.Add($"{n.name}({n.kingdom?.name ?? "-"}{(n.kingdom != null && Camp.Same(n.kingdom, k) ? ",同阵营" : "")})");
+                            if (near.Count > 0) Log($"    边境 {c.name}: {string.Join(" ", near)}");
+                        }
                         foreach (Army army in World.world.armies)
                             if (Guard.Is(army) && Orders.HasUnits(army) && Orders.KingdomOf(army) == k) Log("    " + GuardAI.Describe(army));
                     }

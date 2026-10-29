@@ -50,6 +50,35 @@ namespace DiplomacyOverhaul
             boat.actor.setTask("boat_transport_go_load", true, false, true);
         }
 
+        // 驻扎、扎营的目的地在海对面：原版只在有进攻目标时让士兵执行上船的任务，这里替他们上已经派来的船；
+        // 单子没了（没派到船、被取消）就重新派，同一支军队一个月最多派一次
+        static readonly Dictionary<long, double> _boarded = new Dictionary<long, double>();
+
+        internal static void Board(Army pArmy, WorldTile pTarget)
+        {
+            Actor lead = pArmy.getCaptain();
+            if (lead == null || lead.isRekt()) return;
+            TaxiRequest request = TaxiManager.getRequestForActor(lead);
+            if (request == null)
+            {
+                double now = World.world.getCurWorldTime();
+                if (_boarded.TryGetValue(pArmy.id, out double last) && now >= last && now - last < Clock.MonthLength) return;
+                _boarded[pArmy.id] = now;
+                bool quiet = Quiet;
+                Quiet = true;
+                try { Dispatch(pArmy, pTarget); }
+                finally { Quiet = quiet; }
+                return;
+            }
+            if (!request.hasAssignedBoat() || request.state != TaxiRequestState.Loading) return;
+            foreach (Actor unit in pArmy.units)
+            {
+                if (unit.isRekt() || unit.is_inside_boat || !request.hasActor(unit)) continue;
+                if (unit.ai?.task?.id == "force_into_a_boat") continue;
+                unit.setTask("force_into_a_boat", true, false, true);
+            }
+        }
+
         static int Dist(WorldTile a, WorldTile b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
 
         static bool IsIdleTransport(Actor pActor, out Boat pBoat)
@@ -85,7 +114,8 @@ namespace DiplomacyOverhaul
                     Docks docks = b.component_docks;
                     if (docks == null || b.isRekt()) continue;
                     allDocks.Add(docks);
-                    if (!b.current_tile.isSameIsland(pArmy)) continue;
+                    // 港口建在水面上，按原版的 Docks.getIsland 看它所在城市的大陆
+                    if (docks.getIsland() != pArmy.region.island) continue;
                     WorldTile ocean = OceanTileTowards(docks, pTarget);
                     if (ocean == null) continue;
                     int d = Dist(b.current_tile, pArmy);

@@ -21,7 +21,7 @@ Each month the kingdom assigns tasks to idle Guard units, and each task runs unt
 | **Rescue** | A city of the kingdom or a vassal is under pressure from an enemy army larger than its garrison | One month after the enemy leaves. If the city is lost, the task becomes a campaign to retake it |
 | **Campaign** | There is a war and no city needs rescuing | The city is taken, a ceasefire is made, or the unit is worn down and sent to rest |
 | **Rest** | A campaign or rescue wore the unit down | The unit refills at the nearest city of the kingdom, to 80% or for half a year |
-| **Standby** | There is a war but the unit cannot attack, or there is no war and the unit is not full | Ready for a new task at any time. In peace, units that are not full go back to the capital to refill |
+| **Standby** | There is a war but the unit cannot attack, or there is no war and the unit is below half strength | Ready for a new task at any time. In peace, units below half strength go back to the capital to refill |
 
 - Rescue sends the nearest units first, until the force is enough to overpower the enemy. A capital in danger has top priority and can pull back units that are away on campaign.
 - Campaigns prefer cities with a large population, a small garrison, and a short distance. Enemy capitals are more attractive. The kingdom first concentrates its forces on one city and splits up only when it has enough.
@@ -30,9 +30,9 @@ Each month the kingdom assigns tasks to idle Guard units, and each task runs unt
 ### In Peace
 
 - **Guarding the capital**: One Guard unit holds the capital.
-- **Patrolling the border**: The other full units are spread along the borders with neighboring kingdoms, with more facing stronger neighbors. A unit camps at one stretch of the border for half a year, then moves on to the next. When a neighbor invades, the patrolling Guard is the first to meet it.
+- **Patrolling the border**: The other units at half strength or more are spread along the outer borders of the kingdom's camp, including where vassals and allies face outsiders, with more facing stronger and closer neighbors. A unit camps at one stretch of the border for half a year, then moves on to the next, checking again before each move which border needs it most. If the home continent has no outside neighbor, it sails to the camp's border overseas. When a neighbor invades, the patrolling Guard is the first to meet it.
 - **Relief**: After ten years at the capital, the unit that has patrolled longest comes back to take over, and the old capital unit goes out on patrol. The old unit leaves only after the new one arrives, so the capital is never left empty.
-- Units that are not full go back to the capital to refill, and go out on patrol once full. A kingdom with only one Guard unit keeps it at the capital.
+- Units below half strength go back to the capital to refill, and go out on patrol once they pass half strength. Those that cannot stay at the capital as a reserve. A kingdom with only one Guard unit keeps it at the capital.
 - The army tooltip and the army window show each Guard unit's current duty.
 
 ## Local Armies
