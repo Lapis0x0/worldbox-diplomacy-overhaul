@@ -30,6 +30,8 @@ namespace DiplomacyOverhaul.Perf
     //   shot <名字>              截图到 bin/dev/shots/<名字>.png
     //   fav <items|units> <数量>  随机设一些收藏（走玩家切换收藏的同一个方法）
     //   uitree <窗口 id|res:资源路径> [深度]   打印窗口或预制件的节点层级：名字、是否激活、组件、位置和尺寸、文字
+    //   uihit <窗口 id> <节点路径>   在节点中心做一次界面点击检测，列出挡在那里的东西
+    //   uiclick <窗口 id> <节点路径> 对节点发一次点击，打印点完之后开着的窗口
     //   gcinfo                   打印 GC 模式和托管堆大小
     //   heap <标签> [行数]        遍历托管堆，按类型统计个数和大小（很慢）
     //   gc                       强制完整回收，打印回收前后的占用（得到活对象的大小）
@@ -288,6 +290,58 @@ namespace DiplomacyOverhaul.Perf
                     if (a[1].StartsWith("res:")) UiTree(Resources.Load<GameObject>(a[1].Substring(4))?.transform, 0, a.Length > 2 ? int.Parse(a[2]) : 8);
                     else if (ScrollWindow._all_windows.TryGetValue(a[1], out ScrollWindow uw) && uw != null) UiTree(uw.transform, 0, a.Length > 2 ? int.Parse(a[2]) : 8);
                     else Log("  ! no window " + a[1]);
+                    break;
+                case "uihit":
+                    // uihit <窗口 id> <节点路径>：在这个节点中心的屏幕位置做一次界面点击检测，列出从上到下挡在那里的东西
+                    if (ScrollWindow._all_windows.TryGetValue(a[1], out ScrollWindow hw) && hw != null)
+                    {
+                        RectTransform node = hw.transform.Find(a[2]) as RectTransform;
+                        if (node == null) { Log("  ! no node " + a[2]); break; }
+                        Canvas canvas = node.GetComponentInParent<Canvas>();
+                        Camera cam = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+                        Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, node.TransformPoint(node.rect.center));
+                        var ped = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current) { position = screen };
+                        var hits = new List<UnityEngine.EventSystems.RaycastResult>();
+                        UnityEngine.EventSystems.EventSystem.current.RaycastAll(ped, hits);
+                        Log($"  screen={screen} hits={hits.Count}");
+                        foreach (var h in hits.Take(8))
+                        {
+                            Transform t = h.gameObject.transform;
+                            string path = t.name;
+                            for (Transform p = t.parent; p != null && path.Length < 160; p = p.parent) path = p.name + "/" + path;
+                            Log($"    {path} sortingOrder={h.sortingOrder} depth={h.depth} module={h.module?.GetType().Name}");
+                        }
+                        foreach (Canvas c in node.GetComponentsInChildren<Canvas>(true))
+                            Log($"    canvas {c.name} override={c.overrideSorting} order={c.sortingOrder} enabled={c.enabled}");
+                    }
+                    else Log("  ! no window " + a[1]);
+                    break;
+                case "uiclick":
+                    // uiclick <窗口 id> <节点路径>：对这个节点发一次点击，打印点完之后开着的窗口
+                    if (ScrollWindow._all_windows.TryGetValue(a[1], out ScrollWindow cw) && cw != null && cw.transform.Find(a[2]) is Transform target)
+                    {
+                        Log($"  before: current={(AccessTools.Field(typeof(ScrollWindow), "_current_window").GetValue(null) as ScrollWindow)?.screen_id ?? "null"} animating={ScrollWindow.isAnimationActive()}");
+                        UnityEngine.EventSystems.ExecuteEvents.Execute(target.gameObject, new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current),
+                            UnityEngine.EventSystems.ExecuteEvents.pointerClickHandler);
+                        Log("  open: " + string.Join(" ", ScrollWindow._all_windows.Where(kv => kv.Value != null && kv.Value.gameObject.activeInHierarchy).Select(kv => kv.Key)));
+                        Log($"  after: current={(AccessTools.Field(typeof(ScrollWindow), "_current_window").GetValue(null) as ScrollWindow)?.screen_id ?? "null"}");
+                    }
+                    else Log("  ! no node " + a[1] + " " + (a.Length > 2 ? a[2] : ""));
+                    break;
+                case "uihideall":
+                    ScrollWindow.hideAllEvent(false);
+                    break;
+                case "uiselect":
+                    // uiselect <国家>：和在地图上点选一个王国一样
+                    MetaType.Kingdom.getAsset().selectAndInspect(FindKingdom(a.Length > 1 ? a[1] : null), pCheckNameplate: false);
+                    break;
+                case "uiside":
+                    // 点右下角的议会按钮
+                    var side = AccessTools.Field(typeof(ParliamentWindow), "_side").GetValue(null) as UiMover;
+                    var sideButton = side?.transform.Find("Button")?.GetComponent<UnityEngine.UI.Button>();
+                    if (sideButton == null) Log("  ! no side button");
+                    else sideButton.onClick.Invoke();
+                    Log("  open: " + string.Join(" ", ScrollWindow._all_windows.Where(kv => kv.Value != null && kv.Value.gameObject.activeInHierarchy).Select(kv => kv.Key)));
                     break;
                 case "allocprobe":
                     try
