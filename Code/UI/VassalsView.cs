@@ -7,7 +7,7 @@ namespace DiplomacyOverhaul
 {
     // 宗主的王国窗口「外交」下面一行：列它的附庸，按整合度从高到低。附庸的宗主写在副标题里，概览里有「宗主」一栏可以点过去。
     // 行从原版「外交」那一行复制（见 ClanRelationsView.Template），去掉左边的战争格，右边的格子拉满整行。
-    // 悬停附庸的旗帜是原版王国提示，下面接整合度、对宗主的好感和去年交的贡赋
+    // 悬停附庸的旗帜用自己的提示：原版王国提示的样子，只留标题、人口和兵力，下面是统治者、村镇，再是整合度、对宗主的好感和去年交的贡赋
     public static class VassalsView
     {
         const string RowName = "vd_vassals_row";
@@ -94,16 +94,27 @@ namespace DiplomacyOverhaul
 
         static void ShowTip(Tooltip pTooltip, string pType, TooltipData pData)
         {
-            AssetManager.tooltips.get("kingdom").callback(pTooltip, "kingdom", pData);
             if (!Safety.On(Sys.Interface)) return;
             try
             {
                 Kingdom v = pData?.kingdom;
                 Kingdom lord = Vassals.GetOverlord(v);
                 if (lord == null) return;
+                string color = v.getColor().color_text;
+                pTooltip.setSpeciesIcon(v.getSpeciesIcon());
+                pTooltip.setTitle(Government.DisplayName(v), Government.TitleKey(v), color);
+                foreach (KingdomBanner b in pTooltip.transform.FindAllRecursive<KingdomBanner>()) b.load(v);
+                // 原版按提示 id 各建一个实例，藏起这个实例里的年龄和特质不影响原版的王国提示
+                pTooltip.transform.FindRecursive("Stats")?.gameObject.SetActive(true);
+                pTooltip.transform.FindRecursive("i_age")?.gameObject.SetActive(false);
+                pTooltip.GetComponentInChildren<TooltipKingdomTraitsRow>(true)?.gameObject.SetActive(false);
+                Icon(pTooltip, "i_population", v.getPopulationPeople());
+                Icon(pTooltip, "i_army", v.countTotalWarriors());
+
+                pTooltip.addLineText(RulerTitles.Key(v, "village_statistics_king"), v.hasKing() ? v.king.getName() : "-", color);
+                pTooltip.addLineText("villages", v.cities.Count + "/" + v.getMaxCities());
                 pTooltip.addLineBreak();
-                string tier = Integration.TraitId(v);
-                pTooltip.addLineText("trait_group_" + Integration.GroupId, LM.Get("kingdom_trait_" + tier), Integration.Get(v) >= LoyalAt ? Good : Bad);
+                pTooltip.addLineText("trait_group_" + Integration.GroupId, LM.Get("kingdom_trait_" + Integration.TraitId(v)), Integration.Get(v) >= LoyalAt ? Good : Bad);
                 int opinion = World.world.diplomacy.getOpinion(v, lord).total;
                 pTooltip.addLineText("vd_vassal_opinion", opinion > 0 ? "+" + opinion : opinion.ToString(), opinion >= 0 ? Good : Bad);
                 if (Ledger.HasLastYear(v)) pTooltip.addLineIntText("vd_vassal_tribute", Ledger.LastYear(v, Ledger.Flow.Overlord));
@@ -112,6 +123,14 @@ namespace DiplomacyOverhaul
             {
                 Safety.Fail(Sys.Interface, "附庸提示", e);
             }
+        }
+
+        static void Icon(Tooltip pTooltip, string pName, int pValue)
+        {
+            StatsIcon icon = pTooltip.transform.FindRecursive(pName)?.GetComponent<StatsIcon>();
+            if (icon == null) return;
+            icon.enable_animation = false;
+            icon.setValue(pValue);
         }
     }
 }
