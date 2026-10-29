@@ -62,7 +62,7 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             if (!On) return;
-            foreach (Kingdom k in World.world.kingdoms)
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv() || !k.hasCapital() || !k.hasKing()) continue;
                 int renown = Mathf.RoundToInt(StatueRenown * Weight(k.capital, Statue));

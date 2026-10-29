@@ -51,14 +51,14 @@ namespace DiplomacyOverhaul
 
         public static void UpdateAll()
         {
-            foreach (Kingdom lord in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom lord in Clock.Settling())
             {
                 if (!lord.isAlive() || !lord.isCiv() || Vassals.IsVassal(lord)) continue;
                 if (Policies.Value(lord, Policies.Vassals) != Policies.Assimilation) continue;
                 foreach (Kingdom v in Vassals.GetVassals(lord)) Convert(v, lord.culture, lord.religion, null, VassalYearlyShare);
             }
             // 同文同教：国内各城的居民改用国家的文化、宗教和语言
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 if (Policies.Value(k, Policies.Customs) != Policies.Uniformity) continue;

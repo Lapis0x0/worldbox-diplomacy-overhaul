@@ -210,6 +210,15 @@ namespace DiplomacyOverhaul.Perf
                             if (Treasury.Penalty(c) > 0f) unpaidCities++;
                         }
                     }
+                    int settled = 0, alive = 0, year = Date.getCurrentYear();
+                    foreach (Kingdom k in World.world.kingdoms)
+                    {
+                        if (!k.isAlive()) continue;
+                        alive++;
+                        k.data.get("vd_year_settled", out int y, -1);
+                        if (y == year) settled++;
+                    }
+                    Log($"  year={year} month={Date.getCurrentMonth()} settledThisYear={settled}/{alive} months={string.Join(",", World.world.kingdoms.Where(k => k.isAlive()).Select(k => k.id % 12 + 1).OrderBy(m => m))}");
                     Log($"  military={Military.On} armies={armies} guardArmies={guardArmies} guardUnits={guardUnits} members={members} stations={stations} unpaidKingdoms={unpaidKingdoms} unpaidCities={unpaidCities}");
                     break;
                 }

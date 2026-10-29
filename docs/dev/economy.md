@@ -101,7 +101,7 @@
 
 ## 账本
 
-国库每一笔进出按类别记进今年的账，每年各城交完税、发完军饷后（`Clock` 里依次是 `Treasury.CollectAll`、`Treasury.UpdateAll`、`Ledger.CloseYear`）结账：今年转成去年、今年清零。国库页画的是去年。
+国库每一笔进出按类别记进今年的账，每年在国家的结算月，各城交完税、发完军饷后（`Clock` 里依次是 `Treasury.CollectAll`、`Treasury.UpdateAll`、`Ledger.CloseYear`）结账：今年转成去年、今年清零，各城的上缴跟着所属国家一起结。国库页画的是去年。
 
 | 类别 | 记在哪 |
 |---|---|

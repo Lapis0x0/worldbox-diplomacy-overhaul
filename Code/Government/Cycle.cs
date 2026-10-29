@@ -112,10 +112,16 @@ namespace DiplomacyOverhaul
             else pKingdom.addTrait(TraitIds[(int)pPhase], true);
         }
 
-        // 读档或换世界后的第一次判定：已有的帝国直接算鼎盛，鼎盛年数随机，免得同时衰落
-        static bool _initialPass = true;
+        // 读档或换世界后的第一次判定：已有的帝国直接算鼎盛，鼎盛年数随机，免得同时衰落。
+        // 年结算按国家错开，所以按国家记：这一局开始时就有、这一局还没判定过的国家算第一次
+        static double _sessionStart = -1;
+        static readonly HashSet<long> _judged = new HashSet<long>();
 
-        public static void ResetSession() => _initialPass = true;
+        public static void ResetSession()
+        {
+            _sessionStart = -1;
+            _judged.Clear();
+        }
 
         public static CyclePhase Get(Kingdom pKingdom)
         {
@@ -326,14 +332,15 @@ namespace DiplomacyOverhaul
             if (!Settings.CycleEnabled)
             {
                 // 关掉周期：把显示用的特质摘掉，数据留着，重新打开时接着走
-                foreach (Kingdom k in World.world.kingdoms) SyncTrait(k, CyclePhase.None);
+                foreach (Kingdom k in Clock.Settling()) SyncTrait(k, CyclePhase.None);
                 return;
             }
-            bool initial = _initialPass;
-            _initialPass = false;
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            if (_sessionStart < 0) _sessionStart = World.world.getCurWorldTime();
+            foreach (Kingdom k in Clock.Settling())
             {
-                if (k.isAlive()) Update(k, initial);
+                if (!k.isAlive()) continue;
+                Update(k, k.data.created_time <= _sessionStart && !_judged.Contains(k.id));
+                _judged.Add(k.id);
             }
         }
 

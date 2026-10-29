@@ -212,7 +212,7 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             if (!Military.On) return;
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 foreach (City city in new List<City>(k.getCities())) Pay(city);
@@ -267,7 +267,7 @@ namespace DiplomacyOverhaul
         // 往往几年才交一次，国库的进账忽多忽少；平时碰上了照样交
         public static void CollectAll()
         {
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 Actor king = k.hasKing() ? k.king : null;

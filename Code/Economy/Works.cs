@@ -61,7 +61,7 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             if (!Buildings.On) return;
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 Update(k);

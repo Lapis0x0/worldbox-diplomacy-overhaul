@@ -478,7 +478,7 @@ namespace DiplomacyOverhaul
         {
             int year = Date.getCurrentYear();
             bool enabled = Settings.ParliamentEnabled;
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv() || !k.hasCities()) continue;
                 if (!enabled)

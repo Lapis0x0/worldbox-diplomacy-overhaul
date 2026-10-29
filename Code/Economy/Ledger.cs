@@ -71,10 +71,10 @@ namespace DiplomacyOverhaul
             return v;
         }
 
-        // 每年在发完军饷之后结账：今年转成去年，今年清零
+        // 每年在发完军饷之后结账：今年转成去年，今年清零；各城的上缴跟着所属国家一起结
         public static void CloseYear()
         {
-            foreach (Kingdom k in World.world.kingdoms)
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (k?.data == null || !k.isAlive()) continue;
                 for (int i = 0; i < Count; i++)
@@ -85,14 +85,14 @@ namespace DiplomacyOverhaul
                     k.data.removeInt(KeyThis + i);
                 }
                 k.data.set(KeyClosed, true);
-            }
-            foreach (City c in World.world.cities)
-            {
-                if (c?.data == null) continue;
-                c.data.get(KeyCityThis, out int v, 0);
-                if (v != 0) c.data.set(KeyCityLast, v);
-                else c.data.removeInt(KeyCityLast);
-                c.data.removeInt(KeyCityThis);
+                foreach (City c in k.getCities())
+                {
+                    if (c?.data == null) continue;
+                    c.data.get(KeyCityThis, out int v, 0);
+                    if (v != 0) c.data.set(KeyCityLast, v);
+                    else c.data.removeInt(KeyCityLast);
+                    c.data.removeInt(KeyCityThis);
+                }
             }
         }
 

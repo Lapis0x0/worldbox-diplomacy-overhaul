@@ -203,7 +203,7 @@ namespace DiplomacyOverhaul
 
         public static void UpdateAll()
         {
-            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            foreach (Kingdom k in Clock.Settling())
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
                 Kingdom lord = Vassals.GetOverlord(k);
