@@ -22,6 +22,7 @@ namespace DiplomacyOverhaul.Perf
     //   debugopt <选项> <on|off>   切换原版调试菜单的选项（DebugOption 的名字）
     //   settings                 打开模组设置窗口
     //   mil                      军队大修的状态：军队、禁军编队和人数、驻扎中的军队、欠饷的国家和城市
+    //   mil guard [国家数]        各国禁军编队的人数、任务、所在的城、驻守或巡逻了几年、防区
     //   setting <分组> <开关> <true|false>   改模组设置，如 setting vd_group_perf vd_perf_enabled false
     //   measure <标签> <秒> [detail] [mono]   测帧时间；detail 同时打开原版 Bench 分项计时，
     //                           mono 给所有脚本的 Update/LateUpdate 计时（都有额外开销）
@@ -174,6 +175,14 @@ namespace DiplomacyOverhaul.Perf
                 case "debugopt":
                     DebugConfig.setOption((DebugOption)Enum.Parse(typeof(DebugOption), a[1]), a[2] == "on");
                     Log($"  {a[1]} = {DebugConfig.isOn((DebugOption)Enum.Parse(typeof(DebugOption), a[1]))}");
+                    break;
+                case "mil" when a.Length > 1 && a[1] == "guard":
+                    foreach (Kingdom k in World.world.kingdoms.Where(k => k.isAlive() && k.isCiv()).OrderByDescending(k => k.countCities()).Take(a.Length > 2 ? int.Parse(a[2]) : 8))
+                    {
+                        Log($"  {k.name} cities={k.countCities()} capital={k.capital?.name ?? "-"} war={World.world.wars.hasWars(k)}");
+                        foreach (Army army in World.world.armies)
+                            if (Guard.Is(army) && Orders.HasUnits(army) && Orders.KingdomOf(army) == k) Log("    " + GuardAI.Describe(army));
+                    }
                     break;
                 case "mil":
                 {

@@ -98,6 +98,7 @@
 | `getUnits()` | 同上 | 同上 |
 | `World.world.units` | 遍历全世界的单位 | 一轮最多一次 |
 | `World.world.kingdoms` | 遍历全部王国 | 不要放进按王国的循环（王国数的平方） |
+| `Sectors(` | 每年第一次调用时遍历这个国家全部区块和相邻区块，之后查缓存 | 只在禁军和平部署里用；要每月重算时先想清楚，全世界加起来约为地图区块数 × 8 |
 | `World.world.armies` | 遍历全部军队 | 不要放进按城的循环，先按城建索引（见 `GuardAI.Pressure`） |
 | `World.world.cities` | 遍历全部城市 | 同上 |
 | `recalculateNeighbourCities(` | 原版重算一座城的邻城 | 不要在广度搜索里每个节点调 |

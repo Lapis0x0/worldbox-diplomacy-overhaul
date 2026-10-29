@@ -236,6 +236,17 @@ namespace DiplomacyOverhaul
             captain.setTask("warrior_army_leader_move_random", true, false, true);
         }
 
+        // 队长到了驻地：在驻扎的城里，或在扎营的地方附近
+        public static bool AtStation(Army pArmy)
+        {
+            Actor captain = pArmy?.getCaptain();
+            if (captain == null || captain.isRekt()) return false;
+            City garrison = GetGarrison(pArmy);
+            if (garrison != null) return captain.current_tile.zone.city == garrison;
+            WorldTile hold = GetHold(pArmy);
+            return hold != null && NearHold(captain.current_tile, hold);
+        }
+
         // 点的正是这支军队驻扎的城、或扎营的地方附近
         public static bool IsStationedAt(Army pArmy, WorldTile pTile)
         {

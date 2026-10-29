@@ -4,16 +4,24 @@ using NeoModLoader.General;
 
 namespace DiplomacyOverhaul
 {
-    // 军队提示和军队窗口：玩家下过令的军队多一行「命令」，如「驻扎 王城」「扎营」「进攻 敌城」
+    // 军队提示和军队窗口：玩家下过令的军队多一行「命令」，如「驻扎 王城」「扎营」「进攻 敌城」；
+    // 没有玩家命令的禁军编队在驻守都城、巡逻边境、换防时多一行「任务」
     static class ArmyOrderText
     {
         internal const string Key = "vd_army_order";
+        const string DutyKey = "vd_army_duty";
 
-        // 没有玩家命令时返回 null
-        internal static string Of(Army pArmy, out string pColor)
+        // 两样都没有时返回 null
+        internal static string Of(Army pArmy, out string pColor, out string pKey)
         {
             pColor = "#80FF8C";
-            if (!Orders.IsCommanded(pArmy)) return null;
+            pKey = Key;
+            if (!Orders.IsCommanded(pArmy))
+            {
+                pColor = "#C8D2E6";
+                pKey = DutyKey;
+                return GuardAI.Duty(pArmy);
+            }
             if (Orders.IsForced(pArmy))
             {
                 pColor = "#FF7366";
@@ -70,8 +78,8 @@ namespace DiplomacyOverhaul
         {
             Army army = Patch_ArmyTooltip.Current;
             Patch_ArmyTooltip.Current = null;
-            string text = ArmyOrderText.Of(army, out string color);
-            if (text != null) pTooltip.addLineText(ArmyOrderText.Key, text, color);
+            string text = ArmyOrderText.Of(army, out string color, out string key);
+            if (text != null) pTooltip.addLineText(key, text, color);
         }
     }
 
@@ -83,8 +91,8 @@ namespace DiplomacyOverhaul
             if (!Safety.On(Sys.Interface)) return;
             try
             {
-                string text = ArmyOrderText.Of(SelectedMetas.selected_army, out string color);
-                if (text != null) __instance.showStatRow(ArmyOrderText.Key, text, color, MetaType.None, -1L, true, "iconArmy");
+                string text = ArmyOrderText.Of(SelectedMetas.selected_army, out string color, out string key);
+                if (text != null) __instance.showStatRow(key, text, color, MetaType.None, -1L, true, "iconArmy");
             }
             catch (Exception e) { Safety.Fail(Sys.Interface, "军队窗口命令行", e); }
         }

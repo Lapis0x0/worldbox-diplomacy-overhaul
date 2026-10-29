@@ -240,6 +240,20 @@ namespace DiplomacyOverhaul
             }
         }
 
+        // 补员：从一支编队调几个兵（不调队长）到另一支
+        internal static void Transfer(Army pFrom, Army pInto, int pCount)
+        {
+            Actor captain = pFrom.getCaptain();
+            foreach (Actor a in new List<Actor>(pFrom.units))
+            {
+                if (pCount <= 0) break;
+                if (a == captain || a.isRekt()) continue;
+                a.removeFromArmy();
+                a.setArmy(pInto);
+                pCount--;
+            }
+        }
+
         // ---------- 玩家命令 ----------
 
         // 军队的任务（禁军由 GuardAI、保守的地方军由 LocalAI 维护）：玩家亲手下过命令的，AI 不碰
