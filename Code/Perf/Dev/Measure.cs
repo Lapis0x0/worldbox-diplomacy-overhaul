@@ -191,6 +191,8 @@ namespace DiplomacyOverhaul.Perf
             sb.Append($" units={w.units.Count} buildings={w.buildings.Count} zoom={MoveCamera.instance.main_camera.orthographicSize:F0}");
             sb.Append($" heap={UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1048576}MB");
             if (_spikes.Count > 0) sb.Append(" spikes=" + string.Join(",", _spikes));
+            // 世界没在走时测到的只是画面，不能拿来比模拟的开销
+            if (World.world.getCurWorldTime() - _world_time_start <= 0) sb.Append(" INVALID=world_paused");
             Dev.Log(sb.ToString());
             if (_detail) Dev.Log($"  dirty_tiles/frame={(double)_dirty_tiles / n:F0} tiles={World.world.tiles_list.Length}");
             if (_detail || _mono) DumpDetail(n);

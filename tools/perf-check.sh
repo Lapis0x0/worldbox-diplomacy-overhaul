@@ -49,7 +49,8 @@ else
 fi
 echo
 # 标记：比基线慢一倍以上（且多出 1ms 以上），或者超出预算。预算按多久发生一次定：
-# 定期结算和起草一年一次，50ms；点开窗口 100ms；其余会被频繁调用，16ms（一帧）
+# 年结算单项在单个国家（.worst，按国家错开后一帧里的开销取决于它）4ms；定期结算总量和起草 50ms；点开窗口 100ms；
+# 其余会被频繁调用，16ms（一帧）
 awk -v has_base="$([ -f "$dir/baseline.txt" ] && echo 1 || echo 0)" '
   FNR == NR { if ($1 != "#") b[$1] = $2; next }
   $1 == "#" { next }
@@ -57,7 +58,7 @@ awk -v has_base="$([ -f "$dir/baseline.txt" ] && echo 1 || echo 0)" '
     base = ($1 in b) ? b[$1] : ""
     flag = ""
     if (base != "" && $2 > base * 2 && $2 - base > 1) flag = "慢了"
-    budget = $1 ~ /\.ui\./ ? 100 : $1 ~ /\.clock\.|\.parl\.draft/ ? 50 : 16
+    budget = $1 ~ /\.worst$/ ? 4 : $1 ~ /\.ui\./ ? 100 : $1 ~ /\.clock\.|\.parl\.draft/ ? 50 : 16
     if ($2 > budget) flag = (flag == "" ? "" : flag "，") "超预算 " budget "ms"
     if (flag != "") bad++
     printf "%-32s %10s %10.2f %8s  %s\n", $1, (base == "" ? "-" : sprintf("%.2f", base)), $2, (base == "" || base == 0 ? "" : sprintf("x%.2f", $2 / base)), flag

@@ -62,6 +62,8 @@ namespace DiplomacyOverhaul.Perf
     //   check                    巡检对象之间的关系（附庸、城市、单位、军队、弹道、战争指向的国家都还在），每条违规一行 @violation（tools/soak.sh 用）
     //   year                     写一行 @year <当前年份>
     //   end <token>              写一行 @done <token>，脚本据此判断结束
+    //   一批命令执行期间世界保持运行（玩家暂停了会自动恢复，结果里记一行 @note），跑完自动暂停；
+    //   批里写了 pause on|off 就照最后一次写的
     public static class Dev
     {
         public static bool Enabled;
@@ -70,6 +72,12 @@ namespace DiplomacyOverhaul.Perf
         static Func<bool> _blocker;
         static float _poll;
         static bool _ready;
+
+        // 一批命令执行期间让世界保持运行：玩家中途暂停了就恢复，记下次数；批里写了 pause 就照命令来。
+        // 这批跑完（end）就暂停，批里写过 pause 的照最后一次写的
+        static bool _batch;
+        static bool? _explicitPause;
+        static int _resumed;
 
         public static void Start(string pFolder)
         {
@@ -91,15 +99,26 @@ namespace DiplomacyOverhaul.Perf
 
         public static string Dir => _dir;
 
-        // 开发时各定期结算系统最近一次的耗时；单次超过一帧（16ms）就写一行 @spike
+        // 开发时各定期结算系统的耗时：每月的记最近一次，单次超过一帧（16ms）写一行 @spike；
+        // 年结算按国家计，Timings 累加各国，Worst 记最贵的那个国家，单个国家单项超过预算（4ms）写一行 @spike
         public static readonly Dictionary<string, double> Timings = new Dictionary<string, double>();
+        public static readonly Dictionary<string, (double ms, string kingdom)> Worst = new Dictionary<string, (double, string)>();
         const double SpikeMs = 16.0;
+        public const double KingdomBudgetMs = 4.0;
 
-        public static void Timed(string pName, long pStart)
+        public static void Timed(string pName, long pStart, Kingdom pKingdom = null)
         {
             double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - pStart) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-            Timings[pName] = ms;
-            if (ms > SpikeMs) Log($"@spike {pName} {ms:F1}ms");
+            if (pKingdom == null)
+            {
+                Timings[pName] = ms;
+                if (ms > SpikeMs) Log($"@spike {pName} {ms:F1}ms");
+                return;
+            }
+            Timings.TryGetValue(pName, out double sum);
+            Timings[pName] = sum + ms;
+            if (!Worst.TryGetValue(pName, out var worst) || ms > worst.ms) Worst[pName] = (ms, pKingdom.name);
+            if (ms > KingdomBudgetMs) Log($"@spike {pName} {pKingdom.name} {ms:F1}ms");
         }
 
         // 开发命令里的国家参数：id 或国名；不给时是城市最多的国家
@@ -123,6 +142,11 @@ namespace DiplomacyOverhaul.Perf
             {
                 _ready = true;
                 Log("ready");
+            }
+            if (_batch && _explicitPause == null && Config.paused)
+            {
+                Config.paused = false;
+                _resumed++;
             }
             Measure.Tick();
             _poll += Time.unscaledDeltaTime;
@@ -154,6 +178,12 @@ namespace DiplomacyOverhaul.Perf
             if (!File.Exists(path)) return;
             string[] lines = File.ReadAllLines(path);
             File.Delete(path);
+            if (!_batch && lines.Any(l => !string.IsNullOrWhiteSpace(l)))
+            {
+                _batch = true;
+                _explicitPause = null;
+                _resumed = 0;
+            }
             foreach (string line in lines)
                 if (!string.IsNullOrWhiteSpace(line)) _queue.Enqueue(line.Trim());
         }
@@ -166,7 +196,10 @@ namespace DiplomacyOverhaul.Perf
             {
                 case "load": Load(pLine.Substring(5).Trim()); break;
                 case "speed": Config.setWorldSpeed(a[1]); break;
-                case "pause": Config.paused = a[1] == "on"; break;
+                case "pause":
+                    Config.paused = a[1] == "on";
+                    _explicitPause = Config.paused;
+                    break;
                 case "wait":
                     float until = Time.realtimeSinceStartup + F(a[1]);
                     _blocker = () => Time.realtimeSinceStartup >= until;
@@ -309,7 +342,15 @@ namespace DiplomacyOverhaul.Perf
                     else if (a.Length > 2 && a[1] == "throw") Dev_ThrowInCity.On = a[2] == "on";
                     Log("  " + string.Join(" ", Enum.GetValues(typeof(Sys)).Cast<Sys>().Select(s => s + "=" + (Safety.On(s) ? "on" : "off"))));
                     break;
-                case "end": Log("@done " + (a.Length > 1 ? a[1] : "")); break;
+                case "end":
+                    if (_resumed > 0) Log($"@note 执行期间游戏被暂停了 {_resumed} 次，已自动恢复");
+                    if (_queue.Count == 0)
+                    {
+                        if (_explicitPause == null) Config.paused = true;
+                        _batch = false;
+                    }
+                    Log("@done " + (a.Length > 1 ? a[1] : ""));
+                    break;
                 default: Log("! unknown command"); break;
             }
         }

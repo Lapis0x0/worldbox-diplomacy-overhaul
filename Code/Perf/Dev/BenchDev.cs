@@ -144,9 +144,16 @@ namespace DiplomacyOverhaul.Perf
             int year = Date.getCurrentYear();
             foreach (Kingdom x in kingdoms) x.data.set("vd_parl_next", year);
             Dev.Timings.Clear();
+            Dev.Worst.Clear();
             double yearly = Time(Clock.Yearly);
             double monthly = Time(Clock.Monthly);
             foreach (var kv in Dev.Timings.OrderBy(kv => kv.Key)) Report(kv.Key, kv.Value);
+            // 年结算每一项在最贵的那个国家花了多久：错开以后一帧里的开销取决于它
+            foreach (var kv in Dev.Worst.OrderBy(kv => kv.Key))
+            {
+                Report(kv.Key + ".worst", kv.Value.ms);
+                Dev.Log($"  {kv.Key}.worst = {kv.Value.kingdom}");
+            }
             Report("clock.year_total", yearly);
             Report("clock.month_total", monthly);
             Report("guard.tick", Time(Guard.Tick));

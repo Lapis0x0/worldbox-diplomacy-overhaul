@@ -57,23 +57,42 @@ namespace DiplomacyOverhaul
                 if (k.data != null) k.data.set(KeySettled, year);
         }
 
+        // 结算 Settling() 里的国家：一个国家把各项按顺序结完，再结下一个国家。开发时按国家给每一项计时
+        static Kingdom _settling;
+
         internal static void Yearly()
         {
-            Run(Sys.Government, "Regime", Regime.UpdateAll);
-            Run(Sys.Government, "Government", Government.UpdateAll);
-            Run(Sys.Cycle, "Cycle", Cycle.UpdateAll);
-            Run(Sys.Vassal, "Integration", Integration.UpdateAll);
-            Run(Sys.Vassal, "Territory", Territory.UpdateAll);
-            Run(Sys.Vassal, "Assimilation", Assimilation.UpdateAll);
-            Run(Sys.Economy, "Tribute", Treasury.CollectAll);
-            Run(Sys.Economy, "Treasury", Treasury.UpdateAll);
-            // 军饷发完再结年账，去年的账里有这一年的军饷
-            Run(Sys.Economy, "Ledger", Ledger.CloseYear);
-            Run(Sys.Military, "Armory", Armory.UpdateAll);
-            Run(Sys.Economy, "Buildings", Buildings.UpdateAll);
-            // 军械先花，营建用剩下的
-            Run(Sys.Economy, "Works", Works.UpdateAll);
-            Run(Sys.Parliament, "Parliament", Parliament.UpdateAll);
+            List<Kingdom> all = Settling();
+            List<Kingdom> saved = _batch;
+            try
+            {
+                foreach (Kingdom k in all)
+                {
+                    if (k?.data == null || !k.isAlive()) continue;
+                    _batch = new List<Kingdom> { k };
+                    _settling = k;
+                    Run(Sys.Government, "Regime", Regime.UpdateAll);
+                    Run(Sys.Government, "Government", Government.UpdateAll);
+                    Run(Sys.Cycle, "Cycle", Cycle.UpdateAll);
+                    Run(Sys.Vassal, "Integration", Integration.UpdateAll);
+                    Run(Sys.Vassal, "Territory", Territory.UpdateAll);
+                    Run(Sys.Vassal, "Assimilation", Assimilation.UpdateAll);
+                    Run(Sys.Economy, "Tribute", Treasury.CollectAll);
+                    Run(Sys.Economy, "Treasury", Treasury.UpdateAll);
+                    // 军饷发完再结年账，去年的账里有这一年的军饷
+                    Run(Sys.Economy, "Ledger", Ledger.CloseYear);
+                    Run(Sys.Military, "Armory", Armory.UpdateAll);
+                    Run(Sys.Economy, "Buildings", Buildings.UpdateAll);
+                    // 军械先花，营建用剩下的
+                    Run(Sys.Economy, "Works", Works.UpdateAll);
+                    Run(Sys.Parliament, "Parliament", Parliament.UpdateAll);
+                }
+            }
+            finally
+            {
+                _batch = saved;
+                _settling = null;
+            }
         }
 
         internal static void Monthly()
@@ -82,18 +101,17 @@ namespace DiplomacyOverhaul
             Run(Sys.Vassal, "Vassals", Vassals.SyncAllWars);
             Run(Sys.Military, "Guard", Guard.Rebalance);
             Run(Sys.Military, "GuardAI", GuardAI.UpdateAll);
-            SettleDue();
         }
 
         // 一个系统出错不连累排在后面的系统，也不打断原版这一帧的更新；所属系统熔断后跳过（见 Safety）。
-        // 开发时给每个系统计时（见 Perf.Dev.Timed）
+        // 开发时给每个系统计时，年结算按国家计（见 Perf.Dev.Timed）
         static void Run(Sys pSys, string pName, Action pUpdate)
         {
             if (!Safety.On(pSys)) return;
             long start = Perf.Dev.Enabled ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
             try { pUpdate(); }
             catch (Exception e) { Safety.Fail(pSys, $"定期更新 {pName}", e); }
-            if (Perf.Dev.Enabled) Perf.Dev.Timed("clock." + pName, start);
+            if (Perf.Dev.Enabled) Perf.Dev.Timed("clock." + pName, start, _settling);
         }
 
         [SafeBy("Run 逐个系统兜住")]
@@ -104,7 +122,9 @@ namespace DiplomacyOverhaul
 
             static void Postfix()
             {
-                if (Due(ref _last, MonthLength)) Monthly();
+                if (!Due(ref _last, MonthLength)) return;
+                Monthly();
+                SettleDue();
             }
         }
     }
