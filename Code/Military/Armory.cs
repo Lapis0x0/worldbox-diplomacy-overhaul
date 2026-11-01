@@ -19,6 +19,7 @@ namespace DiplomacyOverhaul
     public static class Armory
     {
         const string KeyTier = "vd_arms_tier";            // kingdom.data / city.data：现行制式的档次
+        const string KeyCommon = "vd_arms_common";        // kingdom.data / city.data：一半以上的兵够得着的最高一档，-1 是简陋
         internal const string KeyRole = "vd_arms_role";   // actor.data：兵种，第一次领制式时定下
         const string FlagOfficial = "vd_arms_official";   // item.data：国家造的装备
         const string FlagLocal = "vd_arms_local";         // item.data：城市造的装备
@@ -113,9 +114,17 @@ namespace DiplomacyOverhaul
 
         public static int TierOf(City pCity) => TierOf(pCity.data);
 
-        public static string TierKey(Kingdom pKingdom) => "vd_arms_tier_" + TierOf(pKingdom);
+        // 界面显示的档次：大部分兵实际穿到哪一档，每年结算时统计；还没统计过的显示制式
+        static string CommonKey(BaseSystemData pData)
+        {
+            pData.get(KeyCommon, out int v, -2);
+            if (v == -2) v = TierOf(pData);
+            return v < 0 ? "vd_arms_tier_none" : "vd_arms_tier_" + v;
+        }
 
-        public static string TierKey(City pCity) => "vd_arms_tier_" + TierOf(pCity);
+        public static string TierKey(Kingdom pKingdom) => CommonKey(pKingdom.data);
+
+        public static string TierKey(City pCity) => CommonKey(pCity.data);
 
         // 一件装备的价钱：本国（本城）存货按官价，不够的按商队的价钱，加上工钱（按档次）。材料凑不齐返回 -1
         static int Cost(Arsenal pArsenal, Tier pTier)
@@ -171,6 +180,41 @@ namespace DiplomacyOverhaul
 
         static void Update(Arsenal pArsenal)
         {
+            Equip(pArsenal);
+            Census(pArsenal);
+        }
+
+        // 统计大部分兵实际穿到哪一档：一个兵按他最差的那件算，取一半以上的兵够得着的最高一档。没有兵时不显示统计，照制式
+        static void Census(Arsenal pArsenal)
+        {
+            List<Actor> members = pArsenal.members;
+            if (members.Count == 0)
+            {
+                pArsenal.Data.removeInt(KeyCommon);
+                return;
+            }
+            int[] counts = new int[Tiers.Length];
+            foreach (Actor a in members)
+            {
+                int worst = int.MaxValue;
+                foreach (EquipmentType slot in Slots)
+                    worst = Mathf.Min(worst, a.equipment.getSlot(slot).getItem()?.getAsset().equipment_value ?? 0);
+                for (int t = Tiers.Length - 1; t >= 0; t--)
+                    if (worst >= Tiers[t].value) { counts[t]++; break; }
+            }
+            int common = -1, reached = 0;
+            for (int t = Tiers.Length - 1; t >= 0; t--)
+            {
+                reached += counts[t];
+                if (reached * 2 < members.Count) continue;
+                common = t;
+                break;
+            }
+            pArsenal.Data.set(KeyCommon, common);
+        }
+
+        static void Equip(Arsenal pArsenal)
+        {
             List<Actor> members = pArsenal.members;
             if (members.Count == 0) return;
 
@@ -202,6 +246,7 @@ namespace DiplomacyOverhaul
 
             int budget = Mathf.FloorToInt((pArsenal.Gold - pArsenal.reserve) * pArsenal.rate);
             if (budget <= 0) return;
+            int fill = FillTier(pArsenal, tier, budget);
             int spent = 0;
             bool broke = false;
             foreach (Actor a in members)
@@ -211,12 +256,30 @@ namespace DiplomacyOverhaul
                 {
                     string subtype = slot == EquipmentType.Weapon ? (role == RoleArcher ? "bow" : melee) : SlotName(slot);
                     if (!Needs(a, slot, subtype, tier)) continue;
-                    broke = !Issue(pArsenal, a, slot, subtype, tier, budget - spent, ref spent);
+                    int top = a.equipment.getSlot(slot).getItem() == null ? fill : tier;
+                    broke = !Issue(pArsenal, a, slot, subtype, top, tier, budget - spent, ref spent);
                     if (broke) break;
                 }
                 if (broke) break;
             }
             pArsenal.Spend(spent);
+        }
+
+        // 空着的部位按哪一档发：今年的钱够把空位都配齐的最高一档，最低是铜。
+        // 平时只补几个新兵，照制式发；打光后缺口大，先发便宜的凑合，以后按装备最差的先换慢慢换成制式
+        static int FillTier(Arsenal pArsenal, int pTier, int pBudget)
+        {
+            int empty = 0;
+            foreach (Actor a in pArsenal.members)
+                foreach (EquipmentType slot in Slots)
+                    if (a.equipment.getSlot(slot).getItem() == null) empty++;
+            if (empty == 0) return pTier;
+            for (int t = pTier; t > 0; t--)
+            {
+                int cost = Cost(pArsenal, Tiers[t]);
+                if (cost >= 0 && cost * empty <= pBudget) return t;
+            }
+            return 0;
         }
 
         // 修自家造的装备：先于置办新装备，用储备以外的钱，不按比例。修理费按损耗的比例算，钱不够就停
@@ -371,16 +434,17 @@ namespace DiplomacyOverhaul
             return false;
         }
 
-        // 发一件：从制式往下挑材料买得到的一档（不比手上的差）。钱不够返回 false，今年不再置办。
-        // 普通金属商队总有，凑不齐材料的只会是秘银、精金，这时退到钢
-        static bool Issue(Arsenal pArsenal, Actor pActor, EquipmentType pSlot, string pSubtype, int pTier, int pBudget, ref int pSpent)
+        // 发一件：从 pTop 往下挑材料买得到的一档。钱不够返回 false，今年不再置办。
+        // 普通金属商队总有，凑不齐材料的只会是秘银、精金，这时退到钢。
+        // 只换比手上好的；同一档次的只在发制式时换（换成制式的材质和武器种类）
+        static bool Issue(Arsenal pArsenal, Actor pActor, EquipmentType pSlot, string pSubtype, int pTop, int pStandard, int pBudget, ref int pSpent)
         {
             ActorEquipmentSlot slot = pActor.equipment.getSlot(pSlot);
             int current = slot.getItem()?.getAsset().equipment_value ?? 0;
-            for (int t = pTier; t >= 0; t--)
+            for (int t = pTop; t >= 0; t--)
             {
                 Tier tier = Tiers[t];
-                if (tier.value < current) break;
+                if (tier.value < current || (tier.value == current && t < pStandard)) break;
                 EquipmentAsset asset = AssetManager.items.get(pSubtype + "_" + tier.material) as EquipmentAsset;
                 if (asset == null) continue;
                 int cost = Cost(pArsenal, tier);

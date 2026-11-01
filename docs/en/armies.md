@@ -56,12 +56,12 @@ The kingdom equips the Guard, and each city equips its own local troops, with st
 | Materials | Bought from the kingdom's cities, and from caravans if not available | Only from the city's stockpile |
 
 - **Troop types**: About a quarter are archers, and in a kingdom whose culture likes bows, half are archers. Melee troops get the culture's preferred weapon: sword, axe, hammer, or spear.
-- **Re-equipping**: Each year after pay is issued, the soldiers with the worst gear are re-equipped first. Gear better than the standard is left alone. Usable old gear is first looked for in the stockpile, and money is spent only if there is none.
+- **Re-equipping**: Each year after pay is issued, the soldiers with the worst gear are re-equipped first. Gear better than the standard is left alone. Usable old gear is first looked for in the stockpile, and money is spent only if there is none. When an army has been wiped out and there is not enough money to equip all the new soldiers to the standard, they get cheaper gear first and are brought up to the standard over the following years.
 - **Upgrading**: When most soldiers are fully equipped, the material goes up one tier the next year. Caravans do not sell mythril or adamantine. The kingdom reaches these tiers only if its own stockpile is enough to re-equip the whole army.
 - **Repair**: The kingdom and cities pay to repair the gear they issued. In peacetime this costs almost nothing.
 - **Recycling**: Replaced gear is melted down for part of its cost back. Gear left by soldiers who died defending a city is reclaimed by the city.
 
-The kingdom window shows the Guard's current standard, and the city window shows the local troops' standard. Under Public Works Only, the Guard is not issued gear and forges its own as in vanilla.
+The kingdom window shows the Guard's equipment, and the city window shows the local troops' equipment: the tier most soldiers actually wear, which may lag behind the standard. Under Public Works Only, the Guard is not issued gear and forges its own as in vanilla.
 
 ## Pay
 
