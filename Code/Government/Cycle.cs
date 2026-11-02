@@ -74,20 +74,20 @@ namespace DiplomacyOverhaul
             {
                 id = "opinion_vd_cycle",
                 translation_key = "opinion_vd_cycle",
-                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? VassalOpinion(pTarget) : 0
+                calc = Safety.Opinion(Sys.Cycle, "周期好感", (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? VassalOpinion(pTarget) : 0)
             });
             Core.Upsert(AssetManager.opinion_library, new OpinionAsset
             {
                 id = "opinion_vd_weak_lord",
                 translation_key = "opinion_vd_weak_lord",
-                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? WeakLordOpinion(pTarget) : 0
+                calc = Safety.Opinion(Sys.Cycle, "弱主好感", (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? WeakLordOpinion(pTarget) : 0)
             });
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_cycle",
                 translation_key = "loyalty_vd_cycle_prime",
                 translation_key_negative = "loyalty_vd_cycle_decline",
-                calc = CityLoyalty
+                calc = Safety.Loyalty(Sys.Cycle, "周期忠诚", CityLoyalty)
             });
             // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉
             LoyaltyAsset conquest = AssetManager.loyalty_library.get("new_conquest");

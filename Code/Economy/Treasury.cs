@@ -144,7 +144,7 @@ namespace DiplomacyOverhaul
             {
                 id = "opinion_vd_vassal_tax",
                 translation_key = "opinion_vd_vassal_tax",
-                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Policies.VassalTaxOpinion(pTarget) : 0
+                calc = Safety.Opinion(Sys.Economy, "贡赋好感", (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget ? Policies.VassalTaxOpinion(pTarget) : 0)
             });
         }
 

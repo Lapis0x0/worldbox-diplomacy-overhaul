@@ -62,7 +62,7 @@ namespace DiplomacyOverhaul
                 id = "loyalty_vd_republic",
                 translation_key = "loyalty_vd_republic",
                 translation_key_negative = "loyalty_vd_republic",
-                calc = CityLoyalty
+                calc = Safety.Loyalty(Sys.Government, "共和忠诚", CityLoyalty)
             });
         }
 

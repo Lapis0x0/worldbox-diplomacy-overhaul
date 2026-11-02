@@ -96,7 +96,7 @@ namespace DiplomacyOverhaul
             {
                 id = "opinion_vd_shame",
                 translation_key = "opinion_vd_shame",
-                calc = (pMain, pTarget) => -Shame(pMain, pTarget)
+                calc = Safety.Opinion(Sys.Peace, "屈辱好感", (pMain, pTarget) => -Shame(pMain, pTarget))
             });
         }
 

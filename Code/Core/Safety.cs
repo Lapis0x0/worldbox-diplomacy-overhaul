@@ -126,6 +126,58 @@ namespace DiplomacyOverhaul
             Perf.Dev.Log($"@audit {bad.Count} 个补丁没有兜住异常");
         }
 
+        // 交给原版调用的忠诚度、好感计算：和补丁一样兜住异常、受熔断控制。
+        // 替换原版计算的传 pVanilla，出错或系统停用时照原版；新加的条目照 0
+        public static LoyaltyDelegateCalc Loyalty(Sys pSys, string pWhere, LoyaltyDelegateCalc pCalc, LoyaltyDelegateCalc pVanilla = null) =>
+            new GuardedLoyalty { Sys = pSys, Where = pWhere, Calc = pCalc, Vanilla = VanillaOf(pVanilla) }.Run;
+
+        public static OpinionDelegateCalc Opinion(Sys pSys, string pWhere, OpinionDelegateCalc pCalc, OpinionDelegateCalc pVanilla = null) =>
+            new GuardedOpinion { Sys = pSys, Where = pWhere, Calc = pCalc, Vanilla = VanillaOf(pVanilla) }.Run;
+
+        // 热重载后资源上挂的是上一版模组包过的计算，从里面取回原版的
+        static T VanillaOf<T>(T pCalc) where T : Delegate
+        {
+            object target = pCalc?.Target;
+            string type = target?.GetType().Name;
+            return type == nameof(GuardedLoyalty) || type == nameof(GuardedOpinion)
+                ? Traverse.Create(target).Field(nameof(GuardedLoyalty.Vanilla)).GetValue<T>()
+                : pCalc;
+        }
+
+        sealed class GuardedLoyalty
+        {
+            public Sys Sys;
+            public string Where;
+            public LoyaltyDelegateCalc Calc, Vanilla;
+
+            public int Run(City pCity)
+            {
+                if (On(Sys))
+                {
+                    try { return Calc(pCity); }
+                    catch (Exception e) { Fail(Sys, Where, e); }
+                }
+                return Vanilla?.Invoke(pCity) ?? 0;
+            }
+        }
+
+        sealed class GuardedOpinion
+        {
+            public Sys Sys;
+            public string Where;
+            public OpinionDelegateCalc Calc, Vanilla;
+
+            public int Run(Kingdom pMain, Kingdom pTarget)
+            {
+                if (On(Sys))
+                {
+                    try { return Calc(pMain, pTarget); }
+                    catch (Exception e) { Fail(Sys, Where, e); }
+                }
+                return Vanilla?.Invoke(pMain, pTarget) ?? 0;
+            }
+        }
+
         static bool Guarded(MethodInfo pMethod) =>
             pMethod.IsDefined(typeof(SafeByAttribute)) || (pMethod.DeclaringType?.IsDefined(typeof(SafeByAttribute)) ?? false)
             || (pMethod.GetMethodBody()?.ExceptionHandlingClauses.Any(c => c.Flags == ExceptionHandlingClauseOptions.Clause) ?? false);

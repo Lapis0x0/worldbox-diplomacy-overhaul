@@ -17,12 +17,12 @@ namespace DiplomacyOverhaul
             // 原版「共同敌人」：同一场战争里站在同一边 +50。附庸是被拖进宗主的仗，不算；
             // 只有附庸自己挨打（它是主守方）、宗主来救的那场才算
             OpinionAsset sameWars = AssetManager.opinion_library.get("opinion_same_wars");
-            if (sameWars != null) sameWars.calc = SameWarsOpinion;
+            if (sameWars != null) sameWars.calc = Safety.Opinion(Sys.Vassal, "共同敌人", SameWarsOpinion, sameWars.calc);
             Core.Upsert(AssetManager.opinion_library, new OpinionAsset
             {
                 id = "opinion_vd_overlord",
                 translation_key = "opinion_vd_overlord",
-                calc = (pMain, pTarget) => GetOverlord(pMain) == pTarget ? OverlordOpinion : 0
+                calc = Safety.Opinion(Sys.Vassal, "宗主好感", (pMain, pTarget) => GetOverlord(pMain) == pTarget ? OverlordOpinion : 0)
             });
         }
 

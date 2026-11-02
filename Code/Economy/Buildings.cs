@@ -32,7 +32,7 @@ namespace DiplomacyOverhaul
                 id = "loyalty_vd_temple",
                 translation_key = "loyalty_vd_temple",
                 translation_key_negative = "loyalty_vd_temple",
-                calc = TempleLoyaltyOf
+                calc = Safety.Loyalty(Sys.Economy, "神庙忠诚", TempleLoyaltyOf)
             });
         }
 

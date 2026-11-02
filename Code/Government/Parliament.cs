@@ -86,14 +86,14 @@ namespace DiplomacyOverhaul
                 id = "loyalty_vd_dissent",
                 translation_key = "loyalty_vd_dissent_content",
                 translation_key_negative = "loyalty_vd_dissent",
-                calc = CityLoyalty
+                calc = Safety.Loyalty(Sys.Parliament, "政见忠诚", CityLoyalty)
             });
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_grievance",
                 translation_key = "loyalty_vd_grievance",
                 translation_key_negative = "loyalty_vd_grievance",
-                calc = GrievanceLoyalty
+                calc = Safety.Loyalty(Sys.Parliament, "积怨忠诚", GrievanceLoyalty)
             });
         }
 

@@ -20,14 +20,14 @@ namespace DiplomacyOverhaul
             {
                 id = "opinion_vd_autonomy",
                 translation_key = "opinion_vd_autonomy",
-                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget
-                                           && Policies.Value(pTarget, Policies.Vassals) == Policies.Autonomy ? AutonomyOpinion : 0
+                calc = Safety.Opinion(Sys.Vassal, "自治好感", (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget
+                                           && Policies.Value(pTarget, Policies.Vassals) == Policies.Autonomy ? AutonomyOpinion : 0)
             });
             Core.Upsert(AssetManager.opinion_library, new OpinionAsset
             {
                 id = "opinion_vd_assimilation",
                 translation_key = "opinion_vd_assimilation",
-                calc = (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget && Resents(pMain, pTarget) ? ResentOpinion : 0
+                calc = Safety.Opinion(Sys.Vassal, "同化好感", (pMain, pTarget) => Vassals.GetOverlord(pMain) == pTarget && Resents(pMain, pTarget) ? ResentOpinion : 0)
             });
             // 原版的文化、语言、宗教：扣的部分按教化政策变
             SetLoyalty("culture", CultureLoyalty);
@@ -38,7 +38,7 @@ namespace DiplomacyOverhaul
         static void SetLoyalty(string pId, LoyaltyDelegateCalc pCalc)
         {
             LoyaltyAsset asset = AssetManager.loyalty_library.get(pId);
-            if (asset != null) asset.calc = pCalc;
+            if (asset != null) asset.calc = Safety.Loyalty(Sys.Vassal, pId + "忠诚", pCalc, asset.calc);
         }
 
         // 宗主在强制同化，附庸的文化或宗教还和宗主不同
