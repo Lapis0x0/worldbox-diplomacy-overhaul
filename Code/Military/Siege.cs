@@ -31,9 +31,10 @@ namespace DiplomacyOverhaul
             if (owner.isRekt() || pGuard.isRekt()) return null;
             WorldTile best = null;
             float bestDist = float.MaxValue;
+            // 已灭亡的王国可能还留在列表里，原版清空了它的 asset，判断敌友会空引用
             foreach (Kingdom k in World.world.kingdoms)
             {
-                if (k != owner && owner.isEnemy(k) && pGuard.isEnemy(k)) Nearest(k, pCity, pFrom, ref best, ref bestDist);
+                if (k != owner && !k.isRekt() && owner.isEnemy(k) && pGuard.isEnemy(k)) Nearest(k, pCity, pFrom, ref best, ref bestDist);
             }
             return best;
         }
@@ -65,7 +66,7 @@ namespace DiplomacyOverhaul
             int attackers = 0;
             foreach (var kv in pCity._capturing_units)
             {
-                if (kv.Key == owner || !kv.Key.isEnemy(owner) || kv.Value <= attackers) continue;
+                if (kv.Key == owner || kv.Key.isRekt() || !kv.Key.isEnemy(owner) || kv.Value <= attackers) continue;
                 attacker = kv.Key;
                 attackers = kv.Value;
             }
