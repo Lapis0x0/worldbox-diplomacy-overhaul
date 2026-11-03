@@ -72,6 +72,7 @@ tools/dev.sh "load bin/bench/saves/tamriel_910" "speed x5" "opt verify on" "wait
 测量时注意：
 
 - 比较帧耗时用不带 `detail` 的 `measure`；`detail` 打开原版 `Bench` 分项计时和额外的计时补丁，本身有开销，只用来找热点
+- arm64 原生副本上，HarmonyX 给泛型方法或正在执行的方法打补丁会卡死游戏。`detail` 在那里不计 `MapBox.Update` 和泛型方法，结果里没有单位、建筑任务的分配量；`probe` 不要挂这两类方法
 - `measure` 期间会关掉垂直同步和帧率上限，否则帧耗时会被取整到 16.7ms 的倍数；结果里的 `game_vsync`、`game_fps_cap` 是游戏自己的设置，玩家看到的帧率要按它们折算
 - 结果里的 `world` 是每秒真实时间推进的世界时间。原版每帧推进固定步长，帧率掉多少，世界就慢多少
 - Unity 的渲染在单独的线程上，和模拟并行。模拟减轻后，帧耗时可能被渲染卡住；暂停时测一次，就是只剩渲染时的帧耗时

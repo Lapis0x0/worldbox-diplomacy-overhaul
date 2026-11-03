@@ -16,6 +16,7 @@ namespace DiplomacyOverhaul.Perf
         const string ProfileHarmonyId = "lapis0x0.worldbox_performance.profile";
 
         public static bool Running { get; private set; }
+        static readonly bool Arm64 = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64;
         static string _label;
         static float _duration;
         static float _elapsed;
@@ -70,14 +71,18 @@ namespace DiplomacyOverhaul.Perf
                     postfix: new HarmonyMethod(typeof(Measure), nameof(BenchEndPostfix)));
                 _profile.Patch(AccessTools.Method(typeof(Bench), nameof(Bench.benchSave)),
                     postfix: new HarmonyMethod(typeof(Measure), nameof(BenchSavePostfix)));
-                foreach (Type batch in new[] { typeof(Batch<Actor>), typeof(Batch<Building>) })
-                    _profile.Patch(AccessTools.Method(batch, "runUpdater"), new HarmonyMethod(typeof(Measure), nameof(JobPrefix)),
-                        new HarmonyMethod(typeof(Measure), nameof(JobPostfix)));
-                // 泛型类型的方法：每个阶段一个专用补丁，键名写死，不用 __originalMethod
-                foreach (string phase in new[] { "Pre", "Parallel", "Post" })
-                    _profile.Patch(AccessTools.Method(typeof(JobManagerBase<BatchBuildings, Building>), "updateBaseJobs" + phase),
-                        new HarmonyMethod(typeof(Measure), nameof(JobPrefix)),
-                        new HarmonyMethod(typeof(Measure), "Phase" + phase + "Postfix"));
+                // arm64 原生副本的 HarmonyX 给泛型方法打补丁会卡死游戏；这几项只用来统计分配量，在那里跳过
+                if (!Arm64)
+                {
+                    foreach (Type batch in new[] { typeof(Batch<Actor>), typeof(Batch<Building>) })
+                        _profile.Patch(AccessTools.Method(batch, "runUpdater"), new HarmonyMethod(typeof(Measure), nameof(JobPrefix)),
+                            new HarmonyMethod(typeof(Measure), nameof(JobPostfix)));
+                    // 泛型类型的方法：每个阶段一个专用补丁，键名写死，不用 __originalMethod
+                    foreach (string phase in new[] { "Pre", "Parallel", "Post" })
+                        _profile.Patch(AccessTools.Method(typeof(JobManagerBase<BatchBuildings, Building>), "updateBaseJobs" + phase),
+                            new HarmonyMethod(typeof(Measure), nameof(JobPrefix)),
+                            new HarmonyMethod(typeof(Measure), "Phase" + phase + "Postfix"));
+                }
                 foreach (MethodBase method in ExtraTargets())
                 {
                     if (method == null || method.DeclaringType.IsGenericType) continue;
@@ -254,7 +259,8 @@ namespace DiplomacyOverhaul.Perf
                 foreach (MethodInfo m in type.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
                     if (m.Name == probe.Substring(dot + 1) && m.GetMethodBody() != null) yield return m;
             }
-            yield return AccessTools.Method(typeof(MapBox), "Update");
+            // 开发命令在 MapBox.Update 的前缀里执行，measure 开始时它正在执行；arm64 上给执行中的方法打补丁会卡死
+            if (!Arm64) yield return AccessTools.Method(typeof(MapBox), "Update");
             yield return AccessTools.Method(typeof(MapBox), "updateSimulation");
             yield return AccessTools.Method(typeof(MapBox), "updateDirtyMetaContainersAndCleanup");
             yield return AccessTools.Method(typeof(MapBox), "calculateVisibleObjects");
