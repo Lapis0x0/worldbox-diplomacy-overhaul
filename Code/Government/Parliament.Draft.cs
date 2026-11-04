@@ -40,32 +40,42 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 提案人能提的每一项改动：赞成的席位按各股势力自己的得失加上对提案人的好感算
-        static List<Option> Options(List<ParliamentClan> pClans, List<Ballot> pBallots, int pProposer, int[,] pOpinions)
+        // 提案人能提的每一项改动：各股势力按自己的得失加上对提案人的好感表态，集团的成员跟着集团投。
+        // 提案人在集团里时，收益按集团成员议席加权的得失算：魁首替整个集团提案
+        static List<Option> Options(List<ParliamentClan> pClans, List<Ballot> pBallots, int pProposer, int[,] pOpinions, List<Bloc> pBlocs)
         {
             var list = new List<Option>();
             int total = TotalSeats(pClans);
+            ParliamentClan proposer = pClans[pProposer];
+            Bloc own = Blocs.Find(pBlocs, proposer);
+            var scores = new float[pClans.Count];
             foreach (Ballot b in pBallots)
             {
+                for (int i = 0; i < pClans.Count; i++)
+                    scores[i] = b.gains[i] + (i != pProposer ? Relations.VoteWeight * pOpinions[i, pProposer] / 100f : 0f);
+                bool[] votes = Blocs.Decide(pClans, pBlocs, scores, proposer, Inertia);
                 int yes = 0;
                 for (int i = 0; i < pClans.Count; i++)
-                {
-                    float g = b.gains[i];
-                    if (i != pProposer) g += Relations.VoteWeight * pOpinions[i, pProposer] / 100f;
-                    if (g > Inertia) yes += pClans[i].seats;
-                }
+                    if (votes[i]) yes += pClans[i].seats;
                 list.Add(new Option
                 {
-                    bill = new Bill { policy = b.policy, option = b.option, proposer = pClans[pProposer].Key },
-                    gain = b.gains[pProposer],
+                    bill = new Bill { policy = b.policy, option = b.option, proposer = proposer.Key },
+                    gain = own != null ? BlocGain(pClans, own, b.gains) : b.gains[pProposer],
                     margin = total > 0 ? (float)yes / total - b.policy.threshold : 0f
                 });
             }
             return list;
         }
 
+        static float BlocGain(List<ParliamentClan> pClans, Bloc pBloc, float[] pGains)
+        {
+            float sum = 0f;
+            for (int k = 0; k < pBloc.members.Count; k++) sum += pBloc.members[k].seats * pGains[pBloc.at[k]];
+            return pBloc.seats > 0 ? sum / pBloc.seats : 0f;
+        }
+
         public static List<Option> Options(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer) =>
-            Options(pClans, Ballots(pKingdom, pClans), pClans.FindIndex(c => c.Key == pProposer.Key), Relations.Matrix(pClans));
+            Options(pClans, Ballots(pKingdom, pClans), pClans.FindIndex(c => c.Key == pProposer.Key), Relations.Matrix(pClans), Blocs.Of(pKingdom, pClans));
 
         // 表决在几年后，各家的立场会变：按眼下的票数差估一个通过的把握，差 8% 的席位约七成把握，差 20% 九成以上
         const float PassScale = 0.08f;
@@ -76,11 +86,11 @@ namespace DiplomacyOverhaul
 
         // 一股势力最想提的议案和它的分量（收益乘通过的把握）：能过的优先，过不了的只有收益大得多时才提
         static (Bill bill, float score) Best(List<ParliamentClan> pClans, List<Ballot> pBallots, int pProposer, int[,] pOpinions,
-            Dictionary<string, int> pRejected, int pYear)
+            List<Bloc> pBlocs, Dictionary<string, int> pRejected, int pYear)
         {
             var best = new List<Bill>();
             float bestScore = 0f;
-            foreach (Option opt in Options(pClans, pBallots, pProposer, pOpinions))
+            foreach (Option opt in Options(pClans, pBallots, pProposer, pOpinions, pBlocs))
             {
                 if (opt.gain <= Inertia) continue;
                 if (opt.margin <= 0f && pRejected.TryGetValue(RejectedKey(opt.bill), out int when) && pYear - when < RejectedYears) continue;
@@ -96,7 +106,8 @@ namespace DiplomacyOverhaul
             return best.Count > 0 ? (best[Randy.randomInt(0, best.Count)], bestScore) : (null, 0f);
         }
 
-        // 起草：越不满、越有势力的越容易成为提案人（议席 × 在意程度 × 它最想提的议案的分量）；谁都没什么想改的，这一期没有议案
+        // 起草：越不满、越有势力的越容易成为提案人（议席 × 在意程度 × 它最想提的议案的分量）；谁都没什么想改的，这一期没有议案。
+        // 集团只由魁首起草，议席按整个集团算
         public static Bill Draft(Kingdom pKingdom, List<ParliamentClan> pClans)
         {
             Dictionary<string, int> rejected = Rejected(pKingdom);
@@ -104,13 +115,16 @@ namespace DiplomacyOverhaul
             var drafts = new List<(Bill bill, float weight)>();
             List<Ballot> ballots = Ballots(pKingdom, pClans);
             int[,] opinions = Relations.Matrix(pClans);
+            List<Bloc> blocs = Blocs.Of(pKingdom, pClans);
             float total = 0f;
             for (int i = 0; i < pClans.Count; i++)
             {
                 ParliamentClan pc = pClans[i];
-                var (bill, score) = Best(pClans, ballots, i, opinions, rejected, year);
+                Bloc bloc = Blocs.Find(blocs, pc);
+                if (bloc != null && bloc.leader != pc) continue;
+                var (bill, score) = Best(pClans, ballots, i, opinions, blocs, rejected, year);
                 if (bill == null) continue;
-                float w = pc.seats * Salience(pc) * score;
+                float w = (bloc != null ? bloc.seats : pc.seats) * Salience(pc) * score;
                 drafts.Add((bill, w));
                 total += w;
             }
@@ -126,7 +140,7 @@ namespace DiplomacyOverhaul
 
         public static Bill DraftBy(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer) =>
             Best(pClans, Ballots(pKingdom, pClans), pClans.FindIndex(c => c.Key == pProposer.Key), Relations.Matrix(pClans),
-                Rejected(pKingdom), Date.getCurrentYear()).bill;
+                Blocs.Of(pKingdom, pClans), Rejected(pKingdom), Date.getCurrentYear()).bill;
 
         static string RejectedKey(Bill pBill) => pBill.policy.id + "=" + pBill.option;
 

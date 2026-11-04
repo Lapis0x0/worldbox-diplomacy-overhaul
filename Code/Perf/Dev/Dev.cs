@@ -53,6 +53,10 @@ namespace DiplomacyOverhaul.Perf
     //   parl renown              各国国王的声望，城主声望和能力的分布
     //   parl rel [国家] [open <氏族名>]   各股势力两两之间的好感和明细；open 打开那个家族的窗口
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
+    //   parl blocs [国家]          各集团的成员和成员对集团的好感，每股势力眼下想拉拢谁、想不想脱离集团
+    //   parl found <国家> <氏族> <氏族>   两家直接结成集团（已有集团时把后一家拉进前一家的集团）
+    //   parl court <国家> <氏族> <目标>   这一家立即拉拢目标一次（送礼、记恩情、够了就入伙）
+    //   parl leave <国家> <氏族>    这一家立即脱离集团
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
     //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备

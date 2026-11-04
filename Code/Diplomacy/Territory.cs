@@ -81,7 +81,7 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 不在本土的城，相邻的城一半以上属于集团里另一方，就有概率划过去。首都不动
+        // 不在本土的城，相邻的城一半以上属于宗藩里另一方，就有概率划过去。首都不动
         static void Consolidate(List<Kingdom> pMembers)
         {
             bool changed = false;

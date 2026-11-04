@@ -135,6 +135,8 @@ namespace DiplomacyOverhaul
 
         const string KeyChief = "vd_chief_id", KeyChiefX = "vd_chief_x", KeyChiefY = "vd_chief_y";
         const string KeyCadet = "vd_cadet_id", KeyCadetX = "vd_cadet_x", KeyCadetY = "vd_cadet_y";
+        // 现在拿主意的人从哪一年起拿主意
+        const string KeyChiefSince = "vd_chief_since", KeyCadetSince = "vd_cadet_since";
         // 换了拿主意的人，意识形态只往新人那边挪这么多
         const float Inherit = 1f / 3f;
         const float MembersWeight = 0.25f;
@@ -190,7 +192,15 @@ namespace DiplomacyOverhaul
             data.set(keyId, v.data.id);
             data.set(keyX, nx);
             data.set(keyY, ny);
+            if (id >= 0) data.set(pClan.cadet ? KeyCadetSince : KeyChiefSince, Date.getCurrentYear());
             return (nx, ny);
+        }
+
+        // 拿主意的人上任了几年；没有记录（建族以来一直是他、或者旧存档）时当作很久
+        public static int VoiceYears(ParliamentClan pClan)
+        {
+            pClan.clan.data.get(pClan.cadet ? KeyCadetSince : KeyChiefSince, out int since, -1);
+            return since < 0 ? int.MaxValue : Date.getCurrentYear() - since;
         }
 
         // 心性对变革的态度：想变局的偏激进，安于现状、守规矩、怕变数的偏保守

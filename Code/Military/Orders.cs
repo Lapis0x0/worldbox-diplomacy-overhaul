@@ -64,7 +64,7 @@ namespace DiplomacyOverhaul
         {
             if (pAttacker == null || pTarget == null || pAttacker == pTarget) return "vd_tip_invalid";
             if (pAttacker.isEnemy(pTarget)) return null;
-            // 附庸不能对第三国宣战；对自己集团开战则允许，开战后附庸关系自动解除
+            // 附庸不能对第三国宣战；对自己宗藩开战则允许，开战后附庸关系自动解除
             if (Vassals.IsVassal(pAttacker) && !Vassals.SameBloc(pAttacker, pTarget)) return "vd_tip_vassal_no_war";
             if (World.world.diplomacy.startWar(pAttacker, pTarget, WarTypeLibrary.normal) == null) return "vd_tip_war_failed";
             return null;

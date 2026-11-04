@@ -205,6 +205,7 @@ namespace DiplomacyOverhaul
             Line(pTooltip, o.ideology >= 0 ? "vd_rel_ideology_close" : "vd_rel_ideology_apart", o.ideology);
             Line(pTooltip, "vd_rel_friend", o.friend);
             Line(pTooltip, "vd_rel_marriage", o.marriage);
+            Line(pTooltip, "vd_rel_neighbor", o.neighbor);
             Line(pTooltip, "vd_rel_favor", o.favor);
             Line(pTooltip, "vd_rel_grudge", o.grudge);
         }

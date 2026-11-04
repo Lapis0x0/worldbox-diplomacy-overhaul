@@ -84,7 +84,7 @@ namespace DiplomacyOverhaul
             return false;
         }
 
-        // 宗主和它的所有附庸同属一个集团
+        // 宗主和它的所有附庸同属一个宗藩
         public static Kingdom Root(Kingdom pKingdom) => GetOverlord(pKingdom) ?? pKingdom;
 
         public static bool SameBloc(Kingdom a, Kingdom b)

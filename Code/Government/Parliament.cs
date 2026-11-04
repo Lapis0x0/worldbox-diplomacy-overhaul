@@ -54,6 +54,9 @@ namespace DiplomacyOverhaul
         public readonly Dictionary<long, bool> votes = new Dictionary<long, bool>();
         // 各股势力自己的得失（不含好感），按表决时的势力顺序
         public float[] gains;
+        // 不算集团时各股势力自己会怎么投、集团跟着投之后的结果，按表决时的势力顺序
+        public bool[] own, final;
+        public List<Bloc> blocs;
         public int Total => yes + no;
     }
 
@@ -246,20 +249,27 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 各股势力按自己的得失，再加上对提案人的好感投票；玩家的议案没有提案人，只看得失
+        // 各股势力按自己的得失，再加上对提案人的好感表态；玩家的议案没有提案人，只看得失。集团的成员跟着集团投（见 Blocs.Decide）
         public static VoteResult Vote(Kingdom pKingdom, Bill pBill, List<ParliamentClan> pClans, RiskMemo pRisks = null)
         {
-            var result = new VoteResult { gains = new float[pClans.Count] };
+            var result = new VoteResult { gains = new float[pClans.Count], blocs = Blocs.Of(pKingdom, pClans) };
             int current = pBill.policy.Get(pKingdom);
             ParliamentClan proposer = Proposer(pClans, pBill);
+            var scores = new float[pClans.Count];
             for (int i = 0; i < pClans.Count; i++)
             {
                 ParliamentClan pc = pClans[i];
                 float gain = Gain(pKingdom, pClans, pc, pBill.policy, current, pBill.option, pRisks);
                 result.gains[i] = gain;
-                bool yes = gain + Favor(pc, proposer) > Inertia;
-                result.votes[pc.Key] = yes;
-                if (yes) result.yes += pc.seats;
+                scores[i] = gain + Favor(pc, proposer);
+            }
+            result.own = Blocs.Decide(pClans, new List<Bloc>(), scores, proposer, Inertia);
+            result.final = Blocs.Decide(pClans, result.blocs, scores, proposer, Inertia);
+            for (int i = 0; i < pClans.Count; i++)
+            {
+                ParliamentClan pc = pClans[i];
+                result.votes[pc.Key] = result.final[i];
+                if (result.final[i]) result.yes += pc.seats;
                 else result.no += pc.seats;
             }
             return result;
@@ -461,12 +471,14 @@ namespace DiplomacyOverhaul
             return passed;
         }
 
-        // 表决一份议案：通过就生效，否决就记下；提案人和各家记下这一票的恩怨
+        // 表决一份议案：通过就生效，否决就记下；提案人和各家记下这一票的恩怨，集团的成员对魁首记下跟着投票的得失
         static bool Decide(Kingdom pKingdom, Bill pBill, List<ParliamentClan> pClans)
         {
             VoteResult result = Vote(pKingdom, pBill, pClans);
             bool passed = Passes(pBill, result);
-            Relations.AfterVote(pClans, Proposer(pClans, pBill), result.gains, result, passed, Inertia);
+            ParliamentClan proposer = Proposer(pClans, pBill);
+            Relations.AfterVote(pClans, proposer, result.gains, result, passed, Inertia);
+            Blocs.AfterVote(pClans, result.blocs, proposer, result.gains, result.own, result.final, passed);
             if (passed) Enact(pKingdom, pBill);
             else Reject(pKingdom, pBill);
             return passed;
@@ -488,6 +500,7 @@ namespace DiplomacyOverhaul
                     continue;
                 }
                 Policies.ConvertTribute(k);
+                if (Blocs.Any(k)) Blocs.Clean(k, Clans(k));
                 int next = NextSession(k);
                 if (next < 0 || next > year + MaxInterval)
                 {

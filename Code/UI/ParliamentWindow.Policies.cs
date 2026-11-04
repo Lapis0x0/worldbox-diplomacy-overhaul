@@ -147,8 +147,33 @@ namespace DiplomacyOverhaul
             pTarget.gameObject.AddComponent<HoverPointer>().show = pShow;
         }
 
-        // 一股势力为什么这样投：政见、掌权家族顾虑的地方稳定、对提案人的好感，减去维持现状的惯性，合计大于 0 就赞成。都乘 100 取整
-        static void VoteTip(RectTransform pTarget, List<ParliamentClan> pClans, Bill pBill, ParliamentClan pClan, ParliamentClan pProposer)
+        const float VoteRowH = 11f;
+
+        static void VoteRow(RectTransform pVotes, List<ParliamentClan> pClans, Bill pBill, VoteResult pResult, ParliamentClan pClan,
+            ParliamentClan pProposer, float pIndent, float pY)
+        {
+            bool yes = pResult.votes.TryGetValue(pClan.Key, out bool v) && v;
+            Swatch(pVotes, 6f + pIndent, pY + 3f, 5f, FactionColor(pClan.faction), 1f);
+            string suffix = pClan.cadet ? " " + LM.Get("vd_parliament_cadet") : "";
+            float nameW = RightW - 102f - pIndent;
+            string name = UiKit.Fit(pClan.clan.name, 6, nameW - Measure(suffix, 6)) + suffix;
+            Text(pVotes, name, 16f + pIndent, pY, nameW, VoteRowH, 6, Ink, TextAnchor.MiddleLeft);
+            VoteCells(pVotes, pClan.seats, yes, pY);
+            RectTransform hover = UiKit.Rect(pVotes, 0f, pY, RightW - 8f, VoteRowH, new Color(0f, 0f, 0f, 0f));
+            HoverTip(hover, () => VoteTip(hover, pClans, pBill, pClan, pProposer, pResult));
+        }
+
+        // 一行右边的议席和赞成、反对
+        static void VoteCells(RectTransform pParent, int pSeats, bool pYes, float pY)
+        {
+            Text(pParent, pSeats.ToString(), RightW - 82f, pY, 28f, VoteRowH, 6, Gold, TextAnchor.MiddleRight);
+            Icon(pParent, pYes ? "ui/Icons/iconMoodHappy" : "ui/Icons/iconMoodAngry", RightW - 50f, pY + 1.5f, 8f);
+            Text(pParent, LM.Get(pYes ? "vd_parliament_yes" : "vd_parliament_no"), RightW - 40f, pY, 30f, VoteRowH, 6, pYes ? YesText : NoText, TextAnchor.MiddleRight);
+        }
+
+        // 一股势力为什么这样投：政见、掌权家族顾虑的地方稳定、对提案人的好感，减去维持现状的惯性，合计大于 0 就赞成。都乘 100 取整。
+        // 在集团里的再列一行集团合计：成员都按它投
+        static void VoteTip(RectTransform pTarget, List<ParliamentClan> pClans, Bill pBill, ParliamentClan pClan, ParliamentClan pProposer, VoteResult pResult)
         {
             int current = pBill.policy.Get(_kingdom);
             float stance = Parliament.StanceGain(_kingdom, pClan, pBill.policy, current, pBill.option);
@@ -159,6 +184,13 @@ namespace DiplomacyOverhaul
             if (pProposer != null && pProposer != pClan) lines.Add(WhyLine("vd_vote_why_favor", favor));
             lines.Add(WhyLine("vd_vote_why_status_quo", -Parliament.Inertia));
             lines.Add(WhyLine("vd_vote_why_total", stance + stability + favor - Parliament.Inertia));
+            Bloc bloc = Blocs.Find(pResult.blocs, pClan);
+            if (bloc != null)
+            {
+                float sum = 0f;
+                foreach (ParliamentClan m in bloc.members) sum += m.seats * (pResult.gains[pClans.IndexOf(m)] + Parliament.Favor(m, pProposer));
+                lines.Add(WhyLine("vd_vote_why_bloc", sum / bloc.seats - Parliament.Inertia));
+            }
             LM.AddToCurrentLocale(VoteTipName, pClan.clan.name + (pClan.cadet ? " " + LM.Get("vd_parliament_cadet") : ""));
             TipName = VoteTipName;
             TipEffects = new List<(string, string)>();
@@ -247,27 +279,45 @@ namespace DiplomacyOverhaul
             Text(bar, LM.Get("vd_parliament_no") + " " + result.no, RightW - 87f, 0f, 80f, 16f, 6, Color.white, TextAnchor.MiddleRight);
             y += 18f;
 
-            List<ParliamentClan> list = RulingFirst(pClans);
+            List<Unit> units = ListUnits(pClans);
             ParliamentClan proposer = Parliament.Proposer(pClans, pBill);
-            const float rowH = 11f;
+            int rows = 0;
+            foreach (Unit u in units) rows += 1 + (u.bloc != null && _expanded.Contains(u.bloc.Key) ? u.members.Count : 0);
             // 按钮贴着窗口底部，名单占满中间
             float buttonsY = H - 30f;
-            RectTransform votes = Scroll("scroll_votes", RightX, y, RightW, buttonsY - 3f - y, list.Count * rowH);
+            RectTransform votes = Scroll("scroll_votes", RightX, y, RightW, buttonsY - 3f - y, rows * VoteRowH);
             float ry = 0f;
-            foreach (ParliamentClan pc in list)
+            foreach (Unit u in units)
             {
-                bool yes = result.votes.TryGetValue(pc.Key, out bool v) && v;
-                Swatch(votes, 6f, ry + 3f, 5f, FactionColor(pc.faction), 1f);
-                string suffix = pc.cadet ? " " + LM.Get("vd_parliament_cadet") : "";
-                string name = UiKit.Fit(pc.clan.name, 6, RightW - 102f - Measure(suffix, 6)) + suffix;
-                Text(votes, name, 16f, ry, RightW - 102f, rowH, 6, Ink, TextAnchor.MiddleLeft);
-                Text(votes, pc.seats.ToString(), RightW - 82f, ry, 28f, rowH, 6, Gold, TextAnchor.MiddleRight);
-                Icon(votes, yes ? "ui/Icons/iconMoodHappy" : "ui/Icons/iconMoodAngry", RightW - 50f, ry + 1.5f, 8f);
-                Text(votes, LM.Get(yes ? "vd_parliament_yes" : "vd_parliament_no"), RightW - 40f, ry, 30f, rowH, 6, yes ? YesText : NoText, TextAnchor.MiddleRight);
-                ParliamentClan clan = pc;
-                RectTransform hover = UiKit.Rect(votes, 0f, ry, RightW - 8f, rowH, new Color(0f, 0f, 0f, 0f));
-                HoverTip(hover, () => VoteTip(hover, pClans, pBill, clan, proposer));
-                ry += rowH;
+                if (u.bloc == null)
+                {
+                    VoteRow(votes, pClans, pBill, result, u.members[0], proposer, 0f, ry);
+                    ry += VoteRowH;
+                    continue;
+                }
+                // 集团收成一行，点开看成员；成员都跟着集团投，集团的票就是魁首的票
+                Bloc b = u.bloc;
+                long key = b.Key;
+                bool open = _expanded.Contains(key);
+                bool yes = result.votes.TryGetValue(b.leader.Key, out bool v) && v;
+                Color color = FactionColor(b.leader.faction);
+                RectTransform row = Button(votes, 0f, ry, RightW - 8f, VoteRowH, null, () =>
+                {
+                    if (!_expanded.Remove(key)) _expanded.Add(key);
+                    Refresh();
+                });
+                Bar(row, 7f, (VoteRowH - 9f) / 2f, color);
+                string name = UiKit.Fit(Blocs.Name(b), 6, RightW - 116f);
+                Text(row, name, 16f, 0f, RightW - 102f, VoteRowH, 6, color, TextAnchor.MiddleLeft);
+                Text(row, open ? "▲" : "▼", 16f + Measure(name, 6) + 3f, 0f, 10f, VoteRowH, 5, Muted, TextAnchor.MiddleLeft);
+                VoteCells(row, b.seats, yes, 0f);
+                ry += VoteRowH;
+                if (!open) continue;
+                foreach (ParliamentClan m in b.members)
+                {
+                    VoteRow(votes, pClans, pBill, result, m, proposer, MemberIndent, ry);
+                    ry += VoteRowH;
+                }
             }
             y = buttonsY;
 

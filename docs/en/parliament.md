@@ -152,6 +152,7 @@ Under the kingdom name in the parliament window is a line naming the kingdom's r
   - When troops and money move to the center, the royal house gains and local clans lose.
   - Warlike or hotheaded chiefs want expansion and more arms, peaceful chiefs want fewer wars. In wartime everyone wants more arms.
   - The overlord's clans want more Vassal Tribute, but not when vassals are strong or already discontented.
+- **Blocs**: Clans in a [bloc](blocs.md) do not vote on their own. The bloc weighs all its members' gains and losses together, and every member votes with it.
 - **Drafting**: The more discontented a clan is and the more seats it has, the more likely it is to be the proposer. The proposer picks the policy that suits it best and is most likely to pass, and issues its friends support are more likely to pass. If nobody wants a change, there is no bill this time.
 - **The royal house's worries**: The ruling clan estimates whether a bill would push the provinces into revolt. At Prime the provinces are calm and the royal house is comfortable taking power. In Decline the provinces are already shaky and it dares not push too hard.
 
@@ -163,6 +164,7 @@ Clans in the same parliament have opinions of each other, one way at a time: wha
 
 - **Politics**: Clans with similar stances get along, opposed ones do not.
 - **Heads are best friends**, **Marriage**: The two chiefs are best friends, or a chief's partner belongs to the other clan.
+- **Neighbors**: The two clans hold cities that border each other.
 - **Favors**: A clan that votes yes out of goodwill, though it would not have otherwise, earns the proposer's gratitude. A clan that gains from a bill is grateful to its proposer.
 - **Grudges**: A clan that loses from a bill resents its proposer. A clan whose no vote sinks a bill earns the proposer's resentment.
 
@@ -190,4 +192,4 @@ Falling city loyalty also drags down the [dynastic cycle](cycle.md).
 
 If you don't want parliament, turn off "Parliament and policies" in the settings. Policies stop having any effect, city tribute follows the vanilla tribute traits, vassals pay no tribute, and clans no longer resent policies. Republics still elect their consuls.
 
-The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. Click a clan to see its chief (for the cadets, the leading prince) and its cities. The right side shows the policies and the current bill.
+The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. Blocs are grouped together in the semicircle, the list, and the chart; see [Blocs](blocs.md). Click a clan to see its chief (for the cadets, the leading prince) and its cities. The right side shows the policies and the current bill.

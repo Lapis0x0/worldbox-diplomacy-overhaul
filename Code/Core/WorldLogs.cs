@@ -33,6 +33,8 @@ namespace DiplomacyOverhaul
         public const string PolicyEnacted = "vd_log_policy";             // $kingdom$ 推行$policy$
         public const string Charter = "vd_log_charter";                  // $kingdom$ 将$policy$写入宪章
         public const string Works = "vd_log_works";                      // $kingdom$ 在 $city$ 营建了一座$building$
+        public const string BlocFormed = "vd_log_bloc_formed";           // $clan$与$partner$结成$bloc$
+        public const string BlocDissolved = "vd_log_bloc_dissolved";     // $bloc$瓦解
 
         public static void Init()
         {
@@ -63,6 +65,8 @@ namespace DiplomacyOverhaul
             Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
             Register(Charter, ParliamentWindow.IconPath, Toolbox.color_log_good, "$kingdom$", "$policy$");
             Register(Works, "ui/Icons/iconMoney", Toolbox.color_log_neutral, "$kingdom$", "$city$", "$building$");
+            Register(BlocFormed, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$clan$", "$partner$", "$bloc$");
+            Register(BlocDissolved, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$bloc$");
             Retitle("king_new", "$kingdom$", "$king$");
             Retitle("king_left", "$kingdom$", "$king$");
             Retitle("king_dead", "$kingdom$", "$king$");

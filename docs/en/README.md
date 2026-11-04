@@ -20,6 +20,7 @@ Saves made before installing the mod work as they are. Missing data is filled in
 |---|---|
 | [Governments and Rulers](government.md) | Monarchy and republic, titles, consul elections, changes of government, crowning an emperor, seizing power |
 | [Parliament and Policies](parliament.md) | How clans get seats, the four factions, the effect of every policy, how bills are proposed and voted on |
+| [Blocs](blocs.md) | How clans win each other over into blocs, how blocs vote together, why members leave |
 | [Rise and Fall of Dynasties](cycle.md) | Mandate of Heaven, the four phases from Renewal to Collapse, Restoration, Great Rebellion |
 | [Vassals](vassals.md) | Where vassals come from, Integration and provinces, why vassals break away |
 | [War and Peace Talks](war.md) | When kingdoms go to war, war score, treaties, sieges |
@@ -35,7 +36,7 @@ Saves made before installing the mod work as they are. Missing data is filled in
 - **The dynastic cycle is the center.** In a kingdom at its Prime, vassals are loyal and cities are calm. In a declining kingdom, vassals drift away and cities rebel, until a Great Rebellion breaks out. A republic at its Prime may crown an emperor. In Collapse, a general may seize power.
 - **Vassals are the basic unit of diplomacy.** Surrender, grants of land, and submission all create vassals. An overlord and its vassals enter and leave wars together. When the dynasty declines, vassals drift away. In a Great Rebellion they break away in numbers.
 - **Wars end by negotiation.** When a war is nearly decided, the two sides talk. Depending on the war score, the loser pays reparations, cedes vassals, or submits.
-- **Clans decide policy.** Clans get seats in proportion to the cities they hold. They vote on taxation, army organization, land grants, and foreign policy. As a kingdom expands, local clans can grow strong enough to rival the royal house.
+- **Clans decide policy.** Clans get seats in proportion to the cities they hold. They vote on taxation, army organization, land grants, and foreign policy. As a kingdom expands, local clans can grow strong enough to rival the royal house. Clans also win each other over into blocs that vote together.
 - **Money has somewhere to go.** City lords send money to the treasury. The treasury pays for the Guard, funds public works, starts plots, and pays reparations.
 
 For exact numbers and formulas, see the [developer docs](../dev/README.md) (in Chinese).

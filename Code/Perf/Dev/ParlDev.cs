@@ -29,6 +29,10 @@ namespace DiplomacyOverhaul.Perf
                 case "draft": Draft(a); break;
                 case "session": Session(a, true); break;
                 case "show": Session(a, false); break;
+                case "blocs": BlocList(a); break;
+                case "found": Found(a); break;
+                case "court": Court(a); break;
+                case "leave": LeaveBloc(a); break;
                 default: List(a); break;
             }
         }
@@ -125,9 +129,73 @@ namespace DiplomacyOverhaul.Perf
                 {
                     if (to == from) continue;
                     Relations.Opinion o = Relations.Of(from, to);
-                    Dev.Log($"    → {to.clan.name}{(to.cadet ? "[宗室]" : "")}: {o.Total} (政见 {o.ideology} 挚友 {o.friend} 联姻 {o.marriage} 恩情 {o.favor} 积怨 {o.grudge})");
+                    Dev.Log($"    → {to.clan.name}{(to.cadet ? "[宗室]" : "")}: {o.Total} (政见 {o.ideology} 挚友 {o.friend} 联姻 {o.marriage} 邻里 {o.neighbor} 恩情 {o.favor} 积怨 {o.grudge})");
                 }
             }
+        }
+
+        static ParliamentClan Pick(List<ParliamentClan> pClans, string pName) =>
+            pClans.FirstOrDefault(c => c.clan.name.Contains(pName) && !c.cadet) ?? pClans.FirstOrDefault(c => c.clan.name.Contains(pName));
+
+        static void BlocList(string[] a)
+        {
+            // parl blocs [国家]：各集团的成员、成员对集团的好感；每股势力拿主意的人眼下想拉拢谁、想不想脱离集团
+            Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
+            if (k == null) { Dev.Log("parl blocs [国家]"); return; }
+            var clans = Parliament.Clans(k);
+            var blocs = Blocs.Of(k, clans);
+            Dev.Log($"  {k.data.name} raw={Blocs.Raw(k)}");
+            foreach (Bloc b in blocs)
+            {
+                Dev.Log($"  {Blocs.Name(b)} #{b.id} 魁首={Name(b.leader)} seats={b.seats} 立场=({b.x:0.00},{b.y:0.00}) {b.faction}");
+                foreach (ParliamentClan m in b.members) Dev.Log($"    {Name(m)} seats={m.seats} {m.faction} 好感={Blocs.Affinity(m, b):0.0}");
+            }
+            foreach (ParliamentClan pc in clans)
+            {
+                if (pc.voice == null) continue;
+                Dev.Log($"  {Name(pc)} voice={pc.voice.getName()} 拉拢: {Blocs.DevPlan(pc.voice)} · 脱离: {Blocs.DevLeave(pc.voice)}");
+            }
+        }
+
+        static void Found(string[] a)
+        {
+            // parl found <国家> <氏族名> <氏族名>：两家直接结成集团（测界面用）
+            Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
+            if (k == null || a.Length < 5) { Dev.Log("parl found <国家> <氏族名> <氏族名>"); return; }
+            var clans = Parliament.Clans(k);
+            ParliamentClan x = Pick(clans, a[3]), y = Pick(clans, a[4]);
+            if (x == null || y == null || x == y) { Dev.Log("  ! clan not found"); return; }
+            var blocs = Blocs.Of(k, clans);
+            Bloc bx = Blocs.Find(blocs, x);
+            if (bx != null) Blocs.Join(k, bx, y);
+            else Blocs.Found(k, x, y);
+            Dev.Log($"  raw={Blocs.Raw(k)}");
+        }
+
+        static void Court(string[] a)
+        {
+            // parl court <国家> <氏族名> <目标氏族名>：这一家拿主意的人立即拉拢目标一次，打印前后的好感和集团
+            Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
+            if (k == null || a.Length < 5) { Dev.Log("parl court <国家> <氏族名> <目标氏族名>"); return; }
+            var clans = Parliament.Clans(k);
+            ParliamentClan x = Pick(clans, a[3]), y = Pick(clans, a[4]);
+            if (x?.voice == null || y?.voice == null || x == y) { Dev.Log("  ! clan not found"); return; }
+            Dev.Log($"  before: {Name(y)}→{Name(x)} {Relations.Value(y, x)} raw={Blocs.Raw(k)}");
+            bool ok = Blocs.CourtTo(x.voice, y.voice);
+            clans = Parliament.Clans(k);
+            x = Pick(clans, a[3]);
+            y = Pick(clans, a[4]);
+            Dev.Log($"  after({ok}): {Name(y)}→{Name(x)} {Relations.Value(y, x)} raw={Blocs.Raw(k)}");
+        }
+
+        static void LeaveBloc(string[] a)
+        {
+            // parl leave <国家> <氏族名>：这一家立即脱离集团
+            Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
+            if (k == null || a.Length < 4) { Dev.Log("parl leave <国家> <氏族名>"); return; }
+            ParliamentClan x = Pick(Parliament.Clans(k), a[3]);
+            if (x?.voice == null) { Dev.Log("  ! clan not found"); return; }
+            Dev.Log($"  {Blocs.LeaveBloc(x.voice)} raw={Blocs.Raw(k)}");
         }
 
         static void OpenElection(string[] a)

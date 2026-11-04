@@ -35,6 +35,10 @@ namespace DiplomacyOverhaul
         static RectTransform _parent;
         static long _appliedSelected = -2;
         static Text _billWhen;
+        // 这一刻的集团、每股势力属于哪个集团（Bloc.Key），议案名单里展开了哪些集团
+        static List<Bloc> _blocs = new List<Bloc>();
+        static readonly Dictionary<long, long> _blocOf = new Dictionary<long, long>();
+        static readonly HashSet<long> _expanded = new HashSet<long>();
 
         // 窗口的一块：记着上次建它时的数据指纹，按氏族调淡的图形和选中框
         class Section
@@ -46,12 +50,15 @@ namespace DiplomacyOverhaul
             public readonly Dictionary<long, GameObject> frames = new Dictionary<long, GameObject>();
         }
 
+        // 按氏族调淡的图形。集团的底色、外环的名字是 shape：选中集团或它的成员时亮着；
+        // 氏族的图形选中它自己、或它所在的集团时亮着。lit 是亮着时的透明度，alpha 是调淡后的
         struct Dim
         {
-            public long clan;
+            public long clan, bloc;
+            public bool shape;
             public Graphic graphic;
             public Outline outline;
-            public float alpha;
+            public float alpha, lit;
         }
 
         public static Color FactionColor(Faction pFaction)
@@ -211,13 +218,20 @@ namespace DiplomacyOverhaul
         {
             if (_shell.root == null || _kingdom == null) return;
             List<ParliamentClan> clans = Parliament.Clans(_kingdom);
-            if (_selected >= 0 && clans.Find(c => c.Key == _selected) == null) _selected = -1;
+            _blocs = Blocs.Of(_kingdom, clans);
+            _blocOf.Clear();
+            foreach (Bloc b in _blocs)
+                foreach (ParliamentClan m in b.members) _blocOf[m.Key] = b.Key;
+            if (_selected >= 0 && clans.Find(c => c.Key == _selected) == null && _blocs.Find(b => b.Key == _selected) == null) _selected = -1;
             bool republic = Government.IsRepublic(_kingdom);
             string k = _kingdom.id + "|";
 
             var ck = new System.Text.StringBuilder(k);
             foreach (ParliamentClan pc in clans)
                 ck.Append(pc.Key).Append(':').Append(pc.clan.name).Append(':').Append(pc.seats).Append(':').Append((int)pc.faction).Append(':').Append(pc.ruling).Append('|');
+            // 集团名跟着魁首的城走
+            ck.Append(Blocs.Raw(_kingdom));
+            foreach (Bloc b in _blocs) ck.Append('|').Append(Blocs.Name(b)).Append((int)b.faction);
             string clanKey = ck.ToString();
 
             RegimeNames.Rule regime = RegimeNames.Of(_kingdom);
@@ -250,6 +264,7 @@ namespace DiplomacyOverhaul
             {
                 bk.Append('b').Append(bill.policy.id).Append(bill.option).Append(bill.player).Append(bill.proposer).Append('|').Append(bill.policy.Get(_kingdom)).Append('|').Append(result.yes).Append(':').Append(result.no);
                 foreach (ParliamentClan pc in clans) bk.Append(result.votes.TryGetValue(pc.Key, out bool v) && v ? 'y' : 'n');
+                foreach (long e in _expanded) bk.Append('e').Append(e);
             }
             if (Build(_bill, bk.ToString(), () => BuildBill(clans, bill, result))) built = true;
             // 离表决还有几年：跨年只改这一行字
@@ -298,12 +313,14 @@ namespace DiplomacyOverhaul
         static void ApplySelection()
         {
             _appliedSelected = _selected;
+            long selectedBloc = _selected >= Bloc.KeyBase ? _selected : _blocOf.TryGetValue(_selected, out long b) ? b : -1;
             foreach (Section s in _sections)
             {
                 foreach (Dim d in s.dims)
                 {
                     if (d.graphic == null) continue;
-                    float a = _selected < 0 || _selected == d.clan ? 1f : d.alpha;
+                    bool on = _selected < 0 || (d.shape ? d.bloc == selectedBloc : _selected == d.clan || (d.bloc >= 0 && _selected == d.bloc));
+                    float a = on ? d.lit : d.alpha;
                     Color c = d.graphic.color;
                     d.graphic.color = new Color(c.r, c.g, c.b, a);
                     if (d.outline != null) d.outline.effectColor = new Color(Edge.r, Edge.g, Edge.b, a);

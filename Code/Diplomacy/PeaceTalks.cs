@@ -344,7 +344,7 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 胜方（的宗主）要不要接管败方的这个附庸：要和胜方集团接壤（称臣时和败方接壤也算），胜方不在衰落、崩溃期；
+        // 胜方（的宗主）要不要接管败方的这个附庸：要和胜方宗藩接壤（称臣时和败方接壤也算），胜方不在衰落、崩溃期；
         // 概率看胜方国王的外交，野心勃勃的更想要
         static bool Takes(Kingdom pLord, Kingdom pLoser, Kingdom pVassal, bool pSubmit)
         {

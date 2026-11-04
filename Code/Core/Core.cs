@@ -36,6 +36,7 @@ namespace DiplomacyOverhaul
             Buildings.Init();
             Parliament.Init();
             Politics.Init();
+            Blocs.Init();
             Restoration.Init();
             PeaceTalks.Init();
             Appanage.Init();

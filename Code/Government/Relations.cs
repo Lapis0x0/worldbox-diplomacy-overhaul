@@ -5,14 +5,14 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 家族好感：议会里一股势力对另一股的看法，有向。照原版王国好感的做法，由几项来源加起来：
-    // 政见远近、拿主意的人是不是挚友、有没有联姻当场算；议会里欠下的恩情和积怨存在氏族数据里，随年份淡化
+    // 政见远近、拿主意的人是不是挚友、有没有联姻、两家的城挨不挨着当场算；议会里欠下的恩情和积怨存在氏族数据里，随年份淡化
     public static class Relations
     {
         const string Key = "vd_rel", KeyCadet = "vd_rel_cadet";
 
         // 政见：两家意识形态的距离 d，20 × (1 − d)，限制在 ±20
         const float Ideology = 20f;
-        const int Friend = 25, Marriage = 20;
+        const int Friend = 25, Marriage = 20, Neighbor = 10;
         const float MaxFavor = 60f, MaxGrudge = 60f;
         // 恩情忘得快，积怨记得久
         const float FavorHalfLife = 10f, GrudgeHalfLife = 25f;
@@ -36,8 +36,8 @@ namespace DiplomacyOverhaul
 
         public struct Opinion
         {
-            public int ideology, friend, marriage, favor, grudge;
-            public int Total => Mathf.Clamp(ideology + friend + marriage + favor + grudge, -100, 100);
+            public int ideology, friend, marriage, neighbor, favor, grudge;
+            public int Total => Mathf.Clamp(ideology + friend + marriage + neighbor + favor + grudge, -100, 100);
         }
 
         // 解析过的恩怨，按势力缓存；对应的氏族数据换了（读了别的存档）就重新解析
@@ -57,6 +57,7 @@ namespace DiplomacyOverhaul
                 Actor lover = a.lover;
                 if (lover != null && lover.isAlive() && lover.hasClan() && lover.clan == pTo.clan && pTo.clan != pFrom.clan) o.marriage = Marriage;
             }
+            if (Neighbors(pFrom, pTo)) o.neighbor = Neighbor;
             if (Load(pFrom).TryGetValue(pTo.Key, out Memory m))
             {
                 int years = Date.getCurrentYear() - m.year;
@@ -67,6 +68,15 @@ namespace DiplomacyOverhaul
         }
 
         public static int Value(ParliamentClan pFrom, ParliamentClan pTo) => Of(pFrom, pTo).Total;
+
+        // 邻里：两家有城接壤
+        static bool Neighbors(ParliamentClan pA, ParliamentClan pB)
+        {
+            foreach (City a in pA.cities)
+                foreach (City b in pB.cities)
+                    if (a.neighbours_cities_kingdom.Contains(b)) return true;
+            return false;
+        }
 
         // 各股势力两两之间的好感，[对谁有看法, 看谁]，按 pClans 的下标
         public static int[,] Matrix(List<ParliamentClan> pClans)
@@ -112,6 +122,22 @@ namespace DiplomacyOverhaul
         {
             if (pFrom == null || pTo == null || pFrom.Key == pTo.Key) return;
             Add(pFrom, pTo, pFavor, 0f);
+        }
+
+        // 跟着集团投票：吃了亏的对魁首记仇，得了好处的记情，和对提案人的算法一样
+        public static void Resent(ParliamentClan pFrom, ParliamentClan pTo, float pLoss) =>
+            Add(pFrom, pTo, 0f, Mathf.Max(-MaxResent, -ResentPerLoss * pLoss));
+
+        public static void Thank(ParliamentClan pFrom, ParliamentClan pTo, float pGain) =>
+            Add(pFrom, pTo, Mathf.Min(MaxGratitude, GratitudePerGain * pGain), 0f);
+
+        // 这股势力记着的最深的积怨（折算到今年，0 或负数）
+        public static float WorstGrudge(ParliamentClan pClan)
+        {
+            int year = Date.getCurrentYear();
+            float worst = 0f;
+            foreach (Memory m in Load(pClan).Values) worst = Mathf.Min(worst, Decay(m.grudge, year - m.year, GrudgeHalfLife));
+            return worst;
         }
 
         static void Add(ParliamentClan pFrom, ParliamentClan pTo, float pFavor, float pGrudge)

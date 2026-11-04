@@ -235,13 +235,24 @@ namespace DiplomacyOverhaul
         // 半圆的排法：试 1–16 排，挑方块沿弧和沿半径的间距最接近的那种；每排的席位数和半径成正比。
         // 内径固定；席位够密就铺满，每席平均占的环面积超过 400 时外径往里收，不把几个方块撒满整块地方。
         // 返回的位置从左到右、同一角度从内到外
-        public static System.Collections.Generic.List<Vector3> SeatLayout(int pCount, float pW, float pH, out float pSize)
+        public static System.Collections.Generic.List<Vector3> SeatLayout(int pCount, float pW, float pH, out float pSize) =>
+            SeatLayout(pCount, pW, pH, 0f, out pSize, out _);
+
+        public struct Ring
+        {
+            public float cx, cy, rIn, rOut;
+        }
+
+        // pReserve：外径的上限再往里收这么多，给外环上的字留地方
+        public static System.Collections.Generic.List<Vector3> SeatLayout(int pCount, float pW, float pH, float pReserve, out float pSize, out Ring pRing)
         {
             var result = new System.Collections.Generic.List<Vector3>();
             pSize = 6f;
+            pRing = default;
             if (pCount <= 0) return result;
             float rFull = pW / 2f - 4f, rIn = rFull * 0.465f;
-            float cx = pW / 2f, cy = pH - 3f, rOut = Mathf.Clamp(Mathf.Sqrt(rIn * rIn + 400f * 2f / Mathf.PI * pCount), rIn + 12f, rFull);
+            float cx = pW / 2f, cy = pH - 3f, rOut = Mathf.Clamp(Mathf.Sqrt(rIn * rIn + 400f * 2f / Mathf.PI * pCount), rIn + 12f, rFull - pReserve);
+            pRing = new Ring { cx = cx, cy = cy, rIn = rIn, rOut = rOut };
             float[] bestRadii = null;
             float bestScore = float.MaxValue;
             for (int rows = 1; rows <= 16; rows++)

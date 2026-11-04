@@ -286,7 +286,7 @@ namespace DiplomacyOverhaul
                 if (Integration.IsProvince(pKingdom)) return Integration.IsHereditary(pKingdom) ? HereditaryProvince : Province;
                 return republic ? Dominion : Duchy;
             }
-            // 帝国按整个集团的城市数算，分封出去的城也算
+            // 帝国按整个宗藩的城市数算，分封出去的城也算
             if (!republic) return Vassals.BlocCities(pKingdom) >= Cycle.EmpireCities ? Empire : Kingdom;
             if (IsMilitary(pKingdom)) return MilitaryRepublic;
             if (pKingdom.culture != null && pKingdom.culture.hasTrait("golden_rule")) return MerchantRepublic;

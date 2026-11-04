@@ -89,7 +89,7 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 没有联盟的集团借用王国提示，人口和兵力换成整个集团的
+        // 没有联盟的宗藩借用王国提示，人口和兵力换成整个宗藩的
         static bool _blocTooltip;
 
         internal static void BlocStats(Tooltip pTooltip, Kingdom pKingdom)
@@ -136,7 +136,7 @@ namespace DiplomacyOverhaul
     }
 
     // 联盟图层的名牌：每个联盟一个名牌，挂在视野内最强的成员或附庸首都上；
-    // 没有联盟的集团只在宗主首都显示宗主国名，附庸不单独显示。名牌上的人口是整个阵营的
+    // 没有联盟的宗藩只在宗主首都显示宗主国名，附庸不单独显示。名牌上的人口是整个阵营的
     [HarmonyPatch(typeof(NameplateLibrary), "actionAlliance")]
     static class Patch_AllianceNameplates
     {

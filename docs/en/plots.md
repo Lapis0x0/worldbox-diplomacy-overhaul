@@ -16,10 +16,12 @@ A city leader's rebellion plot is abandoned once the city is content again. When
 | Restoration | The ruler of a declining dynasty | The lower the Mandate, the more they want it | Good at governing |
 | Royal Appanage | A monarchy's king | The more cities beyond the governing limit, the more they want it | Good at governing |
 | Direct Rule | An overlord with provinces | The further from the governing limit, the more they want it | Good at governing |
+| Win Over | A clan head or a bloc leader | Most when the other clan is close to joining, just lost out, just got a new chief, or has unpaid troops. Small clans want to form blocs more | Good at diplomacy, ambitious. Deceitful heads like to poach |
+| Leave Bloc | A clan head in a bloc, other than the leader | The more discontent with the bloc, the more they want to leave | Hotheaded, ambitious |
 
 - A Content king hardly wants any plot. An Ambitious king wants independence and pressuring others into submission more.
 - Parliament policies also affect motive: under the Feudalism Land Grants policy a king wants the Royal Appanage plot more, and under the Direct Rule policy he or she wants the Direct Rule plot more. A vassal whose Fealty is Seek Autonomy wants independence more.
 - The money for a plot a king starts comes from the treasury.
 - The vanilla "peace negotiation" plot is replaced by Peace Talks.
 
-For the exact conditions and results of each plot, see [Vassals](vassals.md), [Rise and Fall of Dynasties](cycle.md), and [War and Peace Talks](war.md).
+For the exact conditions and results of each plot, see [Vassals](vassals.md), [Rise and Fall of Dynasties](cycle.md), [War and Peace Talks](war.md), and [Blocs](blocs.md).
