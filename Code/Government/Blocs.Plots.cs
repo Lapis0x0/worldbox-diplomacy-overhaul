@@ -225,9 +225,10 @@ namespace DiplomacyOverhaul
         }
 
         // 送礼：拿出家底的这么多
-        const float GiftShare = 0.3f;
-        // 恩情：拿主意的人每点外交这么多（最多 MaxCharm），送的钱按对方的家底折算最多 GoldFavor
-        const float CharmPerDiplomacy = 2f, MaxCharm = 20f, GoldFavor = 30f;
+        const float GiftShare = 0.2f;
+        // 恩情：拿主意的人每点外交这么多（最多 MaxCharm），送的钱按对方的家底折算最多 GoldFavor。
+        // 光靠外交越不过入伙线，钱才是拉拢的主要筹码
+        const float CharmPerDiplomacy = 1f, MaxCharm = 10f, GoldFavor = 40f;
 
         static bool Court(Actor pActor) => CourtTo(pActor, pActor.plot?.target_actor);
 

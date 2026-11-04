@@ -38,7 +38,7 @@ namespace DiplomacyOverhaul
         const string KeyNext = "vd_bloc_next";
 
         // 对集团（或对发起人）的好感过了这条线才肯入伙；跌破退出线就想走；跳槽要比现在的集团高出这么多
-        public const int JoinLine = 25, LeaveLine = 0, SwitchMargin = 15;
+        public const int JoinLine = 40, LeaveLine = 0, SwitchMargin = 15;
 
         // ---------- 存取 ----------
 
