@@ -495,12 +495,17 @@ namespace DiplomacyOverhaul
     }
 
     // 单位伤害的倍数：海军方针只管陆上单位，天命（王朝周期）管全国单位，欠饷管士兵，几项相乘。
-    // 属性重算是并行任务，不经过 Isolation 的任务兜底，出错会让这一帧所有单位的重算中断，所以自己兜住
+    // 属性重算是并行任务，不经过 Isolation 的任务兜底，出错会让这一帧所有单位的重算中断，所以自己兜住。
+    // 原版属性没变时直接返回、不重算，单位窗口之类的地方会这样调用；这时再乘就叠在上次的结果上了
     [HarmonyPatch(typeof(Actor), "updateStats")]
     static class Patch_LandDamage
     {
-        static void Postfix(Actor __instance)
+        [SafeBy("只读一个字段存起来")]
+        static void Prefix(Actor __instance, out bool __state) => __state = __instance.isStatsDirty();
+
+        static void Postfix(Actor __instance, bool __state)
         {
+            if (!__state) return;
             try
             {
                 Kingdom k = __instance.kingdom;

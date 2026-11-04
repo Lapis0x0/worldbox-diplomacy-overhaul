@@ -38,7 +38,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_appanage))
                 AssetManager.plots_library.basic_plots.Add(plot_appanage);
-            Motives.Register(plot_appanage, Motive);
+            Motives.Register(plot_appanage, Sys.Vassal, Motive);
         }
 
         // 超出原版治理上限的城市数；共和国没有王室，不分封宗室

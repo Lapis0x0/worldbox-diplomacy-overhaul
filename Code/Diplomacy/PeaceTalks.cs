@@ -90,7 +90,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_peace))
                 AssetManager.plots_library.basic_plots.Add(plot_peace);
-            Motives.Register(plot_peace, Motive);
+            Motives.Register(plot_peace, Sys.Peace, Motive);
 
             Core.Upsert(AssetManager.opinion_library, new OpinionAsset
             {

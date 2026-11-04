@@ -135,7 +135,7 @@ namespace DiplomacyOverhaul
             new GuardedOpinion { Sys = pSys, Where = pWhere, Calc = pCalc, Vanilla = VanillaOf(pVanilla) }.Run;
 
         // 热重载后资源上挂的是上一版模组包过的计算，从里面取回原版的
-        static T VanillaOf<T>(T pCalc) where T : Delegate
+        internal static T VanillaOf<T>(T pCalc) where T : Delegate
         {
             object target = pCalc?.Target;
             string type = target?.GetType().Name;

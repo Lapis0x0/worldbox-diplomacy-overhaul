@@ -89,9 +89,13 @@ namespace DiplomacyOverhaul
                 translation_key_negative = "loyalty_vd_cycle_decline",
                 calc = Safety.Loyalty(Sys.Cycle, "周期忠诚", CityLoyalty)
             });
-            // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉
+            // 原版「新征服」：王国攻下任何一座城，全国城市十年内都加忠诚。战争胜负已经算进天命，去掉；关掉王朝周期时照原版
             LoyaltyAsset conquest = AssetManager.loyalty_library.get("new_conquest");
-            if (conquest != null) conquest.calc = _ => 0;
+            if (conquest != null)
+            {
+                LoyaltyDelegateCalc vanilla = Safety.VanillaOf(conquest.calc);
+                conquest.calc = Safety.Loyalty(Sys.Cycle, "新征服忠诚", c => Settings.CycleEnabled ? 0 : vanilla?.Invoke(c) ?? 0, vanilla);
+            }
         }
 
         static CyclePhase TraitPhase(Kingdom pKingdom)
@@ -497,11 +501,11 @@ namespace DiplomacyOverhaul
         }
 
         // 城市易手：失去的一方天命 -2，丢的是被攻占的首都再 -15，衰落期丢首都必定大叛乱；得到的一方 +1。
-        // 分给自己附庸的城（分封宗室、叛乱改分封）不算
+        // 宗主和自己附庸之间的转手（分封宗室、叛乱改分封、收归直辖、吞并附庸）不算
         public static void OnCityChanged(Kingdom pOld, Kingdom pNew, bool pCapitalCaptured)
         {
             if (pOld == pNew) return;
-            if (pNew != null && pOld != null && Vassals.GetOverlord(pNew) == pOld) return;
+            if (pNew != null && pOld != null && (Vassals.GetOverlord(pNew) == pOld || Vassals.GetOverlord(pOld) == pNew)) return;
             if (pNew != null && pNew.isAlive()) AddMandate(pNew, CityGained);
             if (pOld == null || !pOld.isAlive()) return;
             AddMandate(pOld, CityLost + (pCapitalCaptured ? CapitalLost : 0f));

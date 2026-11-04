@@ -54,7 +54,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_restoration))
                 AssetManager.plots_library.basic_plots.Add(plot_restoration);
-            Motives.Register(plot_restoration, Motive);
+            Motives.Register(plot_restoration, Sys.Cycle, Motive);
         }
 
         static bool InDecline(Kingdom pKingdom) => pKingdom != null && Cycle.Get(pKingdom) == CyclePhase.Decline;

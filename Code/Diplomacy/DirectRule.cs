@@ -38,7 +38,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_direct_rule))
                 AssetManager.plots_library.basic_plots.Add(plot_direct_rule);
-            Motives.Register(plot_direct_rule, Motive);
+            Motives.Register(plot_direct_rule, Sys.Vassal, Motive);
         }
 
         // 离原版治理上限还空几座；附庸、衰落和崩溃中的国家不收

@@ -64,7 +64,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_independence))
                 AssetManager.plots_library.basic_plots.Add(plot_independence);
-            Motives.Register(plot_independence, Motive);
+            Motives.Register(plot_independence, Sys.Vassal, Motive);
         }
 
         // 独立的动机：怨恨 × 性格。好感低于设置值才开始怨恨，每再低 50 点 +1，最多 2；整合度越低越容易记恨

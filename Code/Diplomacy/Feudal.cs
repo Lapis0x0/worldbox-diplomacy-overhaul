@@ -226,7 +226,7 @@ namespace DiplomacyOverhaul
             });
             if (!AssetManager.plots_library.basic_plots.Contains(plot_tribute))
                 AssetManager.plots_library.basic_plots.Add(plot_tribute);
-            Motives.Register(plot_tribute, TributeMotive);
+            Motives.Register(plot_tribute, Sys.Vassal, TributeMotive);
         }
 
         static bool CanDemand(Kingdom pLord)

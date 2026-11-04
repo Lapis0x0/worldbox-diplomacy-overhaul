@@ -10,13 +10,14 @@ namespace DiplomacyOverhaul
     // 动机 = 局势 × 性格，性格用原版的性格数值（好战、治理、外交）和几个特质
     public static class Motives
     {
-        static readonly Dictionary<string, Func<Actor, float>> _motives = new Dictionary<string, Func<Actor, float>>();
+        static readonly Dictionary<string, (Sys sys, Func<Actor, float> motive)> _motives = new Dictionary<string, (Sys, Func<Actor, float>)>();
 
         public const string Aggression = "personality_aggression";
         public const string Administration = "personality_administration";
         public const string Diplomacy = "personality_diplomatic";
 
-        public static void Register(PlotAsset pAsset, Func<Actor, float> pMotive) => _motives[pAsset.id] = pMotive;
+        // pSys 是密谋所属的系统：系统停用或动机出错时，这个密谋不进池子
+        public static void Register(PlotAsset pAsset, Sys pSys, Func<Actor, float> pMotive) => _motives[pAsset.id] = (pSys, pMotive);
 
         // 主导性格（数值 0.5）×1.5，其余 ×0.6–0.9；争权类密谋野心勃勃 ×1.5；知足 ×0.5
         public static float Personality(Actor pActor, float pStat, bool pPowerGrab)
@@ -51,11 +52,17 @@ namespace DiplomacyOverhaul
 
         internal static void Filter(Actor pActor, ListPool<PlotAsset> pPool)
         {
-            foreach (KeyValuePair<string, Func<Actor, float>> pair in _motives)
+            foreach (KeyValuePair<string, (Sys sys, Func<Actor, float> motive)> pair in _motives)
             {
                 PlotAsset asset = AssetManager.plots_library.get(pair.Key);
                 if (asset == null || !pPool.Contains(asset)) continue;
-                if (!Wants(pActor, pair.Value)) pPool.RemoveAll(p => p == asset);
+                bool wants = false;
+                if (Safety.On(pair.Value.sys))
+                {
+                    try { wants = Wants(pActor, pair.Value.motive); }
+                    catch (Exception e) { Safety.Fail(pair.Value.sys, "密谋动机", e); }
+                }
+                if (!wants) pPool.RemoveAll(p => p == asset);
             }
         }
     }
