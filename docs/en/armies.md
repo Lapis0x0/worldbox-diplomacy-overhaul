@@ -58,6 +58,7 @@ The kingdom equips the Guard, and each city equips its own local troops, with st
 - **Troop types**: About a quarter are archers, and in a kingdom whose culture likes bows, half are archers. Melee troops get the culture's preferred weapon: sword, axe, hammer, or spear.
 - **Re-equipping**: Each year after pay is issued, the soldiers with the worst gear are re-equipped first. Gear better than the standard is left alone. Usable old gear is first looked for in the stockpile, and money is spent only if there is none. When an army has been wiped out and there is not enough money to equip all the new soldiers to the standard, they get cheaper gear first and are brought up to the standard over the following years.
 - **Upgrading**: When most soldiers are fully equipped, the material goes up one tier the next year. Caravans do not sell mythril or adamantine. The kingdom reaches these tiers only if its own stockpile is enough to re-equip the whole army.
+- **Weapons**: Weapons made by the kingdom or a city raise their wielder's damage more the higher the tier: +10% for copper, +50% for steel, and +80% for adamantine.
 - **Repair**: The kingdom and cities pay to repair the gear they issued. In peacetime this costs almost nothing.
 - **Recycling**: Replaced gear is melted down for part of its cost back. Gear left by soldiers who died defending a city is reclaimed by the city.
 

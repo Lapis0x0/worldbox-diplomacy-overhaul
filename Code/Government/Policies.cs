@@ -494,7 +494,7 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 单位伤害的倍数：海军方针只管陆上单位，天命（王朝周期）管全国单位，欠饷管士兵，几项相乘。
+    // 单位伤害的倍数：海军方针只管陆上单位，天命（王朝周期）管全国单位，欠饷管士兵，制式武器管拿着它的单位，几项相乘。
     // 属性重算是并行任务，不经过 Isolation 的任务兜底，出错会让这一帧所有单位的重算中断，所以自己兜住。
     // 原版属性没变时直接返回、不重算，单位窗口之类的地方会这样调用；这时再乘就叠在上次的结果上了
     [HarmonyPatch(typeof(Actor), "updateStats")]
@@ -513,6 +513,7 @@ namespace DiplomacyOverhaul
                 float factor = __instance.asset.is_boat ? 1f : Policies.LandDamageFactor(k);
                 factor *= 1f + Cycle.DamagePercent(k) / 100f;
                 factor *= 1f - Treasury.Penalty(__instance);
+                factor *= Armory.WeaponFactor(__instance);
                 if (factor != 1f) __instance.stats["damage"] *= factor;
             }
             catch (Exception e) { Isolation.Report("单位伤害倍数", e); }

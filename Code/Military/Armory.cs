@@ -39,23 +39,25 @@ namespace DiplomacyOverhaul
         static readonly float[] BudgetRates = { 0f, 0.25f, 0.5f, 1f };
         const int Replacements = 1;          // 补缺换损：只补发，不升级制式
 
-        // 制式的档次：材质、要的材料和份数、每份的官价和商队的价钱（0 是商队不卖）
+        // 制式的档次：材质、要的材料和份数、每份的官价和商队的价钱（0 是商队不卖），
+        // 这一档的武器给单位伤害乘的加成
         struct Tier
         {
             public string material, resource;
             public int amount, price, import, value;
+            public float damage;
         }
 
         internal const int MetalPrice = 2, MetalImport = 5;
 
         static readonly Tier[] Tiers =
         {
-            new Tier { material = "copper", resource = "common_metals", amount = 1, price = MetalPrice, import = MetalImport, value = 10 },
-            new Tier { material = "bronze", resource = "common_metals", amount = 2, price = MetalPrice, import = MetalImport, value = 15 },
-            new Tier { material = "iron", resource = "common_metals", amount = 3, price = MetalPrice, import = MetalImport, value = 30 },
-            new Tier { material = "steel", resource = "common_metals", amount = 4, price = MetalPrice, import = MetalImport, value = 40 },
-            new Tier { material = "mythril", resource = "mythril", amount = 1, price = 20, value = 50 },
-            new Tier { material = "adamantine", resource = "adamantine", amount = 1, price = 40, value = 70 },
+            new Tier { material = "copper", resource = "common_metals", amount = 1, price = MetalPrice, import = MetalImport, value = 10, damage = 0.10f },
+            new Tier { material = "bronze", resource = "common_metals", amount = 2, price = MetalPrice, import = MetalImport, value = 15, damage = 0.20f },
+            new Tier { material = "iron", resource = "common_metals", amount = 3, price = MetalPrice, import = MetalImport, value = 30, damage = 0.35f },
+            new Tier { material = "steel", resource = "common_metals", amount = 4, price = MetalPrice, import = MetalImport, value = 40, damage = 0.50f },
+            new Tier { material = "mythril", resource = "mythril", amount = 1, price = 20, value = 50, damage = 0.65f },
+            new Tier { material = "adamantine", resource = "adamantine", amount = 1, price = 40, value = 70, damage = 0.80f },
         };
 
         static readonly EquipmentType[] Slots = { EquipmentType.Weapon, EquipmentType.Helmet, EquipmentType.Armor, EquipmentType.Boots };
@@ -142,6 +144,20 @@ namespace DiplomacyOverhaul
         public static bool IsOfficial(Item pItem) => pItem?.data != null && pItem.data.hasFlag(FlagOfficial);
 
         public static bool IsLocal(Item pItem) => pItem?.data != null && pItem.data.hasFlag(FlagLocal);
+
+        // 拿着国家、城市造的武器，单位伤害乘的倍数。原版武器只加几点固定伤害，比不过按比例减伤的护甲；
+        // 按档次再乘一个比例，铜到钢之间就能拉开差距。坏了的减半，同原版
+        public static float WeaponFactor(Actor pActor)
+        {
+            if (!Military.On || !pActor.canUseItems()) return 1f;
+            Item item = pActor.equipment.weapon.getItem();
+            if (!IsOfficial(item) && !IsLocal(item)) return 1f;
+            string material = item.getAsset().material;
+            for (int t = 0; t < Tiers.Length; t++)
+                if (Tiers[t].material == material)
+                    return 1f + Tiers[t].damage * (item.isBroken() ? 0.5f : 1f);
+            return 1f;
+        }
 
         // 升到这一档要材料够全军换装：商队卖的总买得到，秘银、精金看本国（本城）的存货
         static bool Available(Arsenal pArsenal, Tier pTier) =>
