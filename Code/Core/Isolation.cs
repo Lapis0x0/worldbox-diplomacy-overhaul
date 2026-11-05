@@ -32,6 +32,7 @@ namespace DiplomacyOverhaul
         static bool _tipped;
         static bool _pendingTip;
         static string _tipMod;
+        static bool _tipVanilla;
 
         public static void ActorFailed(Actor pActor, string pStep, Exception pError)
         {
@@ -47,7 +48,7 @@ namespace DiplomacyOverhaul
             catch (Exception e) { Report($"单位 {pActor.asset?.id} 出错后的恢复", e); }
         }
 
-        // 每处错误第一次记完整堆栈；持续出错时再记一次，并在屏幕上提示玩家一次（每局一次），
+        // 每处错误第一次记完整堆栈；持续出错时再记一次，并在左上角提示玩家一次（每局一次），
         // 免得某个系统悄悄停摆几百年没人察觉。pSubject 是出错的对象，只写进日志，不参与记账。
         // 异常是从别的模组的代码里抛出来的，日志和提示里写上那个模组
         public static void Report(string pWhere, Exception pError, string pSubject = null)
@@ -74,7 +75,7 @@ namespace DiplomacyOverhaul
                     spot.persistent = persistent = true;
             }
             if (!first && !persistent) return;
-            string mod = Culprit.Of(pError);
+            string mod = Culprit.Of(pError, out bool vanilla);
             if (persistent)
             {
                 lock (_spots)
@@ -83,11 +84,12 @@ namespace DiplomacyOverhaul
                     {
                         _tipped = _pendingTip = true;
                         _tipMod = mod;
+                        _tipVanilla = vanilla;
                     }
                 }
             }
             string subject = pSubject == null ? "" : $"（{pSubject}）";
-            string from = mod == null ? "" : $"出错的代码在模组 {mod} 里，";
+            string from = mod != null ? $"出错的代码在模组 {mod} 里，" : vanilla ? "出错的代码在原版里，" : "";
             if (first) Debug.LogError($"[外交大修] {pWhere}{subject} 出错，{from}已跳过，其余照常更新：{pError}");
             if (persistent) Debug.LogError($"[外交大修] {pWhere}{subject} 持续出错，{from}{PersistWindowSeconds} 秒内 {count} 次：{pError}");
         }
@@ -96,14 +98,21 @@ namespace DiplomacyOverhaul
         public static void Tick()
         {
             string mod;
+            bool vanilla;
             lock (_spots)
             {
                 if (!_pendingTip) return;
                 _pendingTip = false;
                 mod = _tipMod;
+                vanilla = _tipVanilla;
             }
-            string text = mod == null ? LM.Get("vd_isolation_persistent") : LM.Get("vd_isolation_persistent_mod").Replace("$mod$", mod);
-            WorldTip.showNow(text, false, "top");
+            // 挂在原版每帧开头，弹日志出错也不能抛出去
+            try
+            {
+                if (mod != null) WorldLogs.Notice(WorldLogs.IsolationMod, mod);
+                else WorldLogs.Notice(vanilla ? WorldLogs.IsolationVanilla : WorldLogs.Isolation);
+            }
+            catch (Exception e) { Debug.LogError($"[外交大修] 异常保护的提示出错：{e}"); }
         }
 
         // 读档、新建世界前
@@ -114,6 +123,7 @@ namespace DiplomacyOverhaul
                 _spots.Clear();
                 _tipped = _pendingTip = false;
                 _tipMod = null;
+                _tipVanilla = false;
             }
             _failures.Clear();
         }
@@ -121,16 +131,19 @@ namespace DiplomacyOverhaul
 
     // 找出异常是从哪个模组的代码里抛出来的。只看抛出的那一帧：从栈顶往下跳过运行时和 Unity 的帧
     // （它们只是在哪儿炸的，比如模组查字典查不到，栈顶是 Dictionary），落到的第一帧属于别的模组才算数；
-    // 落在原版、本模组、NML 或认不出来的帧上就不说，宁可不写也不冤枉别人。
+    // 落在原版上记为原版（只说明在哪儿抛的，状态可能是模组弄坏的）；落在本模组、NML 或认不出来的帧上就不说，
+    // 宁可不写也不冤枉别人。并行任务的异常包在 AggregateException 里，外层栈顶是原版的调度，要看里面那个。
     // 只在第一次和判定持续出错时调用，那两次本来就要把堆栈拼成字符串
     static class Culprit
     {
         static readonly Dictionary<Assembly, string> _names = new Dictionary<Assembly, string>();
 
-        public static string Of(Exception pError)
+        public static string Of(Exception pError, out bool pVanilla)
         {
+            pVanilla = false;
             try
             {
+                while (pError is AggregateException agg && agg.InnerException != null) pError = agg.InnerException;
                 StackFrame[] frames = new StackTrace(pError, false).GetFrames();
                 if (frames == null) return null;
                 foreach (StackFrame frame in frames)
@@ -142,7 +155,12 @@ namespace DiplomacyOverhaul
                     Assembly asm = type.Assembly;
                     string name = asm.GetName().Name;
                     if (IsRuntime(name)) continue;
-                    if (asm == typeof(Culprit).Assembly || name.StartsWith("Assembly-CSharp") || name == "NeoModLoader") return null;
+                    if (name.StartsWith("Assembly-CSharp"))
+                    {
+                        pVanilla = true;
+                        return null;
+                    }
+                    if (asm == typeof(Culprit).Assembly || name == "NeoModLoader") return null;
                     return NameOf(asm, type);
                 }
             }

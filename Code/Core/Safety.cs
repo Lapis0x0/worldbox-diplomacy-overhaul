@@ -74,8 +74,12 @@ namespace DiplomacyOverhaul
         {
             lock (_lock)
             {
-                while (_pendingTips.Count > 0)
-                    WorldTip.showNow(LM.Get("vd_safety_off").Replace("$system$", Name(_pendingTips.Dequeue())), false, "top");
+                // 挂在原版每帧开头，弹日志出错也不能抛出去
+                try
+                {
+                    while (_pendingTips.Count > 0) WorldLogs.Notice(WorldLogs.SafetyOff, Name(_pendingTips.Dequeue()));
+                }
+                catch (Exception e) { Debug.LogError($"[外交大修] 熔断的提示出错：{e}"); }
             }
         }
 
