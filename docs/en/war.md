@@ -1,31 +1,31 @@
 # War and Peace Talks
 
-In vanilla, a war ends in an unconditional ceasefire or when one side is destroyed. Now, when the two sides have fought long enough, they sit down to negotiate and sign a treaty based on the result: a white peace, reparations, ceding vassals, or submission.
+In vanilla, a war ends in one side's destruction or an unconditional ceasefire. The mod lets the two sides negotiate once the situation is clear, and sign a treaty according to the war score: a white peace, reparations, ceding vassals, or submission.
 
-## When Kingdoms Go to War
+## Going to War
 
-After a war, a kingdom waits a while before fighting again, and weighs the strength of rivals when choosing one. Both depend on the government and on parliament's Foreign Policy, see [Government Temperament](government.md#government-temperament) and [Parliament and Policies](parliament.md#diplomacy). When choosing a rival, the strength of each side is counted for the whole bloc: overlord, vassals, and allies all count.
+After a war ends, a kingdom must wait a while before fighting again, and it compares strength when choosing a rival. Both depend on the government and on parliament's Foreign Policy; see [Government Tendencies](government.md#government-tendencies) and [Foreign Policy](parliament.md#diplomacy). Strength is counted for the whole camp: overlord, vassals, and allies all count.
 
-A vassal never starts wars itself. It fights with its overlord, see [Vassals](vassals.md#wars-are-shared).
+A vassal never starts wars on its own. It fights alongside its overlord; see [Vassals](vassals.md#wars-are-shared).
 
 ## War Score
 
-Each war has a war score, shown in the war window and in tooltips, for example "Attackers ahead by 35". When the gap is small it shows "Stalemate". The war score looks only at the two main kingdoms:
+Each war has a war score, shown in the war window and tooltips, for example "Attackers ahead by 35". When the gap is small it shows "Stalemate". The war score compares only the two main kingdoms and depends on three factors.
 
 - The share of cities lost since the war began. The side that lost more is at a disadvantage.
-- If the capital at the start of the war is now in the other side's hands, that is a big loss.
-- The side with more troops gets a small advantage.
+- If the capital at the start of the war is now in the other side's hands, the disadvantage grows sharply.
+- The side with more troops has a slight advantage.
 
-## When They Talk
+## Peace Talks
 
-After 3 years of war, the kings of both sides can start "Peace Talks":
+Peace Talks is a plot. After 3 years of war, the kings of both main sides can start it, at a cost of 5 gold.
 
-- **The side ahead**: Wants to talk once the war score reaches what it expects. Warlike kings expect more and insist on fighting until the other side submits. The longer the war and the more of its own people have died, the less it expects.
-- **The side behind**: The further behind it is and the longer the war has gone on, the more it wants to talk.
+- **The side ahead**: Starts when the war score reaches what it expects. Warlike kings expect more. The longer the war and the more of its own people have died, the less it expects.
+- **The side behind**: The further behind it is and the longer the war has gone on, the more likely it is to start.
 
-When the talks complete, the outcome depends on the war score at that moment. If the gap is below what the leading side expects, the leading side refuses and nothing happens. They can talk again later. In a war that is a tie, both sides' expectations slowly drop until it ends in a white peace.
+When the talks complete, the outcome depends on the war score at that moment. If the gap is below what the side ahead expects, it is treated as a refusal and nothing happens; the talks can be started again later. In a tied war, both sides' expectations slowly drop until it ends in a white peace.
 
-The vanilla "peace negotiation" plot no longer appears. Turn peace talks off in the settings to restore vanilla. Total War has no peace talks.
+Total War has no peace talks. The vanilla "peace negotiation" plot is replaced by Peace Talks, and turning off peace talks in the settings restores it. The vanilla Friendship power is still an unconditional peace.
 
 ## Treaties
 
@@ -33,28 +33,28 @@ The vanilla "peace negotiation" plot no longer appears. Turn peace talks off in 
 |---|---|
 | Below 20 | White peace |
 | 20 to 50 | Reparations |
-| 50 to 80 | Larger reparations, and vassals ceded |
-| 80 or more | Larger reparations, submission, and vassals ceded |
+| 50 to 80 | Reparations (slightly higher share), vassals ceded |
+| 80 or more | Reparations (slightly higher share), submission, vassals ceded |
 
-- **Reparations**: The loser hands over part of the gold in its treasury and in every city's stockpile (20%). All of it goes into the winner's treasury.
-- **Ceding vassals**: Each of the loser's vassals is checked in turn. Those that border the winner may switch to the winner. The better the winner's king is at diplomacy and the more ambitious, the easier it is to take them over. A winner in Decline cannot take them.
-- **Submission**: The loser becomes a vassal of the winner and starts Resentful. Vassals the winner did not take over become independent.
+- **Reparations**: The loser hands over 20% of the gold in its treasury and in every city's stockpile. All of it goes into the winner's treasury.
+- **Ceding vassals**: Each of the loser's vassals is checked in turn. Those bordering the winner's camp may switch to the winner. The better the winner's king is at diplomacy and the more ambitious, the easier it is to take them over. A winner in Decline or Collapse cannot take them.
+- **Submission**: The loser becomes a vassal of the winner, with Integration 0. Vassals of the loser that the winner did not take over become independent.
 
 If the winner is itself a vassal, the ceded vassals and the submitting loser go to the winner's overlord.
 
 ## After the War
 
-- **Mandate**: At the reparations level, the winner gets +2 and the loser -4. At the ceded vassals and submission levels, the winner gets +5 and the loser -10. A white peace changes nothing.
-- **Humiliating defeat**: A loser that only paid reparations or ceded vassals has a lower opinion of the winner. It fades over ten years.
-- The treaty is recorded in the world log. The war window shows the terms and the reparations breakdown.
+- **Mandate**: At the reparations level, the winner gets +2 and the loser -4. At the ceded vassals and submission levels, the winner gets +5 and the loser -10. A white peace does not change the Mandate.
+- **Humiliating defeat**: A loser that only paid reparations has its opinion of the winner reduced by 20, and one that ceded vassals by 40. This fades over ten years. Submission has no such penalty.
+- The treaty is recorded in the world log, and the war window shows the terms and the reparations breakdown.
 
 ## Wars of Independence
 
-A war of independence started by a vassal also goes through peace talks. If the talks reach the submission level for the overlord, the vassal becomes a vassal again. Every other outcome makes the vassal independent, with reparations paid as in the table.
+A war of independence started by a vassal also ends through peace talks. If the talks reach the submission level for the overlord, the vassal becomes a vassal again. Otherwise the vassal becomes independent, with reparations paid according to the treaty.
 
 ## Sieges
 
-This applies to all armies. In vanilla, as long as a single defender is left in a city, siege progress is stuck at 5%. The attacking captain wanders around after entering the city, and a large city may never fall. Now:
+Siege rules apply to all armies. In vanilla, as long as a single defender is left in a city, siege progress stays at 5%, and a large city may never fall. Now:
 
-- After entering the city, the attacking captain goes straight for the nearest defending warrior, city lord, or king. When no one is left, the captain goes to the city center.
-- When the attackers in the city outnumber the defenders 5 to 1, the defenders cannot hold. Siege progress rises as normal, and the city falls when it is full.
+- After entering the city, the attacking captain goes straight for the nearest defending warrior, city lord, or king. When no defender is left, the captain goes to the city center.
+- When the attackers in the city outnumber the defenders 5 to 1, the defenders cannot hold, siege progress rises as normal, and the city falls when it is full.

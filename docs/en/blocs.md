@@ -1,47 +1,52 @@
 # Blocs
 
-Clans in a parliament form blocs. A bloc is a group of clans that stick together: they vote together and nobody goes it alone. A bloc can cross factions, so old Royalist houses and Reformist upstarts may end up on the same side, and the royal house can form a bloc too. A bloc is named after its founding leader's city, for example "Ravenrise Bloc".
+A bloc is an alliance of clans in a parliament whose members vote together on bills. The royal house and the cadets can also form or join blocs, and blocs are not limited by faction. A clan belongs to at most one bloc at a time, a parliament can have several blocs, and a bloc has at least two clans.
 
-## How Blocs Form
+## Leader and Name
 
-Clans form blocs by **Win Over** plots. A clan head picks the moment and arrives with gifts:
+The leader is the member with the most seats, and it changes as members' seats change. A bloc's name is set when it forms and takes the leader's city at that time, for example "Ravenrise Bloc". It does not change afterward; a bloc formed anew after one breaks apart gets a new name. A bloc's stance is derived from its members' stances, and the quadrant it falls in is the faction it belongs to.
 
-- A clan that just lost out in parliament, just got a new chief, or has unpaid troops is easiest to win over.
-- Small clans are more eager to find allies. Ambitious heads good at diplomacy court more often, Content ones rarely bother, and Deceitful ones like to poach other blocs' members.
-- Gifts come from the private money of the clan's city leaders and the spare gold in its cities' stores. The troops' pay is never touched. Poor clans are easy to buy, while rich clans are hard to sway with money.
-- Winning over puts the other clan in your debt. Once that debt plus their existing goodwill is enough, they join. If neither clan has a bloc yet, the two form a new bloc, and the world log records it.
+## Forming and Joining
 
-A clan already in another bloc can be poached too, but it must like the new bloc clearly more than its old one.
+Blocs form through the "Win Over" plot. When Win Over completes, the target clan's opinion of the initiator rises; if the opinion is high enough, the target joins the initiator's bloc. If neither has a bloc, the two clans form a new bloc, and the world log records it.
 
-## What Holds a Bloc Together
+- The initiator is a clan chief whose clan has no bloc yet, or is the leader of its bloc. Each attempt costs 5 gold.
+- The favor gained through Win Over is at most 60 and fades over time, so members who joined this way must be won over again and again to keep a high opinion.
+- A clan that is already in another bloc switches only if it clearly likes the new bloc more. When its old bloc is left with one clan, that bloc breaks apart.
 
-A clan stays in a bloc because of its opinion of the other members, mostly the leader. Opinions come from politics, friendship, favors and grudges, and also **Neighbors**: clans whose cities border each other get along, so blocs tend to be clans from the same region.
+A clan's opinion of its bloc depends mainly on its opinion of the leader, and is made up of politics, best friends, marriage, Neighbors, favors, and grudges. Neighbors is a new source: when two clans' cities border each other, opinion rises by 10. A target joins a bloc when its opinion reaches 40. Politics and Neighbors alone cannot reach 40, so a bloc needs Win Over to form.
 
-- **Voting together**: The bloc weighs every member's gains and losses together and takes one side. All members vote with it.
-- **Being dragged along breeds resentment**: A member that votes with the bloc against its own interest holds a grudge against the leader. A member that gains from voting with the bloc owes the leader a favor.
-- **Feuds**: When two blocs vote on opposite sides, every clan of the losing bloc resents every clan of the winning bloc. As wins and losses trade back and forth, the feud deepens, members come to hate each other, and neither side can poach the other's clans.
-- **Favors fade**: Allies bought with gifts must be courted again and again, or they drift away.
-- **Leaving**: When a clan's opinion of its bloc hits bottom, it plots to leave. Hotheaded and Ambitious heads leave quickly, Content ones put up with more. If the leader courts them back in time, they may stay.
-- When members leave one by one until only one clan is left, the bloc breaks apart.
+## Voting
 
-The leader is the member with the most seats. When another member overtakes it in seats, that member becomes the leader. A bloc keeps the name it was founded with; only a bloc formed anew after one breaks apart gets a new name.
+A bloc takes a position based on the interests of its members as a whole, and all its members vote together. The proposer's bloc always votes yes. Clans outside blocs vote on their own. The vote forecast in the parliament window follows these rules. A bloc's bills are proposed by the leader on behalf of the whole bloc.
 
-## In Parliament
+When a bloc wins a vote, each member other than the leader records favors or grudges toward the leader according to its own situation.
 
-- The leader drafts bills for the whole bloc, picking what suits the bloc as a whole.
-- The proposer's bloc always votes yes.
+- A member that did not want to vote this way and was carried along records a grudge against the leader, at most 30.
+- A member that wanted to vote this way anyway records a favor toward the leader, at most 20.
+
+Nothing is recorded when the bloc loses. These fade over time, and two thirds remain after a chief is replaced.
+
+When two blocs vote on opposite sides in the same vote, each clan of the losing bloc records a grudge against each clan of the winning bloc, at most 15 per vote. After two blocs have grudges against each other, their members are hard for the other side to win over, and the camps settle in place.
+
+## Leaving a Bloc
+
+Leaving a bloc is a plot. A member other than the leader starts it when its opinion of the bloc is below 0, and the lower the opinion, the more likely it is to start. If the opinion rises back to 10 or higher (for example because the leader won it over again), the plot is abandoned. When it completes, the clan leaves the bloc. When one clan is left, the bloc breaks apart, and the world history records "The [bloc name] broke apart".
 
 ## In the Parliament Window
 
-- **Seat semicircle**: A bloc's seats sit together on a shaded band in the bloc's color, with the bloc's name around the outer edge. Seats keep each clan's faction color, so a band with several colors is a bloc that crosses factions.
-- **Clan list**: Each bloc gets a row with its name, its overall stance and its total seats, with its members listed below. Click the bloc's row to see its leader and how many clans it has.
-- **Stance chart**: The clans of a bloc are enclosed in a shaded patch. The larger the patch, the wider the bloc's range of stances.
-- **Bill**: A bloc's votes are folded into one row. Click it to see each clan.
-- **Show blocs**: The Show blocs toggle at the top right of the seat semicircle hides the blocs in the semicircle, showing the clans' seats as they would be without blocs.
-- **Clan window**: The opinion breakdown now includes Neighbors.
+- **Seat semicircle**: A bloc's seats sit together on a band in the bloc's color, with the bloc's name around the outer edge. Seats keep their faction colors, so a bloc with several colors crosses factions.
+- **Clan list**: Each bloc has a row with its name, stance, and total seats, with its members below. Click the bloc's row to see its leader and number of clans.
+- **Stance chart**: The clans of a bloc are enclosed in one shaded patch.
+- **Bill**: A bloc's votes are folded into one row. Click it to see each member.
+- **Show blocs**: The toggle at the top right of the semicircle. When it is off, the semicircle shows seats by faction. It appears only when the kingdom has a bloc, and it is on by default after restarting the game.
+- **Clan window**: The opinion breakdown includes Neighbors.
 
 ## On the Map
 
-In the bottom bar's Noosphere and Life tab, next to the Clan Layer, there is a Bloc Layer. It colors cities by bloc, one color per bloc, and leaves cities outside any bloc uncolored, so you can see each bloc's territory at a glance. When cycling map layers with Z and X, it comes right after the Clan Layer. Nameplates show each bloc's kingdom, name and total seats. Hover over a bloc's city or nameplate to see its leader, stance and each clan's seats, and click to open that kingdom's parliament window.
+In the bottom bar's Noosphere and Life tab, next to the Clan Layer, is the Bloc Layer. When it is on, the map colors cities by bloc, and cities outside any bloc are not colored. It is off by default after restarting the game.
 
-Win Over and Leave Bloc are both plots, so the vanilla plot list shows who is courting whom.
+- **Nameplate**: Shows the kingdom name, bloc name, and total seats.
+- **Hover**: Over a bloc's city or nameplate, shows the leader, stance, and each clan's seats.
+- **Click**: Opens that kingdom's parliament window.
+- When cycling map layers with Z and X, the Bloc Layer comes after the Clan Layer.
