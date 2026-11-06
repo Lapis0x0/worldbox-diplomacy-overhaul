@@ -34,6 +34,9 @@ namespace DiplomacyOverhaul
         public const long CadetKey = 1L << 40;
         public long Key => cadet ? clan.id + CadetKey : clan.id;
         public static long ClanIdOf(long pKey) => pKey >= CadetKey ? pKey - CadetKey : pKey;
+        // 氏族灭了：原版会把它释放（data 置空），手里留着的就不能再用
+        public bool Gone => !Live(clan);
+        public static bool Live(Clan pClan) => pClan != null && pClan.data != null && pClan.isAlive();
         // 占着首都以外的城：兵和钱收归中央时交出去的是它的
         public bool Local => !ruling;
     }
@@ -118,7 +121,7 @@ namespace DiplomacyOverhaul
             foreach (City city in pKingdom.getCities())
             {
                 Actor owner = city.isCapitalCity() && king != null ? king : city.leader;
-                if (owner == null || !owner.isAlive() || !owner.hasClan()) continue;
+                if (owner == null || !owner.isAlive() || !ParliamentClan.Live(owner.clan)) continue;
                 int seats = CitySeats(city);
                 if (seats <= 0) continue;
                 bool cadet = monarchy && owner.clan == rulingClan && Frontier(city, capital, farthest);

@@ -112,10 +112,18 @@ namespace DiplomacyOverhaul
 
         static readonly Dictionary<long, Snapshot> _snapshots = new Dictionary<long, Snapshot>();
 
+        // 年中有氏族灭了，快照就得重拍
+        static bool Stale(List<ParliamentClan> pClans)
+        {
+            for (int i = 0; i < pClans.Count; i++)
+                if (pClans[i].Gone) return true;
+            return false;
+        }
+
         static Snapshot SnapshotOf(Kingdom pKingdom)
         {
             int year = Date.getCurrentYear();
-            if (!_snapshots.TryGetValue(pKingdom.id, out Snapshot s) || s.year != year)
+            if (!_snapshots.TryGetValue(pKingdom.id, out Snapshot s) || s.year != year || Stale(s.clans))
             {
                 List<ParliamentClan> clans = Parliament.Clans(pKingdom);
                 s = new Snapshot { year = year, clans = clans, opinions = Relations.Matrix(clans), total = Parliament.TotalSeats(clans) };
