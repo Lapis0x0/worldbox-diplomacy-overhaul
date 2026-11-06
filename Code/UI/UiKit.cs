@@ -244,14 +244,23 @@ namespace DiplomacyOverhaul
         }
 
         // pReserve：外径的上限再往里收这么多，给外环上的字留地方
-        public static System.Collections.Generic.List<Vector3> SeatLayout(int pCount, float pW, float pH, float pReserve, out float pSize, out Ring pRing)
+        public static System.Collections.Generic.List<Vector3> SeatLayout(int pCount, float pW, float pH, float pReserve, out float pSize, out Ring pRing) =>
+            SeatLayout(new[] { pCount }, pW, pH, pReserve, out pSize, out pRing, out _);
+
+        // 分块排：先按席位数把半圆切成几块扇形（pSegments 从左到右），每块里单独排，每排两头和相邻块各隔半个座位，
+        // 块与块的边界在每一排都落在两个座位中间。pBounds 是各块左右边界的角度（弧度，π 在左），共 块数 + 1 个。
+        // 只有一块时和整个半圆一起排一样。返回的位置一块一块从左到右、同一角度从内到外
+        public static System.Collections.Generic.List<Vector3> SeatLayout(int[] pSegments, float pW, float pH, float pReserve, out float pSize, out Ring pRing, out float[] pBounds)
         {
             var result = new System.Collections.Generic.List<Vector3>();
+            int count = 0;
+            foreach (int n in pSegments) count += Mathf.Max(0, n);
             pSize = 6f;
             pRing = default;
-            if (pCount <= 0) return result;
+            pBounds = new float[pSegments.Length + 1];
+            if (count <= 0) return result;
             float rFull = pW / 2f - 4f, rIn = rFull * 0.465f;
-            float cx = pW / 2f, cy = pH - 3f, rOut = Mathf.Clamp(Mathf.Sqrt(rIn * rIn + 400f * 2f / Mathf.PI * pCount), rIn + 12f, rFull - pReserve);
+            float cx = pW / 2f, cy = pH - 3f, rOut = Mathf.Clamp(Mathf.Sqrt(rIn * rIn + 400f * 2f / Mathf.PI * count), rIn + 12f, rFull - pReserve);
             pRing = new Ring { cx = cx, cy = cy, rIn = rIn, rOut = rOut };
             float[] bestRadii = null;
             float bestScore = float.MaxValue;
@@ -264,7 +273,7 @@ namespace DiplomacyOverhaul
                     radii[i] = rows == 1 ? rOut - 5f : rIn + (rOut - rIn) * i / (rows - 1);
                     sum += radii[i];
                 }
-                float along = Mathf.PI * sum / pCount;
+                float along = Mathf.PI * sum / count;
                 float radial = rows == 1 ? rOut - rIn : (rOut - rIn) / (rows - 1);
                 float score = Mathf.Abs(Mathf.Log(radial / along));
                 if (score < bestScore)
@@ -274,34 +283,60 @@ namespace DiplomacyOverhaul
                     pSize = Mathf.Clamp(Mathf.Min(along, radial) * 0.74f, 3.5f, 9f);
                 }
             }
+            // 沿弧的位置 u 从 0（左端）到 1（右端）；两端的座位压在端点上，块与块的边界在前后两个座位中间
+            int before = 0;
+            for (int si = 0; si < pSegments.Length; si++)
+            {
+                int n = Mathf.Max(0, pSegments[si]);
+                float u1 = si == 0 ? 0f : (before - 0.5f) / Mathf.Max(1, count - 1);
+                before += n;
+                float u2 = si == pSegments.Length - 1 ? 1f : (before - 0.5f) / Mathf.Max(1, count - 1);
+                u1 = Mathf.Clamp01(u1);
+                u2 = Mathf.Clamp01(u2);
+                pBounds[si] = Mathf.PI * (1f - u1);
+                pBounds[si + 1] = Mathf.PI * (1f - u2);
+                if (n == 0) continue;
+                int[] counts = RowCounts(n, bestRadii);
+                var pos = new System.Collections.Generic.List<(float t, float r, Vector3 p)>();
+                for (int ri = 0; ri < bestRadii.Length; ri++)
+                {
+                    int k = counts[ri];
+                    if (k == 0) continue;
+                    float r = bestRadii[ri];
+                    // 挨着端点的一头不留空，挨着别的块的一头留半格
+                    float padL = u1 > 0f ? 0.5f : 0f, padR = u2 < 1f ? 0.5f : 0f;
+                    float steps = k - 1 + padL + padR;
+                    for (int j = 0; j < k; j++)
+                    {
+                        float u = steps <= 0f ? (u1 + u2) / 2f : u1 + (u2 - u1) * (j + padL) / steps;
+                        float t = Mathf.PI * (1f - u);
+                        pos.Add((t, r, new Vector3(cx + r * Mathf.Cos(t), cy - r * Mathf.Sin(t))));
+                    }
+                }
+                pos.Sort((a, b) => a.t != b.t ? b.t.CompareTo(a.t) : a.r.CompareTo(b.r));
+                foreach (var p in pos) result.Add(p.p);
+            }
+            return result;
+        }
+
+        // 每排的席位数和半径成正比，余数按最大余数补齐
+        static int[] RowCounts(int pCount, float[] pRadii)
+        {
             float total = 0f;
-            foreach (float r in bestRadii) total += r;
-            var counts = new int[bestRadii.Length];
+            foreach (float r in pRadii) total += r;
+            var counts = new int[pRadii.Length];
             var rest = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<float, int>>();
             int left = pCount;
-            for (int i = 0; i < bestRadii.Length; i++)
+            for (int i = 0; i < pRadii.Length; i++)
             {
-                float raw = pCount * bestRadii[i] / total;
+                float raw = pCount * pRadii[i] / total;
                 counts[i] = Mathf.FloorToInt(raw);
                 left -= counts[i];
                 rest.Add(new System.Collections.Generic.KeyValuePair<float, int>(raw - counts[i], i));
             }
             rest.Sort((a, b) => b.Key.CompareTo(a.Key));
             for (int i = 0; i < rest.Count && left > 0; i++, left--) counts[rest[i].Value]++;
-            var pos = new System.Collections.Generic.List<(float t, float r, Vector3 p)>();
-            for (int ri = 0; ri < bestRadii.Length; ri++)
-            {
-                int k = counts[ri];
-                float r = bestRadii[ri];
-                for (int j = 0; j < k; j++)
-                {
-                    float t = k == 1 ? Mathf.PI / 2f : Mathf.PI * (1f - (float)j / (k - 1));
-                    pos.Add((t, r, new Vector3(cx + r * Mathf.Cos(t), cy - r * Mathf.Sin(t))));
-                }
-            }
-            pos.Sort((a, b) => a.t != b.t ? b.t.CompareTo(a.t) : a.r.CompareTo(b.r));
-            foreach (var p in pos) result.Add(p.p);
-            return result;
+            return counts;
         }
     }
 }

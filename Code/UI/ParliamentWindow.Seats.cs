@@ -138,9 +138,17 @@ namespace DiplomacyOverhaul
         {
             const float aw = 262f, ah = 132f;
             RectTransform area = Box(_parent, pX + 2f, pY, aw, ah);
-            int total = Parliament.TotalSeats(pClans);
-            List<Vector3> seats = SeatLayout(total, aw, ah, _blocs.Count > 0 ? RingBand : 0f, out float size, out Ring ring);
             List<Unit> units = Units(pClans);
+            // 每个集团一块，相邻的散户合成一块，各块分开排：集团的边界在每一排都落在两个座位中间
+            var segments = new List<int>();
+            var segmentOf = new int[units.Count];
+            for (int i = 0; i < units.Count; i++)
+            {
+                if (units[i].bloc != null || i == 0 || units[i - 1].bloc != null) segments.Add(0);
+                segmentOf[i] = segments.Count - 1;
+                segments[segments.Count - 1] += units[i].seats;
+            }
+            List<Vector3> seats = SeatLayout(segments.ToArray(), aw, ah, _blocs.Count > 0 ? RingBand : 0f, out float size, out Ring ring, out float[] bounds);
             var ranges = new List<(Unit unit, int first, int end)>();
             int s = 0;
             foreach (Unit u in units)
@@ -150,19 +158,23 @@ namespace DiplomacyOverhaul
                 ranges.Add((u, first, s));
             }
 
-            // 座位按角度从左到右排，一个集团的席位正好占满一段角度：扇环的两边落在相邻两家的席位中间
-            float Angle(int i) => Mathf.Atan2(ring.cy - seats[i].y, seats[i].x - ring.cx);
             float rIn = ring.rIn - size / 2f - 2f, rOut = ring.rOut + size / 2f + 2f;
             var arcs = new List<(Bloc bloc, float t1, float t2)>();
-            foreach (var (u, first, end) in ranges)
+            for (int i = 0; i < ranges.Count; i++)
             {
+                var (u, first, end) = ranges[i];
                 if (u.bloc == null || end <= first) continue;
-                float a = Angle(first), z = Angle(end - 1);
-                float t1 = first > 0 ? (a + Angle(first - 1)) / 2f : a + 0.04f;
-                float t2 = end < seats.Count ? (z + Angle(end)) / 2f : z - 0.04f;
+                // 半圆两端的座位压在端点上，扇环在那一头竖直往下多铺一点，和内外环留的边一样宽
+                int seg = segmentOf[i];
+                float t1 = bounds[seg], t2 = bounds[seg + 1];
+                float pad1 = seg == 0 ? size / 2f + 2f : 0f, pad2 = seg == segments.Count - 1 ? size / 2f + 2f : 0f;
                 BlocShape shape = Shape(area, aw, ah, FactionColor(u.bloc.leader.faction));
-                shape.Sector(ring.cx, ring.cy, rIn, rOut, t1, t2);
+                shape.Sector(ring.cx, ring.cy, rIn, rOut, t1, t2, pad1, pad2);
                 DimShape(u.bloc, shape, BlocAlpha, BlocDim);
+                BlocShape border = Shape(area, aw, ah, FactionColor(u.bloc.leader.faction), BorderAlpha);
+                border.stroke = BorderWidth;
+                border.Sector(ring.cx, ring.cy, rIn, rOut, t1, t2, pad1, pad2);
+                DimShape(u.bloc, border, BorderAlpha, BorderDim);
                 arcs.Add((u.bloc, t1, t2));
             }
 
@@ -211,14 +223,14 @@ namespace DiplomacyOverhaul
             Text(area, text, 0f, ah - 24f, aw, 18f, 14, top, TextAnchor.MiddleCenter);
         }
 
-        // 集团底色亮着、调淡时的透明度
-        const float BlocAlpha = 0.3f, BlocDim = 0.08f;
+        // 集团底色和边框亮着、调淡时的透明度，边框的宽度，边框用魁首派系色
+        const float BlocAlpha = 0.3f, BlocDim = 0.08f, BorderAlpha = 0.8f, BorderDim = 0.2f, BorderWidth = 1f;
 
-        static BlocShape Shape(RectTransform pParent, float pW, float pH, Color pColor)
+        static BlocShape Shape(RectTransform pParent, float pW, float pH, Color pColor, float pAlpha = BlocAlpha)
         {
             RectTransform rt = Box(pParent, 0f, 0f, pW, pH, "bloc");
             BlocShape shape = rt.gameObject.AddComponent<BlocShape>();
-            shape.color = new Color(pColor.r, pColor.g, pColor.b, BlocAlpha);
+            shape.color = new Color(pColor.r, pColor.g, pColor.b, pAlpha);
             shape.raycastTarget = false;
             return shape;
         }
@@ -318,6 +330,10 @@ namespace DiplomacyOverhaul
                 BlocShape shape = Shape(slot, pW, pH, FactionColor(b.leader.faction));
                 shape.Hull(pts, 6f);
                 DimShape(b, shape, BlocAlpha, BlocDim);
+                BlocShape border = Shape(slot, pW, pH, FactionColor(b.leader.faction), BorderAlpha);
+                border.stroke = BorderWidth;
+                border.Hull(pts, 6f);
+                DimShape(b, border, BorderAlpha, BorderDim);
             }
             var points = new List<Vector3>();
             var owners = new long[pClans.Count];
