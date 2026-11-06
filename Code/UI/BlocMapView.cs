@@ -9,7 +9,7 @@ namespace DiplomacyOverhaul
 {
     // 集团地图视图：底栏「智域与生命」页签里「氏族图层」旁边多一个「集团图层」开关，打开后地图按集团给城上色。
     // 一座城属于城主家族所在的集团，颜色和边界取魁首家族（原版氏族的颜色），不在集团里的城不上色。
-    // 悬停显示国家和集团名、各家（魁首在前）；点一下打开那个国家的议会窗口并选中这个集团；名牌写国家和集团名、合计议席。
+    // 悬停显示国家和集团名；点一下打开那个国家的议会窗口并选中这个集团；名牌写国家和集团名、合计议席。
     //
     // 原版的地图视图是 MetaTypeLibrary 里的一项，按开关挑出当前那一项。这一项不登记进库（库里的每一项还牵涉窗口、列表、
     // 历史等），只在挑当前视图时换成它；它借用氏族的 map_mode，名牌走原版氏族名牌那条路，在那里换成集团的
@@ -232,7 +232,7 @@ namespace DiplomacyOverhaul
             return true;
         });
 
-        const string TipName = "vd_bloc_map_tip", TipDescription = "vd_bloc_map_tip_description";
+        const string TipName = "vd_bloc_map_tip";
 
         // 地图上的集团名前面带上国家名：各国的集团都以城命名，光看集团名分不出是哪国的
         internal static string PlateName(Entry pEntry) =>
@@ -243,21 +243,14 @@ namespace DiplomacyOverhaul
         {
             Entry e = Of(pZone?.city);
             if (e == null) return false;
-            // 悬停时每帧都会问一次，换了集团才重写文字
+            // 悬停只写名字，详情点开议会窗口看。每帧都会问一次，换了集团才重写文字
             if (_tipFor != e)
             {
                 _tipFor = e;
-                // 标题是名牌上那个名字，下面列出各家，魁首在前、其余按议席
-                Bloc b = e.bloc;
-                var members = new List<ParliamentClan>(b.members);
-                members.Sort((x, y) => x == b.leader ? -1 : y == b.leader ? 1 : y.seats.CompareTo(x.seats));
-                var names = new List<string>();
-                foreach (ParliamentClan m in members) names.Add(m.clan.name + (m.cadet ? " " + LM.Get("vd_parliament_cadet") : ""));
                 LM.AddToCurrentLocale(TipName, PlateName(e));
-                LM.AddToCurrentLocale(TipDescription, string.Join(LM.Get("vd_parliament_separator"), names));
             }
             global::Tooltip.hideTooltip(e.clan, true, "tip");
-            global::Tooltip.show(e.clan, "tip", new TooltipData { tip_name = TipName, tip_description = TipDescription, tooltip_scale = 0.7f, is_sim_tooltip = true });
+            global::Tooltip.show(e.clan, "tip", new TooltipData { tip_name = TipName, tooltip_scale = 0.7f, is_sim_tooltip = true });
             return true;
         });
 
