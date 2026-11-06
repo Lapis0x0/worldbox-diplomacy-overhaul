@@ -35,7 +35,7 @@ Leaving a bloc is a plot. A member other than the leader starts it when its opin
 
 ## In the Parliament Window
 
-- **Seat semicircle**: A bloc's seats sit together on a band in the bloc's color, with the bloc's name around the outer edge. Seats keep their faction colors, so a bloc with several colors crosses factions.
+- **Seat semicircle**: Seats stay ordered and colored by faction from radical to conservative. A bloc's seats sit on a band in the bloc's color, with its name around the outer edge. A bloc whose members are far apart in stance is split into several parts, each labeled with its name, and all parts light up when the bloc is selected.
 - **Clan list**: Each bloc has a row with its name, stance, and total seats, with its members below. Click the bloc's row to see its leader and number of clans.
 - **Stance chart**: The clans of a bloc are enclosed in one shaded patch.
 - **Bill**: A bloc's votes are folded into one row. Click it to see each member.

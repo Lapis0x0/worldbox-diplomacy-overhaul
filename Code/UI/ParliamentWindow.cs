@@ -74,6 +74,9 @@ namespace DiplomacyOverhaul
             }
         }
 
+        // 集团的颜色：它的立场（成员按议席加权）所在派系的颜色，和列表里写的派系一致
+        public static Color BlocColor(Bloc pBloc) => FactionColor(pBloc.faction);
+
         // 热重载：旧版本建的窗口和按钮引用着旧代码，全部拆掉，用到时重建
         public static void Init()
         {

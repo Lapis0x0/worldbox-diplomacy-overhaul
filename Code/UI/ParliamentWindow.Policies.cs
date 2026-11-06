@@ -300,7 +300,7 @@ namespace DiplomacyOverhaul
                 long key = b.Key;
                 bool open = _expanded.Contains(key);
                 bool yes = result.votes.TryGetValue(b.leader.Key, out bool v) && v;
-                Color color = FactionColor(b.leader.faction);
+                Color color = BlocColor(b);
                 RectTransform row = Button(votes, 0f, ry, RightW - 8f, VoteRowH, null, () =>
                 {
                     if (!_expanded.Remove(key)) _expanded.Add(key);

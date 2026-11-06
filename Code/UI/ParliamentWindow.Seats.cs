@@ -31,7 +31,7 @@ namespace DiplomacyOverhaul
                 }
                 Bloc b = u.bloc;
                 long key = b.Key;
-                Color color = FactionColor(b.leader.faction);
+                Color color = BlocColor(b);
                 RectTransform row = Button(content, 0f, ry, ListW - 6f, RowH, Slot, () => Select(key));
                 Bar(row, 6f, (RowH - 9f) / 2f, color);
                 Text(row, UiKit.Fit(Blocs.Name(b), 7, 90f), 16f, 0f, 90f, RowH, 7, color, TextAnchor.MiddleLeft);
@@ -101,6 +101,50 @@ namespace DiplomacyOverhaul
             return units;
         }
 
+        // 半圆显示集团时的顺序：和不分集团时一样按派系从激进到保守排，座位照旧按派系上色；同派系里按所在集团偏向哪边排
+        // （集团成员的派系次序按议席加权取平均，不在集团里的看自己的派系），同一集团的挨着，再按议席。跨相邻两派的集团
+        // 在交界处连成一块；跨得更远的分成几块，每块各自描边、写名字。连着的同集团势力算一格，连着的散户合成一格
+        static List<Unit> SeatRuns(List<ParliamentClan> pClans)
+        {
+            var lean = new Dictionary<long, float>();
+            foreach (Bloc b in _blocs)
+            {
+                float sum = 0f;
+                int seats = 0;
+                foreach (ParliamentClan m in b.members)
+                {
+                    sum += Parliament.FactionOrder(m.faction) * m.seats;
+                    seats += m.seats;
+                }
+                lean[b.Key] = seats > 0 ? sum / seats : 0f;
+            }
+            long BlocKey(ParliamentClan pc) => _blocOf.TryGetValue(pc.Key, out long k) ? k : -1;
+            float Lean(ParliamentClan pc) => _blocOf.TryGetValue(pc.Key, out long k) ? lean[k] : Parliament.FactionOrder(pc.faction);
+            var order = new List<ParliamentClan>(pClans);
+            order.Sort((x, y) =>
+            {
+                int c = Parliament.FactionOrder(x.faction).CompareTo(Parliament.FactionOrder(y.faction));
+                if (c == 0) c = Lean(x).CompareTo(Lean(y));
+                if (c == 0) c = BlocKey(x).CompareTo(BlocKey(y));
+                if (c == 0) c = y.seats.CompareTo(x.seats);
+                return c != 0 ? c : x.Key.CompareTo(y.Key);
+            });
+            var runs = new List<Unit>();
+            foreach (ParliamentClan pc in order)
+            {
+                long key = BlocKey(pc);
+                Bloc bloc = key < 0 ? null : _blocs.Find(b => b.Key == key);
+                Unit last = runs.Count > 0 ? runs[runs.Count - 1] : null;
+                if (last != null && last.bloc == bloc)
+                {
+                    last.members.Add(pc);
+                    last.seats += pc.seats;
+                }
+                else runs.Add(new Unit { bloc = bloc, members = new List<ParliamentClan> { pc }, faction = pc.faction, seats = pc.seats });
+            }
+            return runs;
+        }
+
         // 列表的顺序：王室（或它所在的集团）在最上面，宗室紧跟着
         static List<Unit> ListUnits(List<ParliamentClan> pClans)
         {
@@ -136,15 +180,15 @@ namespace DiplomacyOverhaul
         // 外环上写集团名的那一圈要留的地方
         const float RingBand = 11f;
 
-        // 议席半圆：按派系从激进（左）到保守（右）排开，座位按派系上色。集团的席位连在一起，
-        // 后面铺一块魁首派系色的扇环，集团名沿外环逐字排开。中间写最大集团，没有集团时写最大派系
+        // 议席半圆：按派系从激进（左）到保守（右）排开，座位按派系上色。显示集团时同派系里按集团排（见 SeatRuns），
+        // 集团的每一块后面铺一块集团颜色的扇环，集团名沿外环逐字排开，分成几块的每块都写。中间写最大集团，没有集团时写最大派系
         static void Hemicycle(List<ParliamentClan> pClans, float pX, float pY)
         {
             const float aw = 262f, ah = 132f;
             RectTransform area = Box(_parent, pX + 2f, pY, aw, ah);
             bool blocs = _showBlocs && _blocs.Count > 0;
-            List<Unit> units = Units(pClans, blocs);
-            // 每个集团一块，相邻的散户合成一块，各块分开排：集团的边界在每一排都落在两个座位中间
+            List<Unit> units = blocs ? SeatRuns(pClans) : Units(pClans, false);
+            // 集团的每一块单独一格，相邻的散户合成一格，各格分开排：集团的边界在每一排都落在两个座位中间
             var segments = new List<int>();
             var segmentOf = new int[units.Count];
             for (int i = 0; i < units.Count; i++)
@@ -173,10 +217,10 @@ namespace DiplomacyOverhaul
                 int seg = segmentOf[i];
                 float t1 = bounds[seg], t2 = bounds[seg + 1];
                 float pad1 = seg == 0 ? size / 2f + 2f : 0f, pad2 = seg == segments.Count - 1 ? size / 2f + 2f : 0f;
-                BlocShape shape = Shape(area, aw, ah, FactionColor(u.bloc.leader.faction));
+                BlocShape shape = Shape(area, aw, ah, BlocColor(u.bloc));
                 shape.Sector(ring.cx, ring.cy, rIn, rOut, t1, t2, pad1, pad2);
                 DimShape(u.bloc, shape, BlocAlpha, BlocDim);
-                BlocShape border = Shape(area, aw, ah, FactionColor(u.bloc.leader.faction), BorderAlpha);
+                BlocShape border = Shape(area, aw, ah, BlocColor(u.bloc), BorderAlpha);
                 border.stroke = BorderWidth;
                 border.Sector(ring.cx, ring.cy, rIn, rOut, t1, t2, pad1, pad2);
                 DimShape(u.bloc, border, BorderAlpha, BorderDim);
@@ -208,7 +252,7 @@ namespace DiplomacyOverhaul
             {
                 label = LM.Get("vd_parliament_largest_bloc");
                 text = largest.city + " " + largest.seats;
-                top = FactionColor(largest.leader.faction);
+                top = BlocColor(largest);
             }
             else
             {
@@ -285,7 +329,7 @@ namespace DiplomacyOverhaul
                     break;
                 }
                 if (placed == null) continue;
-                Color color = FactionColor(b.leader.faction);
+                Color color = BlocColor(b);
                 float along = 0f;
                 foreach (char c in placed)
                 {
@@ -348,10 +392,10 @@ namespace DiplomacyOverhaul
             {
                 var pts = new List<Vector2>();
                 foreach (ParliamentClan m in b.members) pts.Add(new Vector2(cx - m.x * rx, cy - m.y * ry));
-                BlocShape shape = Shape(slot, pW, pH, FactionColor(b.leader.faction));
+                BlocShape shape = Shape(slot, pW, pH, BlocColor(b));
                 shape.Hull(pts, 6f);
                 DimShape(b, shape, BlocAlpha, BlocDim);
-                BlocShape border = Shape(slot, pW, pH, FactionColor(b.leader.faction), BorderAlpha);
+                BlocShape border = Shape(slot, pW, pH, BlocColor(b), BorderAlpha);
                 border.stroke = BorderWidth;
                 border.Hull(pts, 6f);
                 DimShape(b, border, BorderAlpha, BorderDim);
