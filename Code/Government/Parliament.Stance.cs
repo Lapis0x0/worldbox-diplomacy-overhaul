@@ -73,10 +73,11 @@ namespace DiplomacyOverhaul
         static Actor VoiceOf(Kingdom pKingdom, ParliamentClan pClan)
         {
             if (pClan.ruling && pKingdom.hasKing() && pKingdom.king.isAlive()) return pKingdom.king;
+            // 族长住在别国时替不了这一支说话，由本国议席最多的城主拿主意
             if (!pClan.cadet)
             {
                 Actor chief = pClan.clan.getChief();
-                if (chief != null && chief.isAlive()) return chief;
+                if (chief != null && chief.isAlive() && chief.kingdom == pKingdom) return chief;
             }
             Actor best = null;
             int bestSeats = -1;
@@ -176,7 +177,8 @@ namespace DiplomacyOverhaul
         static (float x, float y) VoicePart(ParliamentClan pClan, StanceContext pContext)
         {
             ClanData data = pClan.clan.data;
-            string keyId = pClan.cadet ? KeyCadet : KeyChief, keyX = pClan.cadet ? KeyCadetX : KeyChiefX, keyY = pClan.cadet ? KeyCadetY : KeyChiefY;
+            string keyId = VoiceKey(pClan, pClan.cadet ? KeyCadet : KeyChief), keyX = VoiceKey(pClan, pClan.cadet ? KeyCadetX : KeyChiefX),
+                keyY = VoiceKey(pClan, pClan.cadet ? KeyCadetY : KeyChiefY);
             data.get(keyId, out long id, -1L);
             data.get(keyX, out float x, 0f);
             data.get(keyY, out float y, 0f);
@@ -192,15 +194,23 @@ namespace DiplomacyOverhaul
             data.set(keyId, v.data.id);
             data.set(keyX, nx);
             data.set(keyY, ny);
-            if (id >= 0) data.set(pClan.cadet ? KeyCadetSince : KeyChiefSince, Date.getCurrentYear());
+            if (id >= 0) data.set(VoiceKey(pClan, pClan.cadet ? KeyCadetSince : KeyChiefSince), Date.getCurrentYear());
             return (nx, ny);
         }
 
         // 拿主意的人上任了几年；没有记录（建族以来一直是他、或者旧存档）时当作很久
         public static int VoiceYears(ParliamentClan pClan)
         {
-            pClan.clan.data.get(pClan.cadet ? KeyCadetSince : KeyChiefSince, out int since, -1);
+            pClan.clan.data.get(VoiceKey(pClan, pClan.cadet ? KeyCadetSince : KeyChiefSince), out int since, -1);
             return since < 0 ? int.MaxValue : Date.getCurrentYear() - since;
+        }
+
+        // 族长住在别国时，本国这一支由城主拿主意，和族长那边各记各的（键后面加国家 id），免得两国的议会轮流覆盖
+        static string VoiceKey(ParliamentClan pClan, string pBase)
+        {
+            if (pClan.cadet || pClan.ruling || pClan.voice == null || pClan.voice.kingdom == null) return pBase;
+            Actor chief = pClan.clan.getChief();
+            return chief != null && chief.isAlive() && chief.kingdom != pClan.voice.kingdom ? pBase + "_" + pClan.voice.kingdom.id : pBase;
         }
 
         // 心性对变革的态度：想变局的偏激进，安于现状、守规矩、怕变数的偏保守
