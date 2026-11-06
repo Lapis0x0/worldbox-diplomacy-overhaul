@@ -29,7 +29,7 @@ namespace DiplomacyOverhaul
         static long _selected = -1;
         static PolicyTab _tab = PolicyTab.Domestic;
         internal static string _open;
-        static Section _frame, _regime, _seats, _clans, _compass, _detail, _policies, _bill;
+        static Section _frame, _regime, _seats, _clans, _compass, _policies, _bill;
         static Section[] _sections;
         static Section _section;
         static RectTransform _parent;
@@ -191,7 +191,7 @@ namespace DiplomacyOverhaul
             if (_shell.Create())
             {
                 _sections = new[] { _frame = NewSection("frame"), _regime = NewSection("regime"), _seats = NewSection("seats"), _clans = NewSection("clans"), _compass = NewSection("compass"),
-                    _detail = NewSection("detail"), _policies = NewSection("policies"), _bill = NewSection("bill") };
+                    _policies = NewSection("policies"), _bill = NewSection("bill") };
             }
             _shell.Show(pKingdom);
             Refresh();
@@ -260,10 +260,7 @@ namespace DiplomacyOverhaul
 
             var pk = new System.Text.StringBuilder(clanKey).Append(republic).Append('|');
             foreach (ParliamentClan pc in clans) pk.Append(pc.x.ToString("F2")).Append(',').Append(pc.y.ToString("F2")).Append('|');
-            built |= Build(_compass, pk.ToString(), () => Compass(clans, LeftX + ListW + 4f, ListY, LeftW - ListW - 4f, ListRows * (RowH + 2f) - 2f));
-
-            string detail = DetailText(clans);
-            Build(_detail, k + detail, () => Detail(detail, LeftX, ListY + ListRows * (RowH + 2f) + 2f));
+            built |= Build(_compass, pk.ToString(), () => Compass(clans, LeftX + ListW + 4f, ListY, LeftW - ListW - 4f, CompassH));
 
             Bill bill = Parliament.GetBill(_kingdom);
             var ok = new System.Text.StringBuilder(k).Append((int)_tab).Append('|').Append(_open).Append('|').Append(republic).Append('|');
@@ -397,7 +394,6 @@ namespace DiplomacyOverhaul
         const float LeftX = 18f, LeftW = 266f;
         const float RightX = 298f, RightW = 244f;
         const float Top = 26f, RegimeY = 7f;
-        const int ListRows = 5;
         const float PolicyY = Top + 43f, PolicyH = 112f, BillY = PolicyY + PolicyH + 4f;
 
         static void Header(float pX, float pY, float pW, string pText, string pIcon) => UiKit.Header(_parent, pX, pY, pW, pText, pIcon);

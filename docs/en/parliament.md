@@ -185,6 +185,6 @@ Falling city loyalty also affects the [dynastic cycle](cycle.md).
 - **Withdraw**: Remove the current bill, whoever proposed it.
 - **Write into the charter**: Expand a policy and click the lock at the right end of the selected option. A "Charter" mark appears after the policy name, and parliament no longer proposes changing that policy, though clans can still be discontented with it. Clicking the lock on the option of your own bill decrees it at once and writes it into the charter. Picking another option removes the policy from the charter.
 
-The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. Click a clan to see its chief (for the cadets, the leading prince) and its cities. For how blocs are shown, see [Blocs](blocs.md). The right side shows the policies and the current bill.
+The left of the parliament window has the seat semicircle, the clan list, and a chart marking each clan's stance. The royal house's dot wears a crown, and the cadets follow the royal house in the list. For how blocs are shown, see [Blocs](blocs.md). The right side shows the policies and the current bill.
 
 If "Parliament and policies" is turned off in the settings, policies stop taking effect, city tribute reverts to the vanilla tribute traits, vassals pay no tribute, and clans no longer become discontented over policy. Republics still elect their consuls.

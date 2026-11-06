@@ -10,6 +10,8 @@ namespace DiplomacyOverhaul
     public static partial class ParliamentWindow
     {
         const float ListW = 176f, RowH = 15f, ListY = Top + 24f + 146f;
+        // 家族列表一直排到窗口底部，和右边议案的按钮底边齐平；坐标图保持方正，不跟着拉长
+        const float ListH = H - 12f - ListY, CompassH = 83f;
 
         // 势力列表：集团一行表头（集团名、集团的立场、合计议席），成员缩进排在下面；没有集团的势力单独一行
         static void ClanList(List<ParliamentClan> pClans)
@@ -17,7 +19,7 @@ namespace DiplomacyOverhaul
             List<Unit> units = ListUnits(pClans);
             int rows = 0;
             foreach (Unit u in units) rows += u.bloc != null ? u.members.Count + 1 : 1;
-            RectTransform content = Scroll("scroll_clans", LeftX, ListY, ListW, ListRows * (RowH + 2f), rows * (RowH + 2f));
+            RectTransform content = Scroll("scroll_clans", LeftX, ListY, ListW, ListH, rows * (RowH + 2f));
             float ry = 0f;
             foreach (Unit u in units)
             {
@@ -382,31 +384,5 @@ namespace DiplomacyOverhaul
             _section.dims.Add(new Dim { clan = -1, bloc = pBloc.Key, shape = true, graphic = pGraphic, alpha = pDim, lit = pLit });
         }
 
-        // 选中的集团：魁首和几家；选中的氏族：族长和占的城
-        static string DetailText(List<ParliamentClan> pClans)
-        {
-            Bloc bloc = _blocs.Find(b => b.Key == _selected);
-            if (bloc != null)
-            {
-                string leader = bloc.leader.clan.name + (bloc.leader.cadet ? " " + LM.Get("vd_parliament_cadet") : "");
-                return $"<color={UiKit.Tag(FactionColor(bloc.leader.faction))}>{Blocs.Name(bloc)}</color> · {LM.Get("vd_bloc_leader")} <color=#8fb0ff>{leader}</color> · "
-                       + LM.Get("vd_bloc_count").Replace("$count$", bloc.members.Count.ToString());
-            }
-            ParliamentClan pc = pClans.Find(c => c.Key == _selected);
-            if (pc == null) return "";
-            var parts = new List<string>();
-            Actor head = pc.cadet ? pc.voice : pc.clan.getChief();
-            if (head != null && head.isAlive()) parts.Add($"{LM.Get(pc.cadet ? "vd_parliament_cadet_head" : "vd_parliament_chief")} <color=#8fb0ff>{head.getName()}</color>");
-            var cities = new List<string>();
-            foreach (City c in pc.cities) cities.Add(c.data.name);
-            if (cities.Count > 0) parts.Add(string.Join(LM.Get("vd_parliament_separator"), cities));
-            return string.Join(" · ", parts);
-        }
-
-        static void Detail(string pText, float pX, float pY)
-        {
-            if (pText.Length == 0) return;
-            Text(_parent, pText, pX, pY, LeftW, 20f, 6, Muted, TextAnchor.UpperLeft).GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
-        }
     }
 }
