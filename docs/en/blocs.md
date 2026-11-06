@@ -38,4 +38,8 @@ The leader is the member with the most seats. When another member overtakes it i
 - **Bill**: A bloc's votes are folded into one row. Click it to see each clan.
 - **Clan window**: The opinion breakdown now includes Neighbors.
 
+## On the Map
+
+In the bottom bar's Noosphere and Life tab, next to the Clan Layer, there is a Bloc Layer. It colors cities by bloc, one color per bloc, and leaves cities outside any bloc uncolored, so you can see each bloc's territory at a glance. Nameplates show each bloc's name and total seats. Hover over a city to see the bloc's leader and how many clans it has, and click to open that kingdom's parliament window.
+
 Win Over and Leave Bloc are both plots, so the vanilla plot list shows who is courting whom.

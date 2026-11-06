@@ -660,5 +660,8 @@
   "vd_log_isolation_mod": "[Diplomacy Overhaul] Proteção contra erros ativada: uma falha no mod $mod$ foi contida",
   "vd_log_isolation_vanilla": "[Diplomacy Overhaul] Proteção contra erros ativada: uma falha do jogo base foi contida",
   "vd_sys_economy": "Tesouro",
-  "vd_sys_interface": "Interface"
+  "vd_sys_interface": "Interface",
+  "vd_bloc_layer": "Camada de Blocos",
+  "vd_bloc_layer_description": "Mostra as zonas dos blocos do parlamento",
+  "vd_bloc_map_seats": "$seats$ assentos"
 }

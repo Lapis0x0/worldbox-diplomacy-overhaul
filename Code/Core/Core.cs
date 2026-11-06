@@ -44,6 +44,7 @@ namespace DiplomacyOverhaul
             Integration.Init();
             WorldLogs.Init();
             AllianceView.Init();
+            BlocMapView.Init();
             Powers.Init();
             Orders.Init();
             Visuals.Init();
@@ -55,6 +56,7 @@ namespace DiplomacyOverhaul
             TreasuryWindow.Init();
             SettingsWindow.Init();
             ModTab.Build();
+            BlocMapView.BuildButton();
         }
 
         public static void Stop()

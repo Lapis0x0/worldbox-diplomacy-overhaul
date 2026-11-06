@@ -195,6 +195,16 @@ namespace DiplomacyOverhaul
             Refresh();
         }
 
+        // 打开议会窗口并选中一个集团（集团地图视图里点集团）
+        public static void OpenBloc(Kingdom pKingdom, long pBloc)
+        {
+            Open(pKingdom);
+            if (_kingdom != pKingdom) return;
+            _selected = pBloc;
+            Refresh();
+            ScrollToSelected();
+        }
+
         static Section NewSection(string pName)
         {
             RectTransform rt = Box(_shell.root, 0f, 0f, W, H, "vd_section_" + pName);

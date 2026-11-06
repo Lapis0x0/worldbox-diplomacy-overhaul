@@ -660,5 +660,8 @@
   "vd_log_isolation_mod": "[Diplomacy Overhaul] Error protection kicked in: a failure in the mod $mod$ was contained",
   "vd_log_isolation_vanilla": "[Diplomacy Overhaul] Error protection kicked in: a failure in the base game was contained",
   "vd_sys_economy": "Treasury",
-  "vd_sys_interface": "Interface"
+  "vd_sys_interface": "Interface",
+  "vd_bloc_layer": "Bloc Layer",
+  "vd_bloc_layer_description": "Show zones of parliament blocs",
+  "vd_bloc_map_seats": "$seats$ seats"
 }

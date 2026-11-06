@@ -660,5 +660,8 @@
   "vd_log_isolation_mod": "「外交大修」异常保护已起效，模组 $mod$ 的一处出错已拦下",
   "vd_log_isolation_vanilla": "「外交大修」异常保护已起效，原版的一处出错已拦下",
   "vd_sys_economy": "国库",
-  "vd_sys_interface": "界面显示"
+  "vd_sys_interface": "界面显示",
+  "vd_bloc_layer": "集团图层",
+  "vd_bloc_layer_description": "显示议会集团覆盖范围",
+  "vd_bloc_map_seats": "$seats$ 席"
 }

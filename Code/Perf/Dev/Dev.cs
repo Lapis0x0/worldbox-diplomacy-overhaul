@@ -33,6 +33,10 @@ namespace DiplomacyOverhaul.Perf
     //   uihit <窗口 id> <节点路径>   在节点中心做一次界面点击检测，列出挡在那里的东西
     //   uiclick <窗口 id> <节点路径> 对节点发一次点击，打印点完之后开着的窗口
     //   uihover <窗口 id> <节点路径> 鼠标移到节点上，看悬停提示
+    //   power <神力 id>          像玩家点一下神力栏里这个按钮，如 power vd_bloc_layer 打开集团地图视图
+    //   mapclick <国家>          按当前地图视图在这个国家首都的地块上点一下
+    //   tab <页签 id>            切到神力栏的这个页签，如 tab noosphere
+    //   uifind <名字> [children]  找场景里叫这个名字的节点（含未激活的），打印完整路径；children 再列出子节点
     //   uiopen <窗口 id>        打开窗口，内容是当前选中的对象（先 uiselect）
     //   gcinfo                   打印 GC 模式和托管堆大小
     //   heap <标签> [行数]        遍历托管堆，按类型统计个数和大小（很慢）
@@ -340,6 +344,43 @@ namespace DiplomacyOverhaul.Perf
                         UnityEngine.EventSystems.ExecuteEvents.Execute(hovered.gameObject, new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current),
                             UnityEngine.EventSystems.ExecuteEvents.pointerEnterHandler);
                     else Log("  ! no node " + a[1] + " " + (a.Length > 2 ? a[2] : ""));
+                    break;
+                case "power":
+                    // power <神力 id>：像玩家点一下神力栏里这个按钮（地图视图的开关也算）
+                    if (PowerButton.get(a[1]) is PowerButton pb) pb.clickSpecial();
+                    else Log("  ! no button " + a[1]);
+                    break;
+                case "mapclick":
+                    // mapclick <国家>：在这个国家首都的地块上，按当前地图视图点一下（和玩家在地图上点一样）
+                    {
+                        Kingdom mk = FindKingdom(a.Length > 1 ? a[1] : null);
+                        MetaTypeAsset mode = World.world.getCachedMapMetaAsset();
+                        if (mk == null || !mk.hasCapital() || mode == null) { Log("  ! no kingdom or map mode"); break; }
+                        WorldTile tile = mk.capital.getTile();
+                        Log($"  mode={mode.id} tile={tile?.pos} clicked={mode.click_action_zone(tile)}");
+                    }
+                    break;
+                case "tab":
+                    // tab <页签 id>：切到神力栏的这个页签，如 tab noosphere
+                    {
+                        PowersTab shown = null;
+                        foreach (PowersTab t in Resources.FindObjectsOfTypeAll<PowersTab>())
+                            if (t.name == a[1] && t.gameObject.scene.IsValid()) shown = t;
+                        if (shown != null) shown.tryToShowTab();
+                        else Log("  ! no tab " + a[1]);
+                    }
+                    break;
+                case "uifind":
+                    // uifind <名字>：找场景里（含未激活的）叫这个名字的节点，打印完整路径和兄弟节点数
+                    foreach (Transform t in Resources.FindObjectsOfTypeAll<Transform>())
+                    {
+                        if (t.name != a[1] || !t.gameObject.scene.IsValid()) continue;
+                        string path = t.name;
+                        for (Transform p = t.parent; p != null; p = p.parent) path = p.name + "/" + path;
+                        Log($"  {path} active={t.gameObject.activeInHierarchy} siblings={(t.parent != null ? t.parent.childCount : 0)} index={t.GetSiblingIndex()}");
+                        if (a.Length > 2 && a[2] == "children")
+                            for (int ci = 0; ci < t.childCount; ci++) Log($"    {ci} {t.GetChild(ci).name} active={t.GetChild(ci).gameObject.activeSelf}");
+                    }
                     break;
                 case "uihideall":
                     ScrollWindow.hideAllEvent(false);
