@@ -55,6 +55,7 @@ namespace DiplomacyOverhaul
             VassalsView.Init();
             TreasuryWindow.Init();
             SettingsWindow.Init();
+            BlocListWindow.Init();
             ModTab.Build();
             BlocMapView.BuildButton();
         }

@@ -80,7 +80,7 @@ The [player guide](docs/en/README.md) explains how each system plays and its key
 |---|---|
 | [Governments and Rulers](docs/en/government.md) | Monarchy and republic, titles, consul elections, changes of government, crowning an emperor, seizing power |
 | [Parliament and Policies](docs/en/parliament.md) | How clans get seats, the four factions, the effect of every policy, how bills are proposed and voted on |
-| [Parliament Blocs](docs/en/blocs.md) | How blocs form and break up, how they vote, the Win Over plot, the bloc layer |
+| [Parliament Blocs](docs/en/blocs.md) | How blocs form and break up, how they vote, the Win Over plot, the bloc layer and list |
 | [Rise and Fall of Dynasties](docs/en/cycle.md) | Mandate of Heaven, the four phases from Renewal to Collapse, Restoration, Great Rebellion |
 | [Vassals](docs/en/vassals.md) | Where vassals come from, Integration and provinces, why vassals break away |
 | [War and Peace Talks](docs/en/war.md) | When kingdoms go to war, war score, treaties, sieges |

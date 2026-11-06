@@ -50,3 +50,5 @@ In the bottom bar's Noosphere and Life tab, next to the Clan Layer, is the Bloc 
 - **Hover**: Over a bloc's city or nameplate, shows the leader, stance, and each clan's seats.
 - **Click**: Opens that kingdom's parliament window.
 - When cycling map layers with Z and X, the Bloc Layer comes after the Clan Layer.
+
+Above the Bloc Layer is the bloc list, which shows every bloc in every parliament: banner, bloc name, seats, clans, and cities. You can sort it by seats, clans, or kingdom. Hover over a bloc to see its details, and click it to open that kingdom's parliament window.

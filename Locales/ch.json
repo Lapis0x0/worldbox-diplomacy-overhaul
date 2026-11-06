@@ -667,5 +667,11 @@
   "vd_bloc_stance": "立场",
   "vd_bloc_tip_seats": "议席",
   "vd_bloc_tip_members": "几家",
+  "vd_blocs": "集团",
+  "vd_blocs_list_description": "浏览各国议会里抱团的家族",
+  "vd_bloc_list_all": "所有集团",
+  "vd_bloc_list_empty": "此时没有家族结成集团",
+  "vd_sort_by_seats": "议席排序",
+  "vd_bloc_tip_cities": "城市",
   "vd_parliament_show_blocs": "显示集团"
 }

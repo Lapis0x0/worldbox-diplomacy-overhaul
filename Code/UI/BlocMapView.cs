@@ -17,6 +17,7 @@ namespace DiplomacyOverhaul
     {
         public const string PowerId = "vd_bloc_layer";
         const string OptionId = "vd_map_bloc_layer";
+        // 旧版本在集团图层上格放的空位，热重载时一并清掉
         const string SpaceName = "_space_vd_bloc";
 
         static MetaTypeAsset _asset;
@@ -74,7 +75,7 @@ namespace DiplomacyOverhaul
             catch (Exception e) { Safety.Fail(Sys.Interface, "集团视图开关", e); }
         }
 
-        // 按钮：复制原版氏族视图的按钮（带开关图标），放在它后面一列的下格，和其他视图的按钮排在同一行
+        // 按钮：复制原版氏族视图的按钮（带开关图标），放在它后面一列的下格，和其他视图的按钮排在同一行；上格是集团列表
         public static void BuildButton()
         {
             PowerButton clan = PowerButton.get("clan_layer");
@@ -83,7 +84,7 @@ namespace DiplomacyOverhaul
             for (int i = tab.childCount - 1; i >= 0; i--)
             {
                 GameObject child = tab.GetChild(i).gameObject;
-                if (child.name != PowerId && child.name != SpaceName) continue;
+                if (child.name != PowerId && child.name != SpaceName && child.name != BlocListWindow.ButtonId) continue;
                 PowerButton old = child.GetComponent<PowerButton>();
                 if (old != null)
                 {
@@ -96,9 +97,7 @@ namespace DiplomacyOverhaul
             if (!Settings.ParliamentEnabled) return;
 
             int at = clan.transform.GetSiblingIndex() + 1;
-            var space = new GameObject(SpaceName, typeof(RectTransform));
-            space.transform.SetParent(tab, false);
-            space.transform.SetSiblingIndex(at);
+            BlocListWindow.BuildButton(tab, at);
 
             // 先放进一个关着的节点里复制，改好名字再挂上去：按钮在启用时按名字找神力
             var holder = new GameObject("vd_holder");
