@@ -2,6 +2,26 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.13.0
+
+### 中文
+
+1. 引入「议会集团」机制
+2. 优化制式武器的战斗收益，提高军械升级带来的实际差距
+3. 优化军械配给逻辑
+4. 优化异常保护的提示，改为在世界日志中显示，并区分原版、本模组与其他模组引发的错误
+5. 优化系统运行的稳定性
+6. 修复查看单位时伤害倍率重复叠加、宗主与附庸间转让城市误计天命的问题
+
+### English
+
+1. Introduced Parliament Blocs
+2. Improved the combat payoff of standard-issue weapons, widening the real gap between armament tiers
+3. Improved armament distribution logic
+4. Improved fault-protection notices: they now appear in the world log and distinguish errors from the base game, this mod and other mods
+5. Improved overall system stability
+6. Fixed unit damage multipliers stacking repeatedly when inspecting a unit, and city transfers between overlord and vassal being miscounted toward the Mandate
+
 ## 0.12.0
 
 ### 中文

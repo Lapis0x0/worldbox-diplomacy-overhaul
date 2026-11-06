@@ -25,6 +25,8 @@ Vassal ties change over time. A vassal that has been loyal for long enough may g
 
 Every kingdom has a parliament. Families win seats from the cities they hold, vote by their own stance, and set the kingdom's domestic, military and diplomatic policies. Each mix of policies forms a different **regime**, the system the kingdom actually runs by, and the parliament takes a matching name.
 
+Families court one another and form **blocs**: a bloc proposes bills as one and votes as one, and rival blocs build up grudges against each other; members dragged along too often plot to leave. A bloc map layer shows how each kingdom's blocs divide its cities.
+
 <img src="docs/images/parliament.png" alt="Parliament window" width="720">
 
 A kingdom can be a Kingdom or an Empire, or a Republic, Merchant Republic or Military Republic. A new nation's government follows the leanings of its culture, and an existing one does not stay fixed.
@@ -80,6 +82,7 @@ The [player guide](docs/en/README.md) explains how each system plays and its key
 |---|---|
 | [Governments and Rulers](docs/en/government.md) | Monarchy and republic, titles, consul elections, changes of government, crowning an emperor, seizing power |
 | [Parliament and Policies](docs/en/parliament.md) | How clans get seats, the four factions, the effect of every policy, how bills are proposed and voted on |
+| [Parliament Blocs](docs/en/blocs.md) | How blocs form and break up, how they vote, the Win Over plot, the bloc layer |
 | [Rise and Fall of Dynasties](docs/en/cycle.md) | Mandate of Heaven, the four phases from Renewal to Collapse, Restoration, Great Rebellion |
 | [Vassals](docs/en/vassals.md) | Where vassals come from, Integration and provinces, why vassals break away |
 | [War and Peace Talks](docs/en/war.md) | When kingdoms go to war, war score, treaties, sieges |
