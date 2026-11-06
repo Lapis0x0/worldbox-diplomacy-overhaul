@@ -663,5 +663,8 @@
   "vd_sys_interface": "Interface",
   "vd_bloc_layer": "Camada de Blocos",
   "vd_bloc_layer_description": "Mostra as zonas dos blocos do parlamento",
-  "vd_bloc_plate": "$kingdom$ $bloc$"
+  "vd_bloc_plate": "$kingdom$ $bloc$",
+  "vd_bloc_stance": "Posição",
+  "vd_bloc_tip_seats": "Assentos",
+  "vd_bloc_tip_members": "Clãs"
 }

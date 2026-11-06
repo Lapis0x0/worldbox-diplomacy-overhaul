@@ -121,7 +121,7 @@ namespace DiplomacyOverhaul
         }
 
         // 共和国里朝中的老家族叫元老派，地方新贵叫自治派
-        static string FactionKey(Faction pFaction)
+        internal static string FactionKey(Faction pFaction)
         {
             string key = "vd_faction_" + pFaction.ToString().ToLowerInvariant();
             bool republic = _kingdom != null && Government.IsRepublic(_kingdom);

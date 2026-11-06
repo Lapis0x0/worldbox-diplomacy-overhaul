@@ -40,6 +40,6 @@ The leader is the member with the most seats. When another member overtakes it i
 
 ## On the Map
 
-In the bottom bar's Noosphere and Life tab, next to the Clan Layer, there is a Bloc Layer. It colors cities by bloc, one color per bloc, and leaves cities outside any bloc uncolored, so you can see each bloc's territory at a glance. When cycling map layers with Z and X, it comes right after the Clan Layer. Nameplates show each bloc's kingdom, name and total seats. Click a city to open that kingdom's parliament window for the bloc's details.
+In the bottom bar's Noosphere and Life tab, next to the Clan Layer, there is a Bloc Layer. It colors cities by bloc, one color per bloc, and leaves cities outside any bloc uncolored, so you can see each bloc's territory at a glance. When cycling map layers with Z and X, it comes right after the Clan Layer. Nameplates show each bloc's kingdom, name and total seats. Hover over a bloc's city or nameplate to see its leader, stance and each clan's seats, and click to open that kingdom's parliament window.
 
 Win Over and Leave Bloc are both plots, so the vanilla plot list shows who is courting whom.

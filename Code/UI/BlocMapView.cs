@@ -39,6 +39,9 @@ namespace DiplomacyOverhaul
                 toggle_action = Toggle
             });
 
+            // 集团的悬停面板：借用原版氏族面板的版式，原版按种类各建一个面板，改它不影响氏族的
+            Core.Upsert(AssetManager.tooltips, new TooltipAsset { id = TipId, prefab_id = "tooltips/tooltip_clan", callback = FillTip });
+
             _asset = new MetaTypeAsset
             {
                 id = "vd_bloc",
@@ -232,27 +235,80 @@ namespace DiplomacyOverhaul
             return true;
         });
 
-        const string TipName = "vd_bloc_map_tip";
-
         // 地图上的集团名前面带上国家名：各国的集团都以城命名，光看集团名分不出是哪国的
         internal static string PlateName(Entry pEntry) =>
             LM.Get("vd_bloc_plate").Replace("$kingdom$", pEntry.kingdom.data.name).Replace("$bloc$", Blocs.Name(pEntry.bloc));
-        static Entry _tipFor;
+
+        // ---------- 悬停面板 ----------
+
+        const string TipId = "vd_bloc", TipKingdom = "vd_bloc_tip_kingdom";
+        static Entry _tip;
+
+        // 停在集团的城上、或者集团的名牌上，都弹这个面板
+        internal static void ShowTip(Entry pEntry)
+        {
+            _tip = pEntry;
+            global::Tooltip.hideTooltip(pEntry.clan, true, TipId);
+            global::Tooltip.show(pEntry.clan, TipId, new TooltipData { clan = pEntry.clan, tooltip_scale = 0.7f, is_sim_tooltip = true });
+        }
+
+        // 顶部：魁首家族的族徽，集团名，下面一行国家名；图标：议席、几家；明细：魁首、立场，空一行后各家和议席
+        static void FillTip(global::Tooltip pTooltip, string pType, TooltipData pData)
+        {
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                Entry e = _tip;
+                if (e == null || e.clan != pData.clan) return;
+                Bloc b = e.bloc;
+                string color = e.clan.getColor().color_text;
+                LM.AddToCurrentLocale(TipKingdom, e.kingdom.data.name);
+                pTooltip.setTitle(Blocs.Name(b), TipKingdom, color);
+                pTooltip.setSpeciesIcon(e.clan.getActorAsset().getSpriteIcon());
+                foreach (ClanBanner banner in pTooltip.transform.FindAllRecursive<ClanBanner>()) banner.load(e.clan);
+                pTooltip.transform.FindRecursive("TooltipTraitsRow")?.gameObject.SetActive(false);
+
+                Icon(pTooltip, "i_age", ParliamentWindow.IconPath, "vd_bloc_tip_seats", b.seats);
+                Icon(pTooltip, "i_population", null, "vd_bloc_tip_members", b.members.Count);
+
+                string Name(ParliamentClan pc) => pc.clan.name + (pc.cadet ? " " + LM.Get("vd_parliament_cadet") : "");
+                pTooltip.addLineText("vd_bloc_leader", Name(b.leader), color);
+                pTooltip.addLineText("vd_bloc_stance", LM.Get(ParliamentWindow.FactionKey(b.faction)), UiKit.Tag(ParliamentWindow.FactionColor(b.faction)));
+                pTooltip.addLineBreak();
+                var members = new List<ParliamentClan>(b.members);
+                members.Sort((x, y) => x == b.leader ? -1 : y == b.leader ? 1 : y.seats.CompareTo(x.seats));
+                foreach (ParliamentClan m in members)
+                    pTooltip.addLineIntText(Name(m), m.seats, null, false);
+            }
+            catch (Exception ex) { Safety.Fail(Sys.Interface, "集团面板", ex); }
+        }
+
+        // 面板顶上的图标：换图（不换就用原版的）、数值和悬停说明
+        static void Icon(global::Tooltip pTooltip, string pName, string pSprite, string pTip, int pValue)
+        {
+            Transform icon = pTooltip.transform.FindRecursive(pName);
+            if (icon == null) return;
+            if (pSprite != null && icon.Find("Icon")?.GetComponent<Image>() is Image image) image.sprite = SpriteTextureLoader.getSprite(pSprite);
+            if (icon.GetComponent<TipButton>() is TipButton tip) tip.textOnClick = pTip;
+            icon.GetComponent<StatsIcon>()?.setValue(pValue);
+        }
 
         static bool Tooltip(TileZone pZone, MetaTypeAsset pAsset, int pZoneOption) => Guard("集团视图提示", () =>
         {
             Entry e = Of(pZone?.city);
             if (e == null) return false;
-            // 悬停只写名字，详情点开议会窗口看。每帧都会问一次，换了集团才重写文字
-            if (_tipFor != e)
-            {
-                _tipFor = e;
-                LM.AddToCurrentLocale(TipName, PlateName(e));
-            }
-            global::Tooltip.hideTooltip(e.clan, true, "tip");
-            global::Tooltip.show(e.clan, "tip", new TooltipData { tip_name = TipName, tooltip_scale = 0.7f, is_sim_tooltip = true });
+            ShowTip(e);
             return true;
         });
+
+        // 名牌：哪块名牌是哪个集团的，每帧挂名牌时重记
+        internal static readonly Dictionary<NameplateText, Entry> _plates = new Dictionary<NameplateText, Entry>();
+
+        internal static Entry PlateUnderCursor()
+        {
+            NameplateText over = World.world.nameplate_manager.cursor_over_text;
+            return Active && over != null && _plates.TryGetValue(over, out Entry e) ? e : null;
+        }
 
         static bool Click(WorldTile pTile, string pPower) => Guard("集团视图点击", () =>
         {
@@ -314,6 +370,44 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 鼠标停在集团的名牌上：名牌挂在魁首家族上，原版会弹家族的面板，换成集团的
+    [HarmonyPatch(typeof(NameplateManager), "findObjectForTooltip")]
+    static class Patch_BlocPlateTooltip
+    {
+        static void Postfix(ref NanoObject __result)
+        {
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                if (__result == null || !(BlocMapView.PlateUnderCursor() is BlocMapView.Entry e)) return;
+                BlocMapView.ShowTip(e);
+                __result = null;
+            }
+            catch (Exception ex) { Safety.Fail(Sys.Interface, "集团名牌面板", ex); }
+        }
+    }
+
+    // 点集团的名牌：原版会打开魁首家族的窗口，换成打开议会窗口并选中这个集团，和点集团的城一样
+    [HarmonyPatch(typeof(MetaTypeAsset), nameof(MetaTypeAsset.selectAndInspect))]
+    static class Patch_BlocPlateClick
+    {
+        static bool Prefix(bool pFromNameplate)
+        {
+            if (!pFromNameplate || !Safety.On(Sys.Interface)) return true;
+            try
+            {
+                if (!(BlocMapView.PlateUnderCursor() is BlocMapView.Entry e)) return true;
+                ParliamentWindow.OpenBloc(e.kingdom, e.bloc.Key);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Safety.Fail(Sys.Interface, "点集团名牌", ex);
+                return true;
+            }
+        }
+    }
+
     // 名牌：集团视图借用氏族的名牌
     [HarmonyPatch(typeof(NameplateManager), "getCurrentMode")]
     static class Patch_BlocMapNameplateMode
@@ -345,6 +439,7 @@ namespace DiplomacyOverhaul
             if (!Safety.On(Sys.Interface) || !BlocMapView.Active || Zones.getCurrentMapBorderMode() != MetaType.None) return true;
             try
             {
+                BlocMapView._plates.Clear();
                 foreach (BlocMapView.Entry e in BlocMapView.All())
                 {
                     City best = null;
@@ -360,6 +455,7 @@ namespace DiplomacyOverhaul
                     plate.showTextClanCity(e.clan, best);
                     SetText(plate, Format(plate, BlocMapView.PlateName(e), e.bloc.seats), best.city_center, 10);
                     SetPriority(plate, e.bloc.seats);
+                    BlocMapView._plates[plate] = e;
                 }
                 return false;
             }
