@@ -104,7 +104,7 @@
 - 悬停：集团名，下面一行是国家、魁首、几家、合计议席。
 - 点一下：打开那个国家的议会窗口，选中这个集团。
 
-开关只记在内存里，重启游戏后是关着的。设置里关掉议会时没有这个按钮。
+用 Z、X 轮换地图图层时，集团图层排在氏族图层后面（原版按 `HotkeyLibrary._meta_zones` 这张写死的表轮换，这里插进一格）。开关只记在内存里，重启游戏后是关着的。设置里关掉议会时没有这个按钮，轮换也跳过它。
 
 ## 实现
 
@@ -134,4 +134,4 @@
 - 设置里关掉议会时，两个密谋都不发起，集团留在存档里。
 - 集团地图视图是一项不登记进 `MetaTypeLibrary` 的地图视图（库里的每一项还牵涉窗口、列表和历史），挂在 `Zones.getMapMetaAsset` 上：原版视图都关着、集团视图开着时换成它。它借用氏族的 `map_mode`，名牌走原版氏族名牌（`NameplateLibrary.actionClan`），在那里换成集团的。开关是原版的选项（`vd_map_bloc_layer`），加进 `PlayerConfig.dict` 但不进存盘的列表，所以不写进原版的玩家设置文件。
 - 地图视图里城属于哪个集团按国家缓存，集团或年份变了才重建；重建要算整个议会，一帧最多重建一个国家。
-- 开发命令 `parl blocs`、`parl found`、`parl court`、`parl leave`，以及 `power vd_bloc_layer`（开关集团地图视图）、`mapclick`，见 `Code/Perf/Dev/Dev.cs` 顶部。
+- 开发命令 `parl blocs`、`parl found`、`parl court`、`parl leave`，以及 `power vd_bloc_layer`（开关集团地图视图）、`mapclick`、`zones`，见 `Code/Perf/Dev/Dev.cs` 顶部。

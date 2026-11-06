@@ -275,6 +275,45 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // Z、X 轮换地图图层：原版按一张写死的图层表轮换，集团图层不在表里会被跳过。轮换时把它排在氏族图层后面
+    [HarmonyPatch(typeof(HotkeyLibrary), "switchZones")]
+    static class Patch_BlocMapHotkey
+    {
+        static bool Prefix(HotkeyLibrary __instance, int pIndexChange)
+        {
+            if (!Safety.On(Sys.Interface) || !Settings.ParliamentEnabled) return true;
+            try
+            {
+                MetaType[] vanilla = __instance._meta_zones;
+                int ours = Array.IndexOf(vanilla, MetaType.Clan) + 1;
+                if (ours <= 0) return true;
+                // 轮换表：原版的图层，氏族后面插一格集团图层（用 -1 表示）
+                int count = vanilla.Length + 1;
+                int at;
+                if (BlocMapView.Active) at = ours;
+                else
+                {
+                    int i = Array.IndexOf(vanilla, Zones.getCurrentMapBorderMode(pCheckOnlyOption: true));
+                    at = i < 0 ? -1 : i >= ours ? i + 1 : i;
+                }
+                int next = ((at + pIndexChange) % count + count) % count;
+                string power;
+                if (next == ours) power = BlocMapView.PowerId;
+                else power = AssetManager.meta_type_library.getAsset(vanilla[next > ours ? next - 1 : next]).power_option_zone_id;
+                GodPower god = AssetManager.powers.get(power);
+                god.toggle_action(power);
+                PowerButtonSelector.instance.checkToggleIcons();
+                WorldTip.instance.showToolbarText(god);
+                return false;
+            }
+            catch (Exception e)
+            {
+                Safety.Fail(Sys.Interface, "轮换地图图层", e);
+                return true;
+            }
+        }
+    }
+
     // 名牌：集团视图借用氏族的名牌
     [HarmonyPatch(typeof(NameplateManager), "getCurrentMode")]
     static class Patch_BlocMapNameplateMode

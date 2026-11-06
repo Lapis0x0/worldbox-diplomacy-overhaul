@@ -36,6 +36,7 @@ namespace DiplomacyOverhaul.Perf
     //   power <神力 id>          像玩家点一下神力栏里这个按钮，如 power vd_bloc_layer 打开集团地图视图
     //   mapclick <国家>          按当前地图视图在这个国家首都的地块上点一下
     //   tab <页签 id>            切到神力栏的这个页签，如 tab noosphere
+    //   zones <1|-1>             等于按一下 X / Z 轮换地图图层，打印换到的图层
     //   uifind <名字> [children]  找场景里叫这个名字的节点（含未激活的），打印完整路径；children 再列出子节点
     //   uiopen <窗口 id>        打开窗口，内容是当前选中的对象（先 uiselect）
     //   gcinfo                   打印 GC 模式和托管堆大小
@@ -369,6 +370,11 @@ namespace DiplomacyOverhaul.Perf
                         if (shown != null) shown.tryToShowTab();
                         else Log("  ! no tab " + a[1]);
                     }
+                    break;
+                case "zones":
+                    // zones <1|-1>：等于按一下 X / Z 轮换地图图层，打印换到的图层
+                    AssetManager.hotkey_library.switchZones(int.Parse(a[1]));
+                    Log("  now: " + (Zones.getMapMetaAsset()?.id ?? "none"));
                     break;
                 case "uifind":
                     // uifind <名字>：找场景里（含未激活的）叫这个名字的节点，打印完整路径和兄弟节点数
