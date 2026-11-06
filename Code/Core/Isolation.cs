@@ -31,8 +31,6 @@ namespace DiplomacyOverhaul
         static readonly Stopwatch _clock = Stopwatch.StartNew();
         static bool _tipped;
         static bool _pendingTip;
-        static string _tipMod;
-        static bool _tipVanilla;
 
         public static void ActorFailed(Actor pActor, string pStep, Exception pError)
         {
@@ -50,7 +48,8 @@ namespace DiplomacyOverhaul
 
         // 每处错误第一次记完整堆栈；持续出错时再记一次，并在左上角提示玩家一次（每局一次），
         // 免得某个系统悄悄停摆几百年没人察觉。pSubject 是出错的对象，只写进日志，不参与记账。
-        // 异常是从别的模组的代码里抛出来的，日志和提示里写上那个模组
+        // 认得出出在原版或别的模组里的，日志里写上是谁，记成 Warning，也不提示：原版收到第一条 Error 会自动弹出控制台，
+        // 弹出来的是这条带「外交大修」的日志，像是本模组的错；拦下之后游戏照常运行，玩家自己打开控制台才看得到
         public static void Report(string pWhere, Exception pError, string pSubject = null)
         {
             string key = pWhere + "|" + pError.GetType().Name;
@@ -76,42 +75,31 @@ namespace DiplomacyOverhaul
             }
             if (!first && !persistent) return;
             string mod = Culprit.Of(pError, out bool vanilla);
-            if (persistent)
+            bool others = mod != null || vanilla;
+            if (persistent && !others)
             {
                 lock (_spots)
                 {
-                    if (!_tipped)
-                    {
-                        _tipped = _pendingTip = true;
-                        _tipMod = mod;
-                        _tipVanilla = vanilla;
-                    }
+                    if (!_tipped) _tipped = _pendingTip = true;
                 }
             }
             string subject = pSubject == null ? "" : $"（{pSubject}）";
             string from = mod != null ? $"出错的代码在模组 {mod} 里，" : vanilla ? "出错的代码在原版里，" : "";
-            if (first) Debug.LogError($"[外交大修] {pWhere}{subject} 出错，{from}已跳过，其余照常更新：{pError}");
-            if (persistent) Debug.LogError($"[外交大修] {pWhere}{subject} 持续出错，{from}{PersistWindowSeconds} 秒内 {count} 次：{pError}");
+            Action<object> log = others ? (Action<object>)Debug.LogWarning : Debug.LogError;
+            if (first) log($"[外交大修] {pWhere}{subject} 出错，{from}已跳过，其余照常更新：{pError}");
+            if (persistent) log($"[外交大修] {pWhere}{subject} 持续出错，{from}{PersistWindowSeconds} 秒内 {count} 次：{pError}");
         }
 
         // 每帧开头（主线程）
         public static void Tick()
         {
-            string mod;
-            bool vanilla;
             lock (_spots)
             {
                 if (!_pendingTip) return;
                 _pendingTip = false;
-                mod = _tipMod;
-                vanilla = _tipVanilla;
             }
             // 挂在原版每帧开头，弹日志出错也不能抛出去
-            try
-            {
-                if (mod != null) WorldLogs.Notice(WorldLogs.IsolationMod, mod);
-                else WorldLogs.Notice(vanilla ? WorldLogs.IsolationVanilla : WorldLogs.Isolation);
-            }
+            try { WorldLogs.Notice(WorldLogs.Isolation); }
             catch (Exception e) { Debug.LogError($"[外交大修] 异常保护的提示出错：{e}"); }
         }
 
@@ -122,8 +110,6 @@ namespace DiplomacyOverhaul
             {
                 _spots.Clear();
                 _tipped = _pendingTip = false;
-                _tipMod = null;
-                _tipVanilla = false;
             }
             _failures.Clear();
         }

@@ -654,8 +654,6 @@
   "vd_regime_patrimonial_republic_ruler": "Princeps Senatus",
   "vd_log_safety_off": "[Diplomacy Overhaul] $system$ ran into errors and is paused for this session",
   "vd_log_isolation": "[Diplomacy Overhaul] Error protection kicked in: a failure was contained. Please send the game log to the author",
-  "vd_log_isolation_mod": "[Diplomacy Overhaul] Error protection kicked in: a failure in the mod $mod$ was contained",
-  "vd_log_isolation_vanilla": "[Diplomacy Overhaul] Error protection kicked in: a failure in the base game was contained",
   "vd_sys_economy": "Treasury",
   "vd_sys_interface": "Interface",
   "vd_bloc_layer": "Bloc Layer",

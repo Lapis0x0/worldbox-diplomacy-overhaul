@@ -37,8 +37,6 @@ namespace DiplomacyOverhaul
         public const string BlocDissolved = "vd_log_bloc_dissolved";     // $bloc$瓦解
         public const string SafetyOff = "vd_log_safety_off";               // $system$功能出错，本局已暂停
         public const string Isolation = "vd_log_isolation";                 // 异常保护已起效，一处出错已拦下，请把游戏日志发给作者
-        public const string IsolationMod = "vd_log_isolation_mod";         // 异常保护已起效，模组 $mod$ 的一处出错已拦下
-        public const string IsolationVanilla = "vd_log_isolation_vanilla"; // 异常保护已起效，原版的一处出错已拦下
 
         public static void Init()
         {
@@ -73,8 +71,6 @@ namespace DiplomacyOverhaul
             Register(BlocDissolved, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$bloc$");
             Register(SafetyOff, "ui/Icons/iconShield", Toolbox.color_log_warning, "$system$");
             Register(Isolation, "ui/Icons/iconShield", Toolbox.color_log_warning);
-            Register(IsolationMod, "ui/Icons/iconShield", Toolbox.color_log_warning, "$mod$");
-            Register(IsolationVanilla, "ui/Icons/iconShield", Toolbox.color_log_warning);
             Retitle("king_new", "$kingdom$", "$king$");
             Retitle("king_left", "$kingdom$", "$king$");
             Retitle("king_dead", "$kingdom$", "$king$");
