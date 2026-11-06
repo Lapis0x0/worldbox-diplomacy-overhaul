@@ -4,10 +4,12 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 一个集团：议会里几股势力结成的同盟。魁首是议席最多的成员，集团名取魁首的城
+    // 一个集团：议会里几股势力结成的同盟。魁首是议席最多的成员；集团名在结成时取当时魁首的城，之后不再改
     public class Bloc
     {
         public int id;
+        // 集团名里的城名，结成时定下，存在 vd_bloc_names
+        public string city;
         public readonly List<ParliamentClan> members = new List<ParliamentClan>();
         // 成员在建这个集团时那份议会列表里的下标，和 members 一一对应
         public readonly List<int> at = new List<int>();
@@ -36,6 +38,7 @@ namespace DiplomacyOverhaul
     {
         const string KeyList = "vd_blocs";
         const string KeyNext = "vd_bloc_next";
+        const string KeyNames = "vd_bloc_names";
 
         // 对集团（或对发起人）的好感过了这条线才肯入伙；跌破退出线就想走；跳槽要比现在的集团高出这么多
         public const int JoinLine = 40, LeaveLine = 0, SwitchMargin = 15;
@@ -68,6 +71,37 @@ namespace DiplomacyOverhaul
                 if (keys.Count >= 2) parts.Add(id + ":" + string.Join(",", keys));
             if (parts.Count > 0) pKingdom.data.set(KeyList, string.Join(";", parts));
             else pKingdom.data.removeString(KeyList);
+            SaveNames(pKingdom, LoadNames(pKingdom), pList);
+        }
+
+        // 集团名：kingdom.data 里存成「编号=城名|编号=城名」，解散的集团顺手删掉
+        static Dictionary<int, string> LoadNames(Kingdom pKingdom)
+        {
+            var names = new Dictionary<int, string>();
+            pKingdom.data.get(KeyNames, out string raw, null);
+            if (string.IsNullOrEmpty(raw)) return names;
+            foreach (string item in raw.Split('|'))
+            {
+                int eq = item.IndexOf('=');
+                if (eq > 0 && int.TryParse(item.Substring(0, eq), out int id)) names[id] = item.Substring(eq + 1);
+            }
+            return names;
+        }
+
+        static void SaveNames(Kingdom pKingdom, Dictionary<int, string> pNames, List<(int id, List<long> keys)> pList)
+        {
+            var parts = new List<string>();
+            foreach (var (id, keys) in pList)
+                if (keys.Count >= 2 && pNames.TryGetValue(id, out string name)) parts.Add(id + "=" + name.Replace("|", "").Replace("=", ""));
+            if (parts.Count > 0) pKingdom.data.set(KeyNames, string.Join("|", parts));
+            else pKingdom.data.removeString(KeyNames);
+        }
+
+        // 结成时的魁首（议席多的那家）的城
+        static string FoundingCity(ParliamentClan pLeader)
+        {
+            City home = Home(pLeader);
+            return home != null ? home.data.name : pLeader.clan.name;
         }
 
         public static bool Any(Kingdom pKingdom) => !string.IsNullOrEmpty(Raw(pKingdom));
@@ -84,7 +118,10 @@ namespace DiplomacyOverhaul
         {
             var result = new List<Bloc>();
             if (!Any(pKingdom)) return result;
-            foreach (var (id, keys) in Load(pKingdom))
+            Dictionary<int, string> names = LoadNames(pKingdom);
+            bool named = false;
+            var list = Load(pKingdom);
+            foreach (var (id, keys) in list)
             {
                 var b = new Bloc { id = id };
                 foreach (long key in keys)
@@ -94,9 +131,16 @@ namespace DiplomacyOverhaul
                 }
                 if (b.members.Count < 2) continue;
                 Finish(b);
+                // 旧存档里没记名字的集团，按眼下的魁首定一次
+                if (!names.TryGetValue(id, out b.city))
+                {
+                    b.city = names[id] = FoundingCity(b.leader);
+                    named = true;
+                }
                 foreach (ParliamentClan m in b.members) b.at.Add(pClans.IndexOf(m));
                 result.Add(b);
             }
+            if (named) SaveNames(pKingdom, names, list);
             return result;
         }
 
@@ -144,11 +188,7 @@ namespace DiplomacyOverhaul
             return best;
         }
 
-        public static string Name(Bloc pBloc)
-        {
-            City home = Home(pBloc.leader);
-            return LM.Get("vd_bloc_name").Replace("$city$", home != null ? home.data.name : pBloc.leader.clan.name);
-        }
+        public static string Name(Bloc pBloc) => LM.Get("vd_bloc_name").Replace("$city$", pBloc.city ?? FoundingCity(pBloc.leader));
 
         // 对集团的好感：对其他成员的好感按议席加权取平均
         public static float Affinity(ParliamentClan pClan, Bloc pBloc)
@@ -180,7 +220,10 @@ namespace DiplomacyOverhaul
             pKingdom.data.get(KeyNext, out int id, 1);
             pKingdom.data.set(KeyNext, id + 1);
             list.Add((id, new List<long> { pFounder.Key, pPartner.Key }));
+            Dictionary<int, string> names = LoadNames(pKingdom);
+            names[id] = FoundingCity(pFounder.seats >= pPartner.seats ? pFounder : pPartner);
             Save(pKingdom, list);
+            SaveNames(pKingdom, names, list);
             return id;
         }
 
@@ -255,6 +298,25 @@ namespace DiplomacyOverhaul
                     else if (benefit > 0f) Relations.Thank(m, b.leader, benefit);
                 }
             }
+            // 集团对集团：投了相反票的两个集团，输的那个（议案通过时反对的、被否决时赞成的）每一家对赢的那个每一家记仇，
+            // 按输的集团吃的亏（成员的得失按议席加权）；输了却没吃亏的不记
+            for (int a = 0; a < pBlocs.Count; a++)
+                for (int b = a + 1; b < pBlocs.Count; b++)
+                {
+                    bool va = pFinal[pClans.IndexOf(pBlocs[a].leader)], vb = pFinal[pClans.IndexOf(pBlocs[b].leader)];
+                    if (va == vb) continue;
+                    Bloc loser = va != pPassed ? pBlocs[a] : pBlocs[b], winner = loser == pBlocs[a] ? pBlocs[b] : pBlocs[a];
+                    float loss = 0f;
+                    foreach (ParliamentClan m in loser.members)
+                    {
+                        int i = pClans.IndexOf(m);
+                        loss += m.seats * (pPassed ? -pGains[i] : pGains[i]);
+                    }
+                    loss /= Mathf.Max(1, loser.seats);
+                    if (loss <= 0f) continue;
+                    foreach (ParliamentClan m in loser.members)
+                        foreach (ParliamentClan w in winner.members) Relations.Rival(m, w, loss);
+                }
         }
     }
 }

@@ -471,6 +471,9 @@ namespace DiplomacyOverhaul
             return passed;
         }
 
+        // 开发统计：表决过的议案（玩家的不算）和其中通过的，parl tally 读和清零
+        internal static int DevBills, DevPassed;
+
         // 表决一份议案：通过就生效，否决就记下；提案人和各家记下这一票的恩怨，集团的成员对魁首记下跟着投票的得失
         static bool Decide(Kingdom pKingdom, Bill pBill, List<ParliamentClan> pClans)
         {
@@ -481,6 +484,11 @@ namespace DiplomacyOverhaul
             Blocs.AfterVote(pClans, result.blocs, proposer, result.gains, result.own, result.final, passed);
             if (passed) Enact(pKingdom, pBill);
             else Reject(pKingdom, pBill);
+            if (!pBill.player)
+            {
+                DevBills++;
+                if (passed) DevPassed++;
+            }
             return passed;
         }
 

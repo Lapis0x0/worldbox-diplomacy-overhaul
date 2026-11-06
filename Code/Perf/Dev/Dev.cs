@@ -14,6 +14,7 @@ namespace DiplomacyOverhaul.Perf
     //
     // 命令（每行一条）：
     //   load <存档目录>          复制到 bin/dev/run_save 后读档，等读完再继续
+    //   save <存档目录>          把眼下的世界存到这个目录
     //   speed <x1|x5|...>       设置速度
     //   pause <on|off>
     //   wait <秒>
@@ -58,6 +59,7 @@ namespace DiplomacyOverhaul.Perf
     //   parl renown              各国国王的声望，城主声望和能力的分布
     //   parl rel [国家] [open <氏族名>]   各股势力两两之间的好感和明细；open 打开那个家族的窗口
     //   parl bill <国家> <政策 id> <选项>   按眼下的议会表决一份议案，只打印各氏族的票，不生效
+    //   parl tally [reset]       表决过的议案数和通过数（玩家的不算），reset 清零
     //   parl blocs [国家|all]      各集团的成员和成员对集团的好感，每股势力眼下想拉拢谁、想不想脱离集团；all 每个国家一行集团概况
     //   parl found <国家> <氏族> <氏族>   两家直接结成集团（已有集团时把后一家拉进前一家的集团）
     //   parl court <国家> <氏族> <目标>   这一家立即拉拢目标一次（送礼、记恩情、够了就入伙）
@@ -66,6 +68,7 @@ namespace DiplomacyOverhaul.Perf
     //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
     //   bench stress <附庸数>      城市最多的国家把最小的几个国家收为附庸、吞并其余所有国家，造一个大帝国（tools/perf-check.sh 用）
+    //   bench realms <国家数>      测议会用：城市最多的几个国家留下，其余国家的城并入首都最近的那个；关掉叛乱和外交（停战）
     //   bench run                 直接调用议会、好感、各定期结算系统等重函数计时，每项一行 @bench <名字> <毫秒>
     //   bench arrow [stale|restore|null]   射一支箭，把它记下的国家换成已销毁的国家，检查弹道兜底（变体见 BenchDev.Arrow）
     //   safety [fail <系统> [次数] | reset | throw on|off | throw kingdom on|off]   各系统熔断状态；fail 模拟某个系统的补丁出错，reset 全部恢复；
@@ -208,6 +211,14 @@ namespace DiplomacyOverhaul.Perf
             switch (a[0])
             {
                 case "load": Load(pLine.Substring(5).Trim()); break;
+                case "save":
+                    // save <存档目录>：把眼下的世界存到这个目录（用来做预热过的测试档）
+                    {
+                        string dir = pLine.Substring(5).Trim();
+                        SaveManager.saveWorldToDirectory(dir);
+                        Log($"  saved {dir} year={Date.getCurrentYear()}");
+                    }
+                    break;
                 case "speed": Config.setWorldSpeed(a[1]); break;
                 case "pause":
                     Config.paused = a[1] == "on";

@@ -204,9 +204,8 @@ namespace DiplomacyOverhaul
                     if (largest == null || b.seats > largest.seats) largest = b;
             if (largest != null)
             {
-                City home = Blocs.Home(largest.leader);
                 label = LM.Get("vd_parliament_largest_bloc");
-                text = (home != null ? home.data.name : largest.leader.clan.name) + " " + largest.seats;
+                text = largest.city + " " + largest.seats;
                 top = FactionColor(largest.leader.faction);
             }
             else
@@ -265,10 +264,9 @@ namespace DiplomacyOverhaul
             float edge = Mathf.PI + limit;
             foreach (var (b, t1, t2) in pArcs)
             {
-                City home = Blocs.Home(b.leader);
                 string placed = null;
                 float hi = 0f;
-                foreach (string name in new[] { Blocs.Name(b), home != null ? home.data.name : null })
+                foreach (string name in new[] { Blocs.Name(b), b.city })
                 {
                     if (string.IsNullOrEmpty(name)) continue;
                     float half = Measure(name, font) / 2f / pRadius, mid = (t1 + t2) / 2f;

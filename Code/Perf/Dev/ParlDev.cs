@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace DiplomacyOverhaul.Perf
 {
@@ -30,6 +31,10 @@ namespace DiplomacyOverhaul.Perf
                 case "session": Session(a, true); break;
                 case "show": Session(a, false); break;
                 case "blocs": BlocList(a); break;
+                case "tally":
+                    Dev.Log($"@tally year={Date.getCurrentYear()} bills={Parliament.DevBills} passed={Parliament.DevPassed}");
+                    if (a.Length > 2 && a[2] == "reset") Parliament.DevBills = Parliament.DevPassed = 0;
+                    break;
                 case "found": Found(a); break;
                 case "court": Court(a); break;
                 case "leave": LeaveBloc(a); break;
@@ -137,6 +142,26 @@ namespace DiplomacyOverhaul.Perf
         static ParliamentClan Pick(List<ParliamentClan> pClans, string pName) =>
             pClans.FirstOrDefault(c => c.clan.name.Contains(pName) && !c.cadet) ?? pClans.FirstOrDefault(c => c.clan.name.Contains(pName));
 
+        // 集团两两之间：成员之间负好感按议席加权的平均，乘较小一方的议席占比，各对加起来
+        static float Strife(List<Bloc> pBlocs, int pTotal)
+        {
+            float sum = 0f;
+            for (int i = 0; i < pBlocs.Count; i++)
+                for (int j = i + 1; j < pBlocs.Count; j++)
+                {
+                    float w = 0f, neg = 0f;
+                    foreach (ParliamentClan x in pBlocs[i].members)
+                        foreach (ParliamentClan y in pBlocs[j].members)
+                        {
+                            float ww = x.seats * y.seats;
+                            w += 2f * ww;
+                            neg += ww * (Mathf.Max(0, -Relations.Value(x, y)) + Mathf.Max(0, -Relations.Value(y, x)));
+                        }
+                    if (w > 0f) sum += neg / w * Mathf.Min(pBlocs[i].seats, pBlocs[j].seats) / Mathf.Max(1, pTotal);
+                }
+            return sum;
+        }
+
         static void BlocList(string[] a)
         {
             // parl blocs [国家]：各集团的成员、成员对集团的好感；每股势力拿主意的人眼下想拉拢谁、想不想脱离集团
@@ -144,12 +169,26 @@ namespace DiplomacyOverhaul.Perf
             if (a.Length > 2 && a[2] == "all")
             {
                 int kingdoms = 0, withBlocs = 0, count = 0, cross = 0;
+                float grudge = 0f, hostile = 0f;
                 foreach (Kingdom kk in World.world.kingdoms.Where(x => x.isAlive() && x.isCiv()).OrderByDescending(x => x.countCities()))
                 {
                     var cs = Parliament.Clans(kk);
                     if (cs.Count < 2) continue;
                     kingdoms++;
                     var bs = Blocs.Of(kk, cs);
+                    // 全议会两两之间积怨的总和、按议席加权的平均负好感
+                    float wsum = 0f, wneg = 0f;
+                    foreach (ParliamentClan x in cs)
+                        foreach (ParliamentClan y in cs)
+                        {
+                            if (x == y) continue;
+                            Relations.Opinion o = Relations.Of(x, y);
+                            grudge += -o.grudge;
+                            float w = x.seats * y.seats;
+                            wsum += w;
+                            wneg += w * Mathf.Max(0, -o.Total);
+                        }
+                    if (wsum > 0f) hostile += wneg / wsum;
                     if (bs.Count == 0) continue;
                     withBlocs++;
                     int total = Parliament.TotalSeats(cs);
@@ -159,11 +198,11 @@ namespace DiplomacyOverhaul.Perf
                         count++;
                         bool mixed = b.members.Any(m => m.faction != b.members[0].faction);
                         if (mixed) cross++;
-                        parts.Add($"{Blocs.Name(b)} {b.members.Count}家 {100f * b.seats / System.Math.Max(1, total):0}%{(mixed ? " 跨" : "")}");
+                        parts.Add($"{Blocs.Name(b)} {b.members.Count}家 {100f * b.seats / Mathf.Max(1, total):0}%{(mixed ? " 跨" : "")}");
                     }
-                    Dev.Log($"  {kk.data.name} ({cs.Count}家): {string.Join(" | ", parts)}");
+                    Dev.Log($"  {kk.data.name} ({cs.Count}家) 党争={Strife(bs, total):0.0}: {string.Join(" | ", parts)}");
                 }
-                Dev.Log($"@blocs kingdoms={kingdoms} with={withBlocs} blocs={count} cross={cross}");
+                Dev.Log($"@blocs kingdoms={kingdoms} with={withBlocs} blocs={count} cross={cross} grudge={grudge:0} hostile={hostile:0.0}");
                 return;
             }
             Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
@@ -176,6 +215,22 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"  {Blocs.Name(b)} #{b.id} 魁首={Name(b.leader)} seats={b.seats} 立场=({b.x:0.00},{b.y:0.00}) {b.faction}");
                 foreach (ParliamentClan m in b.members) Dev.Log($"    {Name(m)} seats={m.seats} {m.faction} 好感={Blocs.Affinity(m, b):0.0}");
             }
+            // 两两集团之间：成员互相的好感（双向、按议席加权的平均）和其中的积怨
+            for (int i = 0; i < blocs.Count; i++)
+                for (int j = i + 1; j < blocs.Count; j++)
+                {
+                    float w = 0f, total = 0f, grudge = 0f;
+                    foreach (ParliamentClan x in blocs[i].members)
+                        foreach (ParliamentClan y in blocs[j].members)
+                        {
+                            float ww = x.seats * y.seats;
+                            Relations.Opinion xy = Relations.Of(x, y), yx = Relations.Of(y, x);
+                            w += 2f * ww;
+                            total += ww * (xy.Total + yx.Total);
+                            grudge += ww * (xy.grudge + yx.grudge);
+                        }
+                    if (w > 0f) Dev.Log($"  @pair {Blocs.Name(blocs[i])}×{Blocs.Name(blocs[j])} 好感={total / w:0.0} 积怨={grudge / w:0.0}");
+                }
             foreach (ParliamentClan pc in clans)
             {
                 if (pc.voice == null) continue;

@@ -18,7 +18,8 @@ namespace DiplomacyOverhaul.Perf
             if (mode == "stress") Stress(a.Length > 2 ? int.Parse(a[2]) : 6);
             else if (mode == "run") Bench();
             else if (mode == "arrow") Arrow(a.Length > 2 ? a[2] : null);
-            else Dev.Log("bench stress <附庸数> | bench run");
+            else if (mode == "realms") Realms(a.Length > 2 ? int.Parse(a[2]) : 4);
+            else Dev.Log("bench stress <附庸数> | bench run | bench realms <国家数>");
         }
 
         // 射手活着、换了国家，原来的国家已销毁：弹道每帧找敌人时读已销毁国家的 asset（见 Compat.cs 的 Patch_ProjectileKingdom）。
@@ -77,6 +78,26 @@ namespace DiplomacyOverhaul.Perf
                 }
             }
             Dev.Log($"  {lord.data.name}: absorbed {absorbed} cities, vassals {Vassals.GetVassals(lord).Count}");
+        }
+
+        // 造一个测议会用的世界：城市最多的几个国家留下，其余国家的城市并入首都离得最近的那一个；
+        // 关掉世界法则里的「叛乱」和「外交」（停掉所有战争），版图不再被打碎，几个大国的议会能长期演化
+        static void Realms(int pCount)
+        {
+            WorldLawLibrary.world_law_rebellions.toggle(false);
+            WorldLawLibrary.world_law_diplomacy.toggle(false);
+            World.world.wars.stopAllWars();
+            List<Kingdom> civ = World.world.kingdoms.Where(k => k.isAlive() && k.isCiv() && k.countCities() > 0).ToList();
+            List<Kingdom> seeds = civ.OrderByDescending(k => k.countCities()).ThenBy(k => k.id).Take(pCount).ToList();
+            Vector2 Center(Kingdom k) => k.hasCapital() ? k.capital.city_center : k.getCities().First().city_center;
+            foreach (Kingdom k in civ)
+            {
+                if (seeds.Contains(k)) continue;
+                Vector2 at = Center(k);
+                Kingdom to = seeds.OrderBy(s => Vector2.Distance(Center(s), at)).First();
+                foreach (City c in k.getCities().ToList()) c.joinAnotherKingdom(to);
+            }
+            foreach (Kingdom k in seeds) Dev.Log($"  {k.data.name}: {k.countCities()} 城, {Parliament.Clans(k).Count} 家");
         }
 
         static readonly Stopwatch _sw = new Stopwatch();

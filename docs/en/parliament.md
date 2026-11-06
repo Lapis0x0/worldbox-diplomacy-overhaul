@@ -153,7 +153,7 @@ Under the kingdom name in the parliament window is a line naming the kingdom's r
   - Warlike or hotheaded chiefs want expansion and more arms, peaceful chiefs want fewer wars. In wartime everyone wants more arms.
   - The overlord's clans want more Vassal Tribute, but not when vassals are strong or already discontented.
 - **Blocs**: Clans in a [bloc](blocs.md) do not vote on their own. The bloc weighs all its members' gains and losses together, and every member votes with it.
-- **Drafting**: The more discontented a clan is and the more seats it has, the more likely it is to be the proposer. The proposer picks the policy that suits it best and is most likely to pass, and issues its friends support are more likely to pass. If nobody wants a change, there is no bill this time.
+- **Drafting**: The more discontented a clan is and the more seats it has, the more likely it is to be the proposer. The proposer puts forward the change it wants most, whether or not it can pass. When two camps are at odds, bills often fail and policies move slowly. If nobody wants a change, there is no bill this time.
 - **The royal house's worries**: The ruling clan estimates whether a bill would push the provinces into revolt. At Prime the provinces are calm and the royal house is comfortable taking power. In Decline the provinces are already shaky and it dares not push too hard.
 
 When a bill passes, the world log records "kingdom adopts policy".

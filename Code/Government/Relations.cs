@@ -27,6 +27,8 @@ namespace DiplomacyOverhaul
         const float Favor = 20f, Opposed = 10f;
         const float GratitudePerGain = 20f, MaxGratitude = 20f;
         const float ResentPerLoss = 40f, MaxResent = 30f;
+        // 集团对集团的积怨：记在很多对家族之间，每一对比对提案人的轻一半
+        const float RivalPerLoss = 20f, MaxRival = 15f;
 
         struct Memory
         {
@@ -127,6 +129,10 @@ namespace DiplomacyOverhaul
         // 跟着集团投票：吃了亏的对魁首记仇，得了好处的记情，和对提案人的算法一样
         public static void Resent(ParliamentClan pFrom, ParliamentClan pTo, float pLoss) =>
             Add(pFrom, pTo, 0f, Mathf.Max(-MaxResent, -ResentPerLoss * pLoss));
+
+        // 集团对集团：表决里输了的集团的每一家，对赢了的集团的每一家记仇，按输的集团吃的亏
+        public static void Rival(ParliamentClan pFrom, ParliamentClan pTo, float pLoss) =>
+            Add(pFrom, pTo, 0f, Mathf.Max(-MaxRival, -RivalPerLoss * pLoss));
 
         public static void Thank(ParliamentClan pFrom, ParliamentClan pTo, float pGain) =>
             Add(pFrom, pTo, Mathf.Min(MaxGratitude, GratitudePerGain * pGain), 0f);

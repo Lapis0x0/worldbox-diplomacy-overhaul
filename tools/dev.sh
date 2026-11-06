@@ -13,6 +13,7 @@ start=$(wc -l < "$dir/out.log")
 {
   for c in "$@"; do
     if [[ "$c" == load\ * && "${c#load }" != /* ]]; then c="load $root/${c#load }"; fi
+    if [[ "$c" == save\ * && "${c#save }" != /* ]]; then c="save $root/${c#save }"; fi
     echo "$c"
   done
   echo "end $token"

@@ -77,14 +77,7 @@ namespace DiplomacyOverhaul
         public static List<Option> Options(Kingdom pKingdom, List<ParliamentClan> pClans, ParliamentClan pProposer) =>
             Options(pClans, Ballots(pKingdom, pClans), pClans.FindIndex(c => c.Key == pProposer.Key), Relations.Matrix(pClans), Blocs.Of(pKingdom, pClans));
 
-        // 表决在几年后，各家的立场会变：按眼下的票数差估一个通过的把握，差 8% 的席位约七成把握，差 20% 九成以上
-        const float PassScale = 0.08f;
-        // 明知过不了也提，表明立场：过不了的议案按收益的这么多算
-        const float Protest = 0.2f;
-
-        static float PassChance(float pMargin) => 1f / (1f + Mathf.Exp(-pMargin / PassScale));
-
-        // 一股势力最想提的议案和它的分量（收益乘通过的把握）：能过的优先，过不了的只有收益大得多时才提
+        // 一股势力最想提的议案和它的分量：只看收益，最想改什么就提什么，能不能过交给表决
         static (Bill bill, float score) Best(List<ParliamentClan> pClans, List<Ballot> pBallots, int pProposer, int[,] pOpinions,
             List<Bloc> pBlocs, Dictionary<string, int> pRejected, int pYear)
         {
@@ -94,7 +87,7 @@ namespace DiplomacyOverhaul
             {
                 if (opt.gain <= Inertia) continue;
                 if (opt.margin <= 0f && pRejected.TryGetValue(RejectedKey(opt.bill), out int when) && pYear - when < RejectedYears) continue;
-                float score = opt.gain * (Protest + (1f - Protest) * PassChance(opt.margin));
+                float score = opt.gain;
                 if (score < bestScore - 0.001f) continue;
                 if (score > bestScore + 0.001f)
                 {

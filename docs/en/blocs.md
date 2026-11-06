@@ -1,6 +1,6 @@
 # Blocs
 
-Clans in a parliament form blocs. A bloc is a group of clans that stick together: they vote together and nobody goes it alone. A bloc can cross factions, so old Royalist houses and Reformist upstarts may end up on the same side, and the royal house can form a bloc too. A bloc is named after its leader's city, for example "Ravenrise Bloc".
+Clans in a parliament form blocs. A bloc is a group of clans that stick together: they vote together and nobody goes it alone. A bloc can cross factions, so old Royalist houses and Reformist upstarts may end up on the same side, and the royal house can form a bloc too. A bloc is named after its founding leader's city, for example "Ravenrise Bloc".
 
 ## How Blocs Form
 
@@ -19,11 +19,12 @@ A clan stays in a bloc because of its opinion of the other members, mostly the l
 
 - **Voting together**: The bloc weighs every member's gains and losses together and takes one side. All members vote with it.
 - **Being dragged along breeds resentment**: A member that votes with the bloc against its own interest holds a grudge against the leader. A member that gains from voting with the bloc owes the leader a favor.
+- **Feuds**: When two blocs vote on opposite sides, every clan of the losing bloc resents every clan of the winning bloc. As wins and losses trade back and forth, the feud deepens, members come to hate each other, and neither side can poach the other's clans.
 - **Favors fade**: Allies bought with gifts must be courted again and again, or they drift away.
 - **Leaving**: When a clan's opinion of its bloc hits bottom, it plots to leave. Hotheaded and Ambitious heads leave quickly, Content ones put up with more. If the leader courts them back in time, they may stay.
 - When members leave one by one until only one clan is left, the bloc breaks apart.
 
-The leader is the member with the most seats. When another member overtakes it in seats, that member becomes the leader and the bloc is renamed.
+The leader is the member with the most seats. When another member overtakes it in seats, that member becomes the leader. A bloc keeps the name it was founded with; only a bloc formed anew after one breaks apart gets a new name.
 
 ## In Parliament
 
