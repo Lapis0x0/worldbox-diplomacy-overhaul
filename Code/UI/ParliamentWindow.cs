@@ -37,6 +37,8 @@ namespace DiplomacyOverhaul
         static Text _billWhen;
         // 这一刻的集团、每股势力属于哪个集团（Bloc.Key），议案名单里展开了哪些集团
         static List<Bloc> _blocs = new List<Bloc>();
+        // 议会半圆右上角的「显示集团」：关掉时半圆照没有集团时排、不画扇环和名字，窗口别处照旧
+        static bool _showBlocs = true;
         static readonly Dictionary<long, long> _blocOf = new Dictionary<long, long>();
         static readonly HashSet<long> _expanded = new HashSet<long>();
 
@@ -249,9 +251,10 @@ namespace DiplomacyOverhaul
             bool built = Build(_frame, "frame" + assembly, () => BuildFrame(assembly));
             string regimeKey = regime == null ? "" : regime.id + republic + string.Join(",", RegimeNames.Reasons(_kingdom, regime));
             Build(_regime, k + regimeKey, () => Regime(regime));
-            built |= Build(_seats, clanKey, () =>
+            built |= Build(_seats, clanKey + (_showBlocs ? "|B" : "|-"), () =>
             {
                 if (clans.Count > 0) Hemicycle(clans, LeftX, Top + 24f);
+                if (Blocs.Any(_kingdom)) BlocToggle(LeftX + LeftW - ToggleW - 2f, Top + 26f);
             });
             built |= Build(_clans, clanKey + republic, () => ClanList(clans));
 

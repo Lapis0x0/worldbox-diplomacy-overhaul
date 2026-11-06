@@ -666,5 +666,6 @@
   "vd_bloc_plate": "$kingdom$ $bloc$",
   "vd_bloc_stance": "Posição",
   "vd_bloc_tip_seats": "Assentos",
-  "vd_bloc_tip_members": "Clãs"
+  "vd_bloc_tip_members": "Clãs",
+  "vd_parliament_show_blocs": "Mostrar blocos"
 }

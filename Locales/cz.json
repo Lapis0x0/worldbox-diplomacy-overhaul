@@ -666,5 +666,6 @@
   "vd_bloc_plate": "$kingdom$ $bloc$",
   "vd_bloc_stance": "立场",
   "vd_bloc_tip_seats": "议席",
-  "vd_bloc_tip_members": "几家"
+  "vd_bloc_tip_members": "几家",
+  "vd_parliament_show_blocs": "显示集团"
 }

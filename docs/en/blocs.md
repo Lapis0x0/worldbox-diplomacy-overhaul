@@ -36,6 +36,7 @@ The leader is the member with the most seats. When another member overtakes it i
 - **Clan list**: Each bloc gets a row with its name, its overall stance and its total seats, with its members listed below. Click the bloc's row to see its leader and how many clans it has.
 - **Stance chart**: The clans of a bloc are enclosed in a shaded patch. The larger the patch, the wider the bloc's range of stances.
 - **Bill**: A bloc's votes are folded into one row. Click it to see each clan.
+- **Show blocs**: The Show blocs toggle at the top right of the seat semicircle hides the blocs in the semicircle, showing the clans' seats as they would be without blocs.
 - **Clan window**: The opinion breakdown now includes Neighbors.
 
 ## On the Map

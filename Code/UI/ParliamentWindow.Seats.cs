@@ -83,12 +83,14 @@ namespace DiplomacyOverhaul
         }
 
         // 半圆的顺序：按派系从激进到保守、同派系按议席排；集团按它的立场排，成员连在一起
-        static List<Unit> Units(List<ParliamentClan> pClans)
+        // pBlocs 为 false 时不分集团，每股势力各算一格（半圆关掉「显示集团」时用）
+        static List<Unit> Units(List<ParliamentClan> pClans, bool pBlocs = true)
         {
             var units = new List<Unit>();
-            foreach (Bloc b in _blocs) units.Add(new Unit { bloc = b, members = b.members, faction = b.faction, seats = b.seats });
+            if (pBlocs)
+                foreach (Bloc b in _blocs) units.Add(new Unit { bloc = b, members = b.members, faction = b.faction, seats = b.seats });
             foreach (ParliamentClan pc in pClans)
-                if (!_blocOf.ContainsKey(pc.Key)) units.Add(new Unit { members = new List<ParliamentClan> { pc }, faction = pc.faction, seats = pc.seats });
+                if (!pBlocs || !_blocOf.ContainsKey(pc.Key)) units.Add(new Unit { members = new List<ParliamentClan> { pc }, faction = pc.faction, seats = pc.seats });
             units.Sort((a, b) =>
             {
                 int fa = Parliament.FactionOrder(a.faction), fb = Parliament.FactionOrder(b.faction);
@@ -138,7 +140,8 @@ namespace DiplomacyOverhaul
         {
             const float aw = 262f, ah = 132f;
             RectTransform area = Box(_parent, pX + 2f, pY, aw, ah);
-            List<Unit> units = Units(pClans);
+            bool blocs = _showBlocs && _blocs.Count > 0;
+            List<Unit> units = Units(pClans, blocs);
             // 每个集团一块，相邻的散户合成一块，各块分开排：集团的边界在每一排都落在两个座位中间
             var segments = new List<int>();
             var segmentOf = new int[units.Count];
@@ -148,7 +151,7 @@ namespace DiplomacyOverhaul
                 segmentOf[i] = segments.Count - 1;
                 segments[segments.Count - 1] += units[i].seats;
             }
-            List<Vector3> seats = SeatLayout(segments.ToArray(), aw, ah, _blocs.Count > 0 ? RingBand : 0f, out float size, out Ring ring, out float[] bounds);
+            List<Vector3> seats = SeatLayout(segments.ToArray(), aw, ah, blocs ? RingBand : 0f, out float size, out Ring ring, out float[] bounds);
             var ranges = new List<(Unit unit, int first, int end)>();
             int s = 0;
             foreach (Unit u in units)
@@ -196,8 +199,9 @@ namespace DiplomacyOverhaul
             string label, text;
             Color top;
             Bloc largest = null;
-            foreach (Bloc b in _blocs)
-                if (largest == null || b.seats > largest.seats) largest = b;
+            if (blocs)
+                foreach (Bloc b in _blocs)
+                    if (largest == null || b.seats > largest.seats) largest = b;
             if (largest != null)
             {
                 City home = Blocs.Home(largest.leader);
@@ -222,6 +226,23 @@ namespace DiplomacyOverhaul
             Text(area, label, 0f, ah - 34f, aw, 10f, 6, Muted, TextAnchor.MiddleCenter);
             Text(area, text, 0f, ah - 24f, aw, 18f, 14, top, TextAnchor.MiddleCenter);
         }
+
+        // 议会半圆右上角「显示集团」：原版图层按钮上那颗开关圆点加几个字，点了切换半圆里画不画集团
+        static void BlocToggle(float pX, float pY)
+        {
+            RectTransform button = Button(_parent, pX, pY, ToggleW, 10f, null, () =>
+            {
+                _showBlocs = !_showBlocs;
+                Refresh();
+            });
+            ToggleIcon dot = PowerButton.get("clan_layer")?.transform.Find("ToggleIcon")?.GetComponent<ToggleIcon>();
+            Sprite sprite = dot == null ? null : _showBlocs ? dot.spriteON : dot.spriteOFF;
+            // 圆点和字一样高，往下挪一点对齐字的中线（字形的视觉中心比文本框中线低）
+            if (sprite != null) UiKit.Picture(button, sprite, 0f, 3f, 9f, 9f);
+            Text(button, LM.Get("vd_parliament_show_blocs"), 11f, 0f, ToggleW - 11f, 10f, 6, _showBlocs ? Color.white : Muted, TextAnchor.MiddleLeft);
+        }
+
+        internal const float ToggleW = 39f;
 
         // 集团底色和边框亮着、调淡时的透明度，边框的宽度，边框用魁首派系色
         const float BlocAlpha = 0.3f, BlocDim = 0.08f, BorderAlpha = 0.8f, BorderDim = 0.2f, BorderWidth = 1f;
