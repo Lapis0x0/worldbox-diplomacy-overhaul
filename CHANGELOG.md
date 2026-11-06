@@ -2,6 +2,24 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.13.1
+
+### 中文
+
+1. 新增「集团列表」，与原版氏族、王国列表并列，可按议席、家族数或国家排序浏览各国议会集团
+2. 优化议会席位图的集团显示，保留按派系排列的连贯座次，并统一集团配色与其立场一致
+3. 优化议会窗口布局，移除家族列表下方的选中详情，扩大家族列表的可视区域
+4. 优化异常拦截，原版或其他模组的错误被拦截后不再弹出控制台，避免误报为本模组故障
+5. 修复家族年中覆灭后议会密谋反复抛出空引用异常的问题
+
+### English
+
+1. Added a Bloc List alongside the vanilla Clan and Kingdom lists, for browsing every kingdom's parliament blocs sorted by seats, member clans or kingdom
+2. Improved how blocs are shown on the parliament seat chart: seats keep their continuous faction ordering, and bloc colors now match their stance
+3. Improved the parliament window layout: removed the selection details below the clan list and enlarged the clan list's visible area
+4. Improved error interception: errors from the base game or other mods no longer pop up the console after being intercepted, so they are not mistaken for faults in this mod
+5. Fixed parliament plots repeatedly throwing null reference exceptions after a clan was wiped out mid-year
+
 ## 0.13.0
 
 ### 中文
