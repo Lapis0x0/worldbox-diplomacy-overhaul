@@ -140,6 +140,32 @@ namespace DiplomacyOverhaul.Perf
         static void BlocList(string[] a)
         {
             // parl blocs [国家]：各集团的成员、成员对集团的好感；每股势力拿主意的人眼下想拉拢谁、想不想脱离集团
+            // parl blocs all：每个有议会的国家一行：集团数、各集团的家数和议席占比、跨派系的个数
+            if (a.Length > 2 && a[2] == "all")
+            {
+                int kingdoms = 0, withBlocs = 0, count = 0, cross = 0;
+                foreach (Kingdom kk in World.world.kingdoms.Where(x => x.isAlive() && x.isCiv()).OrderByDescending(x => x.countCities()))
+                {
+                    var cs = Parliament.Clans(kk);
+                    if (cs.Count < 2) continue;
+                    kingdoms++;
+                    var bs = Blocs.Of(kk, cs);
+                    if (bs.Count == 0) continue;
+                    withBlocs++;
+                    int total = Parliament.TotalSeats(cs);
+                    var parts = new List<string>();
+                    foreach (Bloc b in bs)
+                    {
+                        count++;
+                        bool mixed = b.members.Any(m => m.faction != b.members[0].faction);
+                        if (mixed) cross++;
+                        parts.Add($"{Blocs.Name(b)} {b.members.Count}家 {100f * b.seats / System.Math.Max(1, total):0}%{(mixed ? " 跨" : "")}");
+                    }
+                    Dev.Log($"  {kk.data.name} ({cs.Count}家): {string.Join(" | ", parts)}");
+                }
+                Dev.Log($"@blocs kingdoms={kingdoms} with={withBlocs} blocs={count} cross={cross}");
+                return;
+            }
             Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
             if (k == null) { Dev.Log("parl blocs [国家]"); return; }
             var clans = Parliament.Clans(k);
