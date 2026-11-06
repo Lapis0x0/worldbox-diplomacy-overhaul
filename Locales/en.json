@@ -663,5 +663,5 @@
   "vd_sys_interface": "Interface",
   "vd_bloc_layer": "Bloc Layer",
   "vd_bloc_layer_description": "Show zones of parliament blocs",
-  "vd_bloc_map_seats": "$seats$ seats"
+  "vd_bloc_plate": "$kingdom$ $bloc$"
 }
