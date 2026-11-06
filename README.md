@@ -23,9 +23,7 @@ Vassal ties change over time. A vassal that has been loyal for long enough may g
 
 ## Kingdoms Have Politics
 
-Every kingdom has a parliament. Families win seats from the cities they hold, vote by their own stance, and set the kingdom's domestic, military and diplomatic policies. Each mix of policies forms a different **regime**, the system the kingdom actually runs by, and the parliament takes a matching name.
-
-Families court one another and form **blocs**: a bloc proposes bills as one and votes as one, and rival blocs build up grudges against each other; members dragged along too often plot to leave. A bloc map layer shows how each kingdom's blocs divide its cities.
+Every kingdom has a parliament. Families win seats from the cities they hold, vote by their own stance, and set the kingdom's domestic, military and diplomatic policies. Each mix of policies forms a different **regime**, the system the kingdom actually runs by, and the parliament takes a matching name. Families court one another and form **blocs**.
 
 <img src="docs/images/parliament.png" alt="Parliament window" width="720">
 
