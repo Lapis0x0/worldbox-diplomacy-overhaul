@@ -27,6 +27,8 @@ namespace DiplomacyOverhaul
         static void Postfix()
         {
             Cycle.ResetSession();
+            Parliament.ResetSession();
+            Blocs.ResetSession();
             Safety.Reset();
             Isolation.Reset();
         }

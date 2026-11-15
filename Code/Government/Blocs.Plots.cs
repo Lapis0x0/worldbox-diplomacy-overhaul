@@ -112,6 +112,8 @@ namespace DiplomacyOverhaul
 
         static readonly Dictionary<long, Snapshot> _snapshots = new Dictionary<long, Snapshot>();
 
+        public static void ResetSession() => _snapshots.Clear();
+
         // 年中有氏族灭了，快照就得重拍
         static bool Stale(List<ParliamentClan> pClans)
         {

@@ -429,6 +429,13 @@ namespace DiplomacyOverhaul
         static readonly Dictionary<long, (int year, Dictionary<long, (int dissent, int grievance)> cities)> _modifiers =
             new Dictionary<long, (int, Dictionary<long, (int, int)>)>();
 
+        // 缓存按编号和年份命中，读档后同一年的编号会撞上旧世界的值，所以清世界时一并清掉
+        public static void ResetSession()
+        {
+            _modifiers.Clear();
+            _foreign.Clear();
+        }
+
         public static int CityLoyalty(City pCity) => CityModifiers(pCity).dissent;
 
         static int GrievanceLoyalty(City pCity) => CityModifiers(pCity).grievance;

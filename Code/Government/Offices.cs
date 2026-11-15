@@ -73,7 +73,7 @@ namespace DiplomacyOverhaul
                 {
                     if (!a.isUnitFitToRule() || !a.isAdult() || a.isKing() || a.isCityLeader()) continue;
                     int score = a.stewardship + a.intelligence;
-                    if (score > bestScore || (score == bestScore && a.getAge() > best.getAge()))
+                    if (best == null || score > bestScore || (score == bestScore && a.getAge() > best.getAge()))
                     {
                         best = a;
                         bestScore = score;
