@@ -27,7 +27,7 @@ The two axes make four factions, and clans in the same faction share a color.
 | Conservative | Royalists (blue): old clans at court | Aristocrats (teal): old clans in the provinces |
 | Radical | Reformists (red): new powers at court | Republicans (orange): new powers in the provinces |
 
-In a republic the Royalists are called Senators and the Republicans are called Autonomists; the colors stay the same.
+In a republic the Royalists are called Senators and the Republicans are called Federalists; the colors stay the same.
 
 ## Policies
 

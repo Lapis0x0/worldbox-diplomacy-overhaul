@@ -168,7 +168,7 @@ namespace DiplomacyOverhaul
             return pClan.cadet ? LM.Get("vd_parliament_cadet") : null;
         }
 
-        // 共和国里朝中的老家族叫元老派，地方新贵叫自治派
+        // 共和国里朝中的老家族叫元老派，地方新贵叫联邦派
         internal static string FactionKey(Faction pFaction)
         {
             string key = "vd_faction_" + pFaction.ToString().ToLowerInvariant();

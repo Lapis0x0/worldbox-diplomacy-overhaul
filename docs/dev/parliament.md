@@ -54,7 +54,7 @@
 | 保守 | 保王派（蓝）：朝中的老家族 | 贵族派（青）：地方上的老家族 |
 | 激进 | 维新派（红）：朝中的新贵 | 共和派（橙）：地方上的新贵 |
 
-共和国（`Government.IsRepublic`）里保王派显示为元老派、共和派显示为自治派（`vd_faction_royalist_republic`、`vd_faction_republican_republic`），只换名字，立场和颜色不变。
+共和国（`Government.IsRepublic`）里保王派显示为元老派、共和派显示为联邦派（`vd_faction_royalist_republic`、`vd_faction_republican_republic`），只换名字，立场和颜色不变。
 
 ## 政策
 
