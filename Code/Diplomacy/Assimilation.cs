@@ -13,6 +13,8 @@ namespace DiplomacyOverhaul
         // 每年转化的比例：每座城里文化、宗教（国内同化还有语言）不一样的居民；插手附庸内政比国内同化慢
         public const float VassalYearlyShare = 0.05f;
         public const float DomesticYearlyShare = 0.1f;
+        // 比例再乘城里已经同化的居民占比：混居的城越转越快，整座异族城起步慢；占比不足这个数按这个数算
+        public const float MinAssimilatedShare = 0.1f;
 
         public static void Init()
         {
@@ -73,13 +75,21 @@ namespace DiplomacyOverhaul
             foreach (City city in pTarget.getCities())
             {
                 pending.Clear();
+                int total = 0;
                 foreach (Actor a in city.getUnits())
                 {
                     if (!a.isAlive() || a.subspecies == null || !a.subspecies.has_advanced_memory) continue;
+                    total++;
                     if ((pCulture != null && a.culture != pCulture) || (pReligion != null && a.religion != pReligion)
                         || (pLanguage != null && a.language != pLanguage)) pending.Add(a);
                 }
-                int count = Mathf.Min(pending.Count, Mathf.CeilToInt(pending.Count * pShare * Buildings.AssimilationFactor(city)));
+                if (pending.Count == 0) continue;
+                float assimilated = Mathf.Max(MinAssimilatedShare, (float)(total - pending.Count) / total);
+                // 按概率取整：小城和大城的比例一样，不会因为每年至少一人而转得飞快
+                float expected = pending.Count * pShare * Buildings.AssimilationFactor(city) * assimilated;
+                int count = Mathf.FloorToInt(expected);
+                if (Randy.randomChance(expected - count)) count++;
+                count = Mathf.Min(pending.Count, count);
                 for (int i = 0; i < count; i++)
                 {
                     int j = Randy.randomInt(i, pending.Count);

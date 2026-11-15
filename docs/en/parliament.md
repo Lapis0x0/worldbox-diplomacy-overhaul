@@ -80,7 +80,7 @@ Elven kingdoms start with Tax Farming, sheep kingdoms start with Central Collect
 |---|---|
 | Local Customs | Cities whose culture, language, or religion differs from the capital's lose half as much loyalty |
 | Natural Course | As in vanilla |
-| Uniformity | These loyalty penalties are larger, but each year some residents switch to the kingdom's culture, language, and religion |
+| Uniformity | These loyalty penalties are larger, but each year some residents switch to the kingdom's culture, language, and religion; the more residents in a city have already assimilated, the faster the rest follow |
 
 ### Military
 
@@ -119,7 +119,7 @@ Transports carry cannons and bombard the coast. Armies also cross the sea by the
 |---|---|
 | Charter of Autonomy | Vassals' opinion of the overlord +15, and Integration -1 each year |
 | Feudal Contract | Normal |
-| Forced Assimilation | Each year 5% of the residents in each vassal's cities whose culture or religion differs from the overlord's are assimilated. A vassal whose own culture or religion differs from the overlord's has its opinion of the overlord -30 |
+| Forced Assimilation | Each year some of the residents in each vassal's cities whose culture or religion differs from the overlord's are assimilated, more slowly than under Uniformity and faster as more of the city has already assimilated. A vassal whose own culture or religion differs from the overlord's has its opinion of the overlord -30 |
 
 **Vassal Tribute**: The share of a vassal's income paid to its overlord.
 
