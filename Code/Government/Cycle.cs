@@ -523,6 +523,15 @@ namespace DiplomacyOverhaul
             foreach (Kingdom k in pWar.getDefenders()) AddMandate(k, WarDelta(pWar, pWinner == WarWinner.Defenders));
         }
 
+        // 单独媾和只算签约的两国：白和平不变，赔款档同和约，其余和打赢打输一样
+        public static void OnSeparatePeace(Kingdom pWinner, Kingdom pLoser, Treaty pTreaty)
+        {
+            if (pTreaty == Treaty.White) return;
+            bool reparations = pTreaty == Treaty.Reparations;
+            AddMandate(pWinner, reparations ? PeaceTalks.ReparationsWin : WarWon);
+            AddMandate(pLoser, reparations ? PeaceTalks.ReparationsLoss : WarLost);
+        }
+
         // 附庸对宗主的好感：新生 +10，鼎盛 +20；衰落和崩溃期 -10，天命每低于 50 一点再 -3，最多 -90
         public static int VassalOpinion(Kingdom pLord)
         {

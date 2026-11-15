@@ -10,20 +10,22 @@ A vassal never starts wars on its own. It fights alongside its overlord; see [Va
 
 ## War Score
 
-Each war has a war score, shown in the war window and tooltips, for example "Attackers ahead by 35". When the gap is small it shows "Stalemate". The war score compares only the two main kingdoms and depends on three factors.
+Each war has a war score, shown in the war window and tooltips, for example "Attackers ahead by 35". When the gap is small it shows "Stalemate". The window shows the war score between the two main kingdoms, which depends on three factors.
 
-- The share of cities lost since the war began. The side that lost more is at a disadvantage.
-- If the capital at the start of the war is now in the other side's hands, the disadvantage grows sharply.
+- The share of cities lost since joining the war. The side that lost more is at a disadvantage.
+- If its capital at the time it joined is now in the other side's hands, the disadvantage grows sharply.
 - The side with more troops has a slight advantage.
 
 ## Peace Talks
 
-Peace Talks is a plot. After 3 years of war, the kings of both main sides can start it, at a cost of 5 gold.
+Peace Talks is a plot. After 3 years of war, the king of any kingdom in the war can start it with the main kingdom on the other side, at a cost of 5 gold. A vassal fighting alongside its overlord leaves the talking to its overlord.
 
 - **The side ahead**: Starts when the war score reaches what it expects. Warlike kings expect more. The longer the war and the more of its own people have died, the less it expects.
 - **The side behind**: The further behind it is and the longer the war has gone on, the more likely it is to start.
 
 When the talks complete, the outcome depends on the war score at that moment. If the gap is below what the side ahead expects, it is treated as a refusal and nothing happens; the talks can be started again later. In a tied war, both sides' expectations slowly drop until it ends in a white peace.
+
+A treaty between the two main kingdoms ends the whole war. Any other kingdom in the war can make a separate peace: once signed, only it leaves the war, along with the vassals fighting alongside it. The main kingdom on the other side still has a war to fight, so a kingdom making a separate peace gets at most reparations even when it is ahead.
 
 Total War has no peace talks. The vanilla "peace negotiation" plot is replaced by Peace Talks, and turning off peace talks in the settings restores it. The vanilla Friendship power is still an unconditional peace.
 
@@ -46,7 +48,7 @@ If the winner is itself a vassal, the ceded vassals and the submitting loser go 
 
 - **Mandate**: At the reparations level, the winner gets +2 and the loser -4. At the ceded vassals and submission levels, the winner gets +5 and the loser -10. A white peace does not change the Mandate.
 - **Humiliating defeat**: A loser that only paid reparations has its opinion of the winner reduced by 20, and one that ceded vassals by 40. This fades over ten years. Submission has no such penalty.
-- The treaty is recorded in the world log, and the war window shows the terms and the reparations breakdown.
+- The treaty is recorded in the world log, and the war window shows the terms of the treaty that ended the war and the reparations breakdown.
 
 ## Wars of Independence
 

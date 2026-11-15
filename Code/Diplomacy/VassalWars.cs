@@ -24,44 +24,31 @@ namespace DiplomacyOverhaul
         }
     }
 
-    [HarmonyPatch(typeof(War), nameof(War.joinAttackers))]
-    static class Patch_JoinAttackers
+    static class VassalWars
     {
-        static void Postfix(War __instance, Kingdom pKingdom)
+        // 加入攻方：附庸按整合度跟随；附庸平叛时宗主按整合度支援
+        public static void OnJoinAttackers(War pWar, Kingdom pKingdom)
         {
-            if (!Safety.On(Sys.Vassal)) return;
-            try
+            Betrayal.Check(pWar, pKingdom);
+            foreach (Kingdom v in Vassals.GetVassals(pKingdom))
             {
-                Betrayal.Check(__instance, pKingdom);
-                foreach (Kingdom v in Vassals.GetVassals(pKingdom))
-                {
-                    if (!__instance.hasKingdom(v) && Integration.JoinsOffensive(__instance, v)) __instance.joinAttackers(v);
-                }
-                Kingdom lord = Vassals.GetOverlord(pKingdom);
-                if (lord != null && Vassals.IsOwnRebellion(__instance, pKingdom)) Vassals.SupportSuppression(__instance, pKingdom, lord);
+                if (!pWar.hasKingdom(v) && Integration.JoinsOffensive(pWar, v)) pWar.joinAttackers(v);
             }
-            catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸随宗主进攻", e); }
+            Kingdom lord = Vassals.GetOverlord(pKingdom);
+            if (lord != null && Vassals.IsOwnRebellion(pWar, pKingdom)) Vassals.SupportSuppression(pWar, pKingdom, lord);
         }
-    }
 
-    [HarmonyPatch(typeof(War), nameof(War.joinDefenders))]
-    static class Patch_JoinDefenders
-    {
-        static void Postfix(War __instance, Kingdom pKingdom)
+        // 加入守方：宗主和附庸一起防守
+        public static void OnJoinDefenders(War pWar, Kingdom pKingdom)
         {
-            if (!Safety.On(Sys.Vassal)) return;
-            try
+            if (!pWar.isDefender(pKingdom)) return; // 总体战等情况下 joinDefenders 不生效
+            Betrayal.Check(pWar, pKingdom);
+            foreach (Kingdom v in Vassals.GetVassals(pKingdom))
             {
-                if (!__instance.isDefender(pKingdom)) return; // 总体战等情况下 joinDefenders 不生效
-                Betrayal.Check(__instance, pKingdom);
-                foreach (Kingdom v in Vassals.GetVassals(pKingdom))
-                {
-                    if (!__instance.hasKingdom(v)) __instance.joinDefenders(v);
-                }
-                Kingdom lord = Vassals.GetOverlord(pKingdom);
-                if (lord != null && !__instance.hasKingdom(lord)) __instance.joinDefenders(lord);
+                if (!pWar.hasKingdom(v)) pWar.joinDefenders(v);
             }
-            catch (Exception e) { Safety.Fail(Sys.Vassal, "宗主附庸一起防守", e); }
+            Kingdom lord = Vassals.GetOverlord(pKingdom);
+            if (lord != null && !pWar.hasKingdom(lord)) pWar.joinDefenders(lord);
         }
     }
 

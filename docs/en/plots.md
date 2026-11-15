@@ -12,7 +12,7 @@ A city lord's rebellion plot is abandoned once the city is content again. When a
 |---|---|---|---|
 | Independence Plot | A vassal's king | Stronger the more discontent with the overlord. Stronger when the overlord is fighting elsewhere | Warlike, ambitious |
 | Demand Tribute | A strong kingdom's king | Stronger the more it outmatches a neighbor | Warlike or good at diplomacy, ambitious |
-| Peace Talks | The kings of both warring sides | The side ahead when the war score is sufficient. The side behind, stronger the more it is losing and the longer the war lasts | The side behind: good at diplomacy |
+| Peace Talks | The king of any kingdom in the war | The side ahead when the war score is sufficient. The side behind, stronger the more it is losing and the longer the war lasts | The side behind: good at diplomacy |
 | Restoration | The ruler of a declining dynasty | Stronger the lower the Mandate | Good at governing |
 | Royal Appanage | A monarchy's king | Stronger the more cities beyond the governing limit | Good at governing |
 | Direct Rule | An overlord with provinces | Stronger the further it is from the governing limit | Good at governing |

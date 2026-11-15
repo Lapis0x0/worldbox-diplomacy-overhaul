@@ -74,6 +74,43 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 加入战争（开战时双方主国也走这里）：先记下和谈用的城数和首都，再拉附庸、宗主进来
+    [HarmonyPatch(typeof(War), nameof(War.joinAttackers))]
+    static class Hook_JoinAttackers
+    {
+        static void Postfix(War __instance, Kingdom pKingdom)
+        {
+            if (Safety.On(Sys.Peace))
+            {
+                try { PeaceTalks.RecordJoin(__instance, pKingdom); }
+                catch (Exception e) { Safety.Fail(Sys.Peace, "加入攻方·和谈", e); }
+            }
+            if (Safety.On(Sys.Vassal))
+            {
+                try { VassalWars.OnJoinAttackers(__instance, pKingdom); }
+                catch (Exception e) { Safety.Fail(Sys.Vassal, "附庸随宗主进攻", e); }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(War), nameof(War.joinDefenders))]
+    static class Hook_JoinDefenders
+    {
+        static void Postfix(War __instance, Kingdom pKingdom)
+        {
+            if (Safety.On(Sys.Peace))
+            {
+                try { PeaceTalks.RecordJoin(__instance, pKingdom); }
+                catch (Exception e) { Safety.Fail(Sys.Peace, "加入守方·和谈", e); }
+            }
+            if (Safety.On(Sys.Vassal))
+            {
+                try { VassalWars.OnJoinDefenders(__instance, pKingdom); }
+                catch (Exception e) { Safety.Fail(Sys.Vassal, "宗主附庸一起防守", e); }
+            }
+        }
+    }
+
     // 战争结束
     [HarmonyPatch(typeof(WarManager), nameof(WarManager.endWar))]
     static class Hook_EndWar
