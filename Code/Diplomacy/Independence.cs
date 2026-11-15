@@ -111,6 +111,24 @@ namespace DiplomacyOverhaul
             return war;
         }
 
+        // 大叛乱时造反的附庸并进宗主的叛乱战争，和起事的城市站在一边，各自和宗主谈和；
+        // 还没有这场战争就由它开。开战失败时恢复附庸关系并返回 null
+        public static War JoinRebellion(Kingdom pRebel, Kingdom pLord, War pWar)
+        {
+            float integration = Integration.Get(pRebel);
+            Vassals.Release(pRebel);
+            // 先退出随宗主参加的战争，可能正包括这场叛乱战争的攻方
+            LeaveLordWars(pRebel, pLord, null);
+            if (pWar != null && !pWar.hasEnded()) pWar.joinDefenders(pRebel);
+            else pWar = World.world.diplomacy.startWar(pLord, pRebel, WarTypeLibrary.rebellion);
+            if (pWar == null || !pWar.isDefender(pRebel))
+            {
+                Vassals.MakeVassal(pLord, pRebel, integration);
+                return null;
+            }
+            return pWar;
+        }
+
         // 退出随宗主参加的战争：起兵的附庸不再替宗主打仗，免得同时与宗主和宗主的敌人为敌。自己是主攻方或主守方的仗照打
         static void LeaveLordWars(Kingdom pRebel, Kingdom pLord, War pIndependence)
         {

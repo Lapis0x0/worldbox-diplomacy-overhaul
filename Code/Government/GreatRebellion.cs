@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 大叛乱：国内多处城市同时叛乱，附庸按对宗主的好感度决定是否发动独立战争
+    // 大叛乱：国内多处城市同时叛乱，附庸按整合度决定是否造反；城市和附庸都在同一场叛乱战争里，各自和原国家谈和
     public static class GreatRebellion
     {
         // 叛军最终占走原国家非首都城市的比例
@@ -29,11 +29,16 @@ namespace DiplomacyOverhaul
             }
             count += rebels.Count + Spread(pKingdom, rebels, nonCapital * TakenPercent / 100 - rebels.Count);
 
+            War war = RebellionWar(pKingdom);
             foreach (Kingdom vassal in Vassals.GetVassals(pKingdom))
             {
                 // 整合度越低越可能反：刚投降的 90%，行省 10% 上下
                 float chance = Mathf.Clamp(90f - Integration.Get(vassal), 10f, 90f) / 100f;
-                if (Randy.randomChance(chance) && Independence.StartWar(vassal, pKingdom) != null) count++;
+                if (!Randy.randomChance(chance)) continue;
+                War joined = Independence.JoinRebellion(vassal, pKingdom, war);
+                if (joined == null) continue;
+                war = joined;
+                count++;
             }
 
             if (count > 0)
@@ -138,18 +143,20 @@ namespace DiplomacyOverhaul
             Kingdom rebel = pCity.makeOwnKingdom(leader, true);
             leader.joinCity(pCity);
 
-            War war = null;
+            War war = RebellionWar(pOld);
+            if (war != null) war.joinDefenders(rebel);
+            else World.world.diplomacy.startWar(pOld, rebel, WarTypeLibrary.rebellion);
+            return rebel;
+        }
+
+        // 原国家发动的叛乱战争（它是主攻方）
+        static War RebellionWar(Kingdom pOld)
+        {
             foreach (War w in pOld.getWars())
             {
-                if (w.isMainAttacker(pOld) && w.getAsset() == WarTypeLibrary.rebellion)
-                {
-                    war = w;
-                    war.joinDefenders(rebel);
-                    break;
-                }
+                if (!w.hasEnded() && w.isMainAttacker(pOld) && w.getAsset() == WarTypeLibrary.rebellion) return w;
             }
-            if (war == null) World.world.diplomacy.startWar(pOld, rebel, WarTypeLibrary.rebellion);
-            return rebel;
+            return null;
         }
     }
 }

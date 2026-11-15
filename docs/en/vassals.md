@@ -100,7 +100,7 @@ A vassal's king can start an "Independence Plot", and if it succeeds, a war of i
 - **Conditions**: The overlord is in Decline or Collapse, or the overlord is weak enough compared with the vassal. The higher the Integration, the weaker the overlord must be.
 - **Willingness**: The lower the vassal's opinion of the overlord and the more warlike its king, the more likely it is to start. When the overlord is fighting a large war elsewhere, a vassal with low Integration is more likely to seize the chance.
 
-If the overlord wins the war of independence, the vassal becomes a vassal again. Otherwise the vassal becomes fully independent. During a Great Rebellion, vassals also rise according to their Integration.
+If the overlord wins the war of independence, the vassal becomes a vassal again. Otherwise the vassal becomes fully independent. During a Great Rebellion, vassals also rise according to their Integration and join the rebels' rebellion war; see [Rise and Fall of Dynasties](cycle.md#great-rebellion).
 
 ## Powers
 
