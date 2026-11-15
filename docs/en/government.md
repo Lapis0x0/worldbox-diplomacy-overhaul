@@ -18,7 +18,7 @@ The government is shown as a kingdom trait, and also after the kingdom name and 
 | Province | A vassal fully merged with its overlord | Viceroy |
 | Hereditary Province | A province with the same royal house as its overlord | Prince |
 
-Becoming a vassal only changes the title, and independence restores it. For provinces, see [Vassals](vassals.md#provinces). Everywhere vanilla says "King" in the interface and the world log, the ruler's actual title is used, and a republic's crown icon is replaced by a golden olive wreath.
+Becoming a vassal only changes the title, and independence restores it. For provinces, see [Vassals](vassals.md#provinces). Everywhere vanilla says "King" in the interface and the world log, the ruler's actual title is used, and a republic's crown icon is replaced by a golden olive wreath. In the kingdom window, Past rulers lists each ruler with the title they held at the end of their reign, so you can still tell who was emperor after an empire declines.
 
 The titles of King, Emperor, and Consul also change with the [regime](parliament.md#regime-names), for example Khan, Hegemon, and Princeps Senatus. The titles of Lord Protector and of vassals do not change. When parliament is turned off, titles do not change with the regime.
 

@@ -263,7 +263,7 @@
   "vd_log_king_killed_2": "$title$ $king$ of $kingdom$ has been killed by $name$",
   "vd_log_king_killed_3": "$king$ of $kingdom$ was murdered by $name$",
   "vd_title_ruled": "Years as $title$",
-  "vd_title_past": "Past rulers",
+  "vd_past_rulers": "Past rulers",
   "vd_title_leadership": "$title$'s leadership",
   "vd_title_rule": "$title$'s rule",
   "vd_title_mood": "$title$'s mood",

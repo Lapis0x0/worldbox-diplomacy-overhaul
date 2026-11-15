@@ -246,12 +246,10 @@ namespace DiplomacyOverhaul
         {
             if (Government.Form(pKingdom) == pForm) return;
             ClearTerm(pKingdom);
+            // 先让君主下台再改政体，历代统治者里记下的还是君主的称呼
+            if (pForm == GovForm.Republic && pKingdom.hasKing()) pKingdom.removeKing();
             Government.SetForm(pKingdom, pForm);
-            if (pForm == GovForm.Republic)
-            {
-                if (pKingdom.hasKing()) pKingdom.removeKing();
-            }
-            else if (pKingdom.hasKing() && pKingdom.king.isAlive())
+            if (pForm != GovForm.Republic && pKingdom.hasKing() && pKingdom.king.isAlive())
             {
                 EnsureClan(pKingdom.king);
                 pKingdom.trySetRoyalClan();

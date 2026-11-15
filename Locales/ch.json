@@ -263,7 +263,7 @@
   "vd_log_king_killed_2": "$kingdom$的$title$$king$死于$name$之手",
   "vd_log_king_killed_3": "$kingdom$的$title$$king$遭到$name$的残杀",
   "vd_title_ruled": "$title$在位(年)",
-  "vd_title_past": "历代$title$",
+  "vd_past_rulers": "历代统治者",
   "vd_title_leadership": "$title$领导能力",
   "vd_title_rule": "$title$统治",
   "vd_title_mood": "$title$情绪",

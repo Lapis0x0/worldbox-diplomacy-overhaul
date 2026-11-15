@@ -263,7 +263,7 @@
   "vd_log_king_killed_2": "$title$ $king$ de $kingdom$ morreu pelas mãos de $name$",
   "vd_log_king_killed_3": "$king$ de $kingdom$ foi vítima de assassinato por $name$",
   "vd_title_ruled": "Anos como $title$",
-  "vd_title_past": "Governantes anteriores",
+  "vd_past_rulers": "Governantes anteriores",
   "vd_title_leadership": "Liderança: $title$",
   "vd_title_rule": "Governo: $title$",
   "vd_title_mood": "Humor: $title$",

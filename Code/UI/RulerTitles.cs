@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +11,7 @@ namespace DiplomacyOverhaul
     // 称呼由 Government.RulerKey 决定，含称呼的文案模板用 Government.TitledKey 注册。
     // 原版的挂点都在这个文件里；模组自己的界面直接用 Government.RulerTitle。
     // 领袖的冠也在这里：共和国用金橄榄冠（王国窗口旗帜上方、领袖卡片标题两边、议会坐标图里执政家族的点上）。
-    // 已覆盖：王国窗口概览的领袖卡片标题、王国窗口和城市窗口的「国王」一栏、「国王在位(年)」「历代国王」、
+    // 已覆盖：王国窗口概览的领袖卡片标题、王国窗口和城市窗口的「国王」一栏、「国王在位(年)」、
     // 王国和城市提示的「国王」一行（KingdomView 的 Patch_KingdomTooltipTreasury 调 Key）、单位提示的副标题、
     // 底部信息栏选中王国时的领袖一栏、王国窗口「查看领袖」按钮的提示（KingdomView）、城市忠诚明细和外交好感明细里的国王项、世界日志（WorldLogs 里的 $title$）
     public static class RulerTitles
@@ -110,8 +112,8 @@ namespace DiplomacyOverhaul
         }
     }
 
-    // 王国窗口的「国王在位(年)」「历代国王」两行按政体换成领袖的称呼。这两行走的是 StatsWindow 较短的重载，
-    // 直接调行容器，所以挂在行容器上
+    // 王国窗口的「国王在位(年)」按政体换成领袖的称呼，「历代国王」改成不随政体变的「历代统治者」。
+    // 这两行走的是 StatsWindow 较短的重载，直接调行容器，所以挂在行容器上
     [HarmonyPatch(typeof(StatsRowsContainer), "showStatRow")]
     static class Patch_RulerStatRows
     {
@@ -120,11 +122,123 @@ namespace DiplomacyOverhaul
             if (!Safety.On(Sys.Interface)) return;
             try
             {
-                string template = pId == "kingdom_statistics_king_ruled" ? "vd_title_ruled" : pId == "past_kings" ? "vd_title_past" : null;
-                if (template == null || __instance.GetComponentInParent<KingdomWindow>() == null) return;
-                pId = RulerTitles.Titled(SelectedMetas.selected_kingdom, template, pId);
+                if (pId != "kingdom_statistics_king_ruled" && pId != "past_kings") return;
+                if (__instance.GetComponentInParent<KingdomWindow>() == null) return;
+                pId = pId == "past_kings" ? PastRulers.TitleKey : RulerTitles.Titled(SelectedMetas.selected_kingdom, "vd_title_ruled", pId);
             }
             catch (Exception e) { Safety.Fail(Sys.Interface, "领袖行", e); }
+        }
+    }
+
+    // 历代统治者：每位统治者下台时记下当时的称呼，名单里写成「名字 · 称呼」，在位的用现在的称呼。
+    // 这样帝国沦为行省后，从前的皇帝仍写着皇帝
+    public static class PastRulers
+    {
+        public const string TitleKey = "vd_past_rulers";
+        const string Key = "vd_ruler_titles";  // "统治者 id=称呼 key;…"，只留还在原版名单（最多 30 位）里的
+
+        static Dictionary<long, string> Load(Kingdom pKingdom)
+        {
+            var result = new Dictionary<long, string>();
+            pKingdom.data.get(Key, out string raw, null);
+            if (string.IsNullOrEmpty(raw)) return result;
+            foreach (string item in raw.Split(';'))
+            {
+                int i = item.IndexOf('=');
+                if (i > 0 && long.TryParse(item.Substring(0, i), out long id)) result[id] = item.Substring(i + 1);
+            }
+            return result;
+        }
+
+        public static void OnRulerLeft(Kingdom pKingdom, LeaderEntry pEntry)
+        {
+            if (pKingdom.isNeutral()) return;
+            Dictionary<long, string> titles = Load(pKingdom);
+            titles[pEntry.id] = Government.RulerKey(pKingdom);
+            var sb = new StringBuilder();
+            foreach (LeaderEntry e in pKingdom.data.past_rulers)
+            {
+                if (titles.TryGetValue(e.id, out string t)) sb.Append(e.id).Append('=').Append(t).Append(';');
+            }
+            pKingdom.data.set(Key, sb.ToString());
+        }
+
+        // 照原版 TooltipLibrary.showPastRulers，名字后面接称呼；没记下称呼的（装模组前下台的）只写名字
+        public static void Show(Tooltip pTooltip, Kingdom pKingdom, ListPool<LeaderEntry> pRulers)
+        {
+            var lines = new List<KeyValuePair<string, string>>();
+            Dictionary<long, string> titles = Load(pKingdom);
+            ColorLibrary colors = AssetManager.meta_customization_library.getAsset(MetaType.Kingdom).color_library?.Invoke();
+            int next = Date.getCurrentYear();
+            for (int i = pRulers.Count - 1; i >= 0; i--)
+            {
+                LeaderEntry e = pRulers[i];
+                Actor actor = World.world.units.get(e.id);
+                bool dead = actor.isRekt();
+                string name = dead ? e.name : actor.name;
+                if (string.IsNullOrEmpty(name)) name = LocalizedTextManager.getText("unknown");
+                if (dead) name = "† " + name;
+                bool reigning = e.timestamp_end < e.timestamp_ago;
+                string title = reigning ? (pKingdom.king != null && pKingdom.king.getID() == e.id ? Government.RulerKey(pKingdom) : null)
+                    : titles.TryGetValue(e.id, out string t) ? t : null;
+                if (title != null && LocalizedTextManager.stringExists(title)) name += " · " + LocalizedTextManager.getText(title);
+                if (e.color_id > -1 && colors != null && e.color_id < colors.list.Count)
+                    name = Toolbox.coloredText(name, Toolbox.colorToHex(colors.list[e.color_id].getColorText(), pAlpha: false));
+                int from = Date.getYear(e.timestamp_ago);
+                int to = reigning ? next : Date.getYear(e.timestamp_end);
+                next = from;
+                lines.Add(new KeyValuePair<string, string>(name, string.Format("{0}–{1} ({2} {3})", from, to, to - from, "y")));
+            }
+            pTooltip.name.text = LocalizedTextManager.getText(TitleKey);
+            foreach (var line in lines) pTooltip.addLineText(line.Key, line.Value, null, pPercent: false, pLocalize: false);
+        }
+    }
+
+    // 统治者下台（原版在新君即位、国王被撤、死去时调）：记下这一刻的称呼
+    [HarmonyPatch(typeof(Kingdom), nameof(Kingdom.rulerLeft))]
+    static class Patch_RulerLeft
+    {
+        static void Prefix(Kingdom __instance, out LeaderEntry __state)
+        {
+            __state = null;
+            if (!Safety.On(Sys.Interface)) return;
+            try
+            {
+                List<LeaderEntry> list = __instance.data.past_rulers;
+                if (list == null || list.Count == 0) return;
+                LeaderEntry last = list[list.Count - 1];
+                if (last.timestamp_end < last.timestamp_ago) __state = last;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "统治者下台·记录", e); }
+        }
+
+        static void Postfix(Kingdom __instance, LeaderEntry __state)
+        {
+            if (__state == null || !Safety.On(Sys.Interface)) return;
+            try
+            {
+                if (__state.timestamp_end >= __state.timestamp_ago) PastRulers.OnRulerLeft(__instance, __state);
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "统治者下台·称呼", e); }
+        }
+    }
+
+    // 王国窗口的历代统治者提示：标题固定，名字后面接下台时的称呼。行都加完才写进提示，出错时照原版
+    [HarmonyPatch(typeof(TooltipLibrary), "showPastRulers")]
+    static class Patch_PastRulersTip
+    {
+        static bool Prefix(Tooltip pTooltip, TooltipData pData)
+        {
+            if (pData?.meta_type != MetaType.Kingdom || pData.past_rulers == null || pData.past_rulers.Count == 0) return true;
+            if (!Safety.On(Sys.Interface)) return true;
+            try
+            {
+                Kingdom k = SelectedMetas.selected_kingdom;
+                if (k == null || !k.isAlive()) return true;
+                PastRulers.Show(pTooltip, k, pData.past_rulers);
+                return false;
+            }
+            catch (Exception e) { Safety.Fail(Sys.Interface, "历代统治者提示", e); return true; }
         }
     }
 
