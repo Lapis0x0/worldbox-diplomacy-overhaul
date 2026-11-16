@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul.Perf
 {
-    // 性能优化的总入口。每项优化都只减少原版的重复计算，不改变游戏结果，规则和验证方法见 docs/performance.md。
+    // 性能优化的总入口。每项优化都只减少原版的重复计算，不改变游戏结果，规则和验证方法见 docs/dev/performance.md。
     // 玩家在设置里只有一个总开关；某项优化运行时出错，就只关掉这一项，之后走原版逻辑
     public static class Perf
     {

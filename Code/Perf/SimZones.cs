@@ -21,8 +21,20 @@ namespace DiplomacyOverhaul.Perf
         static readonly List<Building> _vanilla = new List<Building>();
         static readonly Comparison<(int slot, Building building)> BySlot = (a, b) => a.slot.CompareTo(b.slot);
 
-        static readonly Func<HashSet<Building>, Building, int> SlotOf =
-            AccessTools.MethodDelegate<Func<HashSet<Building>, Building, int>>(AccessTools.Method(typeof(HashSet<Building>), "InternalIndexOf"));
+        // 槽位号来自 Mono 的 HashSet 私有方法，换了运行时可能不存在。用到时才取：拿不到就在调用处抛出，
+        // 只关掉这一项；不能放在静态初始化里，否则类型初始化失败后每次访问本类都会再抛，异常会漏进原版
+        static Func<HashSet<Building>, Building, int> _slot_of;
+
+        static int SlotOf(HashSet<Building> pSet, Building pBuilding)
+        {
+            if (_slot_of == null)
+            {
+                System.Reflection.MethodInfo method = AccessTools.Method(typeof(HashSet<Building>), "InternalIndexOf")
+                    ?? throw new MissingMethodException("HashSet<Building>.InternalIndexOf");
+                _slot_of = AccessTools.MethodDelegate<Func<HashSet<Building>, Building, int>>(method);
+            }
+            return _slot_of(pSet, pBuilding);
+        }
 
         public static void Invalidate() => _invalid = true;
 
