@@ -129,15 +129,7 @@ namespace DiplomacyOverhaul
         // 城市自立 → 加入或发起叛乱战争；扩散交给 Spread
         static Kingdom Rebel(City pCity, Kingdom pOld)
         {
-            Actor leader = null;
-            foreach (Actor unit in pCity.getUnits())
-            {
-                if (unit.isAlive() && !unit.isKing() && unit.isAdult())
-                {
-                    leader = unit;
-                    break;
-                }
-            }
+            Actor leader = Feudal.PickFounder(pCity);
             if (leader == null) return null;
             if (leader.isCityLeader()) pCity.removeLeader();
             Kingdom rebel = pCity.makeOwnKingdom(leader, true);

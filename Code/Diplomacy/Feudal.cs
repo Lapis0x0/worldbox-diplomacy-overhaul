@@ -151,15 +151,7 @@ namespace DiplomacyOverhaul
                 return false;
             }
 
-            Actor ruler = null;
-            foreach (Actor unit in pCity.getUnits())
-            {
-                if (unit.isAlive() && unit.isAdult() && !unit.isKing())
-                {
-                    ruler = unit;
-                    break;
-                }
-            }
+            Actor ruler = PickFounder(pCity);
             if (ruler == null)
             {
                 pConqueror = pLord;
@@ -293,9 +285,30 @@ namespace DiplomacyOverhaul
             return result;
         }
 
+        // 能不能带着城市自立为国。原版建国不做检查：物种没有文明王国、或身上挂着已销毁的王国，建到一半就会抛异常，
+        // 留下一个没有王国类型的空国家，之后每帧清理它都报错，整个模拟卡死。原版自己建城前也查文明王国（CityManager）
+        internal static bool CanFound(Actor pActor)
+        {
+            if (pActor == null || !pActor.isAlive() || pActor.asset == null || !pActor.asset.canBecomeSapient()) return false;
+            KingdomAsset asset = AssetManager.kingdoms.get(pActor.asset.kingdom_id_civilization);
+            if (asset == null || !asset.civ) return false;
+            return !pActor.hasKingdom() || pActor.kingdom.asset != null;
+        }
+
+        // 城里第一个能自立为国的成年居民，国王除外
+        internal static Actor PickFounder(City pCity)
+        {
+            foreach (Actor unit in pCity.getUnits())
+            {
+                if (unit.isAdult() && !unit.isKing() && CanFound(unit)) return unit;
+            }
+            return null;
+        }
+
         // 城市自立为国，由 pRuler 当国王，成为 pLord 的附庸
         internal static Kingdom Grant(City pCity, Actor pRuler, Kingdom pLord, float pIntegration)
         {
+            if (!CanFound(pRuler)) return null;
             if (pRuler.isCityLeader()) pRuler.city.removeLeader();
             Kingdom vassal = pCity.makeOwnKingdom(pRuler);
             pRuler.joinCity(pCity);

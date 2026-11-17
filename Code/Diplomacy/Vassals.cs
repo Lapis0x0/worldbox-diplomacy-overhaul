@@ -171,7 +171,7 @@ namespace DiplomacyOverhaul
             if (pCity.isCapitalCity() || owner.countCities() < 2) return "vd_tip_city_is_capital";
             Kingdom lord = GetOverlord(owner) ?? owner;
 
-            Actor ruler = pCity.hasLeader() ? pCity.leader : pCity.getRandomUnit();
+            Actor ruler = pCity.hasLeader() && Feudal.CanFound(pCity.leader) ? pCity.leader : Feudal.PickFounder(pCity);
             if (ruler == null) return "vd_tip_city_empty";
 
             pNew = pCity.makeOwnKingdom(ruler);

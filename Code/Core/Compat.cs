@@ -109,4 +109,26 @@ namespace DiplomacyOverhaul
             if (_reported.Add(pMessage)) Debug.LogWarning("[外交大修] " + pMessage);
         }
     }
+
+    // 建国中途抛异常（物种没有文明王国、其他模组的单位挂着已销毁的王国）会留下一个没有王国类型的空国家。
+    // 原版移除它时先写「王国灭亡」日志，读颜色要用王国类型，抛空引用；抛在移除之前，这个国家永远留在名单里，
+    // 之后每帧都抛，整个模拟卡死。没有王国类型的就不写这条日志，照常移除
+    [HarmonyPatch(typeof(WorldLog), nameof(WorldLog.logKingdomDestroyed))]
+    static class Patch_BrokenKingdomLog
+    {
+        static bool Prefix(Kingdom pKingdom)
+        {
+            try
+            {
+                if (pKingdom == null || pKingdom.asset != null) return true;
+                ProjectileGuard.Warn($"王国 {pKingdom.data?.name} 没有王国类型，跳过灭亡日志照常移除");
+                return false;
+            }
+            catch (Exception e)
+            {
+                Isolation.Report("残缺王国的灭亡日志", e);
+                return true;
+            }
+        }
+    }
 }
