@@ -208,11 +208,11 @@ namespace DiplomacyOverhaul
         // 在意程度：家大业大、贪婪的，不满时气更大，也更积极提案；不影响它投哪一边
         public static float Salience(ParliamentClan pClan) => pClan.weight * Care(pClan.voice);
 
-        // 理想位置：意识形态乘这项政策的载荷，加上处境和利益；不限制在 -1 到 1
-        public static float Ideal(Kingdom pKingdom, ParliamentClan pClan, Policy pPolicy)
+        // 理想位置：意识形态乘这个议题的载荷，加上处境和利益；不限制在 -1 到 1
+        public static float Ideal(Kingdom pKingdom, ParliamentClan pClan, Issue pIssue)
         {
-            float stance = pPolicy.axis == PolicyAxis.Radical ? pClan.x : pClan.y;
-            return pPolicy.load * stance + (pPolicy.lean != null ? pPolicy.lean(pKingdom, pClan) : 0f);
+            float stance = pIssue.axis == PolicyAxis.Radical ? pClan.x : pClan.y;
+            return pIssue.load * stance + (pIssue.lean != null ? pIssue.lean(pKingdom, pClan) : 0f);
         }
 
         // 从 pFrom 改成 pTo，离理想位置近了多少；掌权家族再减去把地方逼反的风险
@@ -225,10 +225,10 @@ namespace DiplomacyOverhaul
         }
 
         // 只看立场：新的一档离理想位置近了多少
-        public static float StanceGain(Kingdom pKingdom, ParliamentClan pClan, Policy pPolicy, int pFrom, int pTo)
+        public static float StanceGain(Kingdom pKingdom, ParliamentClan pClan, Issue pIssue, int pFrom, int pTo)
         {
-            float ideal = Ideal(pKingdom, pClan, pPolicy);
-            return Mathf.Abs(pPolicy.Center(pFrom) - ideal) - Mathf.Abs(pPolicy.Center(pTo) - ideal);
+            float ideal = Ideal(pKingdom, pClan, pIssue);
+            return Mathf.Abs(pIssue.Center(pFrom) - ideal) - Mathf.Abs(pIssue.Center(pTo) - ideal);
         }
 
         // 看在提案人面上多投的那一点；提案人自己和玩家的议案没有

@@ -20,12 +20,10 @@ namespace DiplomacyOverhaul
 
     // 一项国家政策：几个选项依次排在一条轴上。现行选项存在 kingdom.data 里，
     // 国家政体例外，直接读写政体大类
-    public class Policy
+    public class Policy : Issue
     {
         public string id;
         public PolicyTab tab;
-        public PolicyAxis axis;
-        public int count = 3;
         public string icon;
         // 通过要多少议席赞成
         public float threshold = 0.5f;
@@ -35,10 +33,6 @@ namespace DiplomacyOverhaul
         public Func<Kingdom, bool> proposable;
         public Func<Kingdom, int> read;
         public Action<Kingdom, int> write;
-        // 意识形态在这项政策上的载荷：和所在的轴不相干的政策是 0
-        public float load = 1f;
-        // 处境和利益：把一股势力在这项政策上的理想位置往哪边挪多少（和意识形态同一个单位）
-        public Func<Kingdom, ParliamentClan, float> lean;
         // 收归中央的兵和钱：现行一档比势力想要的更集中时，它的不满算削藩
         public bool crown;
 
@@ -63,10 +57,6 @@ namespace DiplomacyOverhaul
         }
 
         public bool CanPropose(Kingdom pKingdom) => active && shown(pKingdom) && (proposable == null || proposable(pKingdom));
-
-        // 档位均分：-1 到 1 按档数等分，每一档代表其中一段，这是那一段的中心。
-        // 三档是 -2/3、0、2/3，四档是 ±1/4、±3/4，两档是 ±1/2
-        public float Center(int pOption) => count <= 1 ? 0f : -1f + (2f * pOption + 1f) / count;
 
         public string OptionKey(int pOption) => id + "_" + pOption;
 
