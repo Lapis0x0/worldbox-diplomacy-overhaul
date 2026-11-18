@@ -258,21 +258,29 @@ namespace DiplomacyOverhaul
         // 提案人所在的集团全体赞成。pBlocs 要按 pClans 建（见 Of）
         public static bool[] Decide(List<ParliamentClan> pClans, List<Bloc> pBlocs, float[] pScores, ParliamentClan pProposer, float pInertia)
         {
+            float[] merged = Merged(pClans, pBlocs, pScores, pProposer);
             var yes = new bool[pClans.Count];
-            for (int i = 0; i < pClans.Count; i++) yes[i] = pScores[i] > pInertia;
+            for (int i = 0; i < pClans.Count; i++) yes[i] = merged[i] > pInertia;
+            return yes;
+        }
+
+        // 集团合并后的分数：成员都取集团按议席加权的平均分，提案人所在的集团是 1
+        public static float[] Merged(List<ParliamentClan> pClans, List<Bloc> pBlocs, float[] pScores, ParliamentClan pProposer)
+        {
+            var merged = new float[pClans.Count];
+            for (int i = 0; i < pClans.Count; i++) merged[i] = pScores[i];
             foreach (Bloc b in pBlocs)
             {
-                bool by;
-                if (pProposer != null && b.Has(pProposer)) by = true;
-                else
+                float score = 1f;
+                if (pProposer == null || !b.Has(pProposer))
                 {
                     float sum = 0f;
                     for (int k = 0; k < b.members.Count; k++) sum += b.members[k].seats * pScores[b.at[k]];
-                    by = b.seats > 0 && sum / b.seats > pInertia;
+                    score = b.seats > 0 ? sum / b.seats : 0f;
                 }
-                foreach (int i in b.at) yes[i] = by;
+                foreach (int i in b.at) merged[i] = score;
             }
-            return yes;
+            return merged;
         }
 
         // 被裹挟：最低也算吃了这么多亏

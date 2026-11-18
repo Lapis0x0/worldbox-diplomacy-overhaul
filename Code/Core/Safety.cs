@@ -20,7 +20,8 @@ namespace DiplomacyOverhaul
         Parliament,
         Military,
         Economy,
-        Interface
+        Interface,
+        Situation
     }
 
     // 补丁和原版之间的边界：模组的代码不能把异常抛进原版。原版的每帧更新没有异常保护，
@@ -107,6 +108,7 @@ namespace DiplomacyOverhaul
                 case Sys.Parliament: return "vd_group_parliament";
                 case Sys.Military: return "vd_group_military";
                 case Sys.Economy: return "vd_sys_economy";
+                case Sys.Situation: return "vd_sys_situation";
                 default: return "vd_sys_interface";
             }
         }

@@ -222,13 +222,13 @@ namespace DiplomacyOverhaul
         public static Governance Govern(Kingdom pKingdom)
         {
             var g = new Governance();
-            // 城市归心：原版忠诚为正的非首都城市占比，不算周期自己加的忠诚，免得衰落一路自我加速
+            // 城市归心：原版忠诚为正的非首都城市占比，不算周期和局势自己加的忠诚，免得衰落一路自我加速
             int n = 0, loyal = 0;
             foreach (City c in pKingdom.getCities())
             {
                 if (c.isCapitalCity()) continue;
                 n++;
-                if (c.getCachedLoyalty() - CityLoyalty(c) >= 0) loyal++;
+                if (c.getCachedLoyalty() - CityLoyalty(c) - Situations.Loyalty(c) >= 0) loyal++;
             }
             g.Cities = LoyalWeight * ((n > 0 ? (float)loyal / n : 1f) - LoyalMid);
 

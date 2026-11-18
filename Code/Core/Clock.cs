@@ -86,6 +86,7 @@ namespace DiplomacyOverhaul
                     // 军械先花，营建用剩下的
                     Run(Sys.Economy, "Works", Works.UpdateAll);
                     Run(Sys.Parliament, "Parliament", Parliament.UpdateAll);
+                    Run(Sys.Situation, "Situations", Situations.UpdateAll);
                 }
             }
             finally

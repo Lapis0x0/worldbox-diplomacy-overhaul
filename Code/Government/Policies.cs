@@ -502,6 +502,7 @@ namespace DiplomacyOverhaul
                 if (k == null || !k.isCiv()) return;
                 float factor = __instance.asset.is_boat ? 1f : Policies.LandDamageFactor(k);
                 factor *= 1f + Cycle.DamagePercent(k) / 100f;
+                factor *= 1f + Situations.DamagePercent(k) / 100f;
                 factor *= 1f - Treasury.Penalty(__instance);
                 factor *= Armory.WeaponFactor(__instance);
                 if (factor != 1f) __instance.stats["damage"] *= factor;
