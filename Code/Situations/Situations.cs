@@ -8,6 +8,9 @@ namespace DiplomacyOverhaul
     {
         public ParliamentClan clan;
         public float attitude, push;
+        // 界面的悬停提示用：政见得失（往右头为正）、对发起方的好感
+        public float gain;
+        public int favor;
     }
 
     // 局势这一年的推力明细
@@ -89,11 +92,15 @@ namespace DiplomacyOverhaul
         {
             var tally = new SituationTally();
             var scores = new float[pClans.Count];
+            var gains = new float[pClans.Count];
+            var favors = new int[pClans.Count];
             for (int i = 0; i < pClans.Count; i++)
             {
                 ParliamentClan pc = pClans[i];
                 if (pc.Key == pBy.Key) continue;
-                scores[i] = Parliament.StanceGain(pKingdom, pc, pDef, 0, 1) + pDef.favor * Relations.Value(pc, pBy) / 100f;
+                gains[i] = Parliament.StanceGain(pKingdom, pc, pDef, 0, 1);
+                favors[i] = Relations.Value(pc, pBy);
+                scores[i] = gains[i] + pDef.favor * favors[i] / 100f;
             }
             List<Bloc> blocs = Blocs.Of(pKingdom, pClans);
             float[] merged = Blocs.Merged(pClans, blocs, scores, pBy);
@@ -105,7 +112,7 @@ namespace DiplomacyOverhaul
                 bool ally = pc.Key == pBy.Key || (own != null && own.Has(pc));
                 float attitude = ally ? 1f : Mathf.Clamp(merged[i] - Parliament.Inertia, -1f, 1f);
                 float push = seats > 0 ? attitude * pc.seats / seats : 0f;
-                tally.powers.Add(new SituationPower { clan = pc, attitude = attitude, push = push });
+                tally.powers.Add(new SituationPower { clan = pc, attitude = attitude, push = push, gain = gains[i], favor = favors[i] });
                 tally.total += push;
             }
             int years = Years(pKingdom, pDef);
@@ -181,6 +188,7 @@ namespace DiplomacyOverhaul
         static void End(Kingdom pKingdom, SituationDef pDef, SituationTally pTally, ParliamentClan pBy, bool pRight)
         {
             if (pTally != null) Settle(pTally, pBy, pRight);
+            Record(pKingdom, pDef, pBy, pRight);
             Clear(pKingdom, pDef);
             Refresh(pKingdom);
             (pRight ? pDef.onRight : pDef.onLeft)?.Invoke(pKingdom, pBy);
@@ -229,6 +237,7 @@ namespace DiplomacyOverhaul
             List<ParliamentClan> clans = null;
             foreach (SituationDef d in All)
             {
+                Expire(pKingdom, d);
                 if (IsActive(pKingdom, d))
                 {
                     // 议会关掉时没有议席可算，进行中的局势直接结束

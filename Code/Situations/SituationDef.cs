@@ -23,6 +23,8 @@ namespace DiplomacyOverhaul
     public class SituationDef : Issue
     {
         public string id;
+        // 局势和两头结局在界面上的图标
+        public string icon, leftIcon, rightIcon;
         // 合力为 1 时走完全程的年数
         public float years = 10f;
         // 开局时的进度

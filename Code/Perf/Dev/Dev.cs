@@ -66,8 +66,8 @@ namespace DiplomacyOverhaul.Perf
     //   parl court <国家> <氏族> <目标>   这一家立即拉拢目标一次（送礼、记恩情、够了就入伙）
     //   parl leave <国家> <氏族>    这一家立即脱离集团
     //   sit [国家] | sit open <局势 id> <国家> | sit set <局势 id> <国家> <进度> | sit end <局势 id> <国家> left|right
-    //                           | sit tick <国家> [年数] | sit collapse <国家> | sit coup <国家>
-    //                           局势：列出进行中的局势和推力明细；立即开局；拨进度；直接走到一头；只给这个国家推进几年；让它进入崩溃期；反复掷夺权直到发生
+    //                           | sit tick <国家> [年数] | sit collapse <国家> | sit coup <国家> | sit window <国家>
+    //                           局势：列出进行中的局势和推力明细；立即开局；拨进度；直接走到一头；只给这个国家推进几年；让它进入崩溃期；反复掷夺权直到发生；打开局势窗口
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
     //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
@@ -81,6 +81,7 @@ namespace DiplomacyOverhaul.Perf
     //   kings [kill]             没有国王（执政）的国家，最后一行 @kings <无主数>/<国家数>；kill 先让所有国王死去
     //   check                    巡检对象之间的关系（附庸、城市、单位、军队、弹道、战争指向的国家都还在），每条违规一行 @violation（tools/soak.sh 用）
     //   year                     写一行 @year <当前年份>
+    //   sprites <资源目录> [关键词]  列出目录下的贴图名、所在纹理、尺寸和九宫格边距
     //   end <token>              写一行 @done <token>，脚本据此判断结束
     //   一批命令执行期间世界保持运行（玩家暂停了会自动恢复，结果里记一行 @note），跑完自动暂停；
     //   批里写了 pause on|off 就照最后一次写的
@@ -462,6 +463,12 @@ namespace DiplomacyOverhaul.Perf
                 case "bench": BenchDev.Run(a); break;
                 case "check": CheckDev.Run(); break;
                 case "year": Log("@year " + Date.getCurrentYear()); break;
+                case "sprites":
+                    // sprites <资源目录> [关键词]：列出这个目录下的贴图名、所在纹理、尺寸和九宫格边距，找原版贴图的路径用
+                    foreach (Sprite sp in Resources.LoadAll<Sprite>(a[1]))
+                        if (a.Length < 3 || sp.name.Contains(a[2]))
+                            Log($"  {sp.name} tex={sp.texture?.name} rect={sp.rect} border={sp.border}");
+                    break;
                 case "kings": Kings(a.Length > 1 && a[1] == "kill"); break;
                 case "safety":
                     // safety fail <系统> [次数]：模拟这个系统的补丁出错，检查熔断；safety reset：全部恢复

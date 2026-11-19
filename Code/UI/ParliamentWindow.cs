@@ -132,9 +132,9 @@ namespace DiplomacyOverhaul
             tip.showOnClick = false;
             tip.textOnClick = "vd_parliament";
             tip.textOnClickDescription = "vd_parliament_description";
-            // 局势叠在议会上方，一直显示。悬停列出进行中的局势和阶段；手机上没有悬停，点一下也显示
+            // 局势叠在议会上方，一直显示。悬停列出进行中的局势和阶段，点击打开局势窗口
             GameObject situations = null;
-            situations = SideButton(template, moverRect, "SituationButton", SideGap, Situations.IconPath, () => SituationTip(situations));
+            situations = SideButton(template, moverRect, "SituationButton", SideGap, Situations.IconPath, () => SituationWindow.Open(SelectedKingdom()));
             situations.AddComponent<HoverPointer>().show = () => SituationTip(situations);
             return mover;
         }

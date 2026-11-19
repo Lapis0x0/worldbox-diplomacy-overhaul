@@ -13,6 +13,9 @@ namespace DiplomacyOverhaul
         public static readonly SituationDef Def = new SituationDef
         {
             id = "vd_sit_coup",
+            icon = "ui/Icons/iconArmy",
+            leftIcon = "ui/Icons/iconLoyalty",
+            rightIcon = "ui/Icons/iconKings",
             axis = PolicyAxis.Central,
             lean = Lean,
             initiator = FindInitiator,

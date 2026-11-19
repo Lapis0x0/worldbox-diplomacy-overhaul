@@ -31,6 +31,9 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "window":
+                    SituationWindow.Open(Dev.FindKingdom(a[2]));
+                    break;
                 case "tick":
                 {
                     Kingdom k = Dev.FindKingdom(a[2]);
