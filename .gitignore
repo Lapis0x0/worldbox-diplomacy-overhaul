@@ -3,3 +3,6 @@ obj/
 .DS_Store
 .claude/
 .plans/
+
+# 图标草图和参考图只留本地，不入库
+.art/**/*.png
