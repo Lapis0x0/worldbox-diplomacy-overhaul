@@ -288,20 +288,27 @@ namespace DiplomacyOverhaul
         }
 
         // 称帝：鼎盛的大共和国，执政性格越强硬越可能
-        static void TryCrown(Kingdom pKingdom)
+        internal static void TryCrown(Kingdom pKingdom)
         {
-            if (!Government.IsRepublic(pKingdom) || !Cycle.IsEmpire(pKingdom)) return;
+            if (!Government.IsRepublic(pKingdom) || !Cycle.IsEmpire(pKingdom) || Situations.IsActive(pKingdom, Coronation.Def)) return;
             if (Cycle.Get(pKingdom) != CyclePhase.Prime) return;
             Actor ruler = pKingdom.king;
             if (ruler == null || !ruler.isAlive()) return;
             if (!Randy.randomChance(EmperorChance * CrownWeight(ruler))) return;
+            // 议会开着时开「共和国称帝」局势，走到右头才加冕；否则照旧直接称帝
+            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Coronation.TryOpen(pKingdom)) return;
+            Crown(pKingdom, ruler);
+        }
 
+        // 执政加冕称帝：大类变成君主制，他的家族成为王室
+        internal static void Crown(Kingdom pKingdom, Actor pRuler)
+        {
             Government.SetForm(pKingdom, GovForm.Monarchy);
             ClearTerm(pKingdom);
-            EnsureClan(ruler);
+            EnsureClan(pRuler);
             pKingdom.trySetRoyalClan();
-            WorldLogs.Add(WorldLogs.Crowned, Location(pKingdom), ruler,
-                new[] { ruler.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+            WorldLogs.Add(WorldLogs.Crowned, Location(pKingdom), pRuler,
+                new[] { pRuler.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
             AfterChange(pKingdom);
         }
 

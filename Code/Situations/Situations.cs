@@ -38,6 +38,7 @@ namespace DiplomacyOverhaul
             All.Clear();
             All.Add(Decline.Def);
             All.Add(Coup.Def);
+            All.Add(Coronation.Def);
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_situation",
@@ -212,6 +213,11 @@ namespace DiplomacyOverhaul
                 return true;
             }
             SituationTally tally = Tally(pKingdom, pDef, pClans, by);
+            if (pDef.fail != null && pDef.fail(pKingdom, by))
+            {
+                End(pKingdom, pDef, tally, by, false);
+                return true;
+            }
             float progress = Progress(pKingdom, pDef) + tally.total * RightEnd / pDef.years;
             if (progress <= LeftEnd || progress >= RightEnd)
             {

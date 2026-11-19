@@ -86,6 +86,8 @@ A kingdom that does not switch splits as in vanilla.
 
 A republic with 6 or more cities (counting its vassals) that is not a vassal and is at its [Prime](cycle.md) may see its consul crown himself or herself emperor. The consul's clan becomes the royal house and the kingdom becomes an Empire. Ambitious, Bloodlust, and Evil consuls are the most likely to do it. Content, Honest, Pacifist, and Peaceful consuls never do.
 
+With the parliament on, the consul's clan reaches for the crown, and the clans struggle over it in parliament for several years. Conservative clans back the empire and radical clans defend the republic. A kingdom at its height lends the idea weight, and once it leaves Prime the talk gradually dies down. If the consul's clan loses the next election, or the parliament keeps the republic, nothing comes of it. If it succeeds, the consul is crowned. With the parliament off, the consul crowns himself or herself at once.
+
 ### Coup in Times of Collapse
 
 Each year, a kingdom in [Collapse](cycle.md) has a 10% chance (20% if the culture has Warriors Ascension) of facing a coup.

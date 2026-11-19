@@ -40,6 +40,8 @@ namespace DiplomacyOverhaul
         public Action<Kingdom, ParliamentClan> onLeft, onRight;
         // 局势的前提已经不在：直接结束，不执行结局，也不记恩怨
         public Func<Kingdom, ParliamentClan, bool> moot;
+        // 发起方已经输了（如执政家族在改选中落选）：走到左头，照常记恩怨
+        public Func<Kingdom, ParliamentClan, bool> fail;
         // 由别的系统驱动的局势（王朝衰落）：每年调它，开局、进度和落幕都由它决定，不走推力公式
         public Action<Kingdom> drive;
 
