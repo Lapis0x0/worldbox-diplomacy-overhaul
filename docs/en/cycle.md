@@ -86,8 +86,8 @@ When the plot completes, success or failure is decided. The default chance of su
 
 A Great Rebellion breaks out when the Mandate falls below 20, when the capital is lost during Decline, or when the **Great Rebellion** power is used.
 
-1. Several of the lowest-loyalty cities that are not next to each other rise up at once. The bigger the kingdom, the more cities rise, up to 6. The kingdom must have at least 3 cities.
-2. The rebels spread outward and take about 60% of the original kingdom's cities other than the capital.
+1. Clans that resent the royal house (the consul's clan in a republic) rise up together with the cities they hold, the most resentful first. The bigger the kingdom, the more clans rise, up to 6.
+2. The remaining cities with negative loyalty each rise on their own, the lowest first. The kingdom must have at least 3 cities, and at most 60% of the cities other than the capital rise.
 3. Each vassal decides according to its Integration whether to rebel. Newly surrendered vassals almost always rebel, and provinces rarely do. Rebel vassals fight in the same rebellion war as the rebel cities, and each makes its own peace with the original kingdom. Those that submit become vassals again.
 
 The kingdom then enters Collapse, and a notice appears at the top of the screen. With the Rebellions world law turned off, no Great Rebellion breaks out on its own, and a dynasty that hits bottom stays in Decline. The **Great Rebellion** power still works.

@@ -5,29 +5,30 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 大叛乱：国内多处城市同时叛乱，附庸按整合度决定是否造反；城市和附庸都在同一场叛乱战争里，各自和原国家谈和
+    // 大叛乱：怨恨王室的家族带着名下的城起兵，其余不满的城各自起事，附庸按整合度决定是否造反；
+    // 城市和附庸都在同一场叛乱战争里，各自和原国家谈和
     public static class GreatRebellion
     {
-        // 叛军最终占走原国家非首都城市的比例
+        // 起事的城最多占原国家非首都城市的比例
         const int TakenPercent = 60;
+        // 国家至少要有几座城才会有城市起事；起事点不足时用忠诚最低的城补到这个数
+        const int MinCities = 3, MinPoints = 2;
 
         // 原版「叛乱」世界法则关掉时，王朝周期不再自发引发大叛乱；神力照常可用
         public static bool LawOn => WorldLawLibrary.world_law_rebellions.isEnabled();
 
-        // 返回叛乱的城市数和造反的附庸数之和；为 0 表示什么都没发生
+        // 返回起事的城市数和造反的附庸数之和；为 0 表示什么都没发生
         public static int Trigger(Kingdom pKingdom)
         {
             int count = 0;
-
-            int nonCapital = pKingdom.countCities() - (pKingdom.capital != null ? 1 : 0);
-            var rebels = new List<Kingdom>();
-            foreach (City seed in PickSeeds(pKingdom))
+            int total = pKingdom.countCities();
+            if (total >= MinCities)
             {
-                if (seed.kingdom != pKingdom || seed.isRekt()) continue;
-                Kingdom rebel = Rebel(seed, pKingdom);
-                if (rebel != null) rebels.Add(rebel);
+                int budget = (total - (pKingdom.capital != null ? 1 : 0)) * TakenPercent / 100;
+                var rebels = new List<Kingdom>();
+                int taken = RiseClans(pKingdom, budget, Mathf.Clamp(total / 4, 2, 6), rebels);
+                count += taken + RiseCities(pKingdom, budget - taken, rebels);
             }
-            count += rebels.Count + Spread(pKingdom, rebels, nonCapital * TakenPercent / 100 - rebels.Count);
 
             War war = RebellionWar(pKingdom);
             foreach (Kingdom vassal in Vassals.GetVassals(pKingdom))
@@ -49,87 +50,79 @@ namespace DiplomacyOverhaul
             return count;
         }
 
-        // 叛乱点：优先不满、离首都远的非首都城市，彼此不相邻，好让叛军从帝国各处同时冒出来
-        static List<City> PickSeeds(Kingdom pKingdom)
+        // 对王室（共和国是执政家族）好感为负的家族，从最怨恨的开始，最多 pMax 股：
+        // 每股在名下人口最多的城立一个叛军国，名下其余的城一起加入。返回起事的城数
+        static int RiseClans(Kingdom pKingdom, int pBudget, int pMax, List<Kingdom> pRebels)
         {
-            var result = new List<City>();
-            int total = pKingdom.countCities();
-            if (total < 3) return result;
-            WorldTile capital = pKingdom.capital?.getTile();
-            var candidates = new List<City>();
-            foreach (City city in pKingdom.getCities())
+            List<ParliamentClan> clans = Parliament.Clans(pKingdom);
+            ParliamentClan crown = clans.Find(c => c.ruling);
+            if (crown == null) return 0;
+            var grudges = new List<(ParliamentClan clan, int favor)>();
+            foreach (ParliamentClan pc in clans)
             {
-                if (!city.isCapitalCity() && city.units.Count > 0) candidates.Add(city);
+                if (pc.ruling) continue;
+                int favor = Relations.Value(pc, crown);
+                if (favor < 0) grudges.Add((pc, favor));
             }
-            candidates.Sort((a, b) =>
-            {
-                int byLoyalty = a.getCachedLoyalty().CompareTo(b.getCachedLoyalty());
-                if (byLoyalty != 0) return byLoyalty;
-                return Dist(b, capital).CompareTo(Dist(a, capital));
-            });
-            int seeds = Mathf.Clamp(total / 4, 2, 6);
-            foreach (City city in candidates)
-            {
-                if (result.Count >= seeds) break;
-                city.recalculateNeighbourCities();
-                bool adjacent = false;
-                foreach (City picked in result)
-                {
-                    if (city.neighbours_cities.Contains(picked)) adjacent = true;
-                }
-                if (!adjacent) result.Add(city);
-            }
-            return result;
-        }
+            grudges.Sort((a, b) => a.favor.CompareTo(b.favor));
 
-        // 叛军轮流从自己的边界吞并原国家的城市（首都除外），直到吞够 pBudget 座或无城可吞；返回吞并数
-        static int Spread(Kingdom pOld, List<Kingdom> pRebels, int pBudget)
-        {
             int taken = 0;
-            bool progress = true;
-            while (taken < pBudget && progress)
+            foreach (var (pc, _) in grudges)
             {
-                progress = false;
-                foreach (Kingdom rebel in pRebels)
+                if (pRebels.Count >= pMax || taken >= pBudget) break;
+                List<City> cities = pc.cities.FindAll(c => c.kingdom == pKingdom && !c.isCapitalCity() && c.units.Count > 0);
+                cities.Sort((a, b) => b.getPopulationPeople().CompareTo(a.getPopulationPeople()));
+                Kingdom rebel = null;
+                City seat = null;
+                foreach (City city in cities)
+                {
+                    rebel = Rebel(city, pKingdom, city.leader);
+                    if (rebel == null) continue;
+                    seat = city;
+                    break;
+                }
+                if (rebel == null) continue;
+                pRebels.Add(rebel);
+                taken++;
+                foreach (City city in cities)
                 {
                     if (taken >= pBudget) break;
-                    City next = Frontier(rebel, pOld);
-                    if (next == null) continue;
-                    next.joinAnotherKingdom(rebel, false, true);
+                    if (city == seat || city.kingdom != pKingdom || !rebel.isAlive()) continue;
+                    city.joinAnotherKingdom(rebel, false, true);
                     taken++;
-                    progress = true;
                 }
             }
             return taken;
         }
 
-        static City Frontier(Kingdom pRebel, Kingdom pOld)
+        // 剩下的城里忠诚为负的各自起事，从忠诚最低的开始；起事点不足 MinPoints 时用忠诚最低的城补足。返回起事的城数
+        static int RiseCities(Kingdom pKingdom, int pBudget, List<Kingdom> pRebels)
         {
-            if (!pRebel.isAlive()) return null;
-            var options = new List<City>();
-            foreach (City city in pRebel.getCities())
+            var candidates = new List<City>();
+            foreach (City city in pKingdom.getCities())
             {
-                city.recalculateNeighbourCities();
-                foreach (City n in city.neighbours_cities)
-                {
-                    if (n.kingdom == pOld && !n.isCapitalCity() && !options.Contains(n)) options.Add(n);
-                }
+                if (!city.isCapitalCity() && city.units.Count > 0) candidates.Add(city);
             }
-            return options.Count > 0 ? options.GetRandom() : null;
-        }
-
-        static int Dist(City pCity, WorldTile pCapital)
-        {
-            WorldTile tile = pCity.getTile();
-            if (tile == null || pCapital == null) return 0;
-            return (tile.x - pCapital.x) * (tile.x - pCapital.x) + (tile.y - pCapital.y) * (tile.y - pCapital.y);
+            candidates.Sort((a, b) => a.getCachedLoyalty().CompareTo(b.getCachedLoyalty()));
+            int taken = 0;
+            foreach (City city in candidates)
+            {
+                if (taken >= pBudget) break;
+                if (city.getCachedLoyalty() >= 0 && pRebels.Count >= MinPoints) break;
+                if (city.kingdom != pKingdom) continue;
+                Kingdom rebel = Rebel(city, pKingdom, null);
+                if (rebel == null) continue;
+                pRebels.Add(rebel);
+                taken++;
+            }
+            return taken;
         }
 
         // 同原版 DiplomacyHelpersRebellion.startRebellion 的前半段，但不需要密谋：
-        // 城市自立 → 加入或发起叛乱战争；扩散交给 Spread
-        static Kingdom Rebel(City pCity, Kingdom pOld)
+        // 城市自立 → 加入或发起叛乱战争。优先由 pFounder 领头（家族起兵时是这家的城主）
+        static Kingdom Rebel(City pCity, Kingdom pOld, Actor pFounder)
         {
-            Actor leader = Feudal.PickFounder(pCity);
+            Actor leader = pFounder != null && pFounder.isAdult() && !pFounder.isKing() && Feudal.CanFound(pFounder) ? pFounder : Feudal.PickFounder(pCity);
             if (leader == null) return null;
             if (leader.isCityLeader()) pCity.removeLeader();
             Kingdom rebel = pCity.makeOwnKingdom(leader, true);
