@@ -166,7 +166,8 @@ namespace DiplomacyOverhaul
             {
                 id = Form, tab = PolicyTab.Domestic, axis = PolicyAxis.Radical, count = 2, icon = "ui/Icons/iconKings",
                 threshold = 0.75f,
-                proposable = k => !Integration.IsProvince(k),
+                // 王位空悬期间由局势决定政体
+                proposable = k => !Integration.IsProvince(k) && !Situations.IsActive(k, Vacancy.Def),
                 read = k => (int)Government.Form(k),
                 write = (k, v) => Regime.Reform(k, (GovForm)v),
                 lean = (k, pc) =>

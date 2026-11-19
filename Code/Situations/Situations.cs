@@ -39,6 +39,7 @@ namespace DiplomacyOverhaul
             All.Add(Decline.Def);
             All.Add(Coup.Def);
             All.Add(Coronation.Def);
+            All.Add(Vacancy.Def);
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_situation",

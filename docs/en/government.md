@@ -73,7 +73,9 @@ When a king dies and nobody in the kingdom's own royal house can inherit, a king
 
 ### Extinct Royal Line
 
-In vanilla, when the royal house dies out and no heir can be found, a multi-city kingdom splits into many small kingdoms. Now a monarchy has a chance to become a republic instead, with parliament electing a consul, and the kingdom stays whole.
+In vanilla, when the royal house dies out and no heir can be found, a multi-city kingdom splits into many small kingdoms. With the parliament on, the kingdom no longer splits. The throne stands empty instead: the clan with the most seats eyes it, and the clans struggle over it in parliament, most of them unwilling to see a rival house crowned. Parliament governs in the meantime, and the longer it drags on, the more the kingdom leans toward a republic. In the end, either parliament elects a consul and the kingdom becomes a republic, or that clan's head takes the throne and founds a new dynasty. While the throne is empty the kingdom has no ruler, city loyalty drops, and a long vacancy drags the dynasty into decline.
+
+With the parliament off, a monarchy has a chance to become a republic instead, with parliament electing a consul, and the kingdom stays whole.
 
 | Kingdom's culture | Chance of switching |
 |---|---|

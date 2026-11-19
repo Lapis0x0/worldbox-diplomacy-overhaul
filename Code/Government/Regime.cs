@@ -216,6 +216,12 @@ namespace DiplomacyOverhaul
             Culture culture = pKingdom.culture;
             bool leaning = Has(culture, "diplomatic_ascension") || Has(culture, "golden_rule");
             if (!Randy.randomChance(leaning ? RepublicOnExtinctionLeaning : RepublicOnExtinction)) return false;
+            return FoundRepublic(pKingdom);
+        }
+
+        // 无主的君主国改行共和：议会推举执政
+        internal static bool FoundRepublic(Kingdom pKingdom)
+        {
             Actor ruler = Elect(pKingdom);
             if (ruler == null) return false;
 
@@ -227,6 +233,24 @@ namespace DiplomacyOverhaul
                 new[] { pKingdom.data.name, ruler.getName() }, new[] { pKingdom, pKingdom });
             AfterChange(pKingdom);
             return true;
+        }
+
+        // 无主的君主国另立新君：他的家族成为王室
+        internal static void Enthrone(Kingdom pKingdom, Actor pActor)
+        {
+            pKingdom.clearKingData();
+            if (pActor.hasCity())
+            {
+                pActor.stopBeingWarrior();
+                if (pActor.isCityLeader()) pActor.city.removeLeader();
+            }
+            if (pKingdom.hasCapital() && pActor.city != pKingdom.capital) pActor.joinCity(pKingdom.capital);
+            pKingdom.setKing(pActor);
+            EnsureClan(pActor);
+            pKingdom.trySetRoyalClan();
+            WorldLogs.Add(WorldLogs.Enthroned, Location(pKingdom), pActor,
+                new[] { pActor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+            AfterChange(pKingdom);
         }
 
         // 开创王朝的人要有家族，王室才立得起来；原版新王上位后也会给没有家族的国王建一个
@@ -419,6 +443,12 @@ namespace DiplomacyOverhaul
             {
                 if (pKingdom.data.timer_new_king > 0f) return true;
                 if (pKingdom.hasKing() && pKingdom.king.isAlive()) return true;
+                // 王位空悬期间不另立国王，由局势决定
+                if (Safety.On(Sys.Situation) && Situations.IsActive(pKingdom, Vacancy.Def))
+                {
+                    __result = BehResult.Continue;
+                    return false;
+                }
                 if (!Government.IsRepublic(pKingdom) || !Regime.TryElect(pKingdom)) return true;
                 __result = BehResult.Continue;
                 return false;
@@ -442,7 +472,12 @@ namespace DiplomacyOverhaul
         {
             if (!Safety.On(Sys.Government)) return true;
             bool republic = Government.IsRepublic(pMainKingdom);
-            try { return !Regime.TryRepublicOnExtinction(pMainKingdom); }
+            try
+            {
+                // 议会开着时王位空悬，各家族角力；否则按概率改制或照原版分裂
+                if (!republic && Settings.ParliamentEnabled && Regime.Enabled && Safety.On(Sys.Situation) && Vacancy.TryOpen(pMainKingdom)) return false;
+                return !Regime.TryRepublicOnExtinction(pMainKingdom);
+            }
             catch (Exception e)
             {
                 Safety.Fail(Sys.Government, "绝嗣改共和国", e);

@@ -82,6 +82,16 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "vacant":
+                {
+                    // 王室绝嗣：国王死去、撤销王室，等下一次检查国王时走绝嗣的流程
+                    Kingdom k = Dev.FindKingdom(a[2]);
+                    k.king?.die(true, AttackType.Other);
+                    k.data.royal_clan_id = -1L;
+                    Dev.Log($"@sit vacant {k.data.name} cities={k.countCities()} open={Vacancy.TryOpen(k)}");
+                    Show(k);
+                    break;
+                }
                 case "crown":
                 {
                     // 直接开「共和国称帝」：不是共和国时先改成共和国，执政出自原来的王室
