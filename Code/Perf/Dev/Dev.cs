@@ -39,6 +39,7 @@ namespace DiplomacyOverhaul.Perf
     //   tab <页签 id>            切到神力栏的这个页签，如 tab noosphere
     //   zones <1|-1>             等于按一下 X / Z 轮换地图图层，打印换到的图层
     //   uifind <名字> [children]  找场景里叫这个名字的节点（含未激活的），打印完整路径；children 再列出子节点
+    //   uiside [situation]        点右下角的议会按钮（或上面的局势按钮），打印点完之后开着的窗口
     //   uiopen <窗口 id>        打开窗口，内容是当前选中的对象（先 uiselect）
     //   gcinfo                   打印 GC 模式和托管堆大小
     //   heap <标签> [行数]        遍历托管堆，按类型统计个数和大小（很慢）
@@ -414,9 +415,9 @@ namespace DiplomacyOverhaul.Perf
                     ScrollWindow.showWindow(a[1]);
                     break;
                 case "uiside":
-                    // 点右下角的议会按钮
+                    // uiside [situation]：点右下角的议会按钮，或者上面的局势按钮
                     var side = AccessTools.Field(typeof(ParliamentWindow), "_side").GetValue(null) as UiMover;
-                    var sideButton = side?.transform.Find("Button")?.GetComponent<UnityEngine.UI.Button>();
+                    var sideButton = side?.transform.Find(a.Length > 1 && a[1] == "situation" ? "SituationButton" : "Button")?.GetComponent<UnityEngine.UI.Button>();
                     if (sideButton == null) Log("  ! no side button");
                     else sideButton.onClick.Invoke();
                     Log("  open: " + string.Join(" ", ScrollWindow._all_windows.Where(kv => kv.Value != null && kv.Value.gameObject.activeInHierarchy).Select(kv => kv.Key)));

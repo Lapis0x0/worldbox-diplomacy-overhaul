@@ -1,4 +1,4 @@
-"""用 Atlas Cloud 上的 GPT Image 2.5 生成图标草图（复制自 figure-to-ppt skill）。
+"""用 Atlas Cloud 上的 GPT Image 2.6 生成图标草图（复制自 figure-to-ppt skill）。
 
 usage:
   python gen_image.py --prompt p.txt --out fig2_v1 [--refs style1.jpg draft.png ...] [--size 2048x2048]
@@ -33,18 +33,19 @@ ap.add_argument("--refs", nargs="*", default=[])
 ap.add_argument("--size", default="2048x2048")
 ap.add_argument("--quality", default="high", help="low | medium | high | xhigh | max")
 ap.add_argument("--tier", default="sunburst", help="sunburst (larger) | flare")
+ap.add_argument("--version", default="2.6", help="GPT Image 版本，如 2.6、2.5")
 ap.add_argument("--n", type=int, default=2)
 a = ap.parse_args()
 
 body = {"prompt": open(a.prompt).read(), "quality": a.quality, "size": a.size, "output_format": "png", "n": a.n}
 if a.refs:
-    body["model"] = f"openai/gpt-image-2.5-{a.tier}/edit"
+    body["model"] = f"openai/gpt-image-{a.version}-{a.tier}/edit"
     body["images"] = []
     for p in a.refs:
         mime = "image/jpeg" if p.lower().endswith((".jpg", ".jpeg")) else "image/png"
         body["images"].append(f"data:{mime};base64," + base64.b64encode(open(p, "rb").read()).decode())
 else:
-    body["model"] = f"openai/gpt-image-2.5-{a.tier}/text-to-image"
+    body["model"] = f"openai/gpt-image-{a.version}-{a.tier}/text-to-image"
 
 r = requests.post(f"{BASE}/generateImage", headers=H, json=body, timeout=120)
 j = r.json()

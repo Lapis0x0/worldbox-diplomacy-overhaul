@@ -1,6 +1,6 @@
 # Parliament and Policies
 
-Parliament is the body through which a kingdom decides its policies, and every kingdom has one, monarchies included. Clans (vanilla clans) get seats in proportion to the cities they hold, and vote on each policy: taxation, army organization, land grants, and foreign policy. Parliament is the second tab on the left of the kingdom window. When a kingdom is selected on the map, there is also a parliament button at the bottom right.
+Parliament is the body through which a kingdom decides its policies, and every kingdom has one, monarchies included. Clans (vanilla clans) get seats in proportion to the cities they hold, and vote on each policy: taxation, army organization, land grants, and foreign policy. Parliament is the second tab on the left of the kingdom window. When a kingdom is selected on the map, there is also a parliament button at the bottom right. The situations button above it lists the struggles under way in the kingdom, such as a generals' coup.
 
 ## Seats
 

@@ -1,14 +1,18 @@
 """按草图自身的像素网格还原成 28x28：AI 画的「像素块」大小不一定整齐，切错网格会把相邻两块混色、整体发糊。
 这里对每个图标单独量出块的边长和起点（找颜色突变最集中的等距位置，横竖共用一个边长），在每块中间取色，尽量原样保留 AI 画的像素。
 和主体分开的小零件（闪光之类）常常没对齐主体的网格，按主体网格取色会缺笔画，所以按它自己的外框单独取色，再放到最近的格子上。
-用法: pixelize_grid.py 草图.png 行 列 输出前缀 名字...（名字按从左到右、从上到下的格子顺序，- 表示跳过）"""
+用法: pixelize_grid.py 草图.png 行 列 输出前缀 名字[@块边长]...（名字按从左到右、从上到下的格子顺序，- 表示跳过）
+自动量出的块边长不一定对：描边比一个块细时，颜色突变最整齐的常常是半块或一块半，还原出来描边加粗、整体放大。
+这时用 fit_curve.py 看误差曲线的低谷，把块边长写在名字后面（如 vd_situation@29），起点按这个边长自动找"""
+import os
 import sys
 import numpy as np
 from PIL import Image
 
 src, rows, cols, out = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
 names = sys.argv[5:]
-N = 28
+# 画布边长：原版图标是 28；只想看草图按原样还原有多大时，用环境变量 ICON_SIZE 放宽
+N = int(os.environ.get("ICON_SIZE", 28))
 im = np.asarray(Image.open(src).convert("RGB")).astype(float)
 bg = np.median(np.concatenate([im[:8].reshape(-1, 3), im[-8:].reshape(-1, 3)]), axis=0)
 H, W = im.shape[:2]
@@ -32,6 +36,25 @@ def grid(gx, gy, lo=16, hi=26):
         sy, phy = phase_score(gy, p)
         if sx + sy > best[0]: best = (sx + sy, p, phx, phy)
     return best[1:]
+
+
+def fit_error(box, bm, p, phx, phy):
+    """按这个网格每块取中心点的颜色铺回原尺寸，和草图的平均色差"""
+    h, w = bm.shape
+    Y, X = np.mgrid[0:h, 0:w]
+    bi, bj = np.floor((X - phx) / p).astype(int), np.floor((Y - phy) / p).astype(int)
+    cx = np.clip((phx + (np.arange(bi.max() + 2) + 0.5) * p).astype(int), 0, w - 1)
+    cy = np.clip((phy + (np.arange(bj.max() + 2) + 0.5) * p).astype(int), 0, h - 1)
+    on, col = bm[cy[:, None], cx[None, :]], box[cy[:, None], cx[None, :]]
+    lay = on[bj.clip(0), bi.clip(0)] & (bi >= 0) & (bj >= 0)
+    out = np.where(lay[..., None], col[bj.clip(0), bi.clip(0)], bg)
+    return np.abs(out - box).sum(2).mean()
+
+
+def fixed_grid(box, bm, p):
+    """块边长已知：起点取还原误差最小的"""
+    return (p,) + min(((a, b) for a in np.arange(0, p, 1.0) for b in np.arange(0, p, 1.0)),
+                      key=lambda ab: fit_error(box, bm, p, *ab))
 
 
 def components(mask):
@@ -73,6 +96,7 @@ def sample(img, m, a0, a1, b0, b1):
 failed = False
 for k, name in enumerate(names):
     if name == "-": continue
+    name, _, forced = name.partition("@")
     r, c = divmod(k, cols)
     cell = im[r * H // rows:(r + 1) * H // rows, c * W // cols:(c + 1) * W // cols]
     mask = np.abs(cell - bg).sum(axis=2) > 40
@@ -81,12 +105,12 @@ for k, name in enumerate(names):
     box = cell[y0:y1, x0:x1]
     gx = np.abs(np.diff(box, axis=1)).sum(2).sum(0)
     gy = np.abs(np.diff(box, axis=0)).sum(2).sum(1)
-    px, phx, phy = grid(gx, gy)
+    bm = mask[y0:y1, x0:x1]
+    px, phx, phy = fixed_grid(box, bm, float(forced)) if forced else grid(gx, gy)
     py = px
     nx, ny = int((box.shape[1] - phx) // px), int((box.shape[0] - phy) // py)
     M = 3  # 四周多留几格，小零件可能落在主体网格范围外
     small = np.zeros((ny + 2 * M, nx + 2 * M, 4), np.uint8)
-    bm = mask[y0:y1, x0:x1]
     for j in range(ny):
         for i in range(nx):
             c = sample(box, bm, phy + j * py, phy + (j + 1) * py, phx + i * px, phx + (i + 1) * px)
@@ -121,7 +145,7 @@ for k, name in enumerate(names):
         small = small[1:] if top <= bottom else small[:-1]
     h, w = small.shape[:2]
     if h > N or w > N:
-        print(f"{name}: {w}x{h} 超过 28，跳过（让生图模型画小一点）", file=sys.stderr)
+        print(f"{name}: {w}x{h} 超过 {N}，跳过（让生图模型画小一点）", file=sys.stderr)
         failed = True
         continue
     canvas = np.zeros((N, N, 4), np.uint8)

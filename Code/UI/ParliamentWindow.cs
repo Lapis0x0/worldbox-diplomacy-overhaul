@@ -127,8 +127,26 @@ namespace DiplomacyOverhaul
             mover.hidePos = new Vector3(-leftMover.hidePos.x, mover.initPos.y, 0f);
             mover.setVisible(false, true);
 
-            GameObject go = Object.Instantiate(template.gameObject, moverRect);
-            go.name = "Button";
+            GameObject parliament = SideButton(template, moverRect, "Button", 0f, IconPath, () => Open(SelectedKingdom()));
+            TipButton tip = parliament.AddComponent<TipButton>();
+            tip.showOnClick = false;
+            tip.textOnClick = "vd_parliament";
+            tip.textOnClickDescription = "vd_parliament_description";
+            // 局势叠在议会上方，一直显示。悬停列出进行中的局势和阶段；手机上没有悬停，点一下也显示
+            GameObject situations = null;
+            situations = SideButton(template, moverRect, "SituationButton", SideGap, Situations.IconPath, () => SituationTip(situations));
+            situations.AddComponent<HoverPointer>().show = () => SituationTip(situations);
+            return mover;
+        }
+
+        // 右下角按钮的间距：按钮 32，上下隔 8
+        const float SideGap = 40f;
+
+        // 照原版取消按钮的样子做一个右下角按钮：去掉动画、关闭图标和底框，换上自己的图标
+        static GameObject SideButton(Transform pTemplate, RectTransform pParent, string pName, float pY, string pIcon, UnityEngine.Events.UnityAction pClick)
+        {
+            GameObject go = Object.Instantiate(pTemplate.gameObject, pParent);
+            go.name = pName;
             foreach (Component c in go.GetComponents<Component>())
             {
                 if (c is SelectedPowerTabTopContainer || c is Animator) Object.DestroyImmediate(c);
@@ -137,20 +155,39 @@ namespace DiplomacyOverhaul
             Object.DestroyImmediate(go.transform.Find("bg").gameObject);
             RectTransform rt = (RectTransform)go.transform;
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero;
+            rt.anchoredPosition = new Vector2(0f, pY);
             rt.sizeDelta = new Vector2(32f, 32f);
             RectTransform icon = (RectTransform)go.transform.Find("Icon");
             icon.anchoredPosition = Vector2.zero;
-            icon.GetComponent<Image>().sprite = SpriteTextureLoader.getSprite(IconPath);
-
+            icon.GetComponent<Image>().sprite = SpriteTextureLoader.getSprite(pIcon);
             Button button = go.GetComponent<Button>();
             button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(() => Open(SelectedKingdom()));
-            TipButton tip = go.AddComponent<TipButton>();
-            tip.showOnClick = false;
-            tip.textOnClick = "vd_parliament";
-            tip.textOnClickDescription = "vd_parliament_description";
-            return mover;
+            button.onClick.AddListener(pClick);
+            return go;
+        }
+
+        // 阶段名按进度条上那一段的颜色：琥珀到红
+        static readonly string[] StageColors = { "#efcb75", "#e8a56a", "#e2805f" };
+
+        static void SituationTip(GameObject pTarget)
+        {
+            if (pTarget == null) return;
+            Kingdom k = SelectedKingdom();
+            var lines = new List<(string, string, string)>();
+            if (k != null)
+            {
+                foreach (SituationDef d in Situations.All)
+                {
+                    if (!Situations.IsActive(k, d)) continue;
+                    int stage = Situations.StageOf(Situations.Progress(k, d));
+                    lines.Add((d.id, LM.Get(d.id + "_stage" + stage), StageColors[stage]));
+                }
+            }
+            TipName = "vd_situation";
+            TipEffects = new List<(string, string)>();
+            TipLines = lines;
+            TipVote = null;
+            Tooltip.show(pTarget, "tip", new TooltipData { tip_name = "vd_situation", tip_description = "vd_situation_description" });
         }
 
         static Kingdom SelectedKingdom()

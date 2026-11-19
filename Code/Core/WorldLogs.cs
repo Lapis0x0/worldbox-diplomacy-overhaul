@@ -66,8 +66,8 @@ namespace DiplomacyOverhaul
             Register(Crowned, "ui/Icons/iconKingdomList", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
-            Register(CoupBegan, "ui/Icons/iconArmy", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
-            Register(CoupEnded, "ui/Icons/iconArmy", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(CoupBegan, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(CoupEnded, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
             Register(Charter, ParliamentWindow.IconPath, Toolbox.color_log_good, "$kingdom$", "$policy$");
             Register(Works, "ui/Icons/iconMoney", Toolbox.color_log_neutral, "$kingdom$", "$city$", "$building$");

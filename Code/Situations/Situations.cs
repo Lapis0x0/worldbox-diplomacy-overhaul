@@ -23,6 +23,7 @@ namespace DiplomacyOverhaul
     // 进行中的局势全部存在 kingdom.data 里，读档和热重载都不会丢
     public static partial class Situations
     {
+        public const string IconPath = "ui/Icons/vd_situation";
         public const int StageCount = 3;
         const float SecondStage = 33f, ThirdStage = 67f;
         const float LeftEnd = 0f, RightEnd = 100f;

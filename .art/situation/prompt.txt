@@ -1,0 +1,9 @@
+The first image is the exact icon we chose: two people standing back to back, a brown-haired figure in a red cloak on the left and a crowned figure in a blue cloak on the right, with a yellow lightning bolt between them. It stands for rival factions at a royal court turning against each other. The second image shows original WorldBox icons for style.
+
+Redraw this SAME icon as faithfully as possible: same poses, same faces with small dark eyes, same hair, same cloak colors, same lightning bolt, same crown. Only fix two things: draw it on a slightly coarser pixel grid so the whole group is exactly about 24 pixel blocks wide and 20 pixel blocks tall, and keep the crown clean: a simple golden crown with a thin one-pixel dark outline, its points not surrounded by hair. No brooch, no hands.
+
+Draw a 2x2 sheet with 4 renditions of it so we can choose.
+
+Keep the ORIGINAL WorldBox look: slight 3/4 view, warm orange and brown shading with a dark brown one-pixel outline, chunky square pixels on a strict grid where every pixel block has the same size, limited palette, no anti-aliasing, no gradients, no text.
+
+Each icon centered in its own equal square cell, each group about 65% of its cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no shadows on the background, no borders, no labels.

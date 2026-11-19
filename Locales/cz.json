@@ -296,6 +296,8 @@
   "vd_election_leader": "城主",
   "vd_parliament": "议会",
   "vd_parliament_description": "各氏族的议席、立场和国家的政策",
+  "vd_situation": "局势",
+  "vd_situation_description": "国内各方围绕大事的长年角力",
   "vd_parliament_seats": "议会",
   "vd_parliament_policies": "政策",
   "vd_parliament_bill": "议案",

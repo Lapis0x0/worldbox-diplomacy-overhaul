@@ -296,6 +296,8 @@
   "vd_election_leader": "Governor",
   "vd_parliament": "Parliament",
   "vd_parliament_description": "The clans' seats and stances, and the kingdom's policies",
+  "vd_situation": "Situations",
+  "vd_situation_description": "Long struggles among the realm's clans over its great affairs",
   "vd_parliament_seats": "Parliament",
   "vd_parliament_policies": "Policies",
   "vd_parliament_bill": "Bill",

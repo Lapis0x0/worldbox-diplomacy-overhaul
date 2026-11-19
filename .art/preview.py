@@ -5,7 +5,9 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 out, specs = sys.argv[1], sys.argv[2:]
-font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", 22)
+# 新版 macOS 把 PingFang 挪走了，按顺序找一个能用的中文字体
+FONTS = ["/System/Library/Fonts/PingFang.ttc", "/System/Library/Fonts/STHeiti Medium.ttc", "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"]
+font = ImageFont.truetype(next(f for f in FONTS if os.path.exists(f)), 22)
 Z, CW = 7, 28 * 7 + 40
 sheet = Image.new("RGBA", (40 + len(specs) * CW, 28 * Z + 150), (44, 44, 52, 255))
 draw = ImageDraw.Draw(sheet)

@@ -1,0 +1,16 @@
+The first image shows original pixel-art icons from the game WorldBox (28x28 sprites scaled up 16x): a small parliament icon (a horseshoe of colored seats around a speaker), the golden crown, a fiery cloud, and an iron sword. The second image shows more original WorldBox icons for style.
+
+I need an icon for a new button, and I want YOU to invent the idea. Be creative and surprising; avoid the obvious clichés.
+
+What the button opens: the "Situations" of a kingdom. A situation is a long political crisis inside one realm: a general gathering his own army and pressing the court, an old dynasty slowly losing the mandate of heaven, a throne left empty with no heir, a republic's consul edging toward a crown. Noble clans take sides, push and pull for years, small omens and turns of fortune pile up, until the crisis tips into one of two endings. The feeling is tension, intrigue and an uncertain balance of power, like dark clouds gathering over a court.
+
+Constraints:
+- It sits directly above the parliament icon in the same corner, so it must read as clearly different from it at a glance.
+- Do not draw: a parliament, crossed swords, a battle map or war table, a chess game, a plain balance scale, a sealed letter.
+- It must be readable at 28x28 pixels: one clear main object, at most one small secondary detail.
+
+Draw a 3x2 sheet of 6 DIFFERENT ideas of your own, each a distinct concept, not variations of the same thing.
+
+Match the ORIGINAL WorldBox look closely, not a generic mobile-game look: objects seen slightly from the side in 3/4 view, warm orange and brown shading with a dark brown outline on the shadow side, a hand-made slightly playful feel, chunky square pixels on a strict 28x28 grid, limited palette, no anti-aliasing, no gradients, no text.
+
+Each icon centered in its own equal cell, compact, each object about 38% of its cell width, nothing touching the cell borders. Background flat uniform medium grey (#808080), no shadows on the background, no borders, no labels.
