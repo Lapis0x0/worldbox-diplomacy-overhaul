@@ -29,7 +29,7 @@ Every kingdom has a parliament. Families win seats from the cities they hold, vo
 
 A kingdom can be a Kingdom or an Empire, or a Republic, Merchant Republic or Military Republic. A new nation's government follows the leanings of its culture, and an existing one does not stay fixed.
 
-Republics elect their leader at regular intervals. When a royal line dies out, a monarchy may become a republic instead of splitting apart; an ambitious leader of a republic at its prime may proclaim an empire, and generals may seize power from a collapsing dynasty.
+Republics elect their leader at regular intervals. Changes of dynasty play out as **situations**: a throne left empty when the royal line dies out, a consul of a republic at its prime reaching for a crown, a general pressing a collapsing court. The families struggle in parliament for years as the situation moves toward one outcome, and the situations window shows who is pushing and who is holding it back.
 
 You can follow the policy votes in parliament, see candidates, the line of succession and family lands in the Elections & Offices window, and set a family's political stance directly in the clan editor.
 
@@ -41,7 +41,7 @@ Even mighty kingdoms go through cycles of rise and decline.
 
 A great power holds the **Mandate of Heaven**, which reflects the mood of its cities, its ruler, its vassals and the course of its wars, and affects how well its armies fight. While its rule is secure, the kingdom climbs toward its prime; as problems pile up, cities grow restless, vassals drift away, and the dynasty slides into decline.
 
-When the capital falls or the Mandate runs out, a Great Rebellion may sweep the realm: many cities rise at once and vassals declare independence. Even after the rebellion is put down, the problems that built up over the years don't disappear overnight.
+When the capital falls or the Mandate runs out, a Great Rebellion may sweep the realm: families that resent the crown rise with their lands, cities that have lost all loyalty rise on their own, and vassals declare independence. Even after the rebellion is put down, the problems that built up over the years don't disappear overnight.
 
 Decline is not the end, though. A capable ruler may plot a Restoration and try to turn the dynasty's fortunes around.
 

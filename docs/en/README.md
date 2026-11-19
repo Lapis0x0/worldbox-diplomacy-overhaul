@@ -32,7 +32,7 @@ Saves made before installing the mod can be used as they are. Missing data is fi
 
 ## How the systems connect
 
-- **The dynastic cycle** affects vassal Integration, city loyalty, and the chance of rebellion. A republic at its Prime may crown an emperor, and in Collapse a general may seize power.
+- **The dynastic cycle** affects vassal Integration, city loyalty, and the chance of rebellion. A republic at its Prime may crown an emperor, in Collapse a general may seize power, and when a royal line dies out the throne stands empty. Each of these plays out as a situation that the clans fight over in parliament for years.
 - **Vassals** come from surrender, grants of land, and submission. An overlord and its vassals enter and leave wars together. When the dynasty declines, vassals drift away, and in a Great Rebellion they break away in numbers.
 - **Wars** end by negotiation. Depending on the war score, the loser pays reparations, cedes vassals, or submits.
 - **Parliament** decides taxation, army organization, land grants, and foreign policy. Clans can form blocs that vote together.
