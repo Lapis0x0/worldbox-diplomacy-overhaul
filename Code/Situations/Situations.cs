@@ -36,6 +36,7 @@ namespace DiplomacyOverhaul
         public static void Init()
         {
             All.Clear();
+            All.Add(Decline.Def);
             All.Add(Coup.Def);
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
@@ -238,7 +239,12 @@ namespace DiplomacyOverhaul
             foreach (SituationDef d in All)
             {
                 Expire(pKingdom, d);
-                if (IsActive(pKingdom, d))
+                if (d.drive != null)
+                {
+                    if (enabled) d.drive(pKingdom);
+                    else if (IsActive(pKingdom, d)) Clear(pKingdom, d);
+                }
+                else if (IsActive(pKingdom, d))
                 {
                     // 议会关掉时没有议席可算，进行中的局势直接结束
                     if (!enabled) Clear(pKingdom, d);
@@ -247,6 +253,29 @@ namespace DiplomacyOverhaul
                 else if (enabled && d.trigger != null && d.trigger(pKingdom)) Open(pKingdom, d, clans ??= Parliament.Clans(pKingdom));
             }
             Refresh(pKingdom);
+        }
+
+        // ---------- 由别的系统驱动的局势 ----------
+
+        // 开局或者把进度拨到这里；进入新阶段时照常抽候选
+        internal static void Drive(Kingdom pKingdom, SituationDef pDef, float pProgress)
+        {
+            if (!IsActive(pKingdom, pDef))
+            {
+                pKingdom.data.set(KeySince(pDef), Date.getCurrentYear());
+                pKingdom.data.removeLong(KeyBy(pDef));
+            }
+            pProgress = Mathf.Clamp(pProgress, LeftEnd, RightEnd);
+            pKingdom.data.set(KeyProgress(pDef), pProgress);
+            Draw(pKingdom, pDef, pProgress);
+        }
+
+        // 走到一头：记进落幕记录；pRecord 为 false 时只清掉（前提不在了）
+        internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight, bool pRecord)
+        {
+            if (!IsActive(pKingdom, pDef)) return;
+            if (pRecord) Record(pKingdom, pDef, null, pRight);
+            Clear(pKingdom, pDef);
         }
 
         // 开发命令：按眼下的推力直接走到一头

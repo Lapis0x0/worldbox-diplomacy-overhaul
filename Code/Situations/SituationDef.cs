@@ -40,6 +40,8 @@ namespace DiplomacyOverhaul
         public Action<Kingdom, ParliamentClan> onLeft, onRight;
         // 局势的前提已经不在：直接结束，不执行结局，也不记恩怨
         public Func<Kingdom, ParliamentClan, bool> moot;
+        // 由别的系统驱动的局势（王朝衰落）：每年调它，开局、进度和落幕都由它决定，不走推力公式
+        public Action<Kingdom> drive;
 
         public readonly List<SituationPressure> pressures = new List<SituationPressure>();
         // 三个阶段各自的候选

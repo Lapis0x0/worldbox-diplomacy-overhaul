@@ -48,6 +48,15 @@ namespace DiplomacyOverhaul
             public string byName;
             public SituationTally tally;
             public readonly SituationPick[] picks = new SituationPick[Situations.StageCount];
+            // 王朝衰落：进度条画天命，数值是应得天命的组成，往左头（维系王朝）为正
+            public bool decline;
+            public float mandate;
+            // 每年的变化：一般局势是进度，王朝衰落是天命；toward 统一换算成每年往右头走多少进度
+            public float per, toward;
+            // 大势、抽中的候选、各方；各方悬停看对谁的好感
+            public readonly List<Row> trends = new List<Row>();
+            public List<SituationPower> powers = new List<SituationPower>();
+            public ParliamentClan favorTo;
             public string Key => def.id + (ended != null ? "_end" : "");
         }
 
@@ -133,10 +142,16 @@ namespace DiplomacyOverhaul
             {
                 if (!Situations.IsActive(_kingdom, d)) continue;
                 clans ??= Parliament.Clans(_kingdom);
-                var e = new Entry { def = d, progress = Situations.Progress(_kingdom, d), years = Situations.Years(_kingdom, d), by = Situations.Initiator(_kingdom, d, clans) };
-                e.byName = e.by != null ? e.by.clan.name : "";
-                if (e.by != null) e.tally = Situations.Tally(_kingdom, d, clans, e.by);
+                var e = new Entry { def = d, progress = Situations.Progress(_kingdom, d), years = Situations.Years(_kingdom, d) };
                 for (int s = 0; s < Situations.StageCount; s++) e.picks[s] = Situations.Picked(_kingdom, d, s);
+                if (d == Decline.Def) DeclineRows(e, clans);
+                else
+                {
+                    e.by = Situations.Initiator(_kingdom, d, clans);
+                    e.byName = e.by != null ? e.by.clan.name : "";
+                    e.favorTo = e.by;
+                    if (e.by != null) GenericRows(e, Situations.Tally(_kingdom, d, clans, e.by));
+                }
                 list.Add(e);
             }
             var ended = new List<Entry>();
@@ -150,6 +165,60 @@ namespace DiplomacyOverhaul
             }
             list.AddRange(ended.OrderByDescending(e => e.ended.year));
             return list;
+        }
+
+        static void GenericRows(Entry pEntry, SituationTally pTally)
+        {
+            pEntry.tally = pTally;
+            pEntry.powers = pTally.powers;
+            foreach (var (p, v) in pTally.pressures)
+                if (Mathf.Abs(v) > Eps) pEntry.trends.Add(new Row { name = LM.Get(p.id), push = v, color = TrendBar, nameColor = Ink });
+            foreach (var (p, v) in pTally.picks)
+                pEntry.trends.Add(new Row { name = LM.Get(p.id), push = v, color = PickGold, nameColor = Ink });
+            pEntry.per = pTally.total * 100f / pEntry.def.years;
+            pEntry.toward = pEntry.per;
+        }
+
+        // 王朝衰落：大势是应得天命的组成（基准不显示），各方是对王室的向背；每年天命向应得天命靠拢一成
+        static void DeclineRows(Entry pEntry, List<ParliamentClan> pClans)
+        {
+            pEntry.decline = true;
+            pEntry.mandate = Cycle.Mandate(_kingdom);
+            pEntry.progress = Decline.Position(pEntry.mandate);
+            Cycle.Governance g = Cycle.Govern(_kingdom);
+            float scar = Cycle.ScarAging(_kingdom);
+            void Trend(string pKey, float pValue)
+            {
+                if (Mathf.Abs(pValue) > 0.05f) pEntry.trends.Add(new Row { name = LM.Get(pKey), push = pValue, color = TrendBar, nameColor = Ink });
+            }
+            Trend("vd_mandate_decay", scar - Cycle.Aging(_kingdom));
+            Trend("vd_mandate_scar", -scar);
+            Trend("vd_mandate_cities", g.Cities);
+            Trend("vd_mandate_ruler", g.Ruler);
+            Trend("vd_mandate_vassals", g.Vassals);
+            Trend("vd_mandate_people", g.People);
+            Trend("vd_mandate_small_lord", g.SmallLord);
+            float extra = 0f;
+            for (int s = 0; s < Situations.StageCount; s++)
+            {
+                if (pEntry.picks[s] == null) continue;
+                float v = Decline.PickValue(pEntry.picks[s], s);
+                extra += v;
+                pEntry.trends.Add(new Row { name = LM.Get(pEntry.picks[s].id), push = v, color = PickGold, nameColor = Ink });
+            }
+            pEntry.favorTo = pClans.Find(c => c.ruling);
+            if (Settings.ParliamentEnabled)
+            {
+                foreach (Decline.Power p in Decline.Powers(_kingdom, pClans))
+                {
+                    // 只显示一位小数：先取整，不到 0.05 的归进观望，不写成 −0.0
+                    pEntry.powers.Add(new SituationPower { clan = p.clan, push = Mathf.Round(p.value * 10f) / 10f, favor = p.favor });
+                    extra += p.value;
+                }
+            }
+            pEntry.per = Cycle.PullRate * (Cycle.Target(_kingdom, g) + extra - pEntry.mandate);
+            // 天命往下走就是往右头（大叛乱）走：天命 30 点对应进度条 100
+            pEntry.toward = -pEntry.per * 100f / 30f;
         }
 
         static void Build()
@@ -200,8 +269,9 @@ namespace DiplomacyOverhaul
         static (string, Color) Short(Entry pEntry)
         {
             if (pEntry.ended != null) return (Ago(pEntry.ended.year), Muted);
-            float per = PerYear(pEntry);
+            float per = pEntry.toward;
             if (Mathf.Abs(per) < 0.05f) return (LM.Get("vd_sit_stalemate"), Muted);
+            if (pEntry.decline && per < 0f) return (LM.Get("vd_sit_rising"), Away);
             float left = per > 0f ? 100f - pEntry.progress : pEntry.progress;
             return (LM.Get("vd_sit_about").Replace("$n$", Mathf.Max(1, Mathf.CeilToInt(left / Mathf.Abs(per))).ToString()), per > 0f ? Toward : Away);
         }
@@ -216,7 +286,7 @@ namespace DiplomacyOverhaul
             RectTransform head = Sliced(_body, Slot, RX, HeadY, RW, 20f);
             string age = pEntry.ended != null ? Ago(pEntry.ended.year) : LM.Get("vd_sit_year").Replace("$n$", (pEntry.years + 1).ToString());
             Text(head, age, 8f, 0f, RW - 16f, 20f, 7, Muted, TextAnchor.MiddleRight);
-            string desc = LM.Get(d.id + "_desc").Replace("$clan$", pEntry.byName);
+            string desc = LM.Get(d.id + "_desc").Replace("$clan$", pEntry.byName).Replace("$kingdom$", _kingdom.data.name);
             Text(head, Fit(desc, 7, RW - 30f - Measure(age, 7)), 8f, 0f, RW - 16f, 20f, 7, Ink, TextAnchor.MiddleLeft);
 
             float inner = RW - 12f;
@@ -244,15 +314,17 @@ namespace DiplomacyOverhaul
             if (pEntry.ended != null) return;
 
             RectTransform trend = Sliced(_body, Slot, RX, TrendY, RW, 18f);
-            float per = PerYear(pEntry);
-            string perText = Mathf.Abs(per) < 0.05f ? LM.Get("vd_sit_stalemate") : LM.Get("vd_sit_per_year").Replace("$v$", Signed(per, 1));
-            string progressText = LM.Get("vd_sit_progress").Replace("$n$", Mathf.RoundToInt(pEntry.progress).ToString());
+            float per = pEntry.per, toward = pEntry.toward;
+            string perText = Mathf.Abs(toward) < 0.05f ? LM.Get("vd_sit_stalemate") : LM.Get("vd_sit_per_year").Replace("$v$", Signed(per, 1));
+            string progressText = pEntry.decline
+                ? LM.Get("vd_sit_mandate").Replace("$n$", Mathf.RoundToInt(pEntry.mandate).ToString())
+                : LM.Get("vd_sit_progress").Replace("$n$", Mathf.RoundToInt(pEntry.progress).ToString());
             Text(trend, progressText, 8f, 0f, 80f, 18f, 7, Ink, TextAnchor.MiddleLeft);
             // 每年的变化紧跟在进度后面
-            Text(trend, perText, 8f + Measure(progressText, 7) + 6f, 0f, 120f, 18f, 7, Mathf.Abs(per) < 0.05f ? Muted : per > 0f ? Toward : Away, TextAnchor.MiddleLeft);
-            Text(trend, Eta(pEntry, per), 8f, 0f, RW - 16f, 18f, 7, Gold, TextAnchor.MiddleRight);
+            Text(trend, perText, 8f + Measure(progressText, 7) + 6f, 0f, 120f, 18f, 7, Mathf.Abs(toward) < 0.05f ? Muted : toward > 0f ? Toward : Away, TextAnchor.MiddleLeft);
+            Text(trend, Eta(pEntry, toward), 8f, 0f, RW - 16f, 18f, 7, Gold, TextAnchor.MiddleRight);
 
-            if (pEntry.tally != null) Camps(pEntry);
+            if (pEntry.trends.Count > 0 || pEntry.powers.Count > 0) Camps(pEntry);
         }
 
         // 进度条：按阶段从琥珀到红，走过的部分实色、没走到的压暗，白色竖线是现在的位置
@@ -318,13 +390,10 @@ namespace DiplomacyOverhaul
         static void Camps(Entry pEntry)
         {
             SituationDef d = pEntry.def;
-            SituationTally t = pEntry.tally;
-            var trends = new List<Row>();
-            foreach (var (p, v) in t.pressures)
-                if (Mathf.Abs(v) > Eps) trends.Add(new Row { name = LM.Get(p.id), push = v, color = TrendBar, nameColor = Ink });
-            foreach (var (p, v) in t.picks)
-                trends.Add(new Row { name = LM.Get(p.id), push = v, color = PickGold, nameColor = Ink });
+            List<Row> trends = pEntry.trends;
             List<Row> powers = Powers(pEntry);
+            float dir = pEntry.decline ? -1f : 1f;
+            int digits = pEntry.decline ? 1 : 2;
 
             float colW = (RW - 6f) / 2f, h = H - 10f - CampY - WatchH - 4f;
             var watch = powers.Where(r => Mathf.Abs(r.push) <= Eps && r.rank != 0).ToList();
@@ -342,16 +411,16 @@ namespace DiplomacyOverhaul
                 rimg.raycastTarget = false;
                 Text(box, LM.Get(d.id + (right ? "_side_right" : "_side_left")), 0f, 3f, colW, 16f, 8, right ? Toward : Away, TextAnchor.MiddleCenter);
                 var rows = new List<Row>();
-                List<Row> mineTrends = trends.Where(r => right ? r.push > Eps : r.push < -Eps).OrderByDescending(r => Mathf.Abs(r.push)).ToList();
-                List<Row> minePowers = powers.Where(r => right ? r.push > Eps : r.push < -Eps || (r.rank == 0 && Mathf.Abs(r.push) <= Eps))
+                List<Row> mineTrends = trends.Where(r => right ? r.push * dir > Eps : r.push * dir < -Eps).OrderByDescending(r => Mathf.Abs(r.push)).ToList();
+                List<Row> minePowers = powers.Where(r => right ? r.push * dir > Eps : r.push * dir < -Eps || (r.rank == 0 && Mathf.Abs(r.push) <= Eps))
                     .OrderBy(r => r.rank).ThenByDescending(r => Mathf.Abs(r.push)).ToList();
                 float rh = 0f;
                 if (mineTrends.Count > 0) rh += 10f + mineTrends.Count * 12f;
                 if (minePowers.Count > 0) rh += 10f + minePowers.Count * 12f;
                 RectTransform content = Scroll(box, "scroll_" + side, 4f, 20f, colW - 8f, h - 24f, rh);
                 float y = 0f;
-                y = Group(content, LM.Get("vd_sit_trends"), mineTrends, y, colW - 8f, right);
-                Group(content, LM.Get("vd_sit_powers"), minePowers, y, colW - 8f, right);
+                y = Group(content, LM.Get("vd_sit_trends"), mineTrends, y, colW - 8f, right, digits);
+                Group(content, LM.Get("vd_sit_powers"), minePowers, y, colW - 8f, right, digits);
             }
             if (watch.Count == 0) return;
             RectTransform w = Sliced(_body, Slot, RX, H - 10f - WatchH, RW, WatchH);
@@ -367,7 +436,7 @@ namespace DiplomacyOverhaul
             }
         }
 
-        static float Group(RectTransform pParent, string pLabel, List<Row> pRows, float pY, float pW, bool pRight)
+        static float Group(RectTransform pParent, string pLabel, List<Row> pRows, float pY, float pW, bool pRight, int pDigits)
         {
             if (pRows.Count == 0) return pY;
             Text(pParent, pLabel, 4f, pY, pW, 10f, 6, Hex("#9a9584"), TextAnchor.MiddleLeft);
@@ -377,13 +446,12 @@ namespace DiplomacyOverhaul
                 Rect(pParent, 4f, pY + 2f, 3f, 8f, r.color);
                 float nx = 10f;
                 bool none = Mathf.Abs(r.push) <= Eps;
-                string value = none ? "—" : Signed(r.push, 2);
+                string value = none ? "—" : Signed(r.push, pDigits);
                 float vw = Measure(value, 7) + 2f, tw = r.tag != null ? Measure(r.tag, 6) + 4f : 0f;
                 string name = Fit(r.name, 7, pW - nx - vw - tw - 8f);
                 Text(pParent, name, nx, pY, pW, 12f, 7, r.nameColor, TextAnchor.MiddleLeft);
                 if (r.tag != null) Text(pParent, r.tag, nx + Measure(name, 7) + 3f, pY, tw, 12f, 6, Gold, TextAnchor.MiddleLeft);
                 Text(pParent, value, 0f, pY, pW - 4f, 12f, 7, none ? Muted : pRight ? Toward : Away, TextAnchor.MiddleRight);
-                Rect(pParent, 2f, pY + 11.5f, pW - 4f, 0.5f, Line);
                 if (r.tip != null) Hover(Box(pParent, 0f, pY, pW, 12f, "row_hover"), r.name, r.tip);
                 pY += 12f;
             }
@@ -393,12 +461,13 @@ namespace DiplomacyOverhaul
         // 各方：王室第一，宗室第二，发起方第三，其余按推力排；同一个集团的成员收成一行
         static List<Row> Powers(Entry pEntry)
         {
-            SituationTally t = pEntry.tally;
-            var clans = t.powers.Select(p => p.clan).ToList();
+            List<SituationPower> all = pEntry.powers;
+            var clans = all.Select(p => p.clan).ToList();
             List<Bloc> blocs = Blocs.Of(_kingdom, clans);
             var rows = new List<Row>();
             var done = new HashSet<long>();
-            foreach (SituationPower p in t.powers)
+            int digits = pEntry.decline ? 1 : 2;
+            foreach (SituationPower p in all)
             {
                 if (done.Contains(p.clan.Key)) continue;
                 Bloc bloc = blocs.Find(b => b.Has(p.clan));
@@ -412,9 +481,10 @@ namespace DiplomacyOverhaul
                     });
                     continue;
                 }
-                var members = t.powers.Where(m => bloc.Has(m.clan)).ToList();
+                var members = all.Where(m => bloc.Has(m.clan)).ToList();
                 foreach (SituationPower m in members) done.Add(m.clan.Key);
-                var tip = members.Select(m => (ClanName(m.clan), Signed(m.push, 2), Tag(m.push > Eps ? Toward : m.push < -Eps ? Away : Muted))).ToList();
+                float dir = pEntry.decline ? -1f : 1f;
+                var tip = members.Select(m => (ClanName(m.clan), Signed(m.push, digits), Tag(m.push * dir > Eps ? Toward : m.push * dir < -Eps ? Away : Muted))).ToList();
                 rows.Add(new Row
                 {
                     name = Blocs.Name(bloc), tag = members.Select(m => PowerTag(pEntry, m.clan)).FirstOrDefault(s => s != null),
@@ -441,9 +511,9 @@ namespace DiplomacyOverhaul
         static List<(string, string, string)> PowerTip(Entry pEntry, SituationPower pPower)
         {
             var lines = new List<(string, string, string)> { (LM.Get("vd_sit_tip_seats"), pPower.clan.seats.ToString(), null) };
-            if (pEntry.by == null || pPower.clan.Key == pEntry.by.Key) return lines;
-            lines.Add((LM.Get("vd_sit_tip_gain"), Signed(pPower.gain, 2), null));
-            lines.Add((LM.Get("vd_sit_tip_favor").Replace("$clan$", ClanName(pEntry.by)), (pPower.favor > 0 ? "+" : pPower.favor < 0 ? "−" : "") + Mathf.Abs(pPower.favor), null));
+            if (pEntry.favorTo == null || pPower.clan.Key == pEntry.favorTo.Key) return lines;
+            if (!pEntry.decline) lines.Add((LM.Get("vd_sit_tip_gain"), Signed(pPower.gain, 2), null));
+            lines.Add((LM.Get("vd_sit_tip_favor").Replace("$clan$", ClanName(pEntry.favorTo)), (pPower.favor > 0 ? "+" : pPower.favor < 0 ? "−" : "") + Mathf.Abs(pPower.favor), null));
             return lines;
         }
 
@@ -473,13 +543,12 @@ namespace DiplomacyOverhaul
             };
         }
 
-        // 每年的进度变化
-        static float PerYear(Entry pEntry) => pEntry.tally != null ? pEntry.tally.total * 100f / pEntry.def.years : 0f;
 
         // 趋势行右边：往右头推时说多久进入下一阶段或走到右头，往左头拉时说多久走到左头
         static string Eta(Entry pEntry, float pPer)
         {
             if (Mathf.Abs(pPer) < 0.05f) return "";
+            if (pEntry.decline && pPer < 0f) return LM.Get("vd_sit_rising");
             SituationDef d = pEntry.def;
             float[] from = StageEdges();
             int stage = Situations.StageOf(pEntry.progress);

@@ -31,6 +31,30 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "decline":
+                {
+                    // 把王朝周期推进到衰落期，再同步一次局势
+                    Kingdom k = Dev.FindKingdom(a[2]);
+                    for (int i = 0; i < 4 && Cycle.Get(k) != CyclePhase.Decline; i++) Cycle.Advance(k);
+                    Situations.Tick(k);
+                    Dev.Log($"@sit phase {k.data.name} {Cycle.Get(k)} mandate={Cycle.Mandate(k):F1}");
+                    Show(k);
+                    break;
+                }
+                case "advance":
+                case "restore":
+                {
+                    // advance：王朝周期推进一个阶段（衰落期再推就是大叛乱）；restore：直接中兴
+                    Kingdom k = Dev.FindKingdom(a[2]);
+                    if (a[1] == "advance") Cycle.Advance(k);
+                    else Cycle.Restore(k);
+                    Situations.Tick(k);
+                    Dev.Log($"@sit phase {k.data.name} {Cycle.Get(k)} mandate={Cycle.Mandate(k):F1}");
+                    var end = Situations.Ended(k, Decline.Def);
+                    Dev.Log($"@sit ended {(end == null ? "none" : (end.right ? "right" : "left") + " year=" + end.year + " since=" + end.since)}");
+                    Show(k);
+                    break;
+                }
                 case "window":
                     SituationWindow.Open(Dev.FindKingdom(a[2]));
                     break;

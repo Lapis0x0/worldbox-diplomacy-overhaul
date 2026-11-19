@@ -22,6 +22,8 @@ Each year the Mandate moves toward the "deserved Mandate", which has two parts.
 | Livelihood | Few homeless people |
 | Overextended | A penalty when an overlord has only a few cities of its own but many vassals |
 
+During Decline, the clans in parliament also weigh in: clans that favor the royal house hold the Mandate up, clans that resent it drag it down, and clans with more seats count for more. Together they move the Mandate by at most 1 point a year. The situations window shows the Decline with the Mandate's trend and all of these factors.
+
 **Aging**: Every dynasty builds up **Decay**, more slowly the better it is governed. Decay has almost no effect early on and costs more and more late in the dynasty's life, so even the best dynasty declines eventually, only later. Each time a dynasty survives a Great Rebellion it also keeps some **Old wounds**, which bring the next Decline sooner.
 
 Wars and cities change the Mandate directly.
