@@ -246,8 +246,10 @@ namespace DiplomacyOverhaul
             RectTransform trend = Sliced(_body, Slot, RX, TrendY, RW, 18f);
             float per = PerYear(pEntry);
             string perText = Mathf.Abs(per) < 0.05f ? LM.Get("vd_sit_stalemate") : LM.Get("vd_sit_per_year").Replace("$v$", Signed(per, 1));
-            Text(trend, LM.Get("vd_sit_progress").Replace("$n$", Mathf.RoundToInt(pEntry.progress).ToString()), 8f, 0f, 80f, 18f, 7, Ink, TextAnchor.MiddleLeft);
-            Text(trend, perText, 70f, 0f, 120f, 18f, 7, Mathf.Abs(per) < 0.05f ? Muted : per > 0f ? Toward : Away, TextAnchor.MiddleLeft);
+            string progressText = LM.Get("vd_sit_progress").Replace("$n$", Mathf.RoundToInt(pEntry.progress).ToString());
+            Text(trend, progressText, 8f, 0f, 80f, 18f, 7, Ink, TextAnchor.MiddleLeft);
+            // 每年的变化紧跟在进度后面
+            Text(trend, perText, 8f + Measure(progressText, 7) + 6f, 0f, 120f, 18f, 7, Mathf.Abs(per) < 0.05f ? Muted : per > 0f ? Toward : Away, TextAnchor.MiddleLeft);
             Text(trend, Eta(pEntry, per), 8f, 0f, RW - 16f, 18f, 7, Gold, TextAnchor.MiddleRight);
 
             if (pEntry.tally != null) Camps(pEntry);
