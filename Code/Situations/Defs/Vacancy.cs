@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
@@ -7,12 +6,14 @@ namespace DiplomacyOverhaul
     // 左头改行共和，右头这一家的族长登基、开创新王朝。期间原版不另立国王，国家也不分裂
     public static class Vacancy
     {
-        // 大势：议会代行国事，拖得越久越倾向改行共和
-        const float RegencyPerYear = 0.05f, RegencyMax = 0.5f;
+        // 大势：议会代行国事，拖得越久越倾向改行共和，不封顶
+        const float RegencyPerYear = 0.03f;
 
         public static readonly SituationDef Def = new SituationDef
         {
             id = "vd_sit_vacancy",
+            // 没有现状可守，从正中开局
+            start = 50f,
             icon = "ui/Icons/iconClanList",
             leftIcon = "ui/Icons/vd_gov_republic",
             rightIcon = "ui/Icons/iconKings",
@@ -29,7 +30,7 @@ namespace DiplomacyOverhaul
             onRight = Enthrone,
             pressures =
             {
-                new SituationPressure { id = "vd_sit_vacancy_regency", value = (k, years) => -Mathf.Min(RegencyPerYear * (years + 1), RegencyMax) }
+                new SituationPressure { id = "vd_sit_vacancy_regency", value = (k, years) => -RegencyPerYear * (years + 1) }
             },
             stages = new[]
             {

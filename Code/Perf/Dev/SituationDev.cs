@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace DiplomacyOverhaul.Perf
 {
@@ -92,6 +93,9 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "sim":
+                    Sim(Def(a[2]), a.Length > 3 ? int.Parse(a[3]) : 200, a.Length > 4 && a[4] == "each");
+                    break;
                 case "crown":
                 {
                     // 直接开「共和国称帝」：不是共和国时先改成共和国，执政出自原来的王室
@@ -109,6 +113,89 @@ namespace DiplomacyOverhaul.Perf
                 }
             }
         }
+
+        // 每个国家按眼下的议会开局推演 pRuns 次：各方推力取开局时的值不变，大势按开局的情形，候选随机抽。
+        // 王位空悬按无王时的议会算；夺权假定一直在崩溃期，称帝假定一直在鼎盛期
+        static void Sim(SituationDef pDef, int pRuns, bool pEach)
+        {
+            const int MaxYears = 60;
+            var allYears = new List<int>();
+            int allRight = 0, allLeft = 0, allTimeout = 0, kingdoms = 0;
+            foreach (Kingdom k in World.world.kingdoms.ToList())
+            {
+                if (!k.isAlive() || !k.isCiv() || k.countCities() < 2) continue;
+                Actor king = k.king;
+                var cases = new List<(string by, float powers)>();
+                List<ParliamentClan> clans;
+                try
+                {
+                    if (pDef == Vacancy.Def) k.king = null;
+                    clans = Parliament.Clans(k);
+                    if (clans.Count < 2) continue;
+                    // each：每个不掌权、不是宗室的家族都假设成发起方算一遍
+                    List<ParliamentClan> bys = pEach ? clans.FindAll(c => !c.ruling && !c.cadet) : new List<ParliamentClan> { pDef.initiator(k, clans) };
+                    foreach (ParliamentClan by in bys)
+                    {
+                        if (by == null) continue;
+                        cases.Add((by.clan.name, Situations.Tally(k, pDef, clans, by).powers.Sum(p => p.push)));
+                    }
+                }
+                finally { k.king = king; }
+                if (cases.Count == 0) continue;
+                kingdoms++;
+                foreach (var (byName, powers) in cases)
+                {
+                int right = 0, left = 0, timeout = 0;
+                var years = new List<int>();
+                for (int r = 0; r < pRuns; r++)
+                {
+                    float progress = pDef.start;
+                    var picks = new int[Situations.StageCount];
+                    for (int s = 0; s < picks.Length; s++) picks[s] = -1;
+                    int y = 0;
+                    for (; y < MaxYears; y++)
+                    {
+                        int stage = Situations.StageOf(progress);
+                        float total = powers;
+                        for (int s = 0; s < picks.Length; s++)
+                        {
+                            if (s > stage) { picks[s] = -1; continue; }
+                            if (picks[s] < 0) picks[s] = Randy.randomInt(0, pDef.stages[s].Length);
+                            total += pDef.stages[s][picks[s]].turn ? -pDef.pushes[s] : pDef.pushes[s];
+                        }
+                        foreach (SituationPressure p in pDef.pressures) total += SimPressure(p, k, y);
+                        progress += total * 100f / pDef.years;
+                        if (progress <= 0f || progress >= 100f) break;
+                    }
+                    if (y >= MaxYears) { timeout++; continue; }
+                    if (progress >= 100f) right++; else left++;
+                    years.Add(y + 1);
+                }
+                years.Sort();
+                allYears.AddRange(years);
+                allRight += right; allLeft += left; allTimeout += timeout;
+                Dev.Log($"  {k.data.name} cities={k.countCities()} clans={clans.Count} by={byName} powers={powers:F2} right={right * 100 / pRuns}% left={left * 100 / pRuns}% timeout={timeout * 100 / pRuns}% years p50={Pct(years, 50)} p90={Pct(years, 90)}");
+                }
+            }
+            allYears.Sort();
+            int n = allRight + allLeft + allTimeout;
+            if (n == 0) { Dev.Log($"@sim {pDef.id} 没有国家能开局"); return; }
+            Dev.Log($"@sim {pDef.id} kingdoms={kingdoms} right={allRight * 100 / n}% left={allLeft * 100 / n}% timeout={allTimeout * 100 / n}% years p10={Pct(allYears, 10)} p50={Pct(allYears, 50)} p90={Pct(allYears, 90)}");
+        }
+
+        static float SimPressure(SituationPressure p, Kingdom k, int pYears)
+        {
+            switch (p.id)
+            {
+                case "vd_sit_coup_chaos": return 0.2f;
+                case "vd_sit_coup_calm": return 0f;
+                case "vd_sit_crown_prime": return 0.08f;
+                case "vd_sit_crown_fade": return 0f;
+                default: return p.value(k, pYears);
+            }
+        }
+
+        static int Pct(List<int> pSorted, int pPct) => pSorted.Count == 0 ? -1 : pSorted[Mathf.Min(pSorted.Count - 1, pSorted.Count * pPct / 100)];
 
         static SituationDef Def(string pId) => Situations.All.First(d => d.id == pId);
 

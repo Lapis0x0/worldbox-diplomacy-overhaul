@@ -7,8 +7,8 @@ namespace DiplomacyOverhaul
     {
         // 处境：尚武的家族支持，离中央越远越警惕，王室和宗室反对
         const float MartialLean = 0.3f, FarLean = 0.3f, CrownLean = 1f;
-        // 大势：禁军欠饷往夺权推，走出崩溃期后往回拉
-        const float UnpaidPressure = 0.15f, CalmPressure = -0.3f;
+        // 大势：崩溃期朝纲崩坏、禁军欠饷往夺权推，走出崩溃期后往回拉
+        const float UnpaidPressure = 0.15f, ChaosPressure = 0.2f, CalmPressure = -0.3f;
 
         public static readonly SituationDef Def = new SituationDef
         {
@@ -25,6 +25,7 @@ namespace DiplomacyOverhaul
             pressures =
             {
                 new SituationPressure { id = "vd_sit_coup_unpaid", value = (k, years) => Guard.Unpaid(k) ? UnpaidPressure : 0f },
+                new SituationPressure { id = "vd_sit_coup_chaos", value = (k, years) => Cycle.Get(k) == CyclePhase.Collapse ? ChaosPressure : 0f },
                 new SituationPressure { id = "vd_sit_coup_calm", value = (k, years) => Cycle.Get(k) == CyclePhase.Collapse ? 0f : CalmPressure }
             },
             stages = new[]

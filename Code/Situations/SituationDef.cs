@@ -26,7 +26,7 @@ namespace DiplomacyOverhaul
         // 局势和两头结局在界面上的图标
         public string icon, leftIcon, rightIcon;
         // 合力为 1 时走完全程的年数
-        public float years = 10f;
+        public float years = 6f;
         // 开局时的进度
         public float start = 20f;
         // 对发起方的好感在态度里的权重

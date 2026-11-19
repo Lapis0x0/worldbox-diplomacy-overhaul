@@ -9,6 +9,8 @@ namespace DiplomacyOverhaul
         const float BecomeRoyal = 1f;
         // 大势：国运强盛时帝制之议有底气，走出鼎盛后往回拉
         const float PrimePressure = 0.08f, FadePressure = -0.2f;
+        // 大势：议而不决，拖得越久越难成，不封顶
+        const float DoubtPerYear = 0.05f;
 
         public static readonly SituationDef Def = new SituationDef
         {
@@ -27,7 +29,9 @@ namespace DiplomacyOverhaul
             onRight = Crown,
             pressures =
             {
-                new SituationPressure { id = "vd_sit_crown_prime", value = (k, years) => Cycle.Get(k) == CyclePhase.Prime ? PrimePressure : FadePressure }
+                new SituationPressure { id = "vd_sit_crown_prime", value = (k, years) => Cycle.Get(k) == CyclePhase.Prime ? PrimePressure : 0f },
+                new SituationPressure { id = "vd_sit_crown_fade", value = (k, years) => Cycle.Get(k) == CyclePhase.Prime ? 0f : FadePressure },
+                new SituationPressure { id = "vd_sit_crown_doubt", value = (k, years) => -DoubtPerYear * years }
             },
             stages = new[]
             {
