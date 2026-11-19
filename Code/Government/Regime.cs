@@ -31,7 +31,7 @@ namespace DiplomacyOverhaul
 
         public static bool Enabled => Settings.GovernmentEventsEnabled;
 
-        static Vector2 Location(Kingdom pKingdom) => pKingdom.hasCapital() ? pKingdom.capital.last_city_center : Vector2.zero;
+        internal static Vector2 Location(Kingdom pKingdom) => pKingdom.hasCapital() ? pKingdom.capital.last_city_center : Vector2.zero;
 
         static bool Has(Culture pCulture, string pTrait) => pCulture != null && pCulture.hasTrait(pTrait);
 
@@ -322,53 +322,62 @@ namespace DiplomacyOverhaul
             return w;
         }
 
-        // 乱世夺权：崩溃期由战功最高的将领夺位
-        static bool TryCoup(Kingdom pKingdom)
+        // 乱世夺权：崩溃期每年掷一次。议会开着、有家族能出面时开「将领夺权」局势，否则战功最高的将领直接夺位
+        internal static bool TryCoup(Kingdom pKingdom)
         {
-            if (Cycle.Get(pKingdom) != CyclePhase.Collapse) return false;
+            if (Cycle.Get(pKingdom) != CyclePhase.Collapse || Situations.IsActive(pKingdom, Coup.Def)) return false;
             float chance = CoupChance * (Has(pKingdom.culture, "warriors_ascension") ? 2f : 1f);
             if (!Randy.randomChance(chance)) return false;
+            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Coup.TryOpen(pKingdom)) return true;
             Actor general = FindGeneral(pKingdom);
-            if (general == null) return false;
-            bool ambitious = Ambitious(general);
-            // 已经是将领当政，没有野心的将领不会再起事
-            if (!ambitious && Government.IsMilitary(pKingdom)) return false;
+            if (general == null || !WillRise(pKingdom, general)) return false;
+            Usurp(pKingdom, general);
+            return true;
+        }
 
+        // 已经是将领当政，没有野心的将领不会再起事
+        internal static bool WillRise(Kingdom pKingdom, Actor pGeneral) => Ambitious(pGeneral) || !Government.IsMilitary(pKingdom);
+
+        // 有野心的自立为王、开创新王朝，没有野心的成立军事共和国
+        internal static void Usurp(Kingdom pKingdom, Actor pGeneral)
+        {
+            bool ambitious = Ambitious(pGeneral);
             if (pKingdom.hasKing()) pKingdom.removeKing();
             if (ambitious)
             {
                 Government.SetForm(pKingdom, GovForm.Monarchy);
                 pKingdom.data.royal_clan_id = -1L;
-                EnsureClan(general);
-                MakeRuler(pKingdom, general);
+                EnsureClan(pGeneral);
+                MakeRuler(pKingdom, pGeneral);
                 ClearTerm(pKingdom);
                 Cycle.NewDynasty(pKingdom);
-                WorldLogs.Add(WorldLogs.Usurped, Location(pKingdom), general,
-                    new[] { general.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+                WorldLogs.Add(WorldLogs.Usurped, Location(pKingdom), pGeneral,
+                    new[] { pGeneral.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
             }
             else
             {
                 Government.SetForm(pKingdom, GovForm.Republic, true);
                 ClearTerm(pKingdom);
                 // 没有家族的人发起不了密谋（原版 try_new_plot 的条件）
-                EnsureClan(general);
-                MakeRuler(pKingdom, general);
-                WorldLogs.Add(WorldLogs.Junta, Location(pKingdom), general,
-                    new[] { pKingdom.data.name, general.getName() }, new[] { pKingdom, pKingdom });
+                EnsureClan(pGeneral);
+                MakeRuler(pKingdom, pGeneral);
+                WorldLogs.Add(WorldLogs.Junta, Location(pKingdom), pGeneral,
+                    new[] { pKingdom.data.name, pGeneral.getName() }, new[] { pKingdom, pKingdom });
             }
             AfterChange(pKingdom);
-            return true;
         }
 
-        // 战功最高的队长或士兵
-        static Actor FindGeneral(Kingdom pKingdom)
+        internal static bool IsGeneral(Actor pActor) => pActor.isAlive() && !pActor.isKing() && (pActor.is_army_captain || pActor.isWarrior());
+
+        // 战功最高的队长或士兵；给了家族时只看这一家
+        internal static Actor FindGeneral(Kingdom pKingdom, Clan pClan = null)
         {
             Actor best = null;
             foreach (City city in pKingdom.getCities())
             {
                 foreach (Actor a in city.getUnits())
                 {
-                    if (!a.isAlive() || a.isKing() || !(a.is_army_captain || a.isWarrior())) continue;
+                    if (!IsGeneral(a) || (pClan != null && a.clan != pClan)) continue;
                     if (best == null || a.data.kills > best.data.kills) best = a;
                 }
             }

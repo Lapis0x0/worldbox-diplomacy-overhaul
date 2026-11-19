@@ -110,6 +110,7 @@
 | `Mainland(` | 从首都广度搜索全部本土城市 | 一轮算一次往下传 |
 | `distanceBetweenKingdom(` | 原版按两国城市两两比较 | 先用便宜的条件筛掉候选 |
 | `setStatsDirty(` | 单位下一帧重算全部属性 | 对全国单位调用会造成一次属性重算高峰，只在数值真的变了时调 |
+| `FindGeneral(` | 遍历一个国家的全部单位 | 只在掷中夺权、局势开局和落幕时用 |
 | `NearestDefender(` | 遍历守方全国单位 | 只给队长用 |
 | `NearestIntruder(` | 遍历所有交战国的全部单位 | — |
 | `LM.AddToCurrentLocale(` | 拼字符串、改语言表 | 不放在每帧的路径上 |

@@ -36,6 +36,8 @@ namespace DiplomacyOverhaul
         public Func<Kingdom, List<ParliamentClan>, ParliamentClan> initiator;
         // 走到左头、右头时执行。发起的势力已经不在议会时，左头收到的是空
         public Action<Kingdom, ParliamentClan> onLeft, onRight;
+        // 局势的前提已经不在：直接结束，不执行结局，也不记恩怨
+        public Func<Kingdom, ParliamentClan, bool> moot;
 
         public readonly List<SituationPressure> pressures = new List<SituationPressure>();
         // 三个阶段各自的候选

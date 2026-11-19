@@ -64,6 +64,9 @@ namespace DiplomacyOverhaul.Perf
     //   parl found <国家> <氏族> <氏族>   两家直接结成集团（已有集团时把后一家拉进前一家的集团）
     //   parl court <国家> <氏族> <目标>   这一家立即拉拢目标一次（送礼、记恩情、够了就入伙）
     //   parl leave <国家> <氏族>    这一家立即脱离集团
+    //   sit [国家] | sit open <局势 id> <国家> | sit set <局势 id> <国家> <进度> | sit end <局势 id> <国家> left|right
+    //                           | sit tick <国家> [年数] | sit collapse <国家> | sit coup <国家>
+    //                           局势：列出进行中的局势和推力明细；立即开局；拨进度；直接走到一头；只给这个国家推进几年；让它进入崩溃期；反复掷夺权直到发生
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
     //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
@@ -451,6 +454,7 @@ namespace DiplomacyOverhaul.Perf
                 case "heap": HeapWalk.Run(a[1], a.Length > 2 ? int.Parse(a[2]) : 40); break;
                 case "fav": Fav(a[1], int.Parse(a[2])); break;
                 case "parl": ParlDev.Run(a); break;
+                case "sit": SituationDev.Run(a); break;
                 case "arms": ArmsDev.Run(a); break;
                 case "treasury": TreasuryDev.Run(a); break;
                 case "works": WorksDev.Run(a); break;

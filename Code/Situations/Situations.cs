@@ -32,6 +32,7 @@ namespace DiplomacyOverhaul
         public static void Init()
         {
             All.Clear();
+            All.Add(Coup.Def);
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
             {
                 id = "loyalty_vd_situation",
@@ -195,6 +196,11 @@ namespace DiplomacyOverhaul
                 End(pKingdom, pDef, null, null, false);
                 return true;
             }
+            if (pDef.moot != null && pDef.moot(pKingdom, by))
+            {
+                Clear(pKingdom, pDef);
+                return true;
+            }
             SituationTally tally = Tally(pKingdom, pDef, pClans, by);
             float progress = Progress(pKingdom, pDef) + tally.total * RightEnd / pDef.years;
             if (progress <= LeftEnd || progress >= RightEnd)
@@ -210,23 +216,43 @@ namespace DiplomacyOverhaul
         public static void UpdateAll()
         {
             if (All.Count == 0) return;
-            bool enabled = Settings.ParliamentEnabled;
             foreach (Kingdom k in Clock.Settling())
             {
-                if (!k.isAlive() || !k.isCiv()) continue;
-                List<ParliamentClan> clans = null;
-                foreach (SituationDef d in All)
-                {
-                    if (IsActive(k, d))
-                    {
-                        // 议会关掉时没有议席可算，进行中的局势直接结束
-                        if (!enabled) Clear(k, d);
-                        else if (Advance(k, d, clans ??= Parliament.Clans(k))) clans = null;
-                    }
-                    else if (enabled && d.trigger != null && d.trigger(k)) Open(k, d, clans ??= Parliament.Clans(k));
-                }
-                Refresh(k);
+                if (k.isAlive() && k.isCiv()) Tick(k);
             }
+        }
+
+        internal static void Tick(Kingdom pKingdom)
+        {
+            bool enabled = Settings.ParliamentEnabled;
+            List<ParliamentClan> clans = null;
+            foreach (SituationDef d in All)
+            {
+                if (IsActive(pKingdom, d))
+                {
+                    // 议会关掉时没有议席可算，进行中的局势直接结束
+                    if (!enabled) Clear(pKingdom, d);
+                    else if (Advance(pKingdom, d, clans ??= Parliament.Clans(pKingdom))) clans = null;
+                }
+                else if (enabled && d.trigger != null && d.trigger(pKingdom)) Open(pKingdom, d, clans ??= Parliament.Clans(pKingdom));
+            }
+            Refresh(pKingdom);
+        }
+
+        // 开发命令：按眼下的推力直接走到一头
+        internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight)
+        {
+            List<ParliamentClan> clans = Parliament.Clans(pKingdom);
+            ParliamentClan by = Initiator(pKingdom, pDef, clans);
+            End(pKingdom, pDef, by != null ? Tally(pKingdom, pDef, clans, by) : null, by, pRight && by != null);
+        }
+
+        // 开发命令：把进度直接拨到某个位置
+        internal static void SetProgress(Kingdom pKingdom, SituationDef pDef, float pProgress)
+        {
+            pKingdom.data.set(KeyProgress(pDef), pProgress);
+            Draw(pKingdom, pDef, pProgress);
+            Refresh(pKingdom);
         }
     }
 }

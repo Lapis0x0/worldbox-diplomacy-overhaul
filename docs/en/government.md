@@ -88,7 +88,9 @@ A republic with 6 or more cities (counting its vassals) that is not a vassal and
 
 ### Coup in Times of Collapse
 
-Each year, a kingdom in [Collapse](cycle.md) has a 10% chance (20% if the culture has Warriors Ascension) of being taken over by the general with the most kills in the kingdom.
+Each year, a kingdom in [Collapse](cycle.md) has a 10% chance (20% if the culture has Warriors Ascension) of facing a coup.
+
+With the parliament on, the clan of the general with the most kills gathers the armies and presses the court, and the clans struggle over it in parliament for several years. Martial clans back the coup, clans far from the capital are wary of it, and the royal house opposes it. Unpaid guards make the pressure worse, and once the kingdom leaves Collapse the crisis gradually dies down. If the coup fails, the clan's general yields command. If it succeeds, the clan's general with the most kills at that moment takes power. When no clan can lead it, or the parliament is off, the general with the most kills takes power at once.
 
 - If the general is ambitious, he or she deposes the ruler, becomes king, and founds a new dynasty. The dynastic cycle returns to Renewal.
 - If the general is not ambitious, the generals take power together and form a Military Republic, with the general as Lord Protector.

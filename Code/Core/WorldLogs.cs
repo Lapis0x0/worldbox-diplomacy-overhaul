@@ -30,6 +30,8 @@ namespace DiplomacyOverhaul
         public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝
         public const string Usurped = "vd_log_usurped";                  // $ruler$ 篡夺 $kingdom$ 王位，建立新王朝
         public const string Junta = "vd_log_junta";                      // $kingdom$ 的将领们夺取政权，$ruler$ 执政
+        public const string CoupBegan = "vd_log_coup_began";             // $ruler$ 在 $kingdom$ 拥兵自重
+        public const string CoupEnded = "vd_log_coup_ended";             // $ruler$ 交出 $kingdom$ 的兵权
         public const string PolicyEnacted = "vd_log_policy";             // $kingdom$ 推行$policy$
         public const string Charter = "vd_log_charter";                  // $kingdom$ 将$policy$写入宪章
         public const string Works = "vd_log_works";                      // $kingdom$ 在 $city$ 营建了一座$building$
@@ -64,6 +66,8 @@ namespace DiplomacyOverhaul
             Register(Crowned, "ui/Icons/iconKingdomList", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
+            Register(CoupBegan, "ui/Icons/iconArmy", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(CoupEnded, "ui/Icons/iconArmy", Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(PolicyEnacted, ParliamentWindow.IconPath, Toolbox.color_log_neutral, "$kingdom$", "$policy$");
             Register(Charter, ParliamentWindow.IconPath, Toolbox.color_log_good, "$kingdom$", "$policy$");
             Register(Works, "ui/Icons/iconMoney", Toolbox.color_log_neutral, "$kingdom$", "$city$", "$building$");
