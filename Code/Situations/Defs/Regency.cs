@@ -194,7 +194,7 @@ namespace DiplomacyOverhaul
             if (regent != null) Log(WorldLogs.RegencyReturned, pKingdom, regent, false);
         }
 
-        // 罢黜：外姓权臣的家族记恨王室
+        // 罢黜：权臣这一支（外姓家族或宗室分支）记恨王室
         static void Dismiss(Kingdom pKingdom, ParliamentClan pBy)
         {
             Actor regent = TakeRegent(pKingdom);

@@ -805,7 +805,7 @@
   "vd_sit_regency_return": "Power Returned",
   "vd_sit_regency_return_desc": "The regent steps down with grace",
   "vd_sit_regency_dismiss": "Dismissal",
-  "vd_sit_regency_dismiss_desc": "The ruler dismisses the regent, whose clan resents the royal house",
+  "vd_sit_regency_dismiss_desc": "The ruler takes back power and drives the regent from court",
   "vd_sit_regency_usurp": "Usurpation",
   "vd_sit_regency_usurp_desc": "The royal regent deposes the ruler and takes the throne",
   "vd_sit_regency_crown": "The Crown Changes Hands",

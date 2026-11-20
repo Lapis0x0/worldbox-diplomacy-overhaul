@@ -121,7 +121,7 @@ When a monarchy gets a new ruler (other than at its founding), the weaker the ne
 | Personal Rule | Power Changes Hands |
 |---|---|
 | Power Returned: the regent steps down with grace. More likely the more capable the ruler | Usurpation: the royal regent deposes the ruler and takes the throne; the royal house stays the same |
-| Dismissal: the ruler dismisses the regent, and an outsider's clan resents the royal house. More likely the stronger the clans against the regent | The Crown Changes Hands: the outsider takes the throne and his or her clan becomes the royal house, founding a new dynasty |
+| Dismissal: the ruler takes back power and drives the regent from court, and the regent's side resents the royal house from then on. More likely the stronger the clans against the regent | The Crown Changes Hands: the outsider takes the throne and his or her clan becomes the royal house, founding a new dynasty |
 
 If the ruler being overshadowed dies, or the regent dies or leaves the kingdom, the situation ends.
 

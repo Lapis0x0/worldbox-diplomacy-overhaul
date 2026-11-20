@@ -805,7 +805,7 @@
   "vd_sit_regency_return": "Poder Devolvido",
   "vd_sit_regency_return_desc": "O regente se retira com dignidade",
   "vd_sit_regency_dismiss": "Destituição",
-  "vd_sit_regency_dismiss_desc": "O governante destitui o regente, cujo clã guarda rancor da casa real",
+  "vd_sit_regency_dismiss_desc": "O governante retoma o poder e expulsa o regente da corte",
   "vd_sit_regency_usurp": "Usurpação",
   "vd_sit_regency_usurp_desc": "O regente real depõe o governante e assume o trono",
   "vd_sit_regency_crown": "A Coroa Muda de Mãos",
