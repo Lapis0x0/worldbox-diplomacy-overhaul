@@ -69,7 +69,7 @@ Everything is in the **Diplomacy Overhaul** tab at the bottom of the screen. Eac
 
 - **Existing saves**: the mod's data is stored in vanilla saves, so it works with existing worlds.
 - **Mobile**: works on mobile platforms that NeoModLoader runs on.
-- **Performance**: removes redundant calculations in vanilla for about 20% higher frame rate on large maps, with identical results.
+- **Performance**: removes redundant calculations in vanilla for about 20% higher frame rate on large maps, with identical results. Also available as a standalone mod, [Performance Overhaul](https://steamcommunity.com/sharedfiles/filedetails/?id=3842906169), for players without Diplomacy Overhaul.
 - **Error protection**: when a patch throws an exception, it is isolated and the affected module is switched off, so errors can't bring the game down.
 
 ## Player Guide
