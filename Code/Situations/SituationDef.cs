@@ -48,8 +48,12 @@ namespace DiplomacyOverhaul
         // 冲着朝廷来的局势：掌权家族是被冲着的一方，不按议席出推力；其他势力的态度看对它的好感（越好越反对），不看对发起方的
         public bool againstCrown;
 
-        // 每年判定是否开局；由事件开局的局势留空，直接调用 Situations.Open
+        // 局势还能不能进行（如历史事件改制的开关）：返回 false 时不开局，进行中的当月清掉。议会关着时所有局势都不进行
+        public Func<bool> enabled;
+        // 每年判定是否开局；由事件开局的局势留空，由事件调用 Situations.Start
         public Func<Kingdom, bool> trigger;
+        // 局势里的人（领头人、权臣）的角色：用 Situations.SetActor 存，落幕或作废时一并清掉
+        public string[] actors;
         // 开局时定下发起的势力，之后不变；返回空就不开局
         public Func<Kingdom, List<ParliamentClan>, ParliamentClan> initiator;
         // 发起方可以不在议会里：家族没有议席时作为议会外的势力，自己不出推力，族人还在本国就一直算数

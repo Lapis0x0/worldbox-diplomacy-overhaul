@@ -148,11 +148,11 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 不在议会里的家族（在本国没有议席）：族人还在本国时，按同样的规则定下占主导的人和意识形态；议席为 0
+        // 不在议会里的家族（在本国没有议席）：族人还在本国时，按同样的规则定下占主导的人和意识形态；议席为 0。王室或执政家族照样算掌权
         public static ParliamentClan Outsider(Kingdom pKingdom, Clan pClan, List<ParliamentClan> pClans)
         {
             if (!ParliamentClan.Live(pClan) || !HasMember(pClan, pKingdom)) return null;
-            var pc = new ParliamentClan { clan = pClan };
+            var pc = new ParliamentClan { clan = pClan, ruling = pClan == RulingClan(pKingdom) };
             var context = new StanceContext(pKingdom, pClans);
             context.Ages(pClans);
             Situation(pKingdom, pc, context);

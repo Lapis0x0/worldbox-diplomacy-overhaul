@@ -341,7 +341,7 @@ namespace DiplomacyOverhaul
             if (ruler == null || !ruler.isAlive()) return;
             if (!Randy.randomChance(EmperorChance * CrownWeight(ruler))) return;
             // 议会开着时开「帝制之议」局势，走到右头才加冕；否则照旧直接称帝
-            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Coronation.TryOpen(pKingdom)) return;
+            if (Situations.Available(Coronation.Def) && Coronation.TryOpen(pKingdom)) return;
             Crown(pKingdom, ruler);
         }
 
@@ -379,7 +379,7 @@ namespace DiplomacyOverhaul
             bool chaos = Cycle.Get(pKingdom) == CyclePhase.Collapse && Randy.randomChance(chance);
             bool unpaid = !chaos && Guard.Unpaid(pKingdom) && Randy.randomChance(Guard.Disarray(pKingdom) * Treasury.DesertShare);
             if (!chaos && !unpaid) return false;
-            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation)) return Mutiny.TryOpen(pKingdom, unpaid);
+            if (Situations.Available(Mutiny.Def)) return Mutiny.TryOpen(pKingdom, unpaid);
             if (!chaos) return false;
             Actor general = Mutiny.Strongman(pKingdom);
             if (general == null) return false;
@@ -452,7 +452,7 @@ namespace DiplomacyOverhaul
                 if (pKingdom.data.timer_new_king > 0f) return true;
                 if (pKingdom.hasKing() && pKingdom.king.isAlive()) return true;
                 // 王位空悬期间不另立国王，由局势决定
-                if (Safety.On(Sys.Situation) && Situations.IsActive(pKingdom, Vacancy.Def))
+                if (Situations.Available(Vacancy.Def) && Situations.IsActive(pKingdom, Vacancy.Def))
                 {
                     __result = BehResult.Continue;
                     return false;
@@ -483,7 +483,7 @@ namespace DiplomacyOverhaul
             try
             {
                 // 议会开着时王位空悬，各家族角力；否则按概率改制或照原版分裂
-                if (!republic && Settings.ParliamentEnabled && Regime.Enabled && Safety.On(Sys.Situation) && Vacancy.TryOpen(pMainKingdom)) return false;
+                if (!republic && Situations.Available(Vacancy.Def) && Vacancy.TryOpen(pMainKingdom)) return false;
                 return !Regime.TryRepublicOnExtinction(pMainKingdom);
             }
             catch (Exception e)

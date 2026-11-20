@@ -19,8 +19,8 @@ namespace DiplomacyOverhaul
         internal const float ChaosPressure = 0.2f;
         // 迁延日久：兵变久拖不决，人心就散了，每个月往回拉这么多，不封顶
         const float DragPerMonth = -0.05f;
-        // 领头的队长（actor id），开局前定下
-        internal const string KeyLeader = "vd_sit_mutiny_leader";
+        // 领头的队长，开局前定下
+        internal const string RoleLeader = "leader";
         // 这一场是不是欠饷引起的：起因说明按它挑，落幕后留着，下次开局时覆盖
         const string KeyUnpaid = "vd_sit_mutiny_unpaid";
 
@@ -35,12 +35,14 @@ namespace DiplomacyOverhaul
             initiator = FindInitiator,
             outsider = true,
             againstCrown = true,
+            enabled = () => Regime.Enabled,
+            actors = new[] { RoleLeader },
             monthly = true,
             years = Months,
             desc = k => IsUnpaid(k) ? "vd_sit_mutiny_desc_unpaid" : "vd_sit_mutiny_desc",
             // 兵变靠的是他本人的威望：他死了或去了别国，就散了
             fail = (k, by) => Leader(k) == null,
-            moot = (k, by) => !Regime.Enabled || by.ruling || by.cadet,
+            moot = (k, by) => by.ruling || by.cadet,
             leftOutcomes = new[]
             {
                 new SituationOutcome { id = "vd_sit_mutiny_calm", score = (k, by, t) => 1f - Guard.Disarray(k), apply = Calm },
@@ -120,23 +122,15 @@ namespace DiplomacyOverhaul
         }
 
         // 开局：pUnpaid 是欠饷引起的，只看禁军的队长。没有家族的人先自立门户；没有人能出面时返回 false
-        public static bool TryOpen(Kingdom pKingdom, bool pUnpaid)
+        public static bool TryOpen(Kingdom pKingdom, bool pUnpaid) => Situations.Start(pKingdom, Def, (k, clans) =>
         {
-            if (Situations.IsActive(pKingdom, Def)) return false;
-            List<ParliamentClan> clans = Parliament.Clans(pKingdom);
-            Actor general = Strongman(pKingdom, pUnpaid);
+            Actor general = Strongman(k, pUnpaid);
             if (general == null) return false;
             Regime.EnsureClan(general);
-            pKingdom.data.set(KeyLeader, general.data.id);
-            pKingdom.data.set(KeyUnpaid, pUnpaid);
-            if (!Situations.Open(pKingdom, Def, clans))
-            {
-                pKingdom.data.removeLong(KeyLeader);
-                return false;
-            }
-            Log(pUnpaid ? WorldLogs.MutinyUnrest : WorldLogs.MutinyBegan, pKingdom, general, false);
+            Situations.SetActor(k, Def, RoleLeader, general);
+            k.data.set(KeyUnpaid, pUnpaid);
             return true;
-        }
+        }, (k, by) => Log(pUnpaid ? WorldLogs.MutinyUnrest : WorldLogs.MutinyBegan, k, Leader(k), false));
 
         static bool IsUnpaid(Kingdom pKingdom)
         {
@@ -145,12 +139,7 @@ namespace DiplomacyOverhaul
         }
 
         // 领头的人；他死了或去了别国时是空
-        internal static Actor Leader(Kingdom pKingdom)
-        {
-            pKingdom.data.get(KeyLeader, out long id, -1L);
-            Actor a = id >= 0 ? World.world.units.get(id) : null;
-            return a != null && a.isAlive() && a.kingdom == pKingdom ? a : null;
-        }
+        internal static Actor Leader(Kingdom pKingdom) => Situations.ActorOf(pKingdom, Def, RoleLeader);
 
         // 他带的兵占全国兵力的比例；兵被打散、不再是队长时是 0
         internal static float ArmyShare(Actor pLeader, Kingdom pKingdom)
@@ -182,27 +171,19 @@ namespace DiplomacyOverhaul
             return Government.IsRepublic(pKingdom) || SuccessionTool.findNextHeir(pKingdom, pKingdom.king) != null;
         }
 
-        // 领头的人（还在时）和他的 id 一起取走
-        static Actor TakeLeader(Kingdom pKingdom)
-        {
-            Actor leader = Leader(pKingdom);
-            pKingdom.data.removeLong(KeyLeader);
-            return leader;
-        }
-
         // ---------- 左头：兵变平息 ----------
 
         // 平息：不了了之
         static void Calm(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor leader = TakeLeader(pKingdom);
+            Actor leader = Leader(pKingdom);
             if (leader != null) Log(WorldLogs.MutinyCalmed, pKingdom, leader, false);
         }
 
         // 弹压：领头的人被处死，他的家族记恨王室
         static void Crush(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor leader = TakeLeader(pKingdom);
+            Actor leader = Leader(pKingdom);
             if (pBy != null)
             {
                 ParliamentClan royal = Parliament.Clans(pKingdom).Find(c => c.ruling);
@@ -216,7 +197,7 @@ namespace DiplomacyOverhaul
         // 哗散：他带的那支军队解散回乡，他自己也解甲
         static void Scatter(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor leader = TakeLeader(pKingdom);
+            Actor leader = Leader(pKingdom);
             if (leader == null) return;
             Log(WorldLogs.MutinyScattered, pKingdom, leader, false);
             if (leader.army != null)
@@ -232,14 +213,14 @@ namespace DiplomacyOverhaul
         // 夺位：有野心的自立为王，没有的成立军事共和国（已经是军事共和国时由他执政）
         static void Seize(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor general = TakeLeader(pKingdom);
+            Actor general = Leader(pKingdom);
             if (general != null) Regime.Usurp(pKingdom, general);
         }
 
         // 废立：君主被废黜处死，君主国由王室照原版另立新君，共和国重新选举
         static void Depose(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor leader = TakeLeader(pKingdom);
+            Actor leader = Leader(pKingdom);
             if (!pKingdom.hasKing() || !pKingdom.king.isAlive()) return;
             Actor ruler = pKingdom.king;
             if (leader != null) WorldLogs.Add(WorldLogs.MutinyDeposed, Regime.Location(pKingdom), leader,
@@ -250,7 +231,7 @@ namespace DiplomacyOverhaul
         // 索饷：拿首都仓库和君主自己的钱补发禁军的积欠，先拿仓库
         static void Loot(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor leader = TakeLeader(pKingdom);
+            Actor leader = Leader(pKingdom);
             int owed = Guard.Arrears(pKingdom);
             if (owed <= 0) return;
             int taken = 0;

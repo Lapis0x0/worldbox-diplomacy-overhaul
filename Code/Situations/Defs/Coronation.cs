@@ -22,8 +22,9 @@ namespace DiplomacyOverhaul
             load = -1f,
             lean = (k, pc) => pc.ruling ? BecomeRoyal : 0f,
             initiator = (k, clans) => clans.Find(c => c.ruling),
+            enabled = () => Regime.Enabled,
             // 改成君主国、沦为附庸都作废：附庸不能称帝
-            moot = (k, by) => !Regime.Enabled || !Government.IsRepublic(k) || Vassals.IsVassal(k),
+            moot = (k, by) => !Government.IsRepublic(k) || Vassals.IsVassal(k),
             // 执政家族在改选中落选，称帝之议就散了；执政刚死、还没选出继任时不算
             fail = (k, by) => k.hasKing() && k.king.isAlive() && !by.ruling,
             onLeft = Fail,
@@ -58,14 +59,11 @@ namespace DiplomacyOverhaul
         };
 
         // 掷中称帝时开局；没有执政家族时返回 false
-        public static bool TryOpen(Kingdom pKingdom)
+        public static bool TryOpen(Kingdom pKingdom) => Situations.Start(pKingdom, Def, null, (k, by) =>
         {
-            List<ParliamentClan> clans = Parliament.Clans(pKingdom);
-            if (!Situations.Open(pKingdom, Def, clans)) return false;
-            Actor ruler = pKingdom.king;
-            if (ruler != null && ruler.isAlive()) Log(WorldLogs.CrownBegan, pKingdom, ruler);
-            return true;
-        }
+            Actor ruler = k.king;
+            if (ruler != null && ruler.isAlive()) Log(WorldLogs.CrownBegan, k, ruler);
+        });
 
         // 走到右头：执政仍出自这一家时加冕
         static void Crown(Kingdom pKingdom, ParliamentClan pBy)

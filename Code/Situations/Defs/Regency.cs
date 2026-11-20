@@ -15,9 +15,8 @@ namespace DiplomacyOverhaul
         const float AmbitionPressure = 0.3f;
         // 处境：外姓权臣专权时宗室分支站君主，血统在那里；尚武的更看重实力，偏向权臣
         const float CadetLean = 1f, MartialLean = 0.3f;
-        // 权臣（actor id）和他辅佐的君主（actor id），开局前定下
-        internal const string KeyRegent = "vd_sit_regency_regent";
-        internal const string KeyKing = "vd_sit_regency_king";
+        // 权臣和他辅佐的君主，开局前定下
+        internal const string RoleRegent = "regent", RoleKing = "king";
         // 权臣出自王室（摄政）：开局时定下，落幕后留着给起因说明用，下次开局时覆盖
         internal const string KeyRoyal = "vd_sit_regency_royal";
         // 新君登基：记下他，等这个国家的结算月掷一次
@@ -36,9 +35,11 @@ namespace DiplomacyOverhaul
             initiator = FindInitiator,
             outsider = true,
             againstCrown = true,
+            enabled = () => Regime.Enabled,
+            actors = new[] { RoleRegent, RoleKing },
             desc = k => RegentIsRoyal(k) ? "vd_sit_regency_desc_royal" : "vd_sit_regency_desc",
             // 君主换了人（去世、被废）或者不再是君主国，前提就不在了
-            moot = (k, by) => !Regime.Enabled || Government.IsRepublic(k) || Ruler(k) == null,
+            moot = (k, by) => Government.IsRepublic(k) || Ruler(k) == null,
             // 权臣死了或去了别国，权柄自然回到君主手里
             fail = (k, by) => Regent(k) == null,
             leftOutcomes = new[]
@@ -110,22 +111,17 @@ namespace DiplomacyOverhaul
             pKingdom.data.get(KeyNewKing, out long id, -1L);
             if (id >= 0) pKingdom.data.removeLong(KeyNewKing);
             if (!pForce && (id < 0 || !pKingdom.hasKing() || pKingdom.king.data.id != id)) return false;
-            if (!Settings.ParliamentEnabled || !Safety.On(Sys.Situation) || Government.IsRepublic(pKingdom)) return false;
-            if (Situations.IsActive(pKingdom, Def) || !pKingdom.hasKing()) return false;
+            if (Government.IsRepublic(pKingdom) || !pKingdom.hasKing() || !Situations.Available(Def) || Situations.IsActive(pKingdom, Def)) return false;
             if (!pForce && !Randy.randomChance(Weakness(pKingdom.king))) return false;
-            List<ParliamentClan> clans = Parliament.Clans(pKingdom);
-            Actor regent = PickRegent(pKingdom, clans);
-            if (regent == null) return false;
-            pKingdom.data.set(KeyRegent, regent.data.id);
-            pKingdom.data.set(KeyKing, pKingdom.king.data.id);
-            pKingdom.data.set(KeyRoyal, clans.Exists(c => c.cadet && c.voice == regent));
-            if (!Situations.Open(pKingdom, Def, clans))
+            return Situations.Start(pKingdom, Def, (k, clans) =>
             {
-                pKingdom.data.removeLong(KeyRegent);
-                return false;
-            }
-            Log(RegentIsRoyal(pKingdom) ? WorldLogs.RegencyRegent : WorldLogs.RegencyMinister, pKingdom, regent, false);
-            return true;
+                Actor regent = PickRegent(k, clans);
+                if (regent == null) return false;
+                Situations.SetActor(k, Def, RoleRegent, regent);
+                Situations.SetActor(k, Def, RoleKing, k.king);
+                k.data.set(KeyRoyal, clans.Exists(c => c.cadet && c.voice == regent));
+                return true;
+            }, (k, by) => Log(RegentIsRoyal(k) ? WorldLogs.RegencyRegent : WorldLogs.RegencyMinister, k, Regent(k), false));
         }
 
         // 权臣：议席最多的宗室分支的族长（摄政）和议席最多的外姓家族的族长（重臣），取威望高的；一个都没有时是空。
@@ -157,18 +153,13 @@ namespace DiplomacyOverhaul
         // ---------- 读取 ----------
 
         // 权臣；他死了或去了别国时是空
-        internal static Actor Regent(Kingdom pKingdom)
-        {
-            pKingdom.data.get(KeyRegent, out long id, -1L);
-            Actor a = id >= 0 ? World.world.units.get(id) : null;
-            return a != null && a.isAlive() && a.kingdom == pKingdom ? a : null;
-        }
+        internal static Actor Regent(Kingdom pKingdom) => Situations.ActorOf(pKingdom, Def, RoleRegent);
 
         // 他辅佐的君主还在位时是他，否则是空
         static Actor Ruler(Kingdom pKingdom)
         {
-            pKingdom.data.get(KeyKing, out long id, -1L);
-            return pKingdom.hasKing() && pKingdom.king.isAlive() && pKingdom.king.data.id == id ? pKingdom.king : null;
+            Actor king = Situations.ActorOf(pKingdom, Def, RoleKing);
+            return king != null && pKingdom.king == king ? king : null;
         }
 
         // 权臣出自王室：摄政
@@ -178,27 +169,19 @@ namespace DiplomacyOverhaul
             return royal;
         }
 
-        static Actor TakeRegent(Kingdom pKingdom)
-        {
-            Actor regent = Regent(pKingdom);
-            pKingdom.data.removeLong(KeyRegent);
-            pKingdom.data.removeLong(KeyKing);
-            return regent;
-        }
-
         // ---------- 左头：亲政 ----------
 
         // 还政：权臣体面退场
         static void Return(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor regent = TakeRegent(pKingdom);
+            Actor regent = Regent(pKingdom);
             if (regent != null) Log(WorldLogs.RegencyReturned, pKingdom, regent, false);
         }
 
         // 罢黜：权臣这一支（外姓家族或宗室分支）记恨王室
         static void Dismiss(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor regent = TakeRegent(pKingdom);
+            Actor regent = Regent(pKingdom);
             if (pBy != null && !pBy.ruling)
             {
                 ParliamentClan royal = Parliament.Clans(pKingdom).Find(c => c.ruling);
@@ -212,7 +195,7 @@ namespace DiplomacyOverhaul
         // 篡位：宗室摄政废君自立，王室不变，不算改朝换代
         static void Usurp(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor regent = TakeRegent(pKingdom);
+            Actor regent = Regent(pKingdom);
             if (regent == null) return;
             Actor ruler = pKingdom.king;
             LogDeposed(WorldLogs.RegencyUsurped, pKingdom, regent, ruler);
@@ -222,7 +205,7 @@ namespace DiplomacyOverhaul
         // 王冠易手：外姓权臣取而代之，他的家族成为王室，改朝换代
         static void Crown(Kingdom pKingdom, ParliamentClan pBy)
         {
-            Actor regent = TakeRegent(pKingdom);
+            Actor regent = Regent(pKingdom);
             if (regent == null) return;
             Actor ruler = pKingdom.king;
             LogDeposed(WorldLogs.RegencyCrowned, pKingdom, regent, ruler);

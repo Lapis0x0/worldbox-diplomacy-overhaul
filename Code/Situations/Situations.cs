@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -62,6 +63,10 @@ namespace DiplomacyOverhaul
 
         public static bool IsActive(Kingdom pKingdom, SituationDef pDef) => Progress(pKingdom, pDef) >= 0f;
 
+        // 局势能不能进行：议会开着、局势没有熔断、这个局势自己的开关开着
+        public static bool Available(SituationDef pDef) =>
+            Settings.ParliamentEnabled && Safety.On(Sys.Situation) && (pDef.enabled == null || pDef.enabled());
+
         // 没有进行中时是 -1
         public static float Progress(Kingdom pKingdom, SituationDef pDef)
         {
@@ -104,12 +109,29 @@ namespace DiplomacyOverhaul
             return MonthIndex - since;
         }
 
+        // 发起方；不在议会里时按议会外的势力算。宗室分支没有议会外的说法：
+        // 它没了议席（并入王室、丢了城）就不再是发起方，局势按发起方不在了走到左头
         public static ParliamentClan Initiator(Kingdom pKingdom, SituationDef pDef, List<ParliamentClan> pClans)
         {
             pKingdom.data.get(KeyBy(pDef), out long key, -1L);
             ParliamentClan found = pClans.Find(c => c.Key == key);
-            if (found != null || key < 0 || !pDef.outsider) return found;
+            if (found != null || key < 0 || key >= ParliamentClan.CadetKey || !pDef.outsider) return found;
             return Parliament.Outsider(pKingdom, World.world.clans.get(key), pClans);
+        }
+
+        // ---------- 局势里的人 ----------
+
+        static string KeyActor(SituationDef pDef, string pRole) => pDef.id + "_" + pRole;
+
+        public static void SetActor(Kingdom pKingdom, SituationDef pDef, string pRole, Actor pActor) =>
+            pKingdom.data.set(KeyActor(pDef, pRole), pActor.data.id);
+
+        // 他还活着、还在本国时是他，否则是空
+        public static Actor ActorOf(Kingdom pKingdom, SituationDef pDef, string pRole)
+        {
+            pKingdom.data.get(KeyActor(pDef, pRole), out long id, -1L);
+            Actor a = id >= 0 ? World.world.units.get(id) : null;
+            return a != null && a.isAlive() && a.kingdom == pKingdom ? a : null;
         }
 
         // 这个阶段抽中的候选；还没进入这个阶段时是空
@@ -175,6 +197,32 @@ namespace DiplomacyOverhaul
 
         // ---------- 开局和落幕 ----------
 
+        // 由事件开局：pPrepare 定下局势里的人（SetActor），返回 false 就不开；开局后 pOpened 记世界日志。
+        // 出错时清掉这次写下的数据，记到局势的熔断，不牵连调用它的系统
+        public static bool Start(Kingdom pKingdom, SituationDef pDef,
+            Func<Kingdom, List<ParliamentClan>, bool> pPrepare = null, Action<Kingdom, ParliamentClan> pOpened = null)
+        {
+            if (!Available(pDef) || IsActive(pKingdom, pDef)) return false;
+            try
+            {
+                List<ParliamentClan> clans = Parliament.Clans(pKingdom);
+                if ((pPrepare != null && !pPrepare(pKingdom, clans)) || !Open(pKingdom, pDef, clans))
+                {
+                    Clear(pKingdom, pDef);
+                    return false;
+                }
+                pOpened?.Invoke(pKingdom, Initiator(pKingdom, pDef, clans));
+                return true;
+            }
+            catch (Exception e)
+            {
+                Clear(pKingdom, pDef);
+                Refresh(pKingdom);
+                Safety.Fail(Sys.Situation, pDef.id + " 开局", e);
+                return false;
+            }
+        }
+
         public static bool Open(Kingdom pKingdom, SituationDef pDef, List<ParliamentClan> pClans)
         {
             if (IsActive(pKingdom, pDef) || pDef.initiator == null) return false;
@@ -209,6 +257,8 @@ namespace DiplomacyOverhaul
             pKingdom.data.removeInt(KeySinceMonth(pDef));
             pKingdom.data.removeLong(KeyBy(pDef));
             for (int s = 0; s < StageCount; s++) pKingdom.data.removeInt(KeyPick(pDef, s));
+            if (pDef.actors == null) return;
+            foreach (string role in pDef.actors) pKingdom.data.removeLong(KeyActor(pDef, role));
         }
 
         // 走到右头：反对的势力记恨发起方，支持的势力记下人情。走到左头：发起方记恨反对它的势力
@@ -282,10 +332,17 @@ namespace DiplomacyOverhaul
             float[] odds = Odds(pKingdom, pDef, pRight, pBy, pTally);
             int outcome = odds == null ? -1 : pForce >= 0 && pForce < odds.Length ? pForce : Choose(odds);
             Record(pKingdom, pDef, pBy, pRight, outcome);
-            Clear(pKingdom, pDef);
-            Refresh(pKingdom);
-            if (outcome >= 0) Outcomes(pDef, pRight)[outcome].apply?.Invoke(pKingdom, pBy);
-            else (pRight ? pDef.onRight : pDef.onLeft)?.Invoke(pKingdom, pBy);
+            // 结局执行时局势里的人还在，执行完再清掉
+            try
+            {
+                if (outcome >= 0) Outcomes(pDef, pRight)[outcome].apply?.Invoke(pKingdom, pBy);
+                else (pRight ? pDef.onRight : pDef.onLeft)?.Invoke(pKingdom, pBy);
+            }
+            finally
+            {
+                Clear(pKingdom, pDef);
+                Refresh(pKingdom);
+            }
         }
 
         // ---------- 每年 ----------
@@ -330,10 +387,10 @@ namespace DiplomacyOverhaul
             }
         }
 
-        // 每月：推进按月推进的局势（所有国家同一个月推进，不分批）
+        // 每月：推进按月推进的局势（所有国家同一个月推进，不分批）；不能进行的局势（议会关掉、开关关掉）当月清掉
         public static void MonthlyAll()
         {
-            if (!Settings.ParliamentEnabled || !All.Exists(d => d.monthly)) return;
+            if (All.Count == 0) return;
             foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
             {
                 if (!k.isAlive() || !k.isCiv()) continue;
@@ -341,8 +398,10 @@ namespace DiplomacyOverhaul
                 bool changed = false;
                 foreach (SituationDef d in All)
                 {
-                    if (!d.monthly || !IsActive(k, d)) continue;
-                    if (Advance(k, d, clans ??= Parliament.Clans(k))) clans = null;
+                    if (!IsActive(k, d)) continue;
+                    if (!Available(d)) Clear(k, d);
+                    else if (!d.monthly) continue;
+                    else if (Advance(k, d, clans ??= Parliament.Clans(k))) clans = null;
                     changed = true;
                 }
                 if (changed) Refresh(k);
@@ -351,23 +410,21 @@ namespace DiplomacyOverhaul
 
         internal static void Tick(Kingdom pKingdom)
         {
-            bool enabled = Settings.ParliamentEnabled;
             List<ParliamentClan> clans = null;
             foreach (SituationDef d in All)
             {
                 Expire(pKingdom, d);
-                if (d.drive != null)
-                {
-                    if (enabled) d.drive(pKingdom);
-                    else if (IsActive(pKingdom, d)) Clear(pKingdom, d);
-                }
-                else if (IsActive(pKingdom, d))
+                if (!Available(d))
                 {
                     // 议会关掉时没有议席可算，进行中的局势直接结束
-                    if (!enabled) Clear(pKingdom, d);
-                    else if (!d.monthly && Advance(pKingdom, d, clans ??= Parliament.Clans(pKingdom))) clans = null;
+                    if (IsActive(pKingdom, d)) Clear(pKingdom, d);
                 }
-                else if (enabled && d.trigger != null && d.trigger(pKingdom)) Open(pKingdom, d, clans ??= Parliament.Clans(pKingdom));
+                else if (d.drive != null) d.drive(pKingdom);
+                else if (IsActive(pKingdom, d))
+                {
+                    if (!d.monthly && Advance(pKingdom, d, clans ??= Parliament.Clans(pKingdom))) clans = null;
+                }
+                else if (d.trigger != null && d.trigger(pKingdom) && Start(pKingdom, d)) clans = null;
             }
             Refresh(pKingdom);
         }

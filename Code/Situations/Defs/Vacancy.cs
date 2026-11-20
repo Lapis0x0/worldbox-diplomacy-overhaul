@@ -22,6 +22,7 @@ namespace DiplomacyOverhaul
             load = -1f,
             lean = (k, pc) => -Policies.Get(Policies.Form).lean(k, pc),
             initiator = Largest,
+            enabled = () => Regime.Enabled,
             // 国家只剩一座城时照原版由城主继位；已经有了国王就不再空悬
             moot = (k, by) => k.countCities() <= 1 || (k.hasKing() && k.king.isAlive()),
             // 议会投票改行共和，局势也就到了左头
@@ -71,13 +72,13 @@ namespace DiplomacyOverhaul
         public static bool TryOpen(Kingdom pKingdom)
         {
             if (pKingdom.countCities() <= 1) return false;
-            List<ParliamentClan> clans = Parliament.Clans(pKingdom);
-            if (!Situations.Open(pKingdom, Def, clans)) return false;
-            Actor voice = Situations.Initiator(pKingdom, Def, clans)?.voice;
             // 开局只记进世界历史，有了结果（登基或改行共和）才弹出
-            if (voice != null) WorldLogs.Add(WorldLogs.VacancyBegan, Regime.Location(pKingdom), voice,
-                new[] { pKingdom.data.name, voice.getName() }, new[] { pKingdom, pKingdom }, false);
-            return true;
+            return Situations.Start(pKingdom, Def, null, (k, by) =>
+            {
+                Actor voice = by?.voice;
+                if (voice != null) WorldLogs.Add(WorldLogs.VacancyBegan, Regime.Location(k), voice,
+                    new[] { k.data.name, voice.getName() }, new[] { k, k }, false);
+            });
         }
 
         static void Republic(Kingdom pKingdom, ParliamentClan pBy)

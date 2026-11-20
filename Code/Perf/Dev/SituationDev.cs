@@ -229,8 +229,8 @@ namespace DiplomacyOverhaul.Perf
                         if (Government.IsRepublic(k)) continue;
                         Actor regent = Regency.PickRegent(k, clans);
                         if (regent == null || !regent.hasClan()) continue;
-                        k.data.set(Regency.KeyRegent, regent.data.id);
-                        k.data.set(Regency.KeyKing, king != null ? king.data.id : -1L);
+                        Situations.SetActor(k, Regency.Def, Regency.RoleRegent, regent);
+                        if (king != null) Situations.SetActor(k, Regency.Def, Regency.RoleKing, king);
                         k.data.set(Regency.KeyRoyal, clans.Exists(c => c.cadet && c.voice == regent));
                         ParliamentClan rby = clans.Find(c => !c.ruling && c.clan == regent.clan) ?? Parliament.Outsider(k, regent.clan, clans);
                         if (rby == null) continue;
@@ -385,7 +385,7 @@ namespace DiplomacyOverhaul.Perf
                 Dev.Log($"  {d.id} progress={progress:F1} stage={Situations.StageOf(d, progress)} years={Situations.Years(k, d)} by={by?.clan.name} seats={by?.seats} outsider={by != null && !clans.Exists(c => c.Key == by.Key)} voice={by?.voice?.getName()}");
                 if (d == Mutiny.Def)
                 {
-                    k.data.get(Mutiny.KeyLeader, out long lid, -1L);
+                    k.data.get(Mutiny.Def.id + "_" + Mutiny.RoleLeader, out long lid, -1L);
                     Actor l = World.world.units.get(lid), now = Mutiny.Leader(k);
                     Dev.Log($"    leader={l?.getName()} alive={l != null && l.isAlive()} kingdom={l?.kingdom?.data.name} captain={l != null && l.is_army_captain} army={l?.army?.countUnits()} warrior={l != null && l.isWarrior()} cityLeader={l != null && l.isCityLeader()} now={now?.getName()}");
                 }
