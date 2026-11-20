@@ -34,7 +34,7 @@ namespace DiplomacyOverhaul.Perf
                     Actor leader = d == Mutiny.Def ? Mutiny.Leader(k) : null;
                     int before = leader?.army != null ? leader.army.countUnits() : 0;
                     int warriors = k.getCities().Sum(c => c.countWarriors());
-                    Situations.Finish(k, d, a[4] == "right", a.Length > 5 ? a[5] : null);
+                    Situations.ForceEnd(k, d, a[4] == "right", a.Length > 5 ? a[5] : null);
                     if (leader != null) Dev.Log($"@sit leader {leader.getName()} army {before} -> {(leader.army != null ? leader.army.countUnits() : 0)} alive={leader.isAlive()} warrior={leader.isWarrior()} warriors {warriors} -> {k.getCities().Sum(c => c.countWarriors())} king={k.king?.getName()}");
                     SituationEnded end = Situations.Ended(k, d);
                     Dev.Log($"@sit ended {(end == null ? "none" : (end.right ? "right" : "left") + " outcome=" + (Situations.EndedOutcome(d, end)?.id ?? "-"))}");

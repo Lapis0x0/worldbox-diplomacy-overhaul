@@ -82,7 +82,7 @@ namespace DiplomacyOverhaul
                 return;
             }
             if (!Situations.IsActive(pKingdom, Def)) return;
-            Situations.Finish(pKingdom, Def, phase == CyclePhase.Collapse, phase == CyclePhase.Prime || phase == CyclePhase.Collapse);
+            Situations.DriveEnd(pKingdom, Def, phase == CyclePhase.Collapse, phase == CyclePhase.Prime || phase == CyclePhase.Collapse);
         }
 
         // 一股势力（集团合并后）对王室的向背，换算成应得天命

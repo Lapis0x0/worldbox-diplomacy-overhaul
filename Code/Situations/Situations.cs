@@ -445,16 +445,17 @@ namespace DiplomacyOverhaul
             Draw(pKingdom, pDef, pProgress);
         }
 
-        // 走到一头：记进落幕记录；pRecord 为 false 时只清掉（前提不在了）
-        internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight, bool pRecord)
+        // 驱动它的系统让它落幕：记进落幕记录，不算推力、不执行结局；pRecord 为 false 时只清掉（前提不在了）
+        internal static void DriveEnd(Kingdom pKingdom, SituationDef pDef, bool pRight, bool pRecord)
         {
             if (!IsActive(pKingdom, pDef)) return;
             if (pRecord) Record(pKingdom, pDef, null, pRight, -1);
             Clear(pKingdom, pDef);
         }
 
-        // 开发命令：按眼下的推力直接走到一头（fail 成立时只能走到左头）；pOutcome 指定这一头的结局，留空时按分数抽
-        internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight, string pOutcome = null)
+        // 只给开发命令用：按眼下的推力直接走到一头，和推进到一头一样记恩怨、执行结局（fail 成立时只能走到左头）；
+        // pOutcome 指定这一头的结局，留空时按分数抽
+        internal static void ForceEnd(Kingdom pKingdom, SituationDef pDef, bool pRight, string pOutcome = null)
         {
             if (!IsActive(pKingdom, pDef)) return;
             List<ParliamentClan> clans = Parliament.Clans(pKingdom);
