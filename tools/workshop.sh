@@ -25,7 +25,7 @@ case "${1:-}" in
     ;;
   perf)
     id_file=packages/performance-overhaul/workshop_id
-    item_id=$(tr -d '[:space:]' < "$id_file" 2>/dev/null || true)
+    item_id=$([ -f "$id_file" ] && tr -d '[:space:]' < "$id_file" || true)
     mod_dir=packages/performance-overhaul
     changelog=$mod_dir/CHANGELOG.md
     package=tools/package-perf.sh
