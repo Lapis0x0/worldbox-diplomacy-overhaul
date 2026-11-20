@@ -99,7 +99,7 @@ Two things can set off a mutiny crisis:
 
 With the parliament on, the leading captain gathers his or her troops and presses the court (when the Guard is unpaid, by stirring up the troops), backed by his or her clan; a captain without a clan founds one. The royal house is the one being pressed, and the clans struggle over it in parliament. Martial clans back the mutiny, clans far from the capital are wary of it, clans on good terms with the royal house defend it, and clans that bear it a grudge welcome it. The larger the captain's share of the kingdom's troops, the longer the Guard has gone unpaid, and the deeper the disarray of Collapse, the more likely a mutiny breaks out; the longer it drags on, the more its support melts away. The crisis is decided within months to a year, and is defused if the captain dies along the way.
 
-Each end has three possible outcomes. When the crisis reaches an end, one is drawn according to the situation at that moment, and the Situations window shows the current odds of each:
+Each end has three possible outcomes. When the crisis reaches an end, one is drawn according to the situation at that moment:
 
 | Crisis Defused | Mutiny Breaks Out |
 |---|---|

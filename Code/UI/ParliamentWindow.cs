@@ -413,22 +413,25 @@ namespace DiplomacyOverhaul
             Header(RightX, BillY, RightW, LM.Get("vd_parliament_bill"), "ui/Icons/iconDiplomacy");
         }
 
-        // 国名下面一行小字：政制名称，悬停列出是哪几项政策凑成的
-        static void Regime(RegimeNames.Rule pRule)
+        static void Regime(RegimeNames.Rule pRule) => RegimeLine(_parent, _kingdom, pRule, W);
+
+        // 国名下面一行小字：政制名称，悬停列出是哪几项政策凑成的。议会窗口和局势窗口共用
+        internal static void RegimeLine(RectTransform pParent, Kingdom pKingdom, RegimeNames.Rule pRule, float pW)
         {
             if (pRule == null) return;
-            string name = LM.Get(RegimeNames.Key(pRule, Government.IsRepublic(_kingdom)));
+            string key = RegimeNames.Key(pRule, Government.IsRepublic(pKingdom));
+            string name = LM.Get(key);
             float w = Measure(name, 9) + 12f;
-            RectTransform hover = UiKit.Rect(_parent, (W - w) / 2f, RegimeY, w, 14f, new Color(0f, 0f, 0f, 0f));
+            RectTransform hover = UiKit.Rect(pParent, (pW - w) / 2f, RegimeY, w, 14f, new Color(0f, 0f, 0f, 0f));
             Text(hover, name, 0f, 0f, w, 14f, 9, RegimeText, TextAnchor.MiddleCenter);
-            List<string> reasons = RegimeNames.Reasons(_kingdom, pRule);
+            List<string> reasons = RegimeNames.Reasons(pKingdom, pRule);
             string info = "vd_regime_default_info";
             if (reasons.Count > 0)
             {
-                info = "vd_regime_info_" + _kingdom.id;
+                info = "vd_regime_info_" + pKingdom.id;
                 LM.AddToCurrentLocale(info, string.Join(LM.Get("vd_parliament_separator"), reasons));
             }
-            HoverTip(hover, () => Tooltip.show(hover.gameObject, "tip", new TooltipData { tip_name = RegimeNames.Key(pRule, Government.IsRepublic(_kingdom)), tip_description = info }));
+            HoverTip(hover, () => Tooltip.show(hover.gameObject, "tip", new TooltipData { tip_name = key, tip_description = info }));
         }
 
         const float LeftX = 18f, LeftW = 266f;
