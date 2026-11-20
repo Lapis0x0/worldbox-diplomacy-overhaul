@@ -87,6 +87,29 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "rebellion":
+                {
+                    // 大叛乱：先列出各家对王室的好感、名下的城和各城忠诚，再引发，列出起事的各方
+                    Kingdom k = Dev.FindKingdom(a[2]);
+                    List<ParliamentClan> clans = Parliament.Clans(k);
+                    ParliamentClan crown = clans.Find(c => c.ruling);
+                    Dev.Log($"@rebellion {k.data.name} cities={k.countCities()} clans={clans.Count} crown={crown?.clan.name} vassals={Vassals.GetVassals(k).Count}");
+                    foreach (ParliamentClan pc in clans)
+                        Dev.Log($"  {pc.clan.name}{(pc.ruling ? "[王室]" : pc.cadet ? "[宗室]" : "")} seats={pc.seats} favor={(crown != null && !pc.ruling ? Relations.Value(pc, crown).ToString() : "-")} cities={string.Join(",", pc.cities.Select(c => c.name + (c.isCapitalCity() ? "*" : "") + "(" + c.getCachedLoyalty() + ")"))}");
+                    var vassals = Vassals.GetVassals(k);
+                    if (vassals.Count > 0) Dev.Log($"  vassals {string.Join(",", vassals.Select(v => v.data.name + "(" + Integration.Get(v) + ")"))}");
+                    var before = new HashSet<Kingdom>(World.world.kingdoms);
+                    int n = GreatRebellion.Trigger(k);
+                    var stayed = Vassals.GetVassals(k);
+                    if (vassals.Count > 0) Dev.Log($"  revolted {string.Join(",", vassals.Where(v => !stayed.Contains(v)).Select(v => v.data.name))}");
+                    Dev.Log($"@rebellion count={n} left={k.countCities()} phase={Cycle.Get(k)}");
+                    foreach (Kingdom r in World.world.kingdoms)
+                    {
+                        if (before.Contains(r) || !r.isAlive()) continue;
+                        Dev.Log($"  rebel {r.data.name} cities={string.Join(",", r.getCities().Select(c => c.name))} king={r.king?.getName()} clan={r.king?.clan?.name}");
+                    }
+                    break;
+                }
                 case "who":
                 {
                     // 夺权会由谁发起：全国战功最高的将领、排除王室后会起事的将领、发起方

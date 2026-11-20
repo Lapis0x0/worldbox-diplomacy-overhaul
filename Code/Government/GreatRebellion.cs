@@ -5,12 +5,10 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 大叛乱：怨恨王室的家族带着名下的城起兵，其余不满的城各自起事，附庸按整合度决定是否造反；
+    // 大叛乱：怨恨王室的家族带着名下的城起兵，其余不满的城各自起事，都不设上限；附庸按整合度决定是否造反；
     // 城市和附庸都在同一场叛乱战争里，各自和原国家谈和
     public static class GreatRebellion
     {
-        // 起事的城最多占原国家非首都城市的比例
-        const int TakenPercent = 60;
         // 国家至少要有几座城才会有城市起事；起事点不足时用忠诚最低的城补到这个数
         const int MinCities = 3, MinPoints = 2;
 
@@ -24,10 +22,9 @@ namespace DiplomacyOverhaul
             int total = pKingdom.countCities();
             if (total >= MinCities)
             {
-                int budget = (total - (pKingdom.capital != null ? 1 : 0)) * TakenPercent / 100;
                 var rebels = new List<Kingdom>();
-                int taken = RiseClans(pKingdom, budget, Mathf.Clamp(total / 4, 2, 6), rebels);
-                count += taken + RiseCities(pKingdom, budget - taken, rebels);
+                count += RiseClans(pKingdom, rebels);
+                count += RiseCities(pKingdom, rebels);
             }
 
             War war = RebellionWar(pKingdom);
@@ -50,9 +47,9 @@ namespace DiplomacyOverhaul
             return count;
         }
 
-        // 对王室（共和国是执政家族）好感为负的家族，从最怨恨的开始，最多 pMax 股：
+        // 对王室（共和国是执政家族）好感为负的家族全部起兵，从最怨恨的开始：
         // 每股在名下人口最多的城立一个叛军国，名下其余的城一起加入。返回起事的城数
-        static int RiseClans(Kingdom pKingdom, int pBudget, int pMax, List<Kingdom> pRebels)
+        static int RiseClans(Kingdom pKingdom, List<Kingdom> pRebels)
         {
             List<ParliamentClan> clans = Parliament.Clans(pKingdom);
             ParliamentClan crown = clans.Find(c => c.ruling);
@@ -69,7 +66,6 @@ namespace DiplomacyOverhaul
             int taken = 0;
             foreach (var (pc, _) in grudges)
             {
-                if (pRebels.Count >= pMax || taken >= pBudget) break;
                 List<City> cities = pc.cities.FindAll(c => c.kingdom == pKingdom && !c.isCapitalCity() && c.units.Count > 0);
                 cities.Sort((a, b) => b.getPopulationPeople().CompareTo(a.getPopulationPeople()));
                 Kingdom rebel = null;
@@ -86,7 +82,6 @@ namespace DiplomacyOverhaul
                 taken++;
                 foreach (City city in cities)
                 {
-                    if (taken >= pBudget) break;
                     if (city == seat || city.kingdom != pKingdom || !rebel.isAlive()) continue;
                     city.joinAnotherKingdom(rebel, false, true);
                     taken++;
@@ -96,7 +91,7 @@ namespace DiplomacyOverhaul
         }
 
         // 剩下的城里忠诚为负的各自起事，从忠诚最低的开始；起事点不足 MinPoints 时用忠诚最低的城补足。返回起事的城数
-        static int RiseCities(Kingdom pKingdom, int pBudget, List<Kingdom> pRebels)
+        static int RiseCities(Kingdom pKingdom, List<Kingdom> pRebels)
         {
             var candidates = new List<City>();
             foreach (City city in pKingdom.getCities())
@@ -107,7 +102,6 @@ namespace DiplomacyOverhaul
             int taken = 0;
             foreach (City city in candidates)
             {
-                if (taken >= pBudget) break;
                 if (city.getCachedLoyalty() >= 0 && pRebels.Count >= MinPoints) break;
                 if (city.kingdom != pKingdom) continue;
                 Kingdom rebel = Rebel(city, pKingdom, null);
