@@ -25,8 +25,10 @@ namespace DiplomacyOverhaul
             enabled = () => Regime.Enabled,
             // 改成君主国、沦为附庸都作废：附庸不能称帝
             moot = (k, by) => !Government.IsRepublic(k) || Vassals.IsVassal(k),
-            // 执政家族在改选中落选，称帝之议就散了；执政刚死、还没选出继任时不算
-            fail = (k, by) => k.hasKing() && k.king.isAlive() && !by.ruling,
+            // 执政刚死、还没选出继任时先不推进
+            hold = k => !k.hasKing() || !k.king.isAlive(),
+            // 执政家族在改选中落选，称帝之议就散了
+            fail = (k, by) => !by.ruling,
             onLeft = Fail,
             onRight = Crown,
             pressures =
@@ -65,13 +67,8 @@ namespace DiplomacyOverhaul
             if (ruler != null && ruler.isAlive()) Log(WorldLogs.CrownBegan, k, ruler);
         });
 
-        // 走到右头：执政仍出自这一家时加冕
-        static void Crown(Kingdom pKingdom, ParliamentClan pBy)
-        {
-            Actor ruler = pKingdom.king;
-            if (ruler == null || !ruler.isAlive() || !Government.IsRepublic(pKingdom) || ruler.clan != pBy.clan) return;
-            Regime.Crown(pKingdom, ruler);
-        }
+        // 走到右头：执政加冕（执政在位、出自这一家，由 hold 和 fail 保证）
+        static void Crown(Kingdom pKingdom, ParliamentClan pBy) => Regime.Crown(pKingdom, pKingdom.king);
 
         static void Fail(Kingdom pKingdom, ParliamentClan pBy)
         {

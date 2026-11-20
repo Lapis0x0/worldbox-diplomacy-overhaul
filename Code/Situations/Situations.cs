@@ -361,6 +361,7 @@ namespace DiplomacyOverhaul
                 Clear(pKingdom, pDef);
                 return true;
             }
+            if (pDef.hold != null && pDef.hold(pKingdom)) return false;
             SituationTally tally = Tally(pKingdom, pDef, pClans, by);
             if (pDef.fail != null && pDef.fail(pKingdom, by))
             {
@@ -452,13 +453,13 @@ namespace DiplomacyOverhaul
             Clear(pKingdom, pDef);
         }
 
-        // 开发命令：按眼下的推力直接走到一头；pOutcome 指定这一头的结局，留空时按分数抽
+        // 开发命令：按眼下的推力直接走到一头（fail 成立时只能走到左头）；pOutcome 指定这一头的结局，留空时按分数抽
         internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight, string pOutcome = null)
         {
             if (!IsActive(pKingdom, pDef)) return;
             List<ParliamentClan> clans = Parliament.Clans(pKingdom);
             ParliamentClan by = Initiator(pKingdom, pDef, clans);
-            bool right = pRight && by != null;
+            bool right = pRight && by != null && (pDef.fail == null || !pDef.fail(pKingdom, by));
             int force = pOutcome != null && Outcomes(pDef, right) != null ? System.Array.FindIndex(Outcomes(pDef, right), o => o.id == pOutcome) : -1;
             End(pKingdom, pDef, by != null ? Tally(pKingdom, pDef, clans, by) : null, by, right, force);
         }

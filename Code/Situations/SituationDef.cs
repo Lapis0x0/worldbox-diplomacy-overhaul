@@ -68,6 +68,9 @@ namespace DiplomacyOverhaul
         public Func<Kingdom, ParliamentClan, bool> moot;
         // 发起方已经输了（如执政家族在改选中落选）：走到左头，照常记恩怨
         public Func<Kingdom, ParliamentClan, bool> fail;
+        // 这一次先不推进（如执政刚死、还没选出继任）：进度不动，也不判定 fail 和结局。
+        // 结局要的前提写进 moot、fail、hold，结局本身只管执行，落幕记录写的就是实际发生的
+        public Func<Kingdom, bool> hold;
         // 由别的系统驱动的局势（王朝衰落）：每年调它，开局、进度和落幕都由它决定，不走推力公式
         public Action<Kingdom> drive;
 

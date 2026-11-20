@@ -25,8 +25,8 @@ namespace DiplomacyOverhaul
             enabled = () => Regime.Enabled,
             // 国家只剩一座城时照原版由城主继位；已经有了国王就不再空悬
             moot = (k, by) => k.countCities() <= 1 || (k.hasKing() && k.king.isAlive()),
-            // 议会投票改行共和，局势也就到了左头
-            fail = (k, by) => Government.IsRepublic(k),
+            // 议会投票改行共和，或者发起家族在本国已经没有能登基的人，局势也就到了左头
+            fail = (k, by) => Government.IsRepublic(k) || by.voice == null || !by.voice.isAlive() || by.voice.kingdom != k,
             onLeft = Republic,
             onRight = Enthrone,
             pressures =
@@ -83,18 +83,12 @@ namespace DiplomacyOverhaul
 
         static void Republic(Kingdom pKingdom, ParliamentClan pBy)
         {
-            if (pKingdom.hasKing() && pKingdom.king.isAlive()) return;
             // 议会已经改了共和制，下一次检查国王时选举执政
             if (Government.IsRepublic(pKingdom)) return;
             Regime.FoundRepublic(pKingdom);
         }
 
-        static void Enthrone(Kingdom pKingdom, ParliamentClan pBy)
-        {
-            if (pKingdom.hasKing() && pKingdom.king.isAlive()) return;
-            Actor voice = pBy.voice;
-            if (voice == null || !voice.isAlive() || voice.kingdom != pKingdom) Regime.FoundRepublic(pKingdom);
-            else Regime.Enthrone(pKingdom, voice);
-        }
+        // 走到右头：发起家族占主导的人登基（他还在本国，由 fail 保证）
+        static void Enthrone(Kingdom pKingdom, ParliamentClan pBy) => Regime.Enthrone(pKingdom, pBy.voice);
     }
 }
