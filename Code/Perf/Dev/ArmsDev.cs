@@ -35,6 +35,8 @@ namespace DiplomacyOverhaul.Perf
             Print(kingdoms);
             if (!run) return;
             Armory.UpdateAll();
+            foreach (Kingdom k in World.world.kingdoms.Where(k => k.isAlive() && k.isCiv()).ToList())
+                foreach (City c in k.getCities().ToList()) Armory.UpdateCity(c);
             Dev.Log("  -- after run --");
             Print(kingdoms);
         }

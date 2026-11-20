@@ -25,17 +25,26 @@ namespace DiplomacyOverhaul
         {
             var list = new List<Ballot>();
             var risks = new RiskMemo();
-            foreach (Policy p in Policies.All)
+            bool own = _memo == null;
+            if (own) _memo = new DraftMemo();
+            try
             {
-                if (!p.CanPropose(pKingdom) || Locked(pKingdom, p)) continue;
-                int current = p.Get(pKingdom);
-                for (int o = 0; o < p.count; o++)
+                foreach (Policy p in Policies.All)
                 {
-                    if (o == current) continue;
-                    var gains = new float[pClans.Count];
-                    for (int i = 0; i < pClans.Count; i++) gains[i] = Gain(pKingdom, pClans, pClans[i], p, current, o, risks);
-                    list.Add(new Ballot { policy = p, option = o, gains = gains });
+                    if (!p.CanPropose(pKingdom) || Locked(pKingdom, p)) continue;
+                    int current = p.Get(pKingdom);
+                    for (int o = 0; o < p.count; o++)
+                    {
+                        if (o == current) continue;
+                        var gains = new float[pClans.Count];
+                        for (int i = 0; i < pClans.Count; i++) gains[i] = Gain(pKingdom, pClans, pClans[i], p, current, o, risks);
+                        list.Add(new Ballot { policy = p, option = o, gains = gains });
+                    }
                 }
+            }
+            finally
+            {
+                if (own) _memo = null;
             }
             return list;
         }

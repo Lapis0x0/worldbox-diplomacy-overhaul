@@ -233,8 +233,44 @@ namespace DiplomacyOverhaul
         // 理想位置：意识形态乘这个议题的载荷，加上处境和利益；不限制在 -1 到 1
         public static float Ideal(Kingdom pKingdom, ParliamentClan pClan, Issue pIssue)
         {
+            if (_memo != null && _memo.ideals.TryGetValue((pClan, pIssue), out float cached)) return cached;
             float stance = pIssue.axis == PolicyAxis.Radical ? pClan.x : pClan.y;
-            return pIssue.load * stance + (pIssue.lean != null ? pIssue.lean(pKingdom, pClan) : 0f);
+            float ideal = pIssue.load * stance + (pIssue.lean != null ? pIssue.lean(pKingdom, pClan) : 0f);
+            if (_memo != null) _memo.ideals[(pClan, pIssue)] = ideal;
+            return ideal;
+        }
+
+        // 起草期间记下各股势力在各议题上的理想位置、各项政策是否适用和现在的档位：一次起草里政策不变，
+        // 王室估逼反风险时要把每股地方势力对全部政策的不满按每个选项重算一遍，这些不用每次重求
+        class DraftMemo
+        {
+            public readonly Dictionary<(ParliamentClan, Issue), float> ideals = new Dictionary<(ParliamentClan, Issue), float>();
+            public readonly Dictionary<(Kingdom, Policy), bool> shown = new Dictionary<(Kingdom, Policy), bool>();
+            public readonly Dictionary<(Kingdom, Policy), int> current = new Dictionary<(Kingdom, Policy), int>();
+        }
+
+        static DraftMemo _memo;
+
+        static bool Shown(Kingdom pKingdom, Policy pPolicy)
+        {
+            if (_memo == null) return pPolicy.shown(pKingdom);
+            if (!_memo.shown.TryGetValue((pKingdom, pPolicy), out bool shown))
+            {
+                shown = pPolicy.shown(pKingdom);
+                _memo.shown[(pKingdom, pPolicy)] = shown;
+            }
+            return shown;
+        }
+
+        static int Current(Kingdom pKingdom, Policy pPolicy)
+        {
+            if (_memo == null) return pPolicy.Get(pKingdom);
+            if (!_memo.current.TryGetValue((pKingdom, pPolicy), out int current))
+            {
+                current = pPolicy.Get(pKingdom);
+                _memo.current[(pKingdom, pPolicy)] = current;
+            }
+            return current;
         }
 
         // 从 pFrom 改成 pTo，离理想位置近了多少；掌权家族再减去把地方逼反的风险
@@ -412,9 +448,9 @@ namespace DiplomacyOverhaul
             float politics = 0f, crown = 0f;
             foreach (Policy p in Policies.All)
             {
-                if (!p.active || !p.shown(pKingdom)) continue;
+                if (!p.active || !Shown(pKingdom, p)) continue;
                 float ideal = Ideal(pKingdom, pClan, p);
-                int current = p == pChanged ? pOption : p.Get(pKingdom);
+                int current = p == pChanged ? pOption : Current(pKingdom, p);
                 float best = float.MaxValue;
                 int bestOption = current;
                 for (int o = 0; o < p.count; o++)

@@ -102,6 +102,7 @@ namespace DiplomacyOverhaul
             Run(Sys.Vassal, "Vassals", Vassals.SyncAllWars);
             Run(Sys.Military, "Guard", Guard.Rebalance);
             Run(Sys.Military, "GuardAI", GuardAI.UpdateAll);
+            Run(Sys.Military, "ArmoryCities", Armory.UpdateCities);
             Run(Sys.Situation, "Situations", Situations.MonthlyAll);
         }
 

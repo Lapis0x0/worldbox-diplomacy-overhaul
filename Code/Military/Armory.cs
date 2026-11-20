@@ -61,6 +61,8 @@ namespace DiplomacyOverhaul
         };
 
         static readonly EquipmentType[] Slots = { EquipmentType.Weapon, EquipmentType.Helmet, EquipmentType.Armor, EquipmentType.Boots };
+        // 修理按原版遍历装备栏的顺序（头盔、护甲、武器、靴子），只看自家会发的这四类
+        static readonly EquipmentType[] RepairSlots = { EquipmentType.Helmet, EquipmentType.Armor, EquipmentType.Weapon, EquipmentType.Boots };
 
         // 出钱置办军械的一方：国家（city 为空）给禁军，城市给本城的地方兵
         class Arsenal
@@ -180,19 +182,48 @@ namespace DiplomacyOverhaul
                         rate = BudgetRates[option],
                         upgrades = option > Replacements
                     });
-                foreach (City city in new List<City>(k.getCities()))
-                    Update(new Arsenal
-                    {
-                        kingdom = k,
-                        city = city,
-                        members = LocalMembers(city),
-                        capacity = city.getMaxWarriors() - Guard.Quota(city),
-                        reserve = Mathf.CeilToInt(Guard.CountLocal(city) * Treasury.PayPerWarrior * Treasury.ReserveYears) + CityBuildReserve,
-                        rate = CityBudgetRate,
-                        upgrades = true
-                    });
             }
         }
+
+        // 地方兵按城错开结算：每座城按编号固定一个月，一年结一次，免得大国的所有城挤在国家结算的那一帧。
+        // 没有记录的城（新城、旧存档）当作今年结过，明年到自己的月份再结；卡顿跳过了那个月就在下一年补上
+        const string KeyCitySettled = "vd_arms_settled";   // city.data：地方兵军械结算过的年份
+
+        static int CityMonth(City pCity) => (int)(pCity.id % 12) + 1;
+
+        public static void UpdateCities()
+        {
+            if (!Military.On) return;
+            int year = Date.getCurrentYear(), month = Date.getCurrentMonth();
+            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            {
+                if (!k.isAlive() || !k.isCiv()) continue;
+                foreach (City city in new List<City>(k.getCities()))
+                {
+                    city.data.get(KeyCitySettled, out int done, -1);
+                    if (done < 0)
+                    {
+                        city.data.set(KeyCitySettled, year);
+                        continue;
+                    }
+                    if (done >= year || (month < CityMonth(city) && done >= year - 1)) continue;
+                    UpdateCity(city);
+                    city.data.set(KeyCitySettled, year);
+                }
+            }
+        }
+
+        internal static void UpdateCity(City pCity) =>
+            Update(new Arsenal
+            {
+                kingdom = pCity.kingdom,
+                city = pCity,
+                members = LocalMembers(pCity),
+                capacity = pCity.getMaxWarriors() - Guard.Quota(pCity),
+                reserve = Mathf.CeilToInt(Guard.CountLocal(pCity) * Treasury.PayPerWarrior * Treasury.ReserveYears) + CityBuildReserve,
+                rate = CityBudgetRate,
+                upgrades = true
+            });
 
         static void Update(Arsenal pArsenal)
         {
@@ -237,7 +268,7 @@ namespace DiplomacyOverhaul
             string melee = MeleeWeapon(pArsenal.Culture);
             int tier = TierOf(pArsenal.Data);
             if (pArsenal.upgrades && tier < Tiers.Length - 1
-                && members.FindAll(a => !Short(a, melee, tier)).Count >= Mathf.Max(pArsenal.capacity, members.Count) * UpgradeShare
+                && Reaches(members, melee, tier, Mathf.Max(pArsenal.capacity, members.Count) * UpgradeShare)
                 && Available(pArsenal, Tiers[tier + 1]))
             {
                 tier++;
@@ -255,7 +286,10 @@ namespace DiplomacyOverhaul
                 assigned++;
                 if (role == RoleArcher) archerCount++;
             }
-            members.Sort((x, y) => Score(x).CompareTo(Score(y)));
+            // 装备分先算好再排：比较的结果和每次现算一样，排出的顺序也一样
+            var scores = new Dictionary<Actor, int>(members.Count);
+            foreach (Actor a in members) scores[a] = Score(a);
+            members.Sort((x, y) => scores[x].CompareTo(scores[y]));
             foreach (Actor a in members) Role(a, archers, ref archerCount, ref assigned);
 
             Reclaim(pArsenal, melee, tier);
@@ -279,6 +313,18 @@ namespace DiplomacyOverhaul
                 if (broke) break;
             }
             pArsenal.Spend(spent);
+        }
+
+        // 达到制式的兵够不够 pNeed 个：数够就停
+        static bool Reaches(List<Actor> pMembers, string pMelee, int pTier, float pNeed)
+        {
+            int count = 0;
+            foreach (Actor a in pMembers)
+            {
+                if (count >= pNeed) return true;
+                if (!Short(a, pMelee, pTier)) count++;
+            }
+            return count >= pNeed;
         }
 
         // 空着的部位按哪一档发：今年的钱够把空位都配齐的最高一档，最低是铜。
@@ -306,10 +352,10 @@ namespace DiplomacyOverhaul
             foreach (Actor a in pArsenal.members)
             {
                 bool repaired = false;
-                foreach (ActorEquipmentSlot slot in a.equipment)
+                foreach (EquipmentType type in RepairSlots)
                 {
-                    Item item = slot.getItem();
-                    if (!item.data.hasFlag(pArsenal.Flag) || !item.needRepair()) continue;
+                    Item item = a.equipment.getSlot(type).getItem();
+                    if (item == null || !item.data.hasFlag(pArsenal.Flag) || !item.needRepair()) continue;
                     int t = System.Array.FindIndex(Tiers, x => x.material == item.getAsset().material);
                     if (t < 0) continue;
                     float fee = ListPrice(Tiers[t]) * RepairShare * (1f - item.getDurabilityCurrent() / (float)item.getDurabilityMax());
@@ -325,40 +371,79 @@ namespace DiplomacyOverhaul
             pArsenal.Spend(Mathf.CeilToInt(spent));
         }
 
-        // 回收：仓库里的装备，挑比身上好的发给不到制式的士兵，每次拿最好的一件。
-        // 武器要合兵种：弓手只拿弓，近战兵只拿近战武器
+        // 回收：仓库里的装备，挑比身上好的发给不到制式的士兵，每次拿最好的一件（同档的取仓库顺序里的第一件）。
+        // 武器要合兵种：弓手只拿弓，近战兵只拿近战武器。
+        // 开始时把各城仓库按部位建一次索引（档次从高到低，同档按城、仓库里的顺序），不再每个兵每个部位扫一遍全部仓库
         static void Reclaim(Arsenal pArsenal, string pMelee, int pTier)
         {
+            var cities = new List<City>(pArsenal.Stores);
+            var cityIndex = new Dictionary<City, int>(cities.Count);
+            for (int i = 0; i < cities.Count; i++) cityIndex[cities[i]] = i;
+            var index = new List<Stored>[Slots.Length];
+            for (int s = 0; s < Slots.Length; s++)
+            {
+                index[s] = new List<Stored>();
+                for (int i = 0; i < cities.Count; i++) AddStored(index[s], cities[i], i, Slots[s]);
+                index[s].Sort(StoredOrder);
+            }
             foreach (Actor a in pArsenal.members)
             {
                 a.data.get(KeyRole, out int role, RoleMelee);
-                foreach (EquipmentType type in Slots)
+                for (int s = 0; s < Slots.Length; s++)
                 {
+                    if (index[s].Count == 0) continue;
+                    EquipmentType type = Slots[s];
                     string subtype = type == EquipmentType.Weapon ? (role == RoleArcher ? "bow" : pMelee) : SlotName(type);
                     if (!Needs(a, type, subtype, pTier)) continue;
                     ActorEquipmentSlot slot = a.equipment.getSlot(type);
                     int current = slot.getItem()?.getAsset().equipment_value ?? 0;
-                    City from = null;
-                    Item best = null;
-                    foreach (City city in pArsenal.Stores)
-                        foreach (long id in city.data.equipment.getEquipmentList(type))
-                        {
-                            Item item = World.world.items.get(id);
-                            if (item == null || item.isCursed()) continue;
-                            EquipmentAsset asset = item.getAsset();
-                            if (asset.equipment_value <= current || (best != null && asset.equipment_value <= best.getAsset().equipment_value)) continue;
-                            if (type == EquipmentType.Weapon && (role == RoleArcher ? asset.group_id != "bow" : asset.attack_type != WeaponType.Melee)) continue;
-                            best = item;
-                            from = city;
-                        }
+                    Stored best = null;
+                    foreach (Stored st in index[s])
+                    {
+                        if (st.value <= current) break;
+                        if (type == EquipmentType.Weapon && (role == RoleArcher ? st.asset.group_id != "bow" : st.asset.attack_type != WeaponType.Melee)) continue;
+                        best = st;
+                        break;
+                    }
                     if (best == null) continue;
-                    from.data.equipment.getEquipmentList(type).Remove(best.id);
-                    from._storage_version++;
+                    best.city.data.equipment.getEquipmentList(type).Remove(best.item.id);
+                    best.city._storage_version++;
+                    index[s].Remove(best);
                     Retire(pArsenal, a, slot);
-                    slot.setItem(best, a);
+                    slot.setItem(best.item, a);
+                    // 换下的旧装备可能放回户籍城的仓库（满了会挤掉一件更差的）：按那座城仓库的现状重建这一类
+                    if (a.city != null && cityIndex.TryGetValue(a.city, out int ci))
+                    {
+                        index[s].RemoveAll(x => x.cityIdx == ci);
+                        AddStored(index[s], a.city, ci, type);
+                        index[s].Sort(StoredOrder);
+                    }
                 }
             }
         }
+
+        class Stored
+        {
+            public Item item;
+            public EquipmentAsset asset;
+            public City city;
+            public int value, cityIdx, seq;
+        }
+
+        static void AddStored(List<Stored> pList, City pCity, int pCityIdx, EquipmentType pType)
+        {
+            List<long> ids = pCity.data.equipment.getEquipmentList(pType);
+            for (int i = 0; i < ids.Count; i++)
+            {
+                Item item = World.world.items.get(ids[i]);
+                if (item == null || item.isCursed()) continue;
+                EquipmentAsset asset = item.getAsset();
+                pList.Add(new Stored { item = item, asset = asset, city = pCity, value = asset.equipment_value, cityIdx = pCityIdx, seq = i });
+            }
+        }
+
+        static readonly Comparison<Stored> StoredOrder = (x, y) =>
+            x.value != y.value ? y.value.CompareTo(x.value) : x.cityIdx != y.cityIdx ? x.cityIdx.CompareTo(y.cityIdx) : x.seq.CompareTo(y.seq);
 
         static List<Actor> Warriors(City pCity) =>
             pCity._professions_dict.TryGetValue(UnitProfession.Warrior, out List<Actor> list) ? list : null;
