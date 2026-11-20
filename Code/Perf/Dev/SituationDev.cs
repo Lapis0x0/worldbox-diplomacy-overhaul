@@ -41,6 +41,16 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "mandate":
+                {
+                    // 直接设天命，衰落期同步一次王朝衰落的进度（截图、看各阶段用）
+                    Kingdom k = Dev.FindKingdom(a[2]);
+                    Cycle.SetMandate(k, float.Parse(a[3]));
+                    if (Cycle.Get(k) == CyclePhase.Decline) Situations.Drive(k, Decline.Def, Decline.Position(Cycle.Mandate(k)));
+                    Dev.Log($"@sit mandate {k.data.name} {Cycle.Mandate(k):F1} phase={Cycle.Get(k)}");
+                    Show(k);
+                    break;
+                }
                 case "decline":
                 {
                     // 把王朝周期推进到衰落期，再同步一次局势

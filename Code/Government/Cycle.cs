@@ -168,7 +168,7 @@ namespace DiplomacyOverhaul
             return s;
         }
 
-        static void SetMandate(Kingdom pKingdom, float pValue)
+        internal static void SetMandate(Kingdom pKingdom, float pValue)
         {
             pKingdom.data.set(KeyMandate, Mathf.Clamp(pValue, 0f, 100f));
             RefreshDamage(pKingdom);
