@@ -56,6 +56,38 @@ namespace DiplomacyOverhaul
 
         public static float Penalty(Kingdom pKingdom) => Treasury.PenaltyOf(Disarray(pKingdom));
 
+        // 补发一部分积欠（兵变索饷）
+        internal static void Repay(Kingdom pKingdom, int pAmount)
+        {
+            if (pAmount > 0) SetArrears(pKingdom, Arrears(pKingdom) - pAmount);
+        }
+
+        // 把积欠设成这个数：涣散程度按它重算，禁军重算属性
+        internal static void SetArrears(Kingdom pKingdom, int pArrears)
+        {
+            bool wasUnpaid = Unpaid(pKingdom);
+            int arrears = Mathf.Max(0, pArrears);
+            float cost = Mathf.Max(1f, KingdomMembers(pKingdom) * Treasury.PayPerWarrior);
+            if (arrears > 0)
+            {
+                pKingdom.data.set(KeyArrears, arrears);
+                pKingdom.data.set(KeyDisarray, arrears / (arrears + cost));
+            }
+            else
+            {
+                pKingdom.data.removeInt(KeyArrears);
+                pKingdom.data.removeFloat(KeyDisarray);
+            }
+            Ledger.GuardPayChanged(pKingdom, wasUnpaid, Unpaid(pKingdom));
+            foreach (City city in pKingdom.getCities())
+            {
+                List<Actor> warriors = Warriors(city);
+                if (warriors == null) continue;
+                foreach (Actor a in warriors)
+                    if (IsMember(a)) a.setStatsDirty();
+            }
+        }
+
         // 全国的禁军人数，征兵时要看国库养不养得起。每次征兵都数一遍太慢，约一秒数一次
         static readonly Dictionary<long, (int frame, int count)> _members = new Dictionary<long, (int, int)>();
 

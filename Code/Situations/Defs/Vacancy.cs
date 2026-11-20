@@ -73,8 +73,9 @@ namespace DiplomacyOverhaul
             List<ParliamentClan> clans = Parliament.Clans(pKingdom);
             if (!Situations.Open(pKingdom, Def, clans)) return false;
             Actor voice = Situations.Initiator(pKingdom, Def, clans)?.voice;
+            // 开局只记进世界历史，有了结果（登基或改行共和）才弹出
             if (voice != null) WorldLogs.Add(WorldLogs.VacancyBegan, Regime.Location(pKingdom), voice,
-                new[] { pKingdom.data.name, voice.getName() }, new[] { pKingdom, pKingdom });
+                new[] { pKingdom.data.name, voice.getName() }, new[] { pKingdom, pKingdom }, false);
             return true;
         }
 

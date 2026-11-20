@@ -18,7 +18,7 @@ namespace DiplomacyOverhaul
 
         public const float KingShare = 0.2f;      // 上缴里归国王的份
         public const float PayPerWarrior = 0.5f;  // 每个兵每年的军饷
-        const float DesertShare = 0.5f;           // 每年逃散的比例 = 涣散程度 × 这个数
+        internal const float DesertShare = 0.5f;  // 每年逃散的比例 = 涣散程度 × 这个数；欠饷时闹兵变的概率也是（见 Regime.TryMutiny）
         const float PenaltyMax = 0.25f;           // 伤害减益 = 涣散程度 × 这个数
 
         // 储备：军械和营建都只花储备以外的钱。基础是禁军名额两年的饷，禁军还没满额时就是国库 × 纪律系数（钱先留给扩军，

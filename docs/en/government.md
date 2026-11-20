@@ -90,14 +90,29 @@ A republic with 6 or more cities (counting its vassals) that is not a vassal and
 
 With the parliament on, the consul's clan reaches for the crown, and the clans struggle over it in parliament for several years. Conservative clans back the empire and radical clans defend the republic. A kingdom at its height lends the idea weight, the longer the debate drags on the less likely it succeeds, and once the kingdom leaves Prime the talk gradually dies down. If the consul's clan loses the next election, or the parliament keeps the republic, nothing comes of it. If it succeeds, the consul is crowned. With the parliament off, the consul crowns himself or herself at once.
 
-### Coup in Times of Collapse
+### Mutiny Crisis
 
-Each year, a kingdom in [Collapse](cycle.md) has a 10% chance (20% if the culture has Warriors Ascension) of facing a coup.
+Two things can set off a mutiny crisis:
 
-With the parliament on, the army captain with the most kills gathers his or her troops and presses the court, backed by his or her clan; a captain without a clan founds one. The royal house is the one being pressed, and the clans struggle over it in parliament for several years. Martial clans back the coup, clans far from the capital are wary of it, clans on good terms with the royal house defend it, and clans that bear it a grudge welcome the coup. The larger the captain's share of the kingdom's troops, the more weight the coup carries; the disarray of Collapse and unpaid guards add to the pressure, and the longer it drags on, the more its support melts away. A coup is decided within months to a year: if it fails, the captain yields command; if it succeeds, the captain takes power; if the captain dies along the way, the coup falls apart. When no captain can lead it, or the parliament is off, the captain with the most kills takes power at once.
+- Each year, a kingdom in [Collapse](cycle.md) has a 10% chance (20% if the culture has Warriors Ascension) of facing a mutiny crisis, led by the army captain with the most kills.
+- When the Guard is [unpaid](treasury.md#paying-the-troops), the longer the arrears, the more likely trouble breaks out, led by the Guard captain with the most kills.
+
+With the parliament on, the leading captain gathers his or her troops and presses the court (when the Guard is unpaid, by stirring up the troops), backed by his or her clan; a captain without a clan founds one. The royal house is the one being pressed, and the clans struggle over it in parliament. Martial clans back the mutiny, clans far from the capital are wary of it, clans on good terms with the royal house defend it, and clans that bear it a grudge welcome it. The larger the captain's share of the kingdom's troops, the longer the Guard has gone unpaid, and the deeper the disarray of Collapse, the more likely a mutiny breaks out; the longer it drags on, the more its support melts away. The crisis is decided within months to a year, and is defused if the captain dies along the way.
+
+Each end has three possible outcomes. When the crisis reaches an end, one is drawn according to the situation at that moment, and the Situations window shows the current odds of each:
+
+| Crisis Defused | Mutiny Breaks Out |
+|---|---|
+| Stand Down: the matter is dropped. More likely the steadier the troops | Seize the Throne: the captain takes power. More likely the more troops he or she holds, and more so in Collapse |
+| Crushed: the captain is executed and his or her clan resents the royal house. More likely the stronger the clans against the mutiny | Deposition: the ruler is deposed and killed, and a successor raised. More likely the more the backing clans resent the royal house |
+| Desertion: the captain's troops disband and go home. More likely the longer the arrears | Plunder: the capital is looted to pay the arrears. More likely the longer the arrears |
+
+When the captain seizes the throne, his or her character decides what follows:
 
 - If the general is ambitious, he or she deposes the ruler, becomes king, and founds a new dynasty. The dynastic cycle returns to Renewal.
 - If the general is not ambitious, the generals take power together and form a Military Republic, with the general as Lord Protector.
+
+When no captain can lead it, or the parliament is off, the captain with the most kills in a collapsing kingdom takes power at once, and unpaid troops do not cause a mutiny crisis.
 
 ## Changing Government by Hand
 

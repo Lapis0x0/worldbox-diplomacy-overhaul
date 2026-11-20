@@ -65,9 +65,9 @@ namespace DiplomacyOverhaul.Perf
     //   parl found <国家> <氏族> <氏族>   两家直接结成集团（已有集团时把后一家拉进前一家的集团）
     //   parl court <国家> <氏族> <目标>   这一家立即拉拢目标一次（送礼、记恩情、够了就入伙）
     //   parl leave <国家> <氏族>    这一家立即脱离集团
-    //   sit [国家] | sit open <局势 id> <国家> | sit set <局势 id> <国家> <进度> | sit end <局势 id> <国家> left|right
-    //                           | sit tick <国家> [年数] | sit collapse <国家> | sit coup <国家> [outsider] | sit who <国家> | sit rebellion <国家> | sit crown <国家> | sit vacant <国家> | sit sim <局势 id> [次数] [each] | sit decline <国家> | sit advance <国家> | sit restore <国家> | sit window <国家>
-    //                           局势：列出进行中的局势和推力明细；立即开局（夺权走正式开局，不看是不是崩溃期）；拨进度；直接走到一头；只给这个国家推进几年；让它进入崩溃期；反复掷夺权直到发生（outsider 先让战功最高的非王室将领脱离家族）；夺权会由谁发起；列出各家对王室的好感后引发大叛乱、列出起事各方；开共和国称帝；让王室绝嗣并开王位空悬；按眼下的议会推演统计两头比例和年数；推进到衰落期；王朝周期推进一个阶段；直接中兴；打开局势窗口
+    //   sit [国家] | sit open <局势 id> <国家> | sit set <局势 id> <国家> <进度> | sit end <局势 id> <国家> left|right [结局 id]
+    //                           | sit tick <国家> [年数] | sit collapse <国家> | sit mutiny <国家> [outsider] | sit arrears <国家> <年数> | sit who <国家> | sit rebellion <国家> | sit crown <国家> | sit vacant <国家> | sit sim <局势 id> [次数] [each|unpaid] | sit decline <国家> | sit advance <国家> | sit restore <国家> | sit window <国家>
+    //                           局势：列出进行中的局势、推力明细和两头各结局的概率；立即开局（兵变走正式开局、不掷骰子，open vd_sit_mutiny <国家> unpaid 按欠饷开局）；拨进度；直接走到一头（可以指定这一头的结局）；只给这个国家推进几年；让它进入崩溃期；反复掷兵变直到发生（outsider 先让战功最高的非王室将领脱离家族）；把禁军积欠设成几年的饷；兵变会由谁领头；列出各家对王室的好感后引发大叛乱、列出起事各方；开共和国称帝；让王室绝嗣并开王位空悬；按眼下的议会推演统计两头比例和年数（兵变另算各结局的概率，unpaid 按欠饷推演）；推进到衰落期；王朝周期推进一个阶段；直接中兴；打开局势窗口
     //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs | treasury all   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏；all 列出两城以上各国的国库、禁军、积欠和账簿里的欠饷记录
     //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备

@@ -80,7 +80,8 @@ namespace DiplomacyOverhaul
             if (chief != null && chief.isAlive()) Log(WorldLogs.CrownFailed, pKingdom, chief);
         }
 
+        // 开局和共和延续只记进世界历史；加冕的日志由 Regime.Crown 弹出
         static void Log(string pId, Kingdom pKingdom, Actor pActor) =>
-            WorldLogs.Add(pId, Regime.Location(pKingdom), pActor, new[] { pActor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+            WorldLogs.Add(pId, Regime.Location(pKingdom), pActor, new[] { pActor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom }, false);
     }
 }

@@ -37,7 +37,7 @@ namespace DiplomacyOverhaul
         {
             All.Clear();
             All.Add(Decline.Def);
-            All.Add(Coup.Def);
+            All.Add(Mutiny.Def);
             All.Add(Coronation.Def);
             All.Add(Vacancy.Def);
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
@@ -206,13 +206,52 @@ namespace DiplomacyOverhaul
             }
         }
 
-        static void End(Kingdom pKingdom, SituationDef pDef, SituationTally pTally, ParliamentClan pBy, bool pRight)
+        public static SituationOutcome[] Outcomes(SituationDef pDef, bool pRight) => pRight ? pDef.rightOutcomes : pDef.leftOutcomes;
+
+        // 这一头各结局的概率：分数 ÷ 这一头分数之和；分数都不大于 0 时第一个结局是 1。这一头没有多个结局时是空
+        public static float[] Odds(Kingdom pKingdom, SituationDef pDef, bool pRight, ParliamentClan pBy, SituationTally pTally)
+        {
+            SituationOutcome[] list = Outcomes(pDef, pRight);
+            if (list == null || list.Length == 0) return null;
+            var odds = new float[list.Length];
+            float sum = 0f;
+            for (int i = 0; i < list.Length; i++)
+            {
+                odds[i] = list[i].score != null ? Mathf.Max(0f, list[i].score(pKingdom, pBy, pTally)) : 0f;
+                sum += odds[i];
+            }
+            if (sum <= 0f)
+            {
+                odds[0] = 1f;
+                return odds;
+            }
+            for (int i = 0; i < odds.Length; i++) odds[i] /= sum;
+            return odds;
+        }
+
+        static int Choose(float[] pOdds)
+        {
+            float r = Randy.random();
+            for (int i = 0; i < pOdds.Length; i++)
+            {
+                r -= pOdds[i];
+                if (r < 0f) return i;
+            }
+            return pOdds.Length - 1;
+        }
+
+        // pForce：开发命令指定的结局下标，-1 时按分数抽
+        static void End(Kingdom pKingdom, SituationDef pDef, SituationTally pTally, ParliamentClan pBy, bool pRight, int pForce = -1)
         {
             if (pTally != null) Settle(pTally, pBy, pRight);
-            Record(pKingdom, pDef, pBy, pRight);
+            // 结局的分数读的是落幕前的局面，先抽
+            float[] odds = Odds(pKingdom, pDef, pRight, pBy, pTally);
+            int outcome = odds == null ? -1 : pForce >= 0 && pForce < odds.Length ? pForce : Choose(odds);
+            Record(pKingdom, pDef, pBy, pRight, outcome);
             Clear(pKingdom, pDef);
             Refresh(pKingdom);
-            (pRight ? pDef.onRight : pDef.onLeft)?.Invoke(pKingdom, pBy);
+            if (outcome >= 0) Outcomes(pDef, pRight)[outcome].apply?.Invoke(pKingdom, pBy);
+            else (pRight ? pDef.onRight : pDef.onLeft)?.Invoke(pKingdom, pBy);
         }
 
         // ---------- 每年 ----------
@@ -318,16 +357,19 @@ namespace DiplomacyOverhaul
         internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight, bool pRecord)
         {
             if (!IsActive(pKingdom, pDef)) return;
-            if (pRecord) Record(pKingdom, pDef, null, pRight);
+            if (pRecord) Record(pKingdom, pDef, null, pRight, -1);
             Clear(pKingdom, pDef);
         }
 
-        // 开发命令：按眼下的推力直接走到一头
-        internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight)
+        // 开发命令：按眼下的推力直接走到一头；pOutcome 指定这一头的结局，留空时按分数抽
+        internal static void Finish(Kingdom pKingdom, SituationDef pDef, bool pRight, string pOutcome = null)
         {
+            if (!IsActive(pKingdom, pDef)) return;
             List<ParliamentClan> clans = Parliament.Clans(pKingdom);
             ParliamentClan by = Initiator(pKingdom, pDef, clans);
-            End(pKingdom, pDef, by != null ? Tally(pKingdom, pDef, clans, by) : null, by, pRight && by != null);
+            bool right = pRight && by != null;
+            int force = pOutcome != null && Outcomes(pDef, right) != null ? System.Array.FindIndex(Outcomes(pDef, right), o => o.id == pOutcome) : -1;
+            End(pKingdom, pDef, by != null ? Tally(pKingdom, pDef, clans, by) : null, by, right, force);
         }
 
         // 开发命令：把进度直接拨到某个位置

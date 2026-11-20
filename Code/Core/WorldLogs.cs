@@ -30,8 +30,13 @@ namespace DiplomacyOverhaul
         public const string Crowned = "vd_log_crowned";                  // $ruler$ 在 $kingdom$ 称帝
         public const string Usurped = "vd_log_usurped";                  // $ruler$ 篡夺 $kingdom$ 王位，建立新王朝
         public const string Junta = "vd_log_junta";                      // $kingdom$ 的将领们夺取政权，$ruler$ 执政
-        public const string CoupBegan = "vd_log_coup_began";             // $ruler$ 在 $kingdom$ 拥兵自重
-        public const string CoupEnded = "vd_log_coup_ended";             // $ruler$ 交出 $kingdom$ 的兵权
+        public const string MutinyBegan = "vd_log_mutiny_began";         // $ruler$ 在 $kingdom$ 拥兵自重
+        public const string MutinyUnrest = "vd_log_mutiny_unrest";       // $kingdom$ 禁军欠饷，$ruler$ 聚众鼓噪
+        public const string MutinyCalmed = "vd_log_mutiny_calmed";       // $kingdom$ 军心复定，$ruler$ 收兵
+        public const string MutinyCrushed = "vd_log_mutiny_crushed";     // $kingdom$ 先发制人，处死了 $ruler$
+        public const string MutinyScattered = "vd_log_mutiny_scattered"; // $ruler$ 的兵马在 $kingdom$ 一哄而散
+        public const string MutinyDeposed = "vd_log_mutiny_deposed";     // $ruler$ 举兵废黜了 $kingdom$ 的 $king$
+        public const string MutinyLooted = "vd_log_mutiny_looted";       // $ruler$ 举兵洗劫了 $kingdom$ 的都城
         public const string CrownBegan = "vd_log_crown_began";           // $ruler$ 权势日盛，$kingdom$ 帝制之议渐起
         public const string CrownFailed = "vd_log_crown_failed";         // $kingdom$ 保住了共和，$ruler$ 称帝未成
         public const string VacancyBegan = "vd_log_vacancy_began";       // $kingdom$ 王室绝嗣，$ruler$ 觊觎王位
@@ -70,8 +75,13 @@ namespace DiplomacyOverhaul
             Register(Crowned, "ui/Icons/iconKingdomList", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Usurped, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(Junta, "ui/Icons/vd_gov_military_republic", Toolbox.color_log_warning, "$kingdom$", "$ruler$");
-            Register(CoupBegan, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
-            Register(CoupEnded, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(MutinyBegan, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(MutinyUnrest, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(MutinyCalmed, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(MutinyCrushed, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(MutinyScattered, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(MutinyDeposed, "ui/Icons/iconKings", Toolbox.color_log_warning, "$ruler$", "$kingdom$", "$king$");
+            Register(MutinyLooted, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(CrownBegan, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(CrownFailed, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(VacancyBegan, Situations.IconPath, Toolbox.color_log_warning, "$kingdom$", "$ruler$");

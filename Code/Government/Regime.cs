@@ -292,7 +292,7 @@ namespace DiplomacyOverhaul
                 if (!k.isAlive() || !k.isCiv()) continue;
                 if (Government.IsRepublic(k)) UpdateTerm(k);
                 if (!Enabled) continue;
-                if (TryCoup(k)) continue;
+                if (TryMutiny(k)) continue;
                 TryCrown(k);
             }
         }
@@ -355,13 +355,17 @@ namespace DiplomacyOverhaul
             return w;
         }
 
-        // 乱世夺权：崩溃期每年掷一次。议会开着、有家族能出面时开「将领夺权」局势，否则战功最高的将领直接夺位
-        internal static bool TryCoup(Kingdom pKingdom)
+        // 兵变，每年掷一次：崩溃期掷乱世夺权；没掷中而禁军欠饷时，按涣散程度的一半再掷（和每年逃散的比例相同）。
+        // 议会开着、有将领能出面时开「兵变」局势；议会关着时乱世里战功最高的将领直接夺位，欠饷不闹兵变
+        internal static bool TryMutiny(Kingdom pKingdom)
         {
-            if (Cycle.Get(pKingdom) != CyclePhase.Collapse || Situations.IsActive(pKingdom, Coup.Def)) return false;
+            if (Situations.IsActive(pKingdom, Mutiny.Def)) return false;
             float chance = CoupChance * (Has(pKingdom.culture, "warriors_ascension") ? 2f : 1f);
-            if (!Randy.randomChance(chance)) return false;
-            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Coup.TryOpen(pKingdom)) return true;
+            bool chaos = Cycle.Get(pKingdom) == CyclePhase.Collapse && Randy.randomChance(chance);
+            bool unpaid = !chaos && Guard.Unpaid(pKingdom) && Randy.randomChance(Guard.Disarray(pKingdom) * Treasury.DesertShare);
+            if (!chaos && !unpaid) return false;
+            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Mutiny.TryOpen(pKingdom, unpaid)) return true;
+            if (!chaos) return false;
             Actor general = FindGeneral(pKingdom);
             if (general == null || !WillRise(pKingdom, general)) return false;
             Usurp(pKingdom, general);

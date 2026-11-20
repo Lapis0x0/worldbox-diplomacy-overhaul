@@ -16,7 +16,7 @@ Local troops are paid by their city from its stockpile. The [Guard](armies.md) i
 
 - **Recruiting**: A city recruits local troops only if its stockpile can pay all its local troops for a year. The treasury refills the Guard only if it can pay the whole Guard for two years. Army size therefore follows income, and the treasury always keeps a buffer. Under Central Collection, cities keep little money, their local armies are limited, and troops and gold concentrate at the center.
 - **Lax discipline**: Once a dynasty declines, the lower its mandate, the less the court lives within its means. The treasury's buffer grows thinner, and any fall in income leads to unpaid troops.
-- **Unpaid troops**: Pay that cannot be paid each year builds up as arrears, owed together with the next year's pay. While pay is owed, no new recruits are taken. The longer the arrears, the more soldiers desert each year and the less damage the rest deal.
+- **Unpaid troops**: Pay that cannot be paid each year builds up as arrears, owed together with the next year's pay. While pay is owed, no new recruits are taken. The longer the arrears, the more soldiers desert each year, the less damage the rest deal, and the more likely the Guard is to cause a [mutiny crisis](government.md#mutiny-crisis).
 - **Back pay**: Once all arrears are paid, morale recovers at once.
 
 Unpaid local troops are shown in the city window and city tooltip. The unpaid Guard is shown in the kingdom window and kingdom tooltip.

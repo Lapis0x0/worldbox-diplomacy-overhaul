@@ -57,6 +57,8 @@ namespace DiplomacyOverhaul
             public readonly List<Row> trends = new List<Row>();
             public List<SituationPower> powers = new List<SituationPower>();
             public ParliamentClan favorTo;
+            // 一头有几种结局时各结局眼下的概率：[0] 左头，[1] 右头
+            public readonly float[][] odds = new float[2][];
             public string Key => def.id + (ended != null ? "_end" : "");
         }
 
@@ -150,7 +152,13 @@ namespace DiplomacyOverhaul
                     e.by = Situations.Initiator(_kingdom, d, clans);
                     e.byName = e.by != null ? e.by.clan.name : "";
                     e.favorTo = d.againstCrown ? clans.Find(c => c.ruling) : e.by;
-                    if (e.by != null) GenericRows(e, Situations.Tally(_kingdom, d, clans, e.by));
+                    if (e.by != null)
+                    {
+                        SituationTally tally = Situations.Tally(_kingdom, d, clans, e.by);
+                        GenericRows(e, tally);
+                        e.odds[0] = Situations.Odds(_kingdom, d, false, e.by, tally);
+                        e.odds[1] = Situations.Odds(_kingdom, d, true, e.by, tally);
+                    }
                 }
                 list.Add(e);
             }
@@ -286,7 +294,7 @@ namespace DiplomacyOverhaul
             RectTransform head = Sliced(_body, Slot, RX, HeadY, RW, 20f);
             string age = pEntry.ended != null ? Ago(pEntry.ended.year) : LM.Get(pEntry.def.monthly ? "vd_sit_month" : "vd_sit_year").Replace("$n$", (pEntry.years + 1).ToString());
             Text(head, age, 8f, 0f, RW - 16f, 20f, 7, Muted, TextAnchor.MiddleRight);
-            string desc = LM.Get(d.id + "_desc").Replace("$clan$", pEntry.byName).Replace("$kingdom$", _kingdom.data.name);
+            string desc = LM.Get(d.desc?.Invoke(_kingdom) ?? d.id + "_desc").Replace("$clan$", pEntry.byName).Replace("$kingdom$", _kingdom.data.name);
             Text(head, Fit(desc, 7, RW - 30f - Measure(age, 7)), 8f, 0f, RW - 16f, 20f, 7, Ink, TextAnchor.MiddleLeft);
 
             float inner = RW - 12f;
@@ -367,11 +375,43 @@ namespace DiplomacyOverhaul
             if (d.leftIcon != null) Icon(_body, d.leftIcon, RX + 4f, y, 11f);
             string ln = LM.Get(d.id + "_left");
             Text(_body, ln, RX + 18f, y, 80f, 11f, 7, lc, TextAnchor.MiddleLeft);
-            Text(_body, Fit(LM.Get(d.id + "_left_desc").Replace("$clan$", pEntry.byName), 6, RW / 2f - 30f - Measure(ln, 7)), RX + 22f + Measure(ln, 7), y, RW / 2f, 11f, 6, Dim(Muted, pEnd == 1), TextAnchor.MiddleLeft);
+            Text(_body, Fit(EndDesc(pEntry, false), 6, RW / 2f - 30f - Measure(ln, 7)), RX + 22f + Measure(ln, 7), y, RW / 2f, 11f, 6, Dim(Muted, pEnd == 1), TextAnchor.MiddleLeft);
+            OutcomeTip(pEntry, false, RX, y, ln);
             if (d.rightIcon != null) Icon(_body, d.rightIcon, RX + RW - 15f, y, 11f);
             string rn = LM.Get(d.id + "_right");
             Text(_body, rn, RX + RW / 2f, y, RW / 2f - 18f, 11f, 7, rc, TextAnchor.MiddleRight);
-            Text(_body, Fit(LM.Get(d.id + "_right_desc").Replace("$clan$", pEntry.byName), 6, RW / 2f - 30f - Measure(rn, 7)), RX, y, RW - 22f - Measure(rn, 7), 11f, 6, Dim(Muted, pEnd == -1), TextAnchor.MiddleRight);
+            Text(_body, Fit(EndDesc(pEntry, true), 6, RW / 2f - 30f - Measure(rn, 7)), RX, y, RW - 22f - Measure(rn, 7), 11f, 6, Dim(Muted, pEnd == -1), TextAnchor.MiddleRight);
+            OutcomeTip(pEntry, true, RX + RW / 2f, y, rn);
+        }
+
+        // 一头的说明。有几种结局时：进行中列出各结局和眼下的概率；落幕后走到的这一头写抽中的结局
+        static string EndDesc(Entry pEntry, bool pRight)
+        {
+            SituationDef d = pEntry.def;
+            SituationOutcome[] list = Situations.Outcomes(d, pRight);
+            if (list == null) return LM.Get(d.id + (pRight ? "_right_desc" : "_left_desc")).Replace("$clan$", pEntry.byName);
+            if (pEntry.ended != null && pEntry.ended.right == pRight)
+            {
+                SituationOutcome o = Situations.EndedOutcome(d, pEntry.ended);
+                if (o != null) return LM.Get(o.id) + " · " + LM.Get(o.id + "_desc");
+            }
+            float[] odds = pEntry.ended == null ? pEntry.odds[pRight ? 1 : 0] : null;
+            var parts = new List<string>();
+            for (int i = 0; i < list.Length; i++)
+                parts.Add(odds != null ? LM.Get(list[i].id) + " " + Mathf.RoundToInt(odds[i] * 100f) + "%" : LM.Get(list[i].id));
+            return string.Join(" · ", parts);
+        }
+
+        // 有几种结局的一头：悬停列出各结局的说明和眼下的概率
+        static void OutcomeTip(Entry pEntry, bool pRight, float pX, float pY, string pName)
+        {
+            SituationOutcome[] list = Situations.Outcomes(pEntry.def, pRight);
+            if (list == null) return;
+            float[] odds = pEntry.ended == null ? pEntry.odds[pRight ? 1 : 0] : null;
+            var lines = new List<(string, string, string)>();
+            for (int i = 0; i < list.Length; i++)
+                lines.Add((LM.Get(list[i].id) + " · " + LM.Get(list[i].id + "_desc"), odds != null ? Mathf.RoundToInt(odds[i] * 100f) + "%" : "", null));
+            Hover(Box(_body, pX, pY, RW / 2f, 11f, "end_hover"), pName, lines);
         }
 
         // ---------- 两边对垒 ----------
