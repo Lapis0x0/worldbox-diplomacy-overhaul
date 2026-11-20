@@ -171,7 +171,7 @@ namespace DiplomacyOverhaul.Perf
                     break;
                 case "crown":
                 {
-                    // 直接开「共和国称帝」：不是共和国时先改成共和国，执政出自原来的王室
+                    // 直接开「帝制之议」：不是共和国时先改成共和国，执政出自原来的王室
                     Kingdom k = Dev.FindKingdom(a[2]);
                     if (!Government.IsRepublic(k)) Government.SetForm(k, GovForm.Republic);
                     Dev.Log($"@sit crown {k.data.name} open={Coronation.TryOpen(k)} form={Government.Form(k)} phase={Cycle.Get(k)} empire={Cycle.IsEmpire(k)}");

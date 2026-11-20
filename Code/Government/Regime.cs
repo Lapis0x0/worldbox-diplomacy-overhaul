@@ -322,7 +322,7 @@ namespace DiplomacyOverhaul
             Actor ruler = pKingdom.king;
             if (ruler == null || !ruler.isAlive()) return;
             if (!Randy.randomChance(EmperorChance * CrownWeight(ruler))) return;
-            // 议会开着时开「共和国称帝」局势，走到右头才加冕；否则照旧直接称帝
+            // 议会开着时开「帝制之议」局势，走到右头才加冕；否则照旧直接称帝
             if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Coronation.TryOpen(pKingdom)) return;
             Crown(pKingdom, ruler);
         }

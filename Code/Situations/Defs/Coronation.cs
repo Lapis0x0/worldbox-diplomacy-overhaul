@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace DiplomacyOverhaul
 {
-    // 共和国称帝：鼎盛的大共和国，执政家族图谋加冕。左头共和延续，右头加冕称帝
+    // 帝制之议：鼎盛的大共和国，执政家族图谋加冕。左头共和延续，右头加冕称帝
     public static class Coronation
     {
         // 处境：执政家族想成为王室；其余按激进-保守，激进的维护共和、保守的拥护帝制（载荷 -1）
