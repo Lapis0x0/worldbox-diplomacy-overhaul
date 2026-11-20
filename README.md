@@ -29,7 +29,7 @@ Every kingdom has a parliament. Families win seats from the cities they hold, vo
 
 A kingdom can be a Kingdom or an Empire, or a Republic, Merchant Republic or Military Republic. A new nation's government follows the leanings of its culture, and an existing one does not stay fixed.
 
-Republics elect their leader at regular intervals. Changes of dynasty play out as **situations**: a throne left empty when the royal line dies out, a regent ruling in the name of a weak new monarch, a republic at its prime debating a crown, a general pressing the court in chaotic times or over unpaid pay. The families struggle in parliament for years as the situation moves toward one outcome, and the situations window shows who is pushing and who is holding it back.
+Republics elect their leader at regular intervals. Changes of dynasty play out as **situations**: a throne left empty when the royal line dies out, a regent ruling in the name of a weak new monarch, a republic at its prime debating a crown, a general pressing the court in chaotic times or over unpaid pay. These upheavals play out in parliament over several years, as the families take sides according to their stances and interests and together decide how the situation turns out.
 
 You can follow the policy votes in parliament, see candidates, the line of succession and family lands in the Elections & Offices window, and set a family's political stance directly in the clan editor.
 
