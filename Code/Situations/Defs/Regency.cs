@@ -4,7 +4,7 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 王权旁落：君主国的新君庸弱，一位权臣把持朝政。新君登基后的第一个结算月按庸弱程度掷一次（见 OnAccession、TryOpen）。
-    // 权臣是宗室里最年长的成年人和议席最多的外姓家族拿主意的人里威望高的那个：宗室是摄政，外姓是重臣专权。
+    // 权臣是议席最多的宗室分支和议席最多的外姓家族的族长里威望高的那个：宗室是摄政，外姓是重臣专权。
     // 王室是被冲着的一方，不按议席出推力。左头亲政，右头权柄易手：宗室摄政篡位，外姓权臣改朝换代
     public static class Regency
     {
@@ -111,7 +111,7 @@ namespace DiplomacyOverhaul
             if (regent == null) return false;
             pKingdom.data.set(KeyRegent, regent.data.id);
             pKingdom.data.set(KeyKing, pKingdom.king.data.id);
-            pKingdom.data.set(KeyRoyal, regent.clan != null && regent.clan.id == pKingdom.data.royal_clan_id);
+            pKingdom.data.set(KeyRoyal, clans.Exists(c => c.cadet && c.voice == regent));
             if (!Situations.Open(pKingdom, Def, clans))
             {
                 pKingdom.data.removeLong(KeyRegent);
@@ -121,36 +121,30 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 权臣：宗室里最年长的成年人（君主除外），和议席最多的外姓家族拿主意的人，取威望高的；一个都没有时是空
+        // 权臣：议席最多的宗室分支的族长（摄政）和议席最多的外姓家族的族长（重臣），取威望高的；一个都没有时是空。
+        // 摄政出自宗室分支：他自己这一支有议席、出推力，王室和它的盟友留在君主那边
         internal static Actor PickRegent(Kingdom pKingdom, List<ParliamentClan> pClans)
         {
-            Actor king = pKingdom.king, elder = null;
-            Clan royal = World.world.clans.get(pKingdom.data.royal_clan_id);
-            if (royal != null)
-            {
-                foreach (Actor a in royal.units)
-                {
-                    if (a == king || !a.isAlive() || !a.isAdult() || a.kingdom != pKingdom) continue;
-                    if (elder == null || a.getAge() > elder.getAge()) elder = a;
-                }
-            }
-            ParliamentClan top = null;
+            Actor king = pKingdom.king;
+            ParliamentClan cadet = null, outsider = null;
             foreach (ParliamentClan pc in pClans)
             {
-                if (pc.ruling || pc.cadet || pc.voice == null || !pc.voice.isAlive() || pc.voice == king) continue;
-                if (top == null || pc.seats > top.seats) top = pc;
+                if (pc.ruling || pc.voice == null || !pc.voice.isAlive() || pc.voice == king) continue;
+                if (pc.cadet) { if (cadet == null || pc.seats > cadet.seats) cadet = pc; }
+                else if (outsider == null || pc.seats > outsider.seats) outsider = pc;
             }
-            Actor minister = top?.voice;
-            if (elder == null) return minister;
-            if (minister == null) return elder;
-            return minister.renown > elder.renown ? minister : elder;
+            Actor regent = cadet?.voice, minister = outsider?.voice;
+            if (regent == null) return minister;
+            if (minister == null) return regent;
+            return minister.renown > regent.renown ? minister : regent;
         }
 
+        // 权臣这一边：宗室分支和王室是同一个原版家族，要跳过王室那一股
         static ParliamentClan FindInitiator(Kingdom pKingdom, List<ParliamentClan> pClans)
         {
             Actor regent = Regent(pKingdom);
             if (regent == null || !regent.hasClan()) return null;
-            return pClans.Find(c => c.clan == regent.clan) ?? Parliament.Outsider(pKingdom, regent.clan, pClans);
+            return pClans.Find(c => !c.ruling && c.clan == regent.clan) ?? Parliament.Outsider(pKingdom, regent.clan, pClans);
         }
 
         // ---------- 读取 ----------

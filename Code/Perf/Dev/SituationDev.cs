@@ -211,8 +211,8 @@ namespace DiplomacyOverhaul.Perf
                         if (regent == null || !regent.hasClan()) continue;
                         k.data.set(Regency.KeyRegent, regent.data.id);
                         k.data.set(Regency.KeyKing, king != null ? king.data.id : -1L);
-                        k.data.set(Regency.KeyRoyal, regent.clan.id == k.data.royal_clan_id);
-                        ParliamentClan rby = clans.Find(c => c.clan == regent.clan) ?? Parliament.Outsider(k, regent.clan, clans);
+                        k.data.set(Regency.KeyRoyal, clans.Exists(c => c.cadet && c.voice == regent));
+                        ParliamentClan rby = clans.Find(c => !c.ruling && c.clan == regent.clan) ?? Parliament.Outsider(k, regent.clan, clans);
                         if (rby == null) continue;
                         float[] lo = Norm(new[] { 1f - SimWeakness, Situations.OpposeShare(Situations.Tally(k, pDef, clans, rby)) });
                         Dev.Log($"  {k.data.name} regent={regent.getName()} royal={Regency.RegentIsRoyal(k)} ambitious={Regime.Ambitious(regent)} odds left(还政/罢黜)={string.Join("/", lo.Select(o => Mathf.RoundToInt(o * 100)))}");
