@@ -178,7 +178,7 @@
 | `Government.cs` | 政体特质组、掷大类、称号判定、手动设置、政体倾向的数值 |
 | `KingdomView.cs` | 王国窗口、悬停提示、地图名牌上的国名和称号 |
 | `RulerTitles.cs` | 领袖的称呼：原版写着「国王」的各处挂点集中在这里，模组自己的界面用 `Government.RulerTitle` |
-| `Regime.cs` | 共和国选举和任期、王室绝嗣、称帝、兵变的两条起因（`TryMutiny`）、新君的王权旁落（`Regency.TryOpen`）、政权更替（`Install`）、夺位（`Usurp`）、挑队长（`TopGeneral`） |
+| `Regime.cs` | 共和国选举和任期、王室绝嗣、称帝、乱世兵变（`TryMutiny`）、新君的王权旁落（`Regency.TryOpen`）、政权更替（`Install`）、夺位（`Usurp`）、挑队长（`TopGeneral`） |
 | `Succession.cs` | 入继大统 |
 | `ElectionWindow.cs` | 选举与任命窗口：外框、执政选举、王位继承 |
 | `ElectionWindow.Fiefs.cs` | 选举与任命窗口右边的封疆图 |

@@ -186,7 +186,7 @@ namespace DiplomacyOverhaul
 
         // 结算一年的军饷（pDue 见 Due，pPaid 是实际发出的）：发不出的记作积欠。积欠够发几年的饷记作 r，
         // 涣散程度 = r ÷ (1 + r) = 积欠 ÷ (积欠 + 年饷)：逃散这个比例 × DesertShare 的士兵（按概率取整），
-        // 逃兵那份积欠一笔勾销，涣散程度不变；留下的士兵伤害减涣散程度 × PenaltyMax。补发清了涣散程度回到 0。
+        // 真正走掉的人那份积欠由调用方勾销（WriteOff），涣散程度不变；留下的士兵伤害减涣散程度 × PenaltyMax。补发清了涣散程度回到 0。
         // 返回要逃散的人数，pChanged 表示涣散程度变了（士兵要重算属性）
         internal static int Settle(BaseSystemData pData, string pKeyArrears, string pKeyDisarray, int pCost, int pDue, int pPaid, int pCount, out bool pChanged)
         {
@@ -199,7 +199,6 @@ namespace DiplomacyOverhaul
                 float exact = pCount * disarray * DesertShare;
                 desert = Mathf.FloorToInt(exact);
                 if (Randy.randomChance(exact - desert)) desert++;
-                arrears = Mathf.RoundToInt(arrears * (pCount - desert) / (float)pCount);
             }
             if (arrears > 0)
             {
@@ -213,6 +212,22 @@ namespace DiplomacyOverhaul
             }
             return desert;
         }
+
+        // 有人离队（逃散、兵变哗散）：积欠按离开的人数占 pCount 的比例勾销，留下的人只等自己那份饷；涣散程度到下一次发饷再按留下的人重算
+        internal static void WriteOff(BaseSystemData pData, string pKeyArrears, string pKeyDisarray, int pLeft, int pCount)
+        {
+            int arrears = Arrears(pData, pKeyArrears);
+            if (arrears <= 0 || pLeft <= 0 || pCount <= 0) return;
+            arrears = Mathf.RoundToInt(arrears * Mathf.Max(0, pCount - pLeft) / (float)pCount);
+            if (arrears > 0) pData.set(pKeyArrears, arrears);
+            else
+            {
+                pData.removeInt(pKeyArrears);
+                pData.removeFloat(pKeyDisarray);
+            }
+        }
+
+        internal static void WriteOff(City pCity, int pLeft, int pCount) => WriteOff(pCity.data, KeyArrears, KeyDisarray, pLeft, pCount);
 
         // 关掉军队大修：各城地方兵的积欠清掉
         internal static void ClearArrears()
@@ -246,16 +261,18 @@ namespace DiplomacyOverhaul
             int paid = Mathf.Min(due, pCity.getResourcesAmount("gold"));
             if (paid > 0) pCity.takeResource("gold", paid);
             int disband = Settle(pCity.data, KeyArrears, KeyDisarray, cost, due, paid, warriors, out bool changed);
+            int left = 0;
             foreach (Actor a in new List<Actor>(pCity.getUnits()))
             {
                 if (!a.isAlive() || !a.isWarrior() || Guard.IsMember(a)) continue;
-                if (disband > 0 && !a.is_army_captain)
+                if (left < disband && !a.is_army_captain)
                 {
                     a.stopBeingWarrior();
-                    disband--;
+                    left++;
                 }
                 else if (changed) a.setStatsDirty();
             }
+            WriteOff(pCity, left, warriors);
         }
 
         // 国王发起密谋时，钱的检查和花费换成国库

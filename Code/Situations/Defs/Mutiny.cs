@@ -3,8 +3,8 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 兵变危机：领兵的队长拥兵逼宫，走到右头兵变才真正爆发，走到左头是危机化解。两条起因（见 Regime.TryMutiny）：
-    // 禁军欠饷时禁军里战功最高的队长聚众鼓噪，崩溃期全国战功最高的队长拥兵自重。他的家族是发起方，没有议席时作为议会外的势力；
+    // 兵变危机：领兵的队长拥兵逼宫，走到右头兵变才真正爆发，走到左头是危机化解。两条起因：
+    // 禁军发完饷还欠着时禁军里战功最高的队长聚众鼓噪（TryUnpaid），崩溃期全国战功最高的队长拥兵自重（Regime.TryMutiny）。他的家族是发起方，没有议席时作为议会外的势力；
     // 王室是被冲着的一方，不按议席出推力。两头各有三种结局，走到一头时按局面算分数抽一个
     public static class Mutiny
     {
@@ -40,8 +40,8 @@ namespace DiplomacyOverhaul
             monthly = true,
             years = Months,
             desc = k => IsUnpaid(k) ? "vd_sit_mutiny_desc_unpaid" : "vd_sit_mutiny_desc",
-            // 兵变靠的是他本人的威望：他死了或去了别国，就散了
-            fail = (k, by) => Leader(k) == null,
+            // 兵变靠的是他本人的威望：他死了或去了别国，就散了；乱世过去、饷也补清了，起事的由头没了，也就散了
+            fail = (k, by) => Leader(k) == null || Motive(k) <= 0f,
             moot = (k, by) => by.ruling || by.cadet,
             leftOutcomes = new[]
             {
@@ -121,6 +121,11 @@ namespace DiplomacyOverhaul
                 && (a.clan == null || (a.clan.id != royal && a.clan != ruler)) && Regime.WillRise(pKingdom, a));
         }
 
+        // 欠饷：禁军发完饷（Guard.Pay）还欠着时，留下的兵按涣散程度的一半掷一次（和每年逃散的比例相同）
+        internal static bool TryUnpaid(Kingdom pKingdom) =>
+            Guard.Unpaid(pKingdom) && Situations.Available(Def) && !Situations.IsActive(pKingdom, Def)
+            && Randy.randomChance(Guard.Disarray(pKingdom) * Treasury.DesertShare) && TryOpen(pKingdom, true);
+
         // 开局：pUnpaid 是欠饷引起的，只看禁军的队长。没有家族的人先自立门户；没有人能出面时返回 false
         public static bool TryOpen(Kingdom pKingdom, bool pUnpaid) => Situations.Start(pKingdom, Def, (k, clans) =>
         {
@@ -194,18 +199,17 @@ namespace DiplomacyOverhaul
             leader.dieSimpleNone();
         }
 
-        // 哗散：他带的那支军队解散回乡，他自己也解甲
+        // 哗散：他带的那支军队解散回乡，他自己也解甲；散掉的人那份积欠一笔勾销
         static void Scatter(Kingdom pKingdom, ParliamentClan pBy)
         {
             Actor leader = Leader(pKingdom);
             if (leader == null) return;
             Log(WorldLogs.MutinyScattered, pKingdom, leader, false);
-            if (leader.army != null)
-            {
-                foreach (Actor a in new List<Actor>(leader.army.units))
-                    if (a != null && a.isAlive() && a != leader) a.stopBeingWarrior();
-            }
-            leader.stopBeingWarrior();
+            var units = leader.army != null ? new List<Actor>(leader.army.units) : new List<Actor>();
+            units.Remove(leader);
+            // 队长最后解甲：他先走，军队就散了，剩下的人取不到
+            units.Add(leader);
+            Guard.Discharge(pKingdom, units);
         }
 
         // ---------- 右头：兵变成功 ----------

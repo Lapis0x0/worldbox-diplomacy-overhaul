@@ -370,17 +370,14 @@ namespace DiplomacyOverhaul
             return w;
         }
 
-        // 兵变，每年掷一次：崩溃期掷乱世夺权；没掷中而禁军欠饷时，按涣散程度的一半再掷（和每年逃散的比例相同）。
-        // 议会开着时开「兵变」局势，没有将领能出面就作罢；议会关着时乱世里同一位将领直接夺位，欠饷不闹兵变
+        // 乱世夺权，每年掷一次：崩溃期按概率发生。议会开着时开「兵变」局势，没有将领能出面就作罢；
+        // 议会关着时同一位将领直接夺位。欠饷引起的兵变在发饷之后掷（Mutiny.TryUnpaid）
         internal static bool TryMutiny(Kingdom pKingdom)
         {
-            if (Situations.IsActive(pKingdom, Mutiny.Def)) return false;
+            if (Situations.IsActive(pKingdom, Mutiny.Def) || Cycle.Get(pKingdom) != CyclePhase.Collapse) return false;
             float chance = CoupChance * (Has(pKingdom.culture, "warriors_ascension") ? 2f : 1f);
-            bool chaos = Cycle.Get(pKingdom) == CyclePhase.Collapse && Randy.randomChance(chance);
-            bool unpaid = !chaos && Guard.Unpaid(pKingdom) && Randy.randomChance(Guard.Disarray(pKingdom) * Treasury.DesertShare);
-            if (!chaos && !unpaid) return false;
-            if (Situations.Available(Mutiny.Def)) return Mutiny.TryOpen(pKingdom, unpaid);
-            if (!chaos) return false;
+            if (!Randy.randomChance(chance)) return false;
+            if (Situations.Available(Mutiny.Def)) return Mutiny.TryOpen(pKingdom, false);
             Actor general = Mutiny.Strongman(pKingdom);
             if (general == null) return false;
             Usurp(pKingdom, general);

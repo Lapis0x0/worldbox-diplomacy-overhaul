@@ -99,7 +99,7 @@ namespace DiplomacyOverhaul.Perf
                     Kingdom k = Dev.FindKingdom(a[2]);
                     if (a.Length > 3 && a[3] == "outsider") Clanless(k);
                     int rolls = 0;
-                    while (rolls < 500 && !Regime.TryMutiny(k)) rolls++;
+                    while (rolls < 500 && !Regime.TryMutiny(k) && !Mutiny.TryUnpaid(k)) rolls++;
                     Dev.Log($"@sit mutiny {k.data.name} rolls={rolls} active={Situations.IsActive(k, Mutiny.Def)} king={k.king?.getName()} form={Government.Form(k)} phase={Cycle.Get(k)} disarray={Guard.Disarray(k):F2}");
                     Show(k);
                     break;
@@ -375,7 +375,7 @@ namespace DiplomacyOverhaul.Perf
         {
             k.data.get("vd_sit_loyalty", out int loyalty, 0);
             k.data.get("vd_regency_new_king", out long newKing, -1L);
-            Dev.Log($"@sit {k.data.name} loyalty={loyalty} damage={Situations.DamagePercent(k)} king={k.king?.getName()} clan={k.king?.clan?.name} royal={World.world.clans.get(k.data.royal_clan_id)?.name} form={Government.Form(k)} military={Government.IsMilitary(k)} phase={Cycle.Get(k)} mandate={Cycle.Mandate(k):F0} newKing={newKing >= 0}");
+            Dev.Log($"@sit {k.data.name} loyalty={loyalty} damage={Situations.DamagePercent(k)} king={k.king?.getName()} clan={k.king?.clan?.name} royal={World.world.clans.get(k.data.royal_clan_id)?.name} form={Government.Form(k)} military={Government.IsMilitary(k)} phase={Cycle.Get(k)} mandate={Cycle.Mandate(k):F0} newKing={newKing >= 0} arrears={Guard.Arrears(k)} disarray={Guard.Disarray(k):F2}");
             List<ParliamentClan> clans = Parliament.Clans(k);
             foreach (SituationDef d in Situations.All)
             {

@@ -466,18 +466,48 @@ namespace DiplomacyOverhaul
             Ledger.Record(pKingdom, Ledger.Flow.Guard, paid);
             bool wasUnpaid = Unpaid(pKingdom);
             int disband = Treasury.Settle(pKingdom.data, KeyArrears, KeyDisarray, cost, due, paid, members.Count, out bool changed);
-            Ledger.GuardPayChanged(pKingdom, wasUnpaid, Unpaid(pKingdom));
+            int left = 0;
             foreach (Actor a in members)
             {
                 if (!a.isAlive()) continue;
-                if (disband > 0 && !a.is_army_captain)
+                if (left < disband && !a.is_army_captain)
                 {
                     a.data.removeFlag(FlagMember);
                     a.stopBeingWarrior();
-                    disband--;
+                    left++;
                 }
                 else if (changed) a.setStatsDirty();
             }
+            Treasury.WriteOff(pKingdom.data, KeyArrears, KeyDisarray, left, members.Count);
+            Ledger.GuardPayChanged(pKingdom, wasUnpaid, Unpaid(pKingdom));
+            // 发完饷还欠着，留下的兵可能闹兵变
+            Mutiny.TryUnpaid(pKingdom);
+        }
+
+        // 一批兵离队回乡（兵变哗散）：解甲，摘掉禁军标记；禁军和各城地方兵的积欠按离开的人数勾销，和每年逃散一样
+        internal static void Discharge(Kingdom pKingdom, List<Actor> pUnits)
+        {
+            int guards = 0, guardCount = 0;
+            var locals = new Dictionary<City, int>();
+            foreach (City city in pKingdom.getCities()) guardCount += CountMembers(city);
+            foreach (Actor a in pUnits)
+            {
+                if (a == null || !a.isAlive() || !a.isWarrior()) continue;
+                if (IsMember(a)) guards++;
+                else if (a.city != null && a.city.kingdom == pKingdom) locals[a.city] = locals.TryGetValue(a.city, out int n) ? n + 1 : 1;
+            }
+            var counts = new Dictionary<City, int>();
+            foreach (City city in locals.Keys) counts[city] = CountLocal(city);
+            foreach (Actor a in pUnits)
+            {
+                if (a == null || !a.isAlive() || !a.isWarrior()) continue;
+                a.data.removeFlag(FlagMember);
+                a.stopBeingWarrior();
+            }
+            bool wasUnpaid = Unpaid(pKingdom);
+            Treasury.WriteOff(pKingdom.data, KeyArrears, KeyDisarray, guards, guardCount);
+            Ledger.GuardPayChanged(pKingdom, wasUnpaid, Unpaid(pKingdom));
+            foreach (var p in locals) Treasury.WriteOff(p.Key, p.Value, counts[p.Key]);
         }
     }
 
