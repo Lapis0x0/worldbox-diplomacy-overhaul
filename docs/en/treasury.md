@@ -14,9 +14,10 @@ The treasury holds only gold; wood, stone, and food stay in the city stockpiles.
 
 Local troops are paid by their city from its stockpile. The [Guard](armies.md) is paid by the treasury. Each soldier is paid 0.5 gold per year.
 
-- **Recruiting**: A city recruits local troops only if its stockpile can pay all its local troops for a year. The treasury refills the Guard only if it can pay the whole Guard for a year. Army size therefore follows income. Under Central Collection, cities keep little money, their local armies are limited, and troops and gold concentrate at the center.
-- **Unpaid troops**: The part of pay that cannot be paid each year is recorded as unpaid. While pay is owed, no new recruits are taken. Each year a quarter of the unpaid soldiers are discharged, and the damage of the rest falls year by year, by up to a quarter.
-- **Back pay**: Once the pay is cleared, damage recovers year by year.
+- **Recruiting**: A city recruits local troops only if its stockpile can pay all its local troops for a year. The treasury refills the Guard only if it can pay the whole Guard for two years. Army size therefore follows income, and the treasury always keeps a buffer. Under Central Collection, cities keep little money, their local armies are limited, and troops and gold concentrate at the center.
+- **Lax discipline**: Once a dynasty declines, the lower its mandate, the less the court lives within its means. The treasury's buffer grows thinner, and any fall in income leads to unpaid troops.
+- **Unpaid troops**: Pay that cannot be paid each year builds up as arrears, owed together with the next year's pay. While pay is owed, no new recruits are taken. The longer the arrears, the more soldiers desert each year and the less damage the rest deal.
+- **Back pay**: Once all arrears are paid, morale recovers at once.
 
 Unpaid local troops are shown in the city window and city tooltip. The unpaid Guard is shown in the kingdom window and kingdom tooltip.
 
@@ -28,7 +29,7 @@ Unpaid local troops are shown in the city window and city tooltip. The unpaid Gu
 | Treasury | The Guard's pay and armament, public works, plots started by the king, reparations after a lost war |
 | King's personal wealth | His or her own equipment (vanilla) |
 
-- **Reserve**: The treasury keeps a reserve of two years of Guard pay, doubled during a war. Outside war, it is increased by half when the strongest neighboring kingdom of another camp that borders it has more than 1.5 times its strength. The two increases do not stack. Armament and public works spend only money beyond the reserve. The limit for each is set by parliament's [Fiscal Priority](parliament.md#domestic), and money not spent stays in the treasury.
+- **Reserve**: The treasury keeps a reserve of two years of pay for a full-strength Guard; while the Guard is below strength, gold goes to filling it first. The reserve is doubled during a war. Outside war, it is increased by half when the strongest neighboring kingdom of another camp that borders it has more than 1.5 times its strength. The two increases do not stack. Armament and public works spend only money beyond the reserve. The limit for each is set by parliament's [Fiscal Priority](parliament.md#domestic), and money not spent stays in the treasury.
 - **Plots**: The cost of a plot started by a king is paid from the treasury.
 - **Reparations**: After a lost war, the treasury and every city stockpile of the loser hand over gold at the same ratio, and it goes to the winner's treasury. See [War and Peace Talks](war.md#treaties).
 

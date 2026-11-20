@@ -68,7 +68,7 @@ namespace DiplomacyOverhaul.Perf
     //   sit [国家] | sit open <局势 id> <国家> | sit set <局势 id> <国家> <进度> | sit end <局势 id> <国家> left|right
     //                           | sit tick <国家> [年数] | sit collapse <国家> | sit coup <国家> [outsider] | sit who <国家> | sit rebellion <国家> | sit crown <国家> | sit vacant <国家> | sit sim <局势 id> [次数] [each] | sit decline <国家> | sit advance <国家> | sit restore <国家> | sit window <国家>
     //                           局势：列出进行中的局势和推力明细；立即开局（夺权走正式开局，不看是不是崩溃期）；拨进度；直接走到一头；只给这个国家推进几年；让它进入崩溃期；反复掷夺权直到发生（outsider 先让战功最高的非王室将领脱离家族）；夺权会由谁发起；列出各家对王室的好感后引发大叛乱、列出起事各方；开共和国称帝；让王室绝嗣并开王位空悬；按眼下的议会推演统计两头比例和年数；推进到衰落期；王朝周期推进一个阶段；直接中兴；打开局势窗口
-    //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏
+    //   treasury [国家] | treasury open [国家] | treasury close | treasury tabs | treasury all   一个国家的国库账本（今年、去年）和账簿；open 打开国库窗口；close 立即结一次年账；tabs 列出王国窗口页签栏；all 列出两城以上各国的国库、禁军、积欠和账簿里的欠饷记录
     //   works [国家] | works stats   一个国家每座城的建筑数、营建名额和增幅；stats 是全世界各类建筑的城数和领地格子数分布
     //   arms [数量] | arms run | arms storage <国家>   城市最多的几个国家的军械制式、禁军装备分布；run 立即结算一次军械；storage 列出一个国家每座城的兵和仓库装备
     //   bench stress <附庸数>      城市最多的国家把最小的几个国家收为附庸、吞并其余所有国家，造一个大帝国（tools/perf-check.sh 用）
@@ -79,6 +79,7 @@ namespace DiplomacyOverhaul.Perf
     //                           throw 让第一座城的原版更新每帧抛异常，检查原版每帧更新的兜底；
     //                           throw kingdom 让第一个国家检查国王时每次都抛异常，检查逐个国家的兜底
     //   kings [kill]             没有国王（执政）的国家，最后一行 @kings <无主数>/<国家数>；kill 先让所有国王死去
+    //   kings ages               各国君主的年龄、是否成年、王室里成年和未成年的人数，最后一行 @kingages minors=<未成年君主数>/<君主数>
     //   check                    巡检对象之间的关系（附庸、城市、单位、军队、弹道、战争指向的国家都还在），每条违规一行 @violation（tools/soak.sh 用）
     //   year                     写一行 @year <当前年份>
     //   sprites <资源目录> [关键词]  列出目录下的贴图名、所在纹理、尺寸和九宫格边距
@@ -469,6 +470,7 @@ namespace DiplomacyOverhaul.Perf
                         if (a.Length < 3 || sp.name.Contains(a[2]))
                             Log($"  {sp.name} tex={sp.texture?.name} rect={sp.rect} border={sp.border}");
                     break;
+                case "kings" when a.Length > 1 && a[1] == "ages": KingAges(); break;
                 case "kings": Kings(a.Length > 1 && a[1] == "kill"); break;
                 case "safety":
                     // safety fail <系统> [次数]：模拟这个系统的补丁出错，检查熔断；safety reset：全部恢复
@@ -514,6 +516,25 @@ namespace DiplomacyOverhaul.Perf
                 Log($"  {k.data.name} 城 {k.countCities()} 首都城主 {(k.hasCapital() && k.capital.hasLeader() ? "有" : "无")} timer_new_king {k.data.timer_new_king:0.0}");
             }
             Log($"@kings {empty}/{total}");
+        }
+
+        // 各国君主的年龄、是否成年、王室里成年人和幼儿的人数
+        static void KingAges()
+        {
+            int kings = 0, minors = 0;
+            foreach (Kingdom k in World.world.kingdoms)
+            {
+                if (!k.isAlive() || !k.isCiv() || !k.hasKing()) continue;
+                kings++;
+                Actor king = k.king;
+                if (!king.isAdult()) minors++;
+                int adults = 0, kids = 0;
+                if (king.clan != null)
+                    foreach (Actor u in king.clan.units)
+                        if (u.isAlive() && u.kingdom == k) { if (u.isAdult()) adults++; else kids++; }
+                Log($"  {k.data.name} 城 {k.countCities()} 君主 {king.getName()} 年龄 {king.getAge()} 成年 {king.isAdult()} 幼儿 {king.isBaby()} 王室 成年 {adults} 未成年 {kids} 文化 {(k.hasCulture() && k.culture.hasTrait("ultimogeniture") ? "幼子继承" : "-")}");
+            }
+            Log($"@kingages minors={minors}/{kings}");
         }
 
         static void Load(string pSource)

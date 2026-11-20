@@ -12,7 +12,7 @@ namespace DiplomacyOverhaul
         internal const float ArmyWeight = 1f;
         // 基准时长：合力为 1 时几个月走完全程
         const float Months = 4f;
-        const float UnpaidPressure = 0.15f, ChaosPressure = 0.2f, CalmPressure = -0.3f;
+        const float UnpaidPressure = 0.3f, ChaosPressure = 0.2f, CalmPressure = -0.3f;
         // 迁延日久：政变久拖不决，人心就散了，每个月往回拉这么多，不封顶
         const float DragPerMonth = -0.05f;
         // 发起逼宫的将领（actor id）
@@ -39,7 +39,7 @@ namespace DiplomacyOverhaul
             pressures =
             {
                 new SituationPressure { id = "vd_sit_coup_army", value = (k, years) => ArmyWeight * ArmyShare(Leader(k), k) },
-                new SituationPressure { id = "vd_sit_coup_unpaid", value = (k, years) => Guard.Unpaid(k) ? UnpaidPressure : 0f },
+                new SituationPressure { id = "vd_sit_coup_unpaid", value = (k, years) => Guard.Disarray(k) * UnpaidPressure },
                 new SituationPressure { id = "vd_sit_coup_chaos", value = (k, years) => Cycle.Get(k) == CyclePhase.Collapse ? ChaosPressure : 0f },
                 new SituationPressure { id = "vd_sit_coup_calm", value = (k, years) => Cycle.Get(k) == CyclePhase.Collapse ? 0f : CalmPressure },
                 new SituationPressure { id = "vd_sit_coup_drag", value = (k, months) => DragPerMonth * months }

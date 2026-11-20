@@ -14,8 +14,8 @@ namespace DiplomacyOverhaul
         const string FlagGuard = "vd_guard";           // army.data：禁军编队
         const string FlagMember = "vd_guard_member";   // actor.data：上调禁军的兵
         const string KeyTarget = "vd_guard_target";    // army.data：编队的进攻目标城市
-        const string KeyUnpaid = "vd_guard_unpaid";            // kingdom.data：禁军这一年欠饷
-        const string KeyPenalty = "vd_guard_unpaid_penalty";   // kingdom.data：禁军欠饷累积的伤害减益
+        const string KeyArrears = "vd_guard_arrears";     // kingdom.data：欠禁军的饷
+        const string KeyDisarray = "vd_guard_disarray";   // kingdom.data：禁军的涣散程度（见 Treasury.Settle）
         public const int GroupCap = 100;
 
         static readonly float[] Rates = { 0f, 0.25f, 0.5f, 0.75f };
@@ -47,18 +47,14 @@ namespace DiplomacyOverhaul
 
         public static int CountLocal(City pCity) => pCity.countWarriors() - CountMembers(pCity);
 
-        public static bool Unpaid(Kingdom pKingdom)
-        {
-            pKingdom.data.get(KeyUnpaid, out bool unpaid, false);
-            return unpaid;
-        }
+        public static int Arrears(Kingdom pKingdom) => Treasury.Arrears(pKingdom.data, KeyArrears);
 
-        public static float Penalty(Kingdom pKingdom)
-        {
-            if (pKingdom?.data == null) return 0f;
-            pKingdom.data.get(KeyPenalty, out float v, 0f);
-            return v;
-        }
+        public static bool Unpaid(Kingdom pKingdom) => Arrears(pKingdom) > 0;
+
+        // 涣散程度 0 到 1：积欠 ÷ (积欠 + 年饷)
+        public static float Disarray(Kingdom pKingdom) => Treasury.Disarray(pKingdom?.data, KeyDisarray);
+
+        public static float Penalty(Kingdom pKingdom) => Treasury.PenaltyOf(Disarray(pKingdom));
 
         // 全国的禁军人数，征兵时要看国库养不养得起。每次征兵都数一遍太慢，约一秒数一次
         static readonly Dictionary<long, (int frame, int count)> _members = new Dictionary<long, (int, int)>();
@@ -73,12 +69,34 @@ namespace DiplomacyOverhaul
             return n;
         }
 
-        // 征兵时这个兵进禁军还是地方军：禁军名额没满、国库没欠饷、还够全体禁军（连他在内）一年的饷，就进禁军
+        // 国库养得起多少禁军：国库够这些人 ReserveYears 年的饷 ÷ 纪律系数。和储备是同一条线（见 Treasury.Reserve）
+        internal static int Affordable(Kingdom pKingdom) =>
+            Mathf.FloorToInt(Treasury.Get(pKingdom) * Discipline(pKingdom) / (Treasury.PayPerWarrior * Treasury.ReserveYears));
+
+        // 全国的禁军名额
+        internal static int TotalQuota(Kingdom pKingdom)
+        {
+            int n = 0;
+            foreach (City city in pKingdom.getCities()) n += Quota(city);
+            return n;
+        }
+
+        // 纪律系数：量入为出是 1；衰落、崩溃期留的缓冲变薄，天命每低于 50 一点多养 2%（天命 20 时 1.6，缓冲一年多）
+        const float LaxPerMandate = 0.02f;
+
+        public static float Discipline(Kingdom pKingdom)
+        {
+            CyclePhase phase = Cycle.Get(pKingdom);
+            if (phase != CyclePhase.Decline && phase != CyclePhase.Collapse) return 1f;
+            return 1f + Mathf.Max(0f, 50f - Cycle.Mandate(pKingdom)) * LaxPerMandate;
+        }
+
+        // 征兵时这个兵进禁军还是地方军：禁军名额没满、国库没欠饷、养得起全体禁军（连他在内），就进禁军
         internal static bool WantsMember(City pCity)
         {
             Kingdom k = pCity.kingdom;
             if (k == null || Unpaid(k) || CountMembers(pCity) >= Quota(pCity)) return false;
-            return Treasury.Get(k) >= (KingdomMembers(k) + 1) * Treasury.PayPerWarrior;
+            return Affordable(k) >= KingdomMembers(k) + 1;
         }
 
         // 地方兵：名额没满、本城没欠饷、仓库够全体地方兵（连他在内）一年的饷
@@ -295,22 +313,23 @@ namespace DiplomacyOverhaul
         }
 
         // 每月：各城的禁军人数向兵制规定的名额靠拢。多了就把编队外、或在本国境内的兵退回地方；
-        // 少了就从在本国境内、没在打仗的地方兵里调
+        // 少了就从在本国境内、没在打仗的地方兵里调，和征兵一样只调到国库养得起为止（Affordable）
         internal static void Rebalance()
         {
             if (!Military.On) return;
             foreach (Kingdom kingdom in World.world.kingdoms)
             {
                 if (!kingdom.isAlive() || !kingdom.isCiv()) continue;
-                bool unpaid = Unpaid(kingdom);
+                // 还养得起几个：欠饷时不调
+                int room = Unpaid(kingdom) ? 0 : Affordable(kingdom) - KingdomMembers(kingdom);
                 foreach (City city in kingdom.getCities())
                 {
                     List<Actor> warriors = Warriors(city);
                     // 刚读档时城市还没算出兵额（是 0），这时不调
                     if (warriors == null || warriors.Count == 0 || city.getMaxWarriors() == 0) continue;
                     int diff = CountMembers(city) - Quota(city);
-                    if (diff > 0) Release(warriors, diff, kingdom);
-                    else if (diff < 0 && !unpaid) Draft(warriors, -diff, kingdom);
+                    if (diff > 0) room += Release(warriors, diff, kingdom);
+                    else if (diff < 0 && room > 0) room -= Draft(warriors, Mathf.Min(-diff, room), kingdom);
                 }
             }
         }
@@ -318,29 +337,35 @@ namespace DiplomacyOverhaul
         static bool AtHome(Actor pActor, Kingdom pKingdom) =>
             !pActor.isInsideSomething() && !pActor.isFighting() && pActor.current_tile?.zone_city?.kingdom == pKingdom;
 
-        static void Release(List<Actor> pWarriors, int pCount, Kingdom pKingdom)
+        // 返回实际退回的人数
+        static int Release(List<Actor> pWarriors, int pCount, Kingdom pKingdom)
         {
+            int done = 0;
             foreach (Actor a in new List<Actor>(pWarriors))
             {
-                if (pCount <= 0) return;
+                if (done >= pCount) break;
                 if (!IsMember(a) || a.is_army_captain) continue;
                 if (a.hasArmy() && !AtHome(a, pKingdom)) continue;
                 a.data.removeFlag(FlagMember);
                 if (Is(a.army)) Leave(a);
-                pCount--;
+                done++;
             }
+            return done;
         }
 
-        static void Draft(List<Actor> pWarriors, int pCount, Kingdom pKingdom)
+        // 返回实际调来的人数
+        static int Draft(List<Actor> pWarriors, int pCount, Kingdom pKingdom)
         {
+            int done = 0;
             foreach (Actor a in new List<Actor>(pWarriors))
             {
-                if (pCount <= 0) return;
+                if (done >= pCount) break;
                 if (IsMember(a) || a.is_army_captain || !AtHome(a, pKingdom)) continue;
                 a.data.addFlag(FlagMember);
                 if (a.hasArmy()) Leave(a);
-                pCount--;
+                done++;
             }
+            return done;
         }
 
         // 城市换了国家：被攻占的城，上调禁军的兵就地溃散；和平转手的，兵退出禁军，归新国家的地方军
@@ -376,8 +401,8 @@ namespace DiplomacyOverhaul
             foreach (Kingdom k in World.world.kingdoms)
             {
                 if (!k.isAlive()) continue;
-                k.data.removeBool(KeyUnpaid);
-                k.data.removeFloat(KeyPenalty);
+                k.data.removeInt(KeyArrears);
+                k.data.removeFloat(KeyDisarray);
                 foreach (City city in k.getCities())
                 {
                     List<Actor> warriors = Warriors(city);
@@ -392,7 +417,7 @@ namespace DiplomacyOverhaul
 
         // ---------- 军饷 ----------
 
-        // 每年：禁军的饷从国库出，单价和地方兵一样。欠饷的处理同地方兵（见 Treasury.Settle），按国家算
+        // 每年：禁军的饷从国库出，单价和地方兵一样。积欠的处理同地方兵（见 Treasury.Settle），按国家算
         internal static void Pay(Kingdom pKingdom)
         {
             var members = new List<Actor>();
@@ -404,12 +429,12 @@ namespace DiplomacyOverhaul
                     if (IsMember(a)) members.Add(a);
             }
             int cost = Mathf.RoundToInt(members.Count * Treasury.PayPerWarrior);
-            int paid = Treasury.Take(pKingdom, cost);
+            int due = Treasury.Due(pKingdom.data, KeyArrears, cost);
+            int paid = Treasury.Take(pKingdom, due);
             Ledger.Record(pKingdom, Ledger.Flow.Guard, paid);
-            pKingdom.data.get(KeyUnpaid, out bool wasUnpaid, false);
-            int disband = Treasury.Settle(pKingdom.data, KeyUnpaid, KeyPenalty, cost, paid, out bool changed);
-            pKingdom.data.get(KeyUnpaid, out bool unpaid, false);
-            Ledger.GuardPayChanged(pKingdom, wasUnpaid, unpaid);
+            bool wasUnpaid = Unpaid(pKingdom);
+            int disband = Treasury.Settle(pKingdom.data, KeyArrears, KeyDisarray, cost, due, paid, members.Count, out bool changed);
+            Ledger.GuardPayChanged(pKingdom, wasUnpaid, Unpaid(pKingdom));
             foreach (Actor a in members)
             {
                 if (!a.isAlive()) continue;

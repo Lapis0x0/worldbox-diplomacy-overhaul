@@ -7,24 +7,22 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 国库：城主上缴的钱进国库，国王只分一份；附庸的进账按附庸贡赋交一份给宗主；国王发起密谋花国库的钱。
-    // 城市养自己的地方兵：仓库够全体地方兵一年的饷才征兵；每年从本城仓库扣军饷，欠饷时停征兵、逐年解甲，
-    // 留下的士兵伤害逐年下降。
+    // 城市养自己的地方兵：仓库够全体地方兵一年的饷才征兵；每年从本城仓库扣军饷，发不出的记作积欠，
+    // 积欠越久军心越涣散：逃兵越多，留下的士兵伤害越低（见 Settle）。
     // 禁军由国库养，见 Guard；城市仓库余下的金子归城市，用来盖房、给地方军置办军械（见 Armory）
     public static class Treasury
     {
         const string Key = "vd_treasury";
-        const string KeyUnpaid = "vd_unpaid";              // city.data：本城地方兵这一年欠饷
-        const string KeyPenalty = "vd_unpaid_penalty";     // city.data：本城地方兵欠饷累积的伤害减益
+        const string KeyArrears = "vd_arrears";            // city.data：本城欠地方兵的饷
+        const string KeyDisarray = "vd_disarray";          // city.data：本城地方兵的涣散程度
 
         public const float KingShare = 0.2f;      // 上缴里归国王的份
         public const float PayPerWarrior = 0.5f;  // 每个兵每年的军饷
-        const float PenaltyStep = 0.1f;           // 全欠一年伤害减多少，欠一部分按比例
-        const float PenaltyCap = 0.25f;           // 减益的上限
-        const float PenaltyRecover = 0.1f;        // 付清后每年恢复多少
-        const float DisbandShare = 0.25f;         // 每年解甲欠饷士兵的几分之一
+        const float DesertShare = 0.5f;           // 每年逃散的比例 = 涣散程度 × 这个数
+        const float PenaltyMax = 0.25f;           // 伤害减益 = 涣散程度 × 这个数
 
-        // 储备：军械和营建都只花储备以外的钱。基础是两年禁军军饷（没有禁军时按城数留底），
-        // 打仗时加倍，挨着比自己强得多的邻国时多留一半
+        // 储备：军械和营建都只花储备以外的钱。基础是禁军名额两年的饷，禁军还没满额时就是国库 × 纪律系数（钱先留给扩军，
+        // 和征兵的门槛是同一条线，见 Guard.Affordable），不少于按城数留的底；打仗时加倍，挨着比自己强得多的邻国时多留一半
         public const int ReserveYears = 2;
         const int ReservePerCity = 10;
         const float WarReserve = 2f, ThreatReserve = 1.5f;
@@ -36,7 +34,8 @@ namespace DiplomacyOverhaul
         // 已经知道受不受威胁时用这个，免得再找一遍最强邻国
         public static int Reserve(Kingdom pKingdom, bool pThreatened)
         {
-            float reserve = Mathf.Max(Guard.KingdomMembers(pKingdom) * PayPerWarrior * ReserveYears, ReservePerCity * pKingdom.countCities());
+            float full = Guard.TotalQuota(pKingdom) * PayPerWarrior * ReserveYears;
+            float reserve = Mathf.Max(Mathf.Min(full, Get(pKingdom) * Guard.Discipline(pKingdom)), ReservePerCity * pKingdom.countCities());
             if (World.world.wars.hasWars(pKingdom)) reserve *= WarReserve;
             else if (pThreatened) reserve *= ThreatReserve;
             return Mathf.CeilToInt(reserve);
@@ -156,17 +155,24 @@ namespace DiplomacyOverhaul
             return taken;
         }
 
-        public static bool Unpaid(City pCity)
-        {
-            pCity.data.get(KeyUnpaid, out bool unpaid, false);
-            return unpaid;
-        }
+        public static bool Unpaid(City pCity) => Arrears(pCity.data, KeyArrears) > 0;
 
-        public static float Penalty(City pCity)
+        public static float Penalty(City pCity) => Disarray(pCity.data, KeyDisarray) * PenaltyMax;
+
+        internal static int Arrears(BaseSystemData pData, string pKey)
         {
-            pCity.data.get(KeyPenalty, out float v, 0f);
+            pData.get(pKey, out int v, 0);
             return v;
         }
+
+        internal static float Disarray(BaseSystemData pData, string pKey)
+        {
+            if (pData == null) return 0f;
+            pData.get(pKey, out float v, 0f);
+            return v;
+        }
+
+        internal static float PenaltyOf(float pDisarray) => pDisarray * PenaltyMax;
 
         // 士兵因欠饷减掉的伤害：禁军看国家，地方兵看本城
         public static float Penalty(Actor pActor)
@@ -175,36 +181,47 @@ namespace DiplomacyOverhaul
             return Guard.IsMember(pActor) ? Guard.Penalty(pActor.kingdom) : Penalty(pActor.city);
         }
 
-        // 结算一年的军饷：欠饷当年就解甲欠饷士兵的四分之一，留下的士兵军心涣散，伤害减益按欠的比例逐年累积；
-        // 付清后减益逐年恢复。
-        // 返回要解甲的人数，pChanged 表示减益变了（士兵要重算属性）
-        internal static int Settle(BaseSystemData pData, string pKeyUnpaid, string pKeyPenalty, int pCost, int pPaid, out bool pChanged)
+        // 这一年应发的饷：今年的饷加上积欠
+        internal static int Due(BaseSystemData pData, string pKeyArrears, int pCost) => pCost + Arrears(pData, pKeyArrears);
+
+        // 结算一年的军饷（pDue 见 Due，pPaid 是实际发出的）：发不出的记作积欠。积欠够发几年的饷记作 r，
+        // 涣散程度 = r ÷ (1 + r) = 积欠 ÷ (积欠 + 年饷)：逃散这个比例 × DesertShare 的士兵（按概率取整），
+        // 逃兵那份积欠一笔勾销，涣散程度不变；留下的士兵伤害减涣散程度 × PenaltyMax。补发清了涣散程度回到 0。
+        // 返回要逃散的人数，pChanged 表示涣散程度变了（士兵要重算属性）
+        internal static int Settle(BaseSystemData pData, string pKeyArrears, string pKeyDisarray, int pCost, int pDue, int pPaid, int pCount, out bool pChanged)
         {
-            float shortShare = pCost > 0 ? (pCost - pPaid) / (float)pCost : 0f;
-            pData.get(pKeyPenalty, out float before, 0f);
-            float after = shortShare > 0f
-                ? Mathf.Min(PenaltyCap, before + PenaltyStep * shortShare)
-                : Mathf.Max(0f, before - PenaltyRecover);
-            pChanged = !Mathf.Approximately(before, after);
-            if (after > 0f) pData.set(pKeyPenalty, after);
-            else pData.removeFloat(pKeyPenalty);
-            if (shortShare <= 0f)
+            int arrears = pCount > 0 ? Mathf.Max(0, pDue - pPaid) : 0;
+            float disarray = arrears > 0 ? arrears / (float)(arrears + Mathf.Max(1, pCost)) : 0f;
+            pChanged = !Mathf.Approximately(Disarray(pData, pKeyDisarray), disarray);
+            int desert = 0;
+            if (arrears > 0)
             {
-                pData.removeBool(pKeyUnpaid);
-                return 0;
+                float exact = pCount * disarray * DesertShare;
+                desert = Mathf.FloorToInt(exact);
+                if (Randy.randomChance(exact - desert)) desert++;
+                arrears = Mathf.RoundToInt(arrears * (pCount - desert) / (float)pCount);
             }
-            pData.set(pKeyUnpaid, true);
-            return Mathf.CeilToInt(Mathf.CeilToInt((pCost - pPaid) / PayPerWarrior) * DisbandShare);
+            if (arrears > 0)
+            {
+                pData.set(pKeyArrears, arrears);
+                pData.set(pKeyDisarray, disarray);
+            }
+            else
+            {
+                pData.removeInt(pKeyArrears);
+                pData.removeFloat(pKeyDisarray);
+            }
+            return desert;
         }
 
-        // 关掉军队大修：各城地方兵的欠饷和减益清掉
+        // 关掉军队大修：各城地方兵的积欠清掉
         internal static void ClearArrears()
         {
             foreach (City city in World.world.cities)
             {
                 if (city?.data == null) continue;
-                city.data.removeBool(KeyUnpaid);
-                city.data.removeFloat(KeyPenalty);
+                city.data.removeInt(KeyArrears);
+                city.data.removeFloat(KeyDisarray);
             }
         }
 
@@ -225,9 +242,10 @@ namespace DiplomacyOverhaul
         {
             int warriors = Guard.CountLocal(pCity);
             int cost = Mathf.RoundToInt(warriors * PayPerWarrior);
-            int paid = Mathf.Min(cost, pCity.getResourcesAmount("gold"));
+            int due = Due(pCity.data, KeyArrears, cost);
+            int paid = Mathf.Min(due, pCity.getResourcesAmount("gold"));
             if (paid > 0) pCity.takeResource("gold", paid);
-            int disband = Settle(pCity.data, KeyUnpaid, KeyPenalty, cost, paid, out bool changed);
+            int disband = Settle(pCity.data, KeyArrears, KeyDisarray, cost, due, paid, warriors, out bool changed);
             foreach (Actor a in new List<Actor>(pCity.getUnits()))
             {
                 if (!a.isAlive() || !a.isWarrior() || Guard.IsMember(a)) continue;
