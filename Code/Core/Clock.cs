@@ -102,6 +102,7 @@ namespace DiplomacyOverhaul
             Run(Sys.Vassal, "Vassals", Vassals.SyncAllWars);
             Run(Sys.Military, "Guard", Guard.Rebalance);
             Run(Sys.Military, "GuardAI", GuardAI.UpdateAll);
+            Run(Sys.Situation, "Situations", Situations.MonthlyAll);
         }
 
         // 一个系统出错不连累排在后面的系统，也不打断原版这一帧的更新；所属系统熔断后跳过（见 Safety）。

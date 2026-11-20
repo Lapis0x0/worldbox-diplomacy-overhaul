@@ -142,14 +142,14 @@ namespace DiplomacyOverhaul
             {
                 if (!Situations.IsActive(_kingdom, d)) continue;
                 clans ??= Parliament.Clans(_kingdom);
-                var e = new Entry { def = d, progress = Situations.Progress(_kingdom, d), years = Situations.Years(_kingdom, d) };
+                var e = new Entry { def = d, progress = Situations.Progress(_kingdom, d), years = Situations.Elapsed(_kingdom, d) };
                 for (int s = 0; s < Situations.StageCount; s++) e.picks[s] = Situations.Picked(_kingdom, d, s);
                 if (d == Decline.Def) DeclineRows(e, clans);
                 else
                 {
                     e.by = Situations.Initiator(_kingdom, d, clans);
                     e.byName = e.by != null ? e.by.clan.name : "";
-                    e.favorTo = e.by;
+                    e.favorTo = d.againstCrown ? clans.Find(c => c.ruling) : e.by;
                     if (e.by != null) GenericRows(e, Situations.Tally(_kingdom, d, clans, e.by));
                 }
                 list.Add(e);
@@ -265,7 +265,7 @@ namespace DiplomacyOverhaul
             if (pSelected) Frame(card, -2f);
         }
 
-        // 卡片右上角：约几年走到一头、僵持，或者落幕几年前
+        // 卡片右上角：约几年（按月推进的局势是几个月）走到一头、僵持，或者落幕几年前
         static (string, Color) Short(Entry pEntry)
         {
             if (pEntry.ended != null) return (Ago(pEntry.ended.year), Muted);
@@ -273,7 +273,7 @@ namespace DiplomacyOverhaul
             if (Mathf.Abs(per) < 0.05f) return (LM.Get("vd_sit_stalemate"), Muted);
             if (pEntry.decline && per < 0f) return (LM.Get("vd_sit_rising"), Away);
             float left = per > 0f ? 100f - pEntry.progress : pEntry.progress;
-            return (LM.Get("vd_sit_about").Replace("$n$", Mathf.Max(1, Mathf.CeilToInt(left / Mathf.Abs(per))).ToString()), per > 0f ? Toward : Away);
+            return (LM.Get(pEntry.def.monthly ? "vd_sit_about_month" : "vd_sit_about").Replace("$n$", Mathf.Max(1, Mathf.CeilToInt(left / Mathf.Abs(per))).ToString()), per > 0f ? Toward : Away);
         }
 
         // ---------- 右边的详情 ----------
@@ -284,7 +284,7 @@ namespace DiplomacyOverhaul
             Header(_body, RX, Top, RW, LM.Get(d.id), d.icon ?? Situations.IconPath);
 
             RectTransform head = Sliced(_body, Slot, RX, HeadY, RW, 20f);
-            string age = pEntry.ended != null ? Ago(pEntry.ended.year) : LM.Get("vd_sit_year").Replace("$n$", (pEntry.years + 1).ToString());
+            string age = pEntry.ended != null ? Ago(pEntry.ended.year) : LM.Get(pEntry.def.monthly ? "vd_sit_month" : "vd_sit_year").Replace("$n$", (pEntry.years + 1).ToString());
             Text(head, age, 8f, 0f, RW - 16f, 20f, 7, Muted, TextAnchor.MiddleRight);
             string desc = LM.Get(d.id + "_desc").Replace("$clan$", pEntry.byName).Replace("$kingdom$", _kingdom.data.name);
             Text(head, Fit(desc, 7, RW - 30f - Measure(age, 7)), 8f, 0f, RW - 16f, 20f, 7, Ink, TextAnchor.MiddleLeft);
@@ -315,7 +315,7 @@ namespace DiplomacyOverhaul
 
             RectTransform trend = Sliced(_body, Slot, RX, TrendY, RW, 18f);
             float per = pEntry.per, toward = pEntry.toward;
-            string perText = Mathf.Abs(toward) < 0.05f ? LM.Get("vd_sit_stalemate") : LM.Get("vd_sit_per_year").Replace("$v$", Signed(per, 1));
+            string perText = Mathf.Abs(toward) < 0.05f ? LM.Get("vd_sit_stalemate") : LM.Get(pEntry.def.monthly ? "vd_sit_per_month" : "vd_sit_per_year").Replace("$v$", Signed(per, 1));
             string progressText = pEntry.decline
                 ? LM.Get("vd_sit_mandate").Replace("$n$", Mathf.RoundToInt(pEntry.mandate).ToString())
                 : LM.Get("vd_sit_progress").Replace("$n$", Mathf.RoundToInt(pEntry.progress).ToString());
@@ -553,9 +553,9 @@ namespace DiplomacyOverhaul
             float[] from = StageEdges();
             int stage = Situations.StageOf(pEntry.progress);
             if (pPer > 0f && stage < Situations.StageCount - 1)
-                return LM.Get("vd_sit_eta_stage").Replace("$n$", Years(from[stage + 1] - pEntry.progress, pPer)).Replace("$stage$", LM.Get(d.id + "_stage" + (stage + 1)));
+                return LM.Get(d.monthly ? "vd_sit_eta_stage_month" : "vd_sit_eta_stage").Replace("$n$", Years(from[stage + 1] - pEntry.progress, pPer)).Replace("$stage$", LM.Get(d.id + "_stage" + (stage + 1)));
             bool right = pPer > 0f;
-            return LM.Get("vd_sit_eta_end").Replace("$n$", Years(right ? 100f - pEntry.progress : pEntry.progress, pPer))
+            return LM.Get(d.monthly ? "vd_sit_eta_end_month" : "vd_sit_eta_end").Replace("$n$", Years(right ? 100f - pEntry.progress : pEntry.progress, pPer))
                 .Replace("$end$", LM.Get(d.id + (right ? "_right" : "_left")));
         }
 

@@ -148,6 +148,28 @@ namespace DiplomacyOverhaul
             return list;
         }
 
+        // 不在议会里的家族（在本国没有议席）：族人还在本国时，按同样的规则定下拿主意的人和意识形态；议席为 0
+        public static ParliamentClan Outsider(Kingdom pKingdom, Clan pClan, List<ParliamentClan> pClans)
+        {
+            if (!ParliamentClan.Live(pClan) || !HasMember(pClan, pKingdom)) return null;
+            var pc = new ParliamentClan { clan = pClan };
+            var context = new StanceContext(pKingdom, pClans);
+            context.Ages(pClans);
+            Situation(pKingdom, pc, context);
+            Stance(pc, context);
+            return pc;
+        }
+
+        // 族人名单要等原版下一轮刷新，刚建的家族只认得族长
+        static bool HasMember(Clan pClan, Kingdom pKingdom)
+        {
+            Actor chief = pClan.getChief();
+            if (chief != null && chief.isAlive() && chief.kingdom == pKingdom) return true;
+            foreach (Actor a in pClan.units)
+                if (a != null && a.isAlive() && a.kingdom == pKingdom) return true;
+            return false;
+        }
+
         // 王族占的城不和首都接壤、离首都又超过最远那座城距离的一半，才算宗室；近畿的王族和王室是一体的
         const float FrontierDistance = 0.5f;
 

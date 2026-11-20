@@ -254,9 +254,11 @@ namespace DiplomacyOverhaul
         }
 
         // 开创王朝的人要有家族，王室才立得起来；原版新王上位后也会给没有家族的国王建一个
-        static void EnsureClan(Actor pActor)
+        // 原版建族时不立刻设族长，族人名单也要等下一轮刷新；这里当场让他当族长，议会马上认得这一家
+        internal static void EnsureClan(Actor pActor)
         {
-            if (!pActor.hasClan()) World.world.clans.newClan(pActor, true);
+            if (pActor.hasClan()) return;
+            World.world.clans.newClan(pActor, true).setChief(pActor);
         }
 
         static void AfterChange(Kingdom pKingdom)
@@ -398,9 +400,10 @@ namespace DiplomacyOverhaul
             AfterChange(pKingdom);
         }
 
-        internal static bool IsGeneral(Actor pActor) => pActor.isAlive() && !pActor.isKing() && (pActor.is_army_captain || pActor.isWarrior());
+        // 手里有一支军队的人才能逼宫：队长，不算普通士兵
+        internal static bool IsGeneral(Actor pActor) => pActor.isAlive() && !pActor.isKing() && pActor.is_army_captain && pActor.army != null;
 
-        // 战功最高的队长或士兵；给了家族时只看这一家
+        // 战功最高的队长；给了家族时只看这一家
         internal static Actor FindGeneral(Kingdom pKingdom, Clan pClan = null)
         {
             Actor best = null;

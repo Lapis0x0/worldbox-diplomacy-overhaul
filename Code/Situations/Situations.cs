@@ -53,6 +53,9 @@ namespace DiplomacyOverhaul
 
         static string KeyProgress(SituationDef pDef) => pDef.id + "_progress";
         static string KeySince(SituationDef pDef) => pDef.id + "_since";
+        // 按月推进的局势从哪个月开局（年 × 12 + 月）
+        static string KeySinceMonth(SituationDef pDef) => pDef.id + "_since_month";
+        static int MonthIndex => Date.getCurrentYear() * 12 + Date.getCurrentMonth();
         static string KeyBy(SituationDef pDef) => pDef.id + "_by";
         static string KeyPick(SituationDef pDef, int pStage) => pDef.id + "_pick" + pStage;
 
@@ -73,10 +76,20 @@ namespace DiplomacyOverhaul
             return Date.getCurrentYear() - since;
         }
 
+        // 进行了几次推进的时长：按月推进的局势是月数，其余是年数
+        public static int Elapsed(Kingdom pKingdom, SituationDef pDef)
+        {
+            if (!pDef.monthly) return Years(pKingdom, pDef);
+            pKingdom.data.get(KeySinceMonth(pDef), out int since, MonthIndex);
+            return MonthIndex - since;
+        }
+
         public static ParliamentClan Initiator(Kingdom pKingdom, SituationDef pDef, List<ParliamentClan> pClans)
         {
             pKingdom.data.get(KeyBy(pDef), out long key, -1L);
-            return pClans.Find(c => c.Key == key);
+            ParliamentClan found = pClans.Find(c => c.Key == key);
+            if (found != null || key < 0 || !pDef.outsider) return found;
+            return Parliament.Outsider(pKingdom, World.world.clans.get(key), pClans);
         }
 
         // 这个阶段抽中的候选；还没进入这个阶段时是空
@@ -90,6 +103,7 @@ namespace DiplomacyOverhaul
         // ---------- 推力 ----------
 
         // 态度 = 政见得失 + 好感权重 × 对发起方的好感 ÷ 100 − 惯性，集团合并后限制在 ±1；发起方和它的集团是 1。
+        // 冲着朝廷来的局势把对发起方的好感换成减去对掌权家族的好感，掌权家族自己态度为 0
         // 进度每年变化 = (各方推力 + 大势 + 抽中的候选) × 100 ÷ 基准时长
         public static SituationTally Tally(Kingdom pKingdom, SituationDef pDef, List<ParliamentClan> pClans, ParliamentClan pBy)
         {
@@ -97,13 +111,15 @@ namespace DiplomacyOverhaul
             var scores = new float[pClans.Count];
             var gains = new float[pClans.Count];
             var favors = new int[pClans.Count];
+            ParliamentClan to = pDef.againstCrown ? pClans.Find(c => c.ruling) : pBy;
+            float sign = pDef.againstCrown ? -1f : 1f;
             for (int i = 0; i < pClans.Count; i++)
             {
                 ParliamentClan pc = pClans[i];
                 if (pc.Key == pBy.Key) continue;
                 gains[i] = Parliament.StanceGain(pKingdom, pc, pDef, 0, 1);
-                favors[i] = Relations.Value(pc, pBy);
-                scores[i] = gains[i] + pDef.favor * favors[i] / 100f;
+                favors[i] = Relations.Value(pc, to);
+                scores[i] = gains[i] + sign * pDef.favor * favors[i] / 100f;
             }
             List<Bloc> blocs = Blocs.Of(pKingdom, pClans);
             float[] merged = Blocs.Merged(pClans, blocs, scores, pBy);
@@ -113,12 +129,12 @@ namespace DiplomacyOverhaul
             {
                 ParliamentClan pc = pClans[i];
                 bool ally = pc.Key == pBy.Key || (own != null && own.Has(pc));
-                float attitude = ally ? 1f : Mathf.Clamp(merged[i] - Parliament.Inertia, -1f, 1f);
+                float attitude = pDef.againstCrown && pc.ruling ? 0f : ally ? 1f : Mathf.Clamp(merged[i] - Parliament.Inertia, -1f, 1f);
                 float push = seats > 0 ? attitude * pc.seats / seats : 0f;
                 tally.powers.Add(new SituationPower { clan = pc, attitude = attitude, push = push, gain = gains[i], favor = favors[i] });
                 tally.total += push;
             }
-            int years = Years(pKingdom, pDef);
+            int years = Elapsed(pKingdom, pDef);
             foreach (SituationPressure p in pDef.pressures)
             {
                 float value = p.value(pKingdom, years);
@@ -145,6 +161,7 @@ namespace DiplomacyOverhaul
             if (by == null) return false;
             pKingdom.data.set(KeyProgress(pDef), pDef.start);
             pKingdom.data.set(KeySince(pDef), Date.getCurrentYear());
+            if (pDef.monthly) pKingdom.data.set(KeySinceMonth(pDef), MonthIndex);
             pKingdom.data.set(KeyBy(pDef), by.Key);
             Draw(pKingdom, pDef, pDef.start);
             Refresh(pKingdom);
@@ -168,6 +185,7 @@ namespace DiplomacyOverhaul
         {
             pKingdom.data.removeFloat(KeyProgress(pDef));
             pKingdom.data.removeInt(KeySince(pDef));
+            pKingdom.data.removeInt(KeySinceMonth(pDef));
             pKingdom.data.removeLong(KeyBy(pDef));
             for (int s = 0; s < StageCount; s++) pKingdom.data.removeInt(KeyPick(pDef, s));
         }
@@ -239,6 +257,25 @@ namespace DiplomacyOverhaul
             }
         }
 
+        // 每月：推进按月推进的局势（所有国家同一个月推进，不分批）
+        public static void MonthlyAll()
+        {
+            if (!Settings.ParliamentEnabled || !All.Exists(d => d.monthly)) return;
+            foreach (Kingdom k in new List<Kingdom>(World.world.kingdoms))
+            {
+                if (!k.isAlive() || !k.isCiv()) continue;
+                List<ParliamentClan> clans = null;
+                bool changed = false;
+                foreach (SituationDef d in All)
+                {
+                    if (!d.monthly || !IsActive(k, d)) continue;
+                    if (Advance(k, d, clans ??= Parliament.Clans(k))) clans = null;
+                    changed = true;
+                }
+                if (changed) Refresh(k);
+            }
+        }
+
         internal static void Tick(Kingdom pKingdom)
         {
             bool enabled = Settings.ParliamentEnabled;
@@ -255,7 +292,7 @@ namespace DiplomacyOverhaul
                 {
                     // 议会关掉时没有议席可算，进行中的局势直接结束
                     if (!enabled) Clear(pKingdom, d);
-                    else if (Advance(pKingdom, d, clans ??= Parliament.Clans(pKingdom))) clans = null;
+                    else if (!d.monthly && Advance(pKingdom, d, clans ??= Parliament.Clans(pKingdom))) clans = null;
                 }
                 else if (enabled && d.trigger != null && d.trigger(pKingdom)) Open(pKingdom, d, clans ??= Parliament.Clans(pKingdom));
             }
