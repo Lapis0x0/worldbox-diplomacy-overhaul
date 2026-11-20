@@ -97,10 +97,10 @@ namespace DiplomacyOverhaul
 
         // ---------- 开局 ----------
 
-        // 新君登基（Kingdom.setKing，见 Hooks）：君主国换了君主（不是开国）时记下他
+        // 新君登基（Kingdom.setKing，见 Hooks）：君主国照原版继位（不是开国，也不是篡位、开新朝这些模组立的君）时记下他
         internal static void OnAccession(Kingdom pKingdom, Actor pKing)
         {
-            if (pKing == null || pKingdom?.data == null || pKingdom.data.total_kings <= 1 || Government.IsRepublic(pKingdom)) return;
+            if (pKing == null || pKingdom?.data == null || pKingdom.data.total_kings <= 1 || Government.IsRepublic(pKingdom) || Regime.Installing) return;
             pKingdom.data.set(KeyNewKing, pKing.data.id);
         }
 
@@ -209,14 +209,14 @@ namespace DiplomacyOverhaul
 
         // ---------- 右头：权柄易手 ----------
 
-        // 篡位：宗室摄政废君自立，王室不变
+        // 篡位：宗室摄政废君自立，王室不变，不算改朝换代
         static void Usurp(Kingdom pKingdom, ParliamentClan pBy)
         {
             Actor regent = TakeRegent(pKingdom);
             if (regent == null) return;
             Actor ruler = pKingdom.king;
             LogDeposed(WorldLogs.RegencyUsurped, pKingdom, regent, ruler);
-            Regime.Supplant(pKingdom, regent);
+            Regime.Install(pKingdom, regent, GovForm.Monarchy);
         }
 
         // 王冠易手：外姓权臣取而代之，他的家族成为王室，改朝换代
@@ -226,7 +226,7 @@ namespace DiplomacyOverhaul
             if (regent == null) return;
             Actor ruler = pKingdom.king;
             LogDeposed(WorldLogs.RegencyCrowned, pKingdom, regent, ruler);
-            Regime.FoundDynasty(pKingdom, regent);
+            Regime.Install(pKingdom, regent, GovForm.Monarchy);
         }
 
         // 开局和亲政只记进世界历史，权柄易手才在左上角弹出

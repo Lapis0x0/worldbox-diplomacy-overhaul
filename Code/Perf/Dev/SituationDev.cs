@@ -160,7 +160,7 @@ namespace DiplomacyOverhaul.Perf
                     // 兵变会由谁领头：全国战功最高的将领、排除王室后会起事的将领（乱世）、禁军里的（欠饷）
                     Kingdom k = Dev.FindKingdom(a[2]);
                     List<ParliamentClan> clans = Parliament.Clans(k);
-                    Actor top = Regime.FindGeneral(k), strong = Mutiny.Strongman(k, clans), guard = Mutiny.Strongman(k, clans, true);
+                    Actor top = Regime.TopGeneral(k), strong = Mutiny.Strongman(k), guard = Mutiny.Strongman(k, true);
                     int army = strong != null && strong.army != null ? strong.army.countUnits() : 0;
                     int guardArmy = guard != null && guard.army != null ? guard.army.countUnits() : 0;
                     Dev.Log($"@sit who {k.data.name} warriors={k.countTotalWarriors()} top={top?.getName()}({top?.data.kills}, {top?.clan?.name}) strongman={strong?.getName()}({strong?.data.kills}, {strong?.clan?.name}, army={army}) guard={guard?.getName()}({guard?.data.kills}, {guard?.clan?.name}, army={guardArmy}) disarray={Guard.Disarray(k):F2} parliament={Settings.ParliamentEnabled} safety={Safety.On(Sys.Situation)}");
@@ -238,7 +238,7 @@ namespace DiplomacyOverhaul.Perf
                         Dev.Log($"  {k.data.name} regent={regent.getName()} royal={Regency.RegentIsRoyal(k)} ambitious={Regime.Ambitious(regent)} odds left(还政/罢黜)={string.Join("/", lo.Select(o => Mathf.RoundToInt(o * 100)))}");
                     }
                     // 兵变：和开局时一样，没有家族的将领先自立门户（会留在世界里，测完重新读档）
-                    Actor strong = pDef == Mutiny.Def && !pEach ? Mutiny.Strongman(k, clans, _simUnpaid) : null;
+                    Actor strong = pDef == Mutiny.Def && !pEach ? Mutiny.Strongman(k, _simUnpaid) : null;
                     if (pDef == Mutiny.Def && !pEach && strong == null) continue;
                     if (strong != null)
                     {
@@ -252,7 +252,7 @@ namespace DiplomacyOverhaul.Perf
                     {
                         if (by == null) continue;
                         // 拥兵自重：发起的队长带的兵；each 时取这一家战功最高的队长
-                        Actor leader = pDef != Mutiny.Def ? null : pEach ? Regime.FindGeneral(k, by.clan) : strong;
+                        Actor leader = pDef != Mutiny.Def ? null : pEach ? Regime.TopGeneral(k, g => g.clan == by.clan) : strong;
                         SituationTally tally = Situations.Tally(k, pDef, clans, by);
                         float share = Mutiny.ArmyShare(leader, k);
                         cases.Add((by.clan.name, tally.powers.Sum(p => p.push), Mutiny.ArmyWeight * share));
@@ -374,7 +374,8 @@ namespace DiplomacyOverhaul.Perf
         static void Show(Kingdom k)
         {
             k.data.get("vd_sit_loyalty", out int loyalty, 0);
-            Dev.Log($"@sit {k.data.name} loyalty={loyalty} damage={Situations.DamagePercent(k)} king={k.king?.getName()} form={Government.Form(k)} phase={Cycle.Get(k)}");
+            k.data.get("vd_regency_new_king", out long newKing, -1L);
+            Dev.Log($"@sit {k.data.name} loyalty={loyalty} damage={Situations.DamagePercent(k)} king={k.king?.getName()} clan={k.king?.clan?.name} royal={World.world.clans.get(k.data.royal_clan_id)?.name} form={Government.Form(k)} military={Government.IsMilitary(k)} phase={Cycle.Get(k)} mandate={Cycle.Mandate(k):F0} newKing={newKing >= 0}");
             List<ParliamentClan> clans = Parliament.Clans(k);
             foreach (SituationDef d in Situations.All)
             {

@@ -45,7 +45,7 @@ A white peace does not change the Mandate.
 Renewal ──≥ 70──▶ Prime ──< 50──▶ Decline ──< 20──▶ Great Rebellion ──▶ Collapse
    ▲                ▲                │  ▲                                  │
    │                └─ Restoration ──┘  └─── Rebellion ends (pacified) ────┤
-   └───────────────── General seizes power (new dynasty) ──────────────────┘
+   └───────────────────────── Change of dynasty ───────────────────────────┘
 ```
 
 The numbers in the diagram are Mandate values.
@@ -53,7 +53,9 @@ The numbers in the diagram are Mandate values.
 - **Renewal**: Starts when a kingdom reaches 6 cities or gets vassals, with a Mandate of 60. At 70 it enters Prime. Below 40 it goes straight to Decline.
 - **Prime**: The kingdom enters Decline when the Mandate falls below 50.
 - **Decline**: When the Mandate returns to 70, the dynasty is restored and goes back to Prime. If it falls below 20, or the capital is lost, a Great Rebellion breaks out.
-- **Collapse**: The phase after a Great Rebellion. When the rebel wars and wars of independence are over and the kingdom is still large enough, it counts as **pacified** and returns to Decline with a Mandate of 45. If the kingdom has become small, the cycle ends. During Collapse a general may seize power. After this **change of dynasty** the kingdom returns to Renewal, and its Decay and Old wounds are cleared. See [Governments and Rulers](government.md#coup-in-times-of-collapse).
+- **Collapse**: The phase after a Great Rebellion. When the rebel wars and wars of independence are over and the kingdom is still large enough, it counts as **pacified** and returns to Decline with a Mandate of 45. If the kingdom has become small, the cycle ends. During Collapse a general may seize power.
+
+**Change of dynasty**: another house takes the throne. This includes a general seizing the crown, a minister of another house replacing the ruler, and a clan taking an empty throne. Whatever the phase, the kingdom then returns to Renewal, and its Decay and Old wounds are cleared. A cadet branch usurping the throne or a consul taking the crown is still the same house, so it does not count.
 
 ## Effects of Each Phase
 

@@ -109,26 +109,14 @@ namespace DiplomacyOverhaul
             return pClans.Find(c => c.clan == leader.clan) ?? Parliament.Outsider(pKingdom, leader.clan, pClans);
         }
 
-        // 战功最高、也确实会起事的队长；王室和宗室的人是朝廷自己人，不算。pGuard：只看禁军编队的队长
-        internal static Actor Strongman(Kingdom pKingdom, List<ParliamentClan> pClans, bool pGuard = false)
+        // 战功最高、也确实会起事的队长；王室（宗室和王室是同一个家族）和现任统治者的家族是朝廷自己人，不算。
+        // pGuard：只看禁军编队的队长。议会关着时乱世直接夺位也由他出面
+        internal static Actor Strongman(Kingdom pKingdom, bool pGuard = false)
         {
-            var crown = new HashSet<Clan>();
-            foreach (ParliamentClan pc in pClans)
-            {
-                if (pc.ruling || pc.cadet) crown.Add(pc.clan);
-            }
-            if (pKingdom.hasKing() && pKingdom.king.hasClan()) crown.Add(pKingdom.king.clan);
-            Actor best = null;
-            foreach (City city in pKingdom.getCities())
-            {
-                foreach (Actor a in city.getUnits())
-                {
-                    if (!Regime.IsGeneral(a) || (pGuard && !Guard.Is(a.army)) || (a.clan != null && crown.Contains(a.clan))) continue;
-                    if (best != null && a.data.kills <= best.data.kills) continue;
-                    if (Regime.WillRise(pKingdom, a)) best = a;
-                }
-            }
-            return best;
+            long royal = pKingdom.data.royal_clan_id;
+            Clan ruler = pKingdom.hasKing() ? pKingdom.king.clan : null;
+            return Regime.TopGeneral(pKingdom, a => (!pGuard || Guard.Is(a.army))
+                && (a.clan == null || (a.clan.id != royal && a.clan != ruler)) && Regime.WillRise(pKingdom, a));
         }
 
         // 开局：pUnpaid 是欠饷引起的，只看禁军的队长。没有家族的人先自立门户；没有人能出面时返回 false
@@ -136,7 +124,7 @@ namespace DiplomacyOverhaul
         {
             if (Situations.IsActive(pKingdom, Def)) return false;
             List<ParliamentClan> clans = Parliament.Clans(pKingdom);
-            Actor general = Strongman(pKingdom, clans, pUnpaid);
+            Actor general = Strongman(pKingdom, pUnpaid);
             if (general == null) return false;
             Regime.EnsureClan(general);
             pKingdom.data.set(KeyLeader, general.data.id);
@@ -245,9 +233,7 @@ namespace DiplomacyOverhaul
         static void Seize(Kingdom pKingdom, ParliamentClan pBy)
         {
             Actor general = TakeLeader(pKingdom);
-            if (general == null) return;
-            if (Regime.WillRise(pKingdom, general)) Regime.Usurp(pKingdom, general);
-            else Regime.Appoint(pKingdom, general);
+            if (general != null) Regime.Usurp(pKingdom, general);
         }
 
         // 废立：君主被废黜处死，君主国由王室照原版另立新君，共和国重新选举

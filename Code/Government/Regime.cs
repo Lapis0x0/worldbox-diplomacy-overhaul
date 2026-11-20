@@ -163,25 +163,59 @@ namespace DiplomacyOverhaul
                 StartTerm(pKingdom, pActor);
                 return;
             }
-            if (pKingdom.hasKing()) pKingdom.removeKing();
-            pKingdom.data.timer_new_king = 0f;
-            pKingdom.clearKingData();
-            MakeRuler(pKingdom, pActor);
+            Install(pKingdom, pActor, GovForm.Republic);
             WorldLogs.Add(WorldLogs.Elected, Location(pKingdom), pActor,
                 new[] { pActor.getName(), pKingdom.data.name, Government.RulerKey(pKingdom) }, new[] { pKingdom, pKingdom });
         }
 
-        // 和原版立新王一样：离开城主之位、搬进首都
-        static void MakeRuler(Kingdom pKingdom, Actor pActor)
+        // ---------- 政权更替 ----------
+
+        // 模组立君期间：这样即位的不算原版继位（见 Regency.OnAccession）
+        internal static bool Installing { get; private set; }
+
+        // 立 pActor 为统治者，大类改成 pForm（pMilitary：改成军事共和国）。现任下台，共和国从现在起算任期。
+        // 君主制下由另一家坐上王位就是改朝换代：他的家族成为王室，王朝周期回到新生。
+        // 宗室篡位、执政称帝是同一家，不算；改行共和、军事共和也不算
+        internal static void Install(Kingdom pKingdom, Actor pActor, GovForm pForm, bool pMilitary = false)
         {
+            long before = RulingClan(pKingdom);
+            bool seated = pKingdom.king == pActor;
+            if (!seated && pKingdom.hasKing()) pKingdom.removeKing();
+            if (Government.Form(pKingdom) != pForm || pMilitary) Government.SetForm(pKingdom, pForm, pMilitary);
+            // 王室要有家族；将领也要有，没有家族的人发起不了密谋（原版 try_new_plot 的条件）
+            if (pForm != GovForm.Republic || pMilitary) EnsureClan(pActor);
+            bool dynasty = pForm != GovForm.Republic && pActor.clan.id != before;
+            // 王室先空着，原版即位时把他的家族立为新王室（而不是记成王室易主）
+            if (dynasty) pKingdom.data.royal_clan_id = -1L;
+            if (seated) pKingdom.trySetRoyalClan();
+            else Seat(pKingdom, pActor);
+            if (pForm == GovForm.Republic) StartTerm(pKingdom, pActor);
+            else ClearTerm(pKingdom);
+            if (dynasty) Cycle.NewDynasty(pKingdom);
+            AfterChange(pKingdom);
+        }
+
+        // 坐江山的家族：君主国是王室，共和国是现任执政的家族；都没有时是 -1
+        static long RulingClan(Kingdom pKingdom)
+        {
+            if (!Government.IsRepublic(pKingdom) && pKingdom.data.royal_clan_id >= 0) return pKingdom.data.royal_clan_id;
+            return pKingdom.hasKing() && pKingdom.king.hasClan() ? pKingdom.king.clan.id : -1L;
+        }
+
+        // 和原版立新王一样：离开城主之位、搬进首都
+        static void Seat(Kingdom pKingdom, Actor pActor)
+        {
+            pKingdom.data.timer_new_king = 0f;
+            pKingdom.clearKingData();
             if (pActor.hasCity())
             {
                 pActor.stopBeingWarrior();
                 if (pActor.isCityLeader()) pActor.city.removeLeader();
             }
             if (pKingdom.hasCapital() && pActor.city != pKingdom.capital) pActor.joinCity(pKingdom.capital);
-            pKingdom.setKing(pActor);
-            StartTerm(pKingdom, pActor);
+            Installing = true;
+            try { pKingdom.setKing(pActor); }
+            finally { Installing = false; }
         }
 
         static void StartTerm(Kingdom pKingdom, Actor pRuler)
@@ -201,8 +235,7 @@ namespace DiplomacyOverhaul
         {
             Actor ruler = Elect(pKingdom);
             if (ruler == null) return false;
-            pKingdom.clearKingData();
-            MakeRuler(pKingdom, ruler);
+            Install(pKingdom, ruler, GovForm.Republic);
             WorldLogs.Add(WorldLogs.Elected, Location(pKingdom), ruler,
                 new[] { ruler.getName(), pKingdom.data.name, Government.RulerKey(pKingdom) }, new[] { pKingdom, pKingdom });
             return true;
@@ -224,33 +257,18 @@ namespace DiplomacyOverhaul
         {
             Actor ruler = Elect(pKingdom);
             if (ruler == null) return false;
-
-            Government.SetForm(pKingdom, GovForm.Republic);
-            ClearTerm(pKingdom);
-            pKingdom.clearKingData();
-            MakeRuler(pKingdom, ruler);
+            Install(pKingdom, ruler, GovForm.Republic);
             WorldLogs.Add(WorldLogs.RepublicFounded, Location(pKingdom), ruler,
                 new[] { pKingdom.data.name, ruler.getName() }, new[] { pKingdom, pKingdom });
-            AfterChange(pKingdom);
             return true;
         }
 
-        // 无主的君主国另立新君：他的家族成为王室
+        // 无主的君主国另立新君：他的家族成为王室，改朝换代
         internal static void Enthrone(Kingdom pKingdom, Actor pActor)
         {
-            pKingdom.clearKingData();
-            if (pActor.hasCity())
-            {
-                pActor.stopBeingWarrior();
-                if (pActor.isCityLeader()) pActor.city.removeLeader();
-            }
-            if (pKingdom.hasCapital() && pActor.city != pKingdom.capital) pActor.joinCity(pKingdom.capital);
-            pKingdom.setKing(pActor);
-            EnsureClan(pActor);
-            pKingdom.trySetRoyalClan();
+            Install(pKingdom, pActor, GovForm.Monarchy);
             WorldLogs.Add(WorldLogs.Enthroned, Location(pKingdom), pActor,
                 new[] { pActor.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
-            AfterChange(pKingdom);
         }
 
         // 开创王朝的人要有家族，王室才立得起来；原版新王上位后也会给没有家族的国王建一个
@@ -330,13 +348,9 @@ namespace DiplomacyOverhaul
         // 执政加冕称帝：大类变成君主制，他的家族成为王室
         internal static void Crown(Kingdom pKingdom, Actor pRuler)
         {
-            Government.SetForm(pKingdom, GovForm.Monarchy);
-            ClearTerm(pKingdom);
-            EnsureClan(pRuler);
-            pKingdom.trySetRoyalClan();
+            Install(pKingdom, pRuler, GovForm.Monarchy);
             WorldLogs.Add(WorldLogs.Crowned, Location(pKingdom), pRuler,
                 new[] { pRuler.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
-            AfterChange(pKingdom);
         }
 
         static int CrownWeight(Actor pRuler)
@@ -357,7 +371,7 @@ namespace DiplomacyOverhaul
         }
 
         // 兵变，每年掷一次：崩溃期掷乱世夺权；没掷中而禁军欠饷时，按涣散程度的一半再掷（和每年逃散的比例相同）。
-        // 议会开着、有将领能出面时开「兵变」局势；议会关着时乱世里战功最高的将领直接夺位，欠饷不闹兵变
+        // 议会开着时开「兵变」局势，没有将领能出面就作罢；议会关着时乱世里同一位将领直接夺位，欠饷不闹兵变
         internal static bool TryMutiny(Kingdom pKingdom)
         {
             if (Situations.IsActive(pKingdom, Mutiny.Def)) return false;
@@ -365,10 +379,10 @@ namespace DiplomacyOverhaul
             bool chaos = Cycle.Get(pKingdom) == CyclePhase.Collapse && Randy.randomChance(chance);
             bool unpaid = !chaos && Guard.Unpaid(pKingdom) && Randy.randomChance(Guard.Disarray(pKingdom) * Treasury.DesertShare);
             if (!chaos && !unpaid) return false;
-            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation) && Mutiny.TryOpen(pKingdom, unpaid)) return true;
+            if (Settings.ParliamentEnabled && Safety.On(Sys.Situation)) return Mutiny.TryOpen(pKingdom, unpaid);
             if (!chaos) return false;
-            Actor general = FindGeneral(pKingdom);
-            if (general == null || !WillRise(pKingdom, general)) return false;
+            Actor general = Mutiny.Strongman(pKingdom);
+            if (general == null) return false;
             Usurp(pKingdom, general);
             return true;
         }
@@ -376,62 +390,34 @@ namespace DiplomacyOverhaul
         // 已经是将领当政，没有野心的将领不会再起事
         internal static bool WillRise(Kingdom pKingdom, Actor pGeneral) => Ambitious(pGeneral) || !Government.IsMilitary(pKingdom);
 
-        // 他取代现任君主、开创新王朝：大类变成君主制，他的家族成为王室（没有就新建），王朝周期回到新生
-        internal static void FoundDynasty(Kingdom pKingdom, Actor pActor)
-        {
-            if (pKingdom.hasKing()) pKingdom.removeKing();
-            Government.SetForm(pKingdom, GovForm.Monarchy);
-            pKingdom.data.royal_clan_id = -1L;
-            EnsureClan(pActor);
-            MakeRuler(pKingdom, pActor);
-            ClearTerm(pKingdom);
-            Cycle.NewDynasty(pKingdom);
-            AfterChange(pKingdom);
-        }
-
-        // 同一个王室里换人当君主：现任下台，他即位
-        internal static void Supplant(Kingdom pKingdom, Actor pActor)
-        {
-            if (pKingdom.hasKing()) pKingdom.removeKing();
-            MakeRuler(pKingdom, pActor);
-            ClearTerm(pKingdom);
-            AfterChange(pKingdom);
-        }
-
-        // 有野心的自立为王、开创新王朝，没有野心的成立军事共和国
+        // 夺位：有野心的自立为王，没有野心的成立军事共和国（已经是军事共和国时由他执政）
         internal static void Usurp(Kingdom pKingdom, Actor pGeneral)
         {
             if (Ambitious(pGeneral))
             {
-                FoundDynasty(pKingdom, pGeneral);
+                Install(pKingdom, pGeneral, GovForm.Monarchy);
                 WorldLogs.Add(WorldLogs.Usurped, Location(pKingdom), pGeneral,
                     new[] { pGeneral.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
                 return;
             }
-            if (pKingdom.hasKing()) pKingdom.removeKing();
-            Government.SetForm(pKingdom, GovForm.Republic, true);
-            ClearTerm(pKingdom);
-            // 没有家族的人发起不了密谋（原版 try_new_plot 的条件）
-            EnsureClan(pGeneral);
-            MakeRuler(pKingdom, pGeneral);
+            Install(pKingdom, pGeneral, GovForm.Republic, true);
             WorldLogs.Add(WorldLogs.Junta, Location(pKingdom), pGeneral,
                 new[] { pKingdom.data.name, pGeneral.getName() }, new[] { pKingdom, pKingdom });
-            AfterChange(pKingdom);
         }
 
         // 手里有一支军队的人才能逼宫：队长，不算普通士兵
         internal static bool IsGeneral(Actor pActor) => pActor.isAlive() && !pActor.isKing() && pActor.is_army_captain && pActor.army != null;
 
-        // 战功最高的队长；给了家族时只看这一家
-        internal static Actor FindGeneral(Kingdom pKingdom, Clan pClan = null)
+        // 符合条件的队长里战功最高的；没有时是空
+        internal static Actor TopGeneral(Kingdom pKingdom, Func<Actor, bool> pWhere = null)
         {
             Actor best = null;
             foreach (City city in pKingdom.getCities())
             {
                 foreach (Actor a in city.getUnits())
                 {
-                    if (!IsGeneral(a) || (pClan != null && a.clan != pClan)) continue;
-                    if (best == null || a.data.kills > best.data.kills) best = a;
+                    if (!IsGeneral(a) || (best != null && a.data.kills <= best.data.kills)) continue;
+                    if (pWhere == null || pWhere(a)) best = a;
                 }
             }
             return best;
