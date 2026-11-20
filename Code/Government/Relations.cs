@@ -5,7 +5,7 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 家族好感：议会里一股势力对另一股的看法，有向。照原版王国好感的做法，由几项来源加起来：
-    // 政见远近、拿主意的人是不是挚友、有没有联姻、两家的城挨不挨着当场算；议会里欠下的恩情和积怨存在氏族数据里，随年份淡化
+    // 政见远近、占主导的人是不是挚友、有没有联姻、两家的城挨不挨着当场算；议会里欠下的恩情和积怨存在氏族数据里，随年份淡化
     public static class Relations
     {
         const string Key = "vd_rel", KeyCadet = "vd_rel_cadet";
@@ -16,7 +16,7 @@ namespace DiplomacyOverhaul
         const float MaxFavor = 60f, MaxGrudge = 60f;
         // 恩情忘得快，积怨记得久
         const float FavorHalfLife = 10f, GrudgeHalfLife = 25f;
-        // 换了拿主意的人，记着的恩怨留下这么多
+        // 换了占主导的人，记着的恩怨留下这么多
         const float Inherit = 2f / 3f;
         // 折算后不到这么多的条目写入时删掉
         const float Forget = 1f;
@@ -159,7 +159,7 @@ namespace DiplomacyOverhaul
             Save(pFrom, memories);
         }
 
-        // 拿主意的人换了：父辈的恩怨大致还在，新人有和解的余地
+        // 占主导的人换了：父辈的恩怨大致还在，新人有和解的余地
         public static void NewVoice(ParliamentClan pClan)
         {
             Dictionary<long, Memory> memories = Load(pClan);

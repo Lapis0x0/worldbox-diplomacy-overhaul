@@ -73,7 +73,7 @@ namespace DiplomacyOverhaul
         static Actor VoiceOf(Kingdom pKingdom, ParliamentClan pClan)
         {
             if (pClan.ruling && pKingdom.hasKing() && pKingdom.king.isAlive()) return pKingdom.king;
-            // 族长住在别国时替不了这一支说话，由本国议席最多的城主拿主意
+            // 族长住在别国时替不了这一支说话，由本国议席最多的城主占主导
             if (!pClan.cadet)
             {
                 Actor chief = pClan.clan.getChief();
@@ -136,15 +136,15 @@ namespace DiplomacyOverhaul
 
         const string KeyChief = "vd_chief_id", KeyChiefX = "vd_chief_x", KeyChiefY = "vd_chief_y";
         const string KeyCadet = "vd_cadet_id", KeyCadetX = "vd_cadet_x", KeyCadetY = "vd_cadet_y";
-        // 现在拿主意的人从哪一年起拿主意
+        // 现在占主导的人从哪一年起占主导
         const string KeyChiefSince = "vd_chief_since", KeyCadetSince = "vd_cadet_since";
-        // 换了拿主意的人，意识形态只往新人那边挪这么多
+        // 换了占主导的人，意识形态只往新人那边挪这么多
         const float Inherit = 1f / 3f;
         const float MembersWeight = 0.25f;
 
-        // 保守-激进：门第，比议会里的平均老 4 倍 -0.6、新 4 倍 +0.6；拿主意的人的心性和年龄（见 VoiceRadical）；
+        // 保守-激进：门第，比议会里的平均老 4 倍 -0.6、新 4 倍 +0.6；占主导的人的心性和年龄（见 VoiceRadical）；
         // 族人的心性按平均值算四分之一；家风。
-        // 分权-集权：离首都的远近，在首都 +0.6、和最远的城一样远 -0.6，城少的国家按 Spread 打折；拿主意的人多疑、野心（见 VoiceCentral）；家风。
+        // 分权-集权：离首都的远近，在首都 +0.6、和最远的城一样远 -0.6，城少的国家按 Spread 打折；占主导的人多疑、野心（见 VoiceCentral）；家风。
         // 最后按政见特质定下站在哪一边（见 Politics）
         static void Stance(ParliamentClan pClan, StanceContext pContext)
         {
@@ -172,7 +172,7 @@ namespace DiplomacyOverhaul
         // 国家铺得多开：一座城没有地方可言，离首都的远近不算；每多一座城加 1/4，5 座城及以上算满
         static float Spread(Kingdom pKingdom) => Mathf.Clamp01((pKingdom.countCities() - 1) / 4f);
 
-        // 拿主意的人带来的那部分意识形态。换人时只往新人那边挪 1/3，记在氏族数据里，
+        // 占主导的人带来的那部分意识形态。换人时只往新人那边挪 1/3，记在氏族数据里，
         // 所以一个家族的立场是几代人慢慢攒下来的，不会因为换一个族长整个翻过来
         static (float x, float y) VoicePart(ParliamentClan pClan, StanceContext pContext)
         {
@@ -198,14 +198,14 @@ namespace DiplomacyOverhaul
             return (nx, ny);
         }
 
-        // 拿主意的人上任了几年；没有记录（建族以来一直是他、或者旧存档）时当作很久
+        // 占主导的人上任了几年；没有记录（建族以来一直是他、或者旧存档）时当作很久
         public static int VoiceYears(ParliamentClan pClan)
         {
             pClan.clan.data.get(VoiceKey(pClan, pClan.cadet ? KeyCadetSince : KeyChiefSince), out int since, -1);
             return since < 0 ? int.MaxValue : Date.getCurrentYear() - since;
         }
 
-        // 族长住在别国时，本国这一支由城主拿主意，和族长那边各记各的（键后面加国家 id），免得两国的议会轮流覆盖
+        // 族长住在别国时，本国这一支由城主占主导，和族长那边各记各的（键后面加国家 id），免得两国的议会轮流覆盖
         static string VoiceKey(ParliamentClan pClan, string pBase)
         {
             if (pClan.cadet || pClan.ruling || pClan.voice == null || pClan.voice.kingdom == null) return pBase;
@@ -226,7 +226,7 @@ namespace DiplomacyOverhaul
             return t;
         }
 
-        // 心性，狂人走极端（翻倍）；年龄和议会里各家拿主意的人的平均年龄比，每老 40 岁 -0.4
+        // 心性，狂人走极端（翻倍）；年龄和议会里各家占主导的人的平均年龄比，每老 40 岁 -0.4
         internal static float VoiceRadical(Actor pVoice, float pMeanAge)
         {
             float t = Temper(pVoice);

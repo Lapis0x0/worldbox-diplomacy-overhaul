@@ -164,7 +164,7 @@ namespace DiplomacyOverhaul.Perf
 
         static void BlocList(string[] a)
         {
-            // parl blocs [国家]：各集团的成员、成员对集团的好感；每股势力拿主意的人眼下想拉拢谁、想不想脱离集团
+            // parl blocs [国家]：各集团的成员、成员对集团的好感；每股势力占主导的人眼下想拉拢谁、想不想脱离集团
             // parl blocs all：每个有议会的国家一行：集团数、各集团的家数和议席占比、跨派系的个数
             if (a.Length > 2 && a[2] == "all")
             {
@@ -255,7 +255,7 @@ namespace DiplomacyOverhaul.Perf
 
         static void Court(string[] a)
         {
-            // parl court <国家> <氏族名> <目标氏族名>：这一家拿主意的人立即拉拢目标一次，打印前后的好感和集团
+            // parl court <国家> <氏族名> <目标氏族名>：这一家占主导的人立即拉拢目标一次，打印前后的好感和集团
             Kingdom k = Dev.FindKingdom(a.Length > 2 ? a[2] : null);
             if (k == null || a.Length < 5) { Dev.Log("parl court <国家> <氏族名> <目标氏族名>"); return; }
             var clans = Parliament.Clans(k);

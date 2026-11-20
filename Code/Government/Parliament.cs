@@ -22,7 +22,7 @@ namespace DiplomacyOverhaul
         // 家大业大的程度：地方势力按议席和其他地方势力的平均比；掌权家族是 1
         public float weight = 1f;
         public readonly List<City> cities = new List<City>();
-        // 替这一股拿主意的人：王室看君主，宗室看议席最多的那位王族城主，其他看族长
+        // 这一股里占主导的人：王室看君主，宗室看议席最多的那位王族城主，其他看族长
         public Actor voice;
         // 意识形态：保守(-1) 到激进(+1)，分权(-1) 到集权(+1)
         public float x, y;
@@ -148,7 +148,7 @@ namespace DiplomacyOverhaul
             return list;
         }
 
-        // 不在议会里的家族（在本国没有议席）：族人还在本国时，按同样的规则定下拿主意的人和意识形态；议席为 0
+        // 不在议会里的家族（在本国没有议席）：族人还在本国时，按同样的规则定下占主导的人和意识形态；议席为 0
         public static ParliamentClan Outsider(Kingdom pKingdom, Clan pClan, List<ParliamentClan> pClans)
         {
             if (!ParliamentClan.Live(pClan) || !HasMember(pClan, pKingdom)) return null;
@@ -217,7 +217,7 @@ namespace DiplomacyOverhaul
 
         // ---------- 表决 ----------
 
-        // 拿主意的人有多在意：贪婪的加倍，知足的减半
+        // 占主导的人有多在意：贪婪的加倍，知足的减半
         public static float Care(Actor pVoice)
         {
             if (pVoice == null || !pVoice.isAlive()) return 1f;

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace DiplomacyOverhaul
 {
     // 集团的两个密谋：拉拢（结党、招揽、挖角、维系都是它）和脱离集团。
-    // 发起人是一股势力拿主意的人；拉拢只由魁首或还不在集团里的人发起，脱离集团只由魁首以外的成员发起
+    // 发起人是一股势力占主导的人；拉拢只由魁首或还不在集团里的人发起，脱离集团只由魁首以外的成员发起
     public static partial class Blocs
     {
         public static PlotAsset plot_court, plot_leave;
@@ -140,7 +140,7 @@ namespace DiplomacyOverhaul
             return s;
         }
 
-        // 只有替一股势力拿主意的人能代表它（王室是君主，其他是族长或议席最多的城主）
+        // 只有一股势力里占主导的人能代表它（王室是君主，其他是族长或议席最多的城主）
         static bool MayVoice(Actor pActor) =>
             Settings.ParliamentEnabled && pActor != null && pActor.isAlive() && pActor.hasClan() && pActor.kingdom != null && pActor.kingdom.isCiv()
             && (pActor.isKing() || pActor.isCityLeader() || pActor.clan.getChief() == pActor);
@@ -156,7 +156,7 @@ namespace DiplomacyOverhaul
         const float Reach = 40f;
         // 自己看不上的家族不去拉
         const int Courtable = 5;
-        // 刚换了拿主意的人：这么多年以内
+        // 刚换了占主导的人：这么多年以内
         const int NewVoiceYears = 5;
         // 记着这么深的积怨，算刚吃了亏
         const float SoreGrudge = -20f;
@@ -236,7 +236,7 @@ namespace DiplomacyOverhaul
 
         // 送礼：拿出家底的这么多
         const float GiftShare = 0.2f;
-        // 恩情：拿主意的人每点外交这么多（最多 MaxCharm），送的钱按对方的家底折算最多 GoldFavor。
+        // 恩情：占主导的人每点外交这么多（最多 MaxCharm），送的钱按对方的家底折算最多 GoldFavor。
         // 光靠外交越不过入伙线，钱才是拉拢的主要筹码
         const float CharmPerDiplomacy = 1f, MaxCharm = 10f, GoldFavor = 40f;
 
@@ -277,7 +277,7 @@ namespace DiplomacyOverhaul
             return true;
         }
 
-        // 家底：族人当城主的私财，加上这些城的仓库里留够一年地方兵军饷之后的金子；拿主意的人不当城主时加上他自己的钱
+        // 家底：族人当城主的私财，加上这些城的仓库里留够一年地方兵军饷之后的金子；占主导的人不当城主时加上他自己的钱
         static int Wealth(ParliamentClan pClan)
         {
             int sum = 0;
@@ -302,7 +302,7 @@ namespace DiplomacyOverhaul
             return Mathf.Max(0, pCity.getResourcesAmount("gold") - reserve);
         }
 
-        // 先花拿主意的人自己的钱，再花各城城主的，最后动城市仓库的余钱；返回实际拿出的
+        // 先花占主导的人自己的钱，再花各城城主的，最后动城市仓库的余钱；返回实际拿出的
         static int Take(ParliamentClan pClan, int pAmount)
         {
             int left = pAmount;
