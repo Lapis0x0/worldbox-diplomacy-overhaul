@@ -144,7 +144,7 @@ namespace DiplomacyOverhaul.Perf
 
         public static void DumpKinds()
         {
-            foreach (var kv in _kinds) Dev.Log($"  city mismatch kind: {kv.Key} x{kv.Value}");
+            foreach (var kv in _kinds) PerfHost.Log($"  city mismatch kind: {kv.Key} x{kv.Value}");
             _kinds.Clear();
         }
 

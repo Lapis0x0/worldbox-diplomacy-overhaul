@@ -10,6 +10,16 @@
 - 每项优化在 `Opt` 里有一个字段，补丁先判断它
 - 某一项运行时抛出异常：只关掉这一项，本次调用交给原版，日志里记一条「性能优化 xxx 出错」。直到重启游戏或热重载才会再启用
 
+## 独立模组
+
+同一份优化也单独发布成「性能大修」（GUID `lapis0x0_performance_overhaul`），不装外交大修也能用：
+
+- `Code/Perf/` 顶层的文件两边共用，只能依赖 `PerfHost`（总开关、日志、模组名）和 `SafeBy`。外交大修的 `PerfHost` 在 `Code/Core/PerfHost.cs`；独立模组的外壳在 `packages/performance-overhaul/`，自带 `PerfHost`、`SafeBy`、设置和语言文件。开发工具 `Code/Perf/Dev/` 只在外交大修里
+- 独立模组在所有模组加载完后（`Init`）检查外交大修有没有加载，加载了就不打补丁，由外交大修那份运行
+- 外壳放在 `packages/` 下，是因为本地开发时整个仓库就是外交大修的模组目录，NML 会编译目录里所有 `.cs`，但跳过名为 `packages` 的目录
+- `tools/package-perf.sh` 打发布包，把外壳和 `Code/Perf/*.cs` 拼进 `bin/dist/PerformanceOverhaul-v<版本>.zip`；`dotnet build packages/performance-overhaul/PerformanceOverhaul.csproj` 做编译检查
+- 优化改了，外交大修和独立模组一起发版
+
 ## 各项优化
 
 | 字段 | 原版 | 优化后 | 为什么结果相同 |

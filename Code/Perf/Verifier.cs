@@ -29,7 +29,7 @@ namespace DiplomacyOverhaul.Perf
             foreach (KeyValuePair<string, Stat> kv in _stats)
             {
                 Stat s = kv.Value;
-                Dev.Log($"@verify {kv.Key} checks={s.checks} items={s.items} mismatches={s.mismatches}" + (s.example != null ? " e.g. " + s.example : ""));
+                PerfHost.Log($"@verify {kv.Key} checks={s.checks} items={s.items} mismatches={s.mismatches}" + (s.example != null ? " e.g. " + s.example : ""));
             }
             _stats.Clear();
         }

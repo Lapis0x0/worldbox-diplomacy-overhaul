@@ -1,0 +1,21 @@
+<!-- 只用于本地编译检查；游戏里由 NML 编译发布包里的 Code/，见 tools/package-perf.sh；放在 packages/ 下是因为 NML 编译外交大修时跳过这个目录名 -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <NoStdLib>true</NoStdLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GameData>$(HOME)/Library/Application Support/Steam/steamapps/common/worldbox/worldbox.app/Contents/Resources/Data</GameData>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Code/*.cs" />
+    <!-- 与 tools/package-perf.sh；放在 packages/ 下是因为 NML 编译外交大修时跳过这个目录名 复制的文件相同：外交大修 Code/Perf/ 顶层，不含开发工具 -->
+    <Compile Include="../../Code/Perf/*.cs" Link="Code/Perf/%(Filename)%(Extension)" />
+    <Reference Include="$(GameData)/Managed/*.dll" Exclude="$(GameData)/Managed/Assembly-CSharp.dll" Private="false" />
+    <Reference Include="$(GameData)/StreamingAssets/mods/NML/Assembly-CSharp-Publicized.dll" Private="false" />
+    <Reference Include="$(GameData)/StreamingAssets/mods/NeoModLoader.dll" Private="false" />
+    <Reference Include="$(GameData)/StreamingAssets/mods/NML/Assemblies/0Harmony.dll" Private="false" />
+  </ItemGroup>
+</Project>

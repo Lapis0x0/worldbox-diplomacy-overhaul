@@ -1,0 +1,11 @@
+The first image is the cover of my existing WorldBox mod "Diplomacy Overhaul": a pixel-art map of rival kingdoms. The second image shows original WorldBox pixel-art icons (28x28 sprites scaled up 16x) for the game's art style.
+
+I need the cover art for a sibling mod called "Performance Overhaul", and I want YOU to invent the idea. Be creative and surprising; avoid the obvious clichés.
+
+What the mod does: WorldBox is a god-simulation sandbox. On a huge world with thousands of villagers, animals, trees and buildings, the base game recomputes the same things again and again and starts to stutter. This mod quietly removes that redundant work. The world plays out EXACTLY the same, nothing about the game changes, it just runs lighter and smoother. The feeling: a vast, crowded, living world that suddenly moves effortlessly, as if a weight was lifted, or the gears of the world were finally oiled.
+
+Do not draw: lightning bolts, rockets, speedometers, stopwatches, hourglasses, gears or cogs, arrows, charts or graphs, computer chips, FPS counters, numbers, a plain glowing globe.
+
+Draw a 3x2 sheet of 6 DIFFERENT cover ideas of your own, each a distinct concept, not variations of the same thing. Each cell is one square cover. Leave the top quarter of each cover calm and uncluttered, because a title will be placed there later.
+
+Match the ORIGINAL WorldBox look closely, not a generic mobile-game look: chunky square pixels on a strict grid, limited palette, warm shading with dark outlines, a hand-made slightly playful feel, no anti-aliasing, no gradients, no text, no letters, no labels. Thin dark gaps between the six cells, no borders around them.

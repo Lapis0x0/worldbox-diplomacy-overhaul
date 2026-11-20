@@ -1,0 +1,10 @@
+{
+  "name": "性能大修 Performance Overhaul",
+  "author": "Lapis0x0",
+  "version": "1.0.0",
+  "description": "去掉原版的重复计算，大地图更流畅，不改变游戏结果。\nRemoves redundant base-game computation for smoother large worlds without changing outcomes.",
+  "GUID": "lapis0x0_performance_overhaul",
+  "targetGameBuild": 719,
+  "UsePublicizedAssembly": true,
+  "iconPath": "preview.png"
+}

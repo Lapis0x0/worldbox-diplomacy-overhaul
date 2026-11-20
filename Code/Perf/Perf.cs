@@ -7,27 +7,22 @@ using UnityEngine;
 namespace DiplomacyOverhaul.Perf
 {
     // 性能优化的总入口。每项优化都只减少原版的重复计算，不改变游戏结果，规则和验证方法见 docs/dev/performance.md。
-    // 玩家在设置里只有一个总开关；某项优化运行时出错，就只关掉这一项，之后走原版逻辑
+    // 玩家在设置里只有一个总开关；某项优化运行时出错，就只关掉这一项，之后走原版逻辑。
+    // Code/Perf/ 顶层的文件原样打进独立的性能优化模组（packages/performance-overhaul/），这里只能依赖 PerfHost，两边各有一份
     public static class Perf
     {
         static bool _enabled;
         static readonly HashSet<string> _failed = new HashSet<string>();
 
-        public static void Start(string pFolder)
+        public static void Start()
         {
-            Apply(Settings.PerfEnabled);
-            Dev.Start(pFolder);
-        }
-
-        public static void Stop()
-        {
-            Dev.Stop();
+            Apply(PerfHost.Enabled);
         }
 
         // 每帧读一次设置，总开关变了就整体切换
         internal static void Tick()
         {
-            bool on = Settings.PerfEnabled;
+            bool on = PerfHost.Enabled;
             if (on != _enabled) Apply(on);
         }
 
@@ -58,7 +53,7 @@ namespace DiplomacyOverhaul.Perf
                 if (!_failed.Add(pOpt)) return;
             }
             Opt.Set(pOpt, false);
-            Debug.LogError($"[外交大修] 性能优化 {pOpt} 出错，已关闭这一项，改用原版逻辑：{pError}");
+            Debug.LogError($"[{PerfHost.Name}] 性能优化 {pOpt} 出错，已关闭这一项，改用原版逻辑：{pError}");
         }
     }
 

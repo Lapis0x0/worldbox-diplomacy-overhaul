@@ -1,0 +1,10 @@
+{
+  "vd_group_perf": [
+    {
+      "Id": "vd_perf_enabled",
+      "Type": "SWITCH",
+      "IconPath": "ui/Icons/iconClock",
+      "BoolVal": true
+    }
+  ]
+}

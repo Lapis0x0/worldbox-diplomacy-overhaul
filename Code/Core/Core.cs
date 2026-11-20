@@ -20,7 +20,8 @@ namespace DiplomacyOverhaul
         public static void Start(ModConfig pConfig, string pFolder)
         {
             Settings.Config = pConfig;
-            Perf.Perf.Start(pFolder);
+            Perf.Perf.Start();
+            Perf.Dev.Start(pFolder);
             LoadIcons(pFolder);
             _harmony = new Harmony(HarmonyId);
             _harmony.PatchAll(typeof(Core).Assembly);
@@ -64,7 +65,7 @@ namespace DiplomacyOverhaul
 
         public static void Stop()
         {
-            Perf.Perf.Stop();
+            Perf.Dev.Stop();
             _harmony?.UnpatchSelf();
             _harmony = null;
         }
