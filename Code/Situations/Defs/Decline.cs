@@ -3,12 +3,16 @@ using UnityEngine;
 
 namespace DiplomacyOverhaul
 {
-    // 王朝衰落：特殊的局势，不走推力公式。进度条画天命，从 50（左头中兴）到 20（右头大叛乱）；
+    // 王朝衰落：特殊的局势，不走推力公式。进度条画天命，从 70（左头，涨回来就中兴）到 20（右头大叛乱），
+    // 阶段按天命分：式微 70–40、动荡 40–30、危亡 30–20，在进度条上占一半、四分之一、四分之一，每段内按天命均匀画；
     // 大势是应得天命的各项组成，各方只在衰落期按对王室的向背计入应得天命。
     // 阶段由天命决定，王朝周期照旧推进天命，这里每年跟着同步进度、抽候选，进入鼎盛或崩溃时落幕
     public static class Decline
     {
-        const float Top = 50f, Bottom = 20f;
+        public const float Bottom = Cycle.RebellionBelow;
+        // 各阶段交界的天命和它在进度条上的位置
+        static readonly float[] Marks = { Cycle.PrimeAt, 40f, 30f, Bottom };
+        static readonly float[] Edges = { 0f, 50f, 75f, 100f };
         // 各方合计对应得天命的影响上限：天命每年向应得天命靠拢一成，所以每年最多影响天命 ±1
         public const float PowersWeight = 10f;
 
@@ -19,6 +23,7 @@ namespace DiplomacyOverhaul
             leftIcon = "ui/Icons/vd_cycle_prime",
             rightIcon = "ui/Icons/vd_cycle_collapse",
             drive = Drive,
+            stageEdges = Edges,
             // 候选的力度是应得天命：坏事 -2/-3/-4，转机反过来
             pushes = new[] { 2f, 3f, 4f },
             stages = new[]
@@ -44,8 +49,28 @@ namespace DiplomacyOverhaul
             }
         };
 
-        // 天命在进度条上的位置：50 是 0，20 是 100
-        public static float Position(float pMandate) => Mathf.Clamp((Top - pMandate) / (Top - Bottom) * 100f, 0f, 100f);
+        // 天命在进度条上的位置：70 是 0，20 是 100，阶段交界处对齐
+        public static float Position(float pMandate)
+        {
+            if (pMandate >= Marks[0]) return 0f;
+            int k = Segment(pMandate);
+            if (pMandate <= Marks[k + 1]) return 100f;
+            return Edges[k] + (Marks[k] - pMandate) / (Marks[k] - Marks[k + 1]) * (Edges[k + 1] - Edges[k]);
+        }
+
+        // 眼下所在的那一段里，天命每降一点，进度条往右头走多少
+        public static float Slope(float pMandate)
+        {
+            int k = Segment(pMandate);
+            return (Edges[k + 1] - Edges[k]) / (Marks[k] - Marks[k + 1]);
+        }
+
+        static int Segment(float pMandate)
+        {
+            int k = 0;
+            while (k < Marks.Length - 2 && pMandate < Marks[k + 1]) k++;
+            return k;
+        }
 
         // 每年在王朝周期之后：衰落期开局或同步进度；离开衰落时，进入鼎盛是中兴、进入崩溃是大叛乱，其余（不再是大国、关掉周期）不记结局
         static void Drive(Kingdom pKingdom)

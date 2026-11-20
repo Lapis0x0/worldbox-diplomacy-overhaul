@@ -212,8 +212,8 @@ namespace DiplomacyOverhaul
                 }
             }
             pEntry.per = Cycle.PullRate * (Cycle.Target(_kingdom, g) + extra - pEntry.mandate);
-            // 天命往下走就是往右头（大叛乱）走：天命 30 点对应进度条 100
-            pEntry.toward = -pEntry.per * 100f / 30f;
+            // 天命往下走就是往右头（大叛乱）走，按眼下这一段的比例换算成进度
+            pEntry.toward = -pEntry.per * Decline.Slope(pEntry.mandate);
         }
 
         static void Build()
@@ -269,8 +269,9 @@ namespace DiplomacyOverhaul
             float per = pEntry.toward;
             if (Mathf.Abs(per) < 0.05f) return (LM.Get("vd_sit_stalemate"), Muted);
             if (pEntry.decline && per < 0f) return (LM.Get("vd_sit_rising"), Away);
-            float left = per > 0f ? 100f - pEntry.progress : pEntry.progress;
-            return (LM.Get(pEntry.def.monthly ? "vd_sit_about_month" : "vd_sit_about").Replace("$n$", Mathf.Max(1, Mathf.CeilToInt(left / Mathf.Abs(per))).ToString()), per > 0f ? Toward : Away);
+            // 王朝衰落的进度条各段比例不同，按天命算还要几年跌到 20
+            float years = pEntry.decline ? (pEntry.mandate - Decline.Bottom) / Mathf.Abs(pEntry.per) : (per > 0f ? 100f - pEntry.progress : pEntry.progress) / Mathf.Abs(per);
+            return (LM.Get(pEntry.def.monthly ? "vd_sit_about_month" : "vd_sit_about").Replace("$n$", Mathf.Max(1, Mathf.CeilToInt(years)).ToString()), per > 0f ? Toward : Away);
         }
 
         // ---------- 右边的详情 ----------
@@ -287,8 +288,8 @@ namespace DiplomacyOverhaul
             Text(head, Fit(desc, 7, RW - 30f - Measure(age, 7)), 8f, 0f, RW - 16f, 20f, 7, Ink, TextAnchor.MiddleLeft);
 
             float inner = RW - 12f;
-            int stage = Situations.StageOf(pEntry.progress), end = EndOf(pEntry);
-            float[] from = StageEdges();
+            int stage = Situations.StageOf(d, pEntry.progress), end = EndOf(pEntry);
+            float[] from = Situations.Edges(d);
             for (int k = 0; k < Situations.StageCount; k++)
             {
                 bool now = k == stage && end == 0;
@@ -302,7 +303,9 @@ namespace DiplomacyOverhaul
             {
                 SituationPick[] picks = d.stages[k];
                 if (picks == null) continue;
-                float cx = RX + 6f + inner * from[k] / 100f, cw = inner * (from[k + 1] - from[k]) / 100f;
+                // 候选总是三等分排，进度条上的阶段宽窄不等时也不挤
+                float[] cols = Situations.ThirdEdges;
+                float cx = RX + 6f + inner * cols[k] / 100f, cw = inner * (cols[k + 1] - cols[k]) / 100f;
                 if (k > 0) Rect(_body, cx, PickY, 1f, 3f * PickRow, Line);
                 for (int j = 0; j < picks.Length && j < 3; j++) PickRow3(picks[j], picks[j] == pEntry.picks[k], cx + 5f, PickY + j * PickRow, cw - 8f);
             }
@@ -331,7 +334,7 @@ namespace DiplomacyOverhaul
         static void Bar(RectTransform pParent, Entry pEntry, float pX, float pY, float pW, float pH, float pMark)
         {
             Rect(pParent, pX, pY, pW, pH, BarBack);
-            float[] from = StageEdges();
+            float[] from = Situations.Edges(pEntry.def);
             for (int k = 0; k < Situations.StageCount; k++)
             {
                 float x0 = pW * from[k] / 100f, x1 = pW * from[k + 1] / 100f;
@@ -557,8 +560,8 @@ namespace DiplomacyOverhaul
             if (Mathf.Abs(pPer) < 0.05f) return "";
             if (pEntry.decline && pPer < 0f) return LM.Get("vd_sit_rising");
             SituationDef d = pEntry.def;
-            float[] from = StageEdges();
-            int stage = Situations.StageOf(pEntry.progress);
+            float[] from = Situations.Edges(d);
+            int stage = Situations.StageOf(d, pEntry.progress);
             if (pPer > 0f && stage < Situations.StageCount - 1)
                 return LM.Get(d.monthly ? "vd_sit_eta_stage_month" : "vd_sit_eta_stage").Replace("$n$", Years(from[stage + 1] - pEntry.progress, pPer)).Replace("$stage$", LM.Get(d.id + "_stage" + (stage + 1)));
             bool right = pPer > 0f;
@@ -576,8 +579,6 @@ namespace DiplomacyOverhaul
 
         // 走到哪一头：右头 1，左头 -1，进行中 0
         static int EndOf(Entry pEntry) => pEntry.ended == null ? 0 : pEntry.ended.right ? 1 : -1;
-
-        static float[] StageEdges() => new[] { 0f, 33f, 67f, 100f };
 
         static Color StageColor(int pStage) => Color.Lerp(StageFrom, StageTo, pStage / (float)(Situations.StageCount - 1));
 

@@ -28,7 +28,7 @@ namespace DiplomacyOverhaul
     {
         public const string IconPath = "ui/Icons/vd_situation";
         public const int StageCount = 3;
-        const float SecondStage = 33f, ThirdStage = 67f;
+        public static readonly float[] ThirdEdges = { 0f, 33f, 67f, 100f };
         const float LeftEnd = 0f, RightEnd = 100f;
 
         public static readonly List<SituationDef> All = new List<SituationDef>();
@@ -69,7 +69,16 @@ namespace DiplomacyOverhaul
             return progress;
         }
 
-        public static int StageOf(float pProgress) => pProgress < SecondStage ? 0 : pProgress < ThirdStage ? 1 : 2;
+        // 进度条上各阶段的起点和终点
+        public static float[] Edges(SituationDef pDef) => pDef.stageEdges ?? ThirdEdges;
+
+        public static int StageOf(SituationDef pDef, float pProgress)
+        {
+            float[] edges = Edges(pDef);
+            int stage = 0;
+            while (stage < StageCount - 1 && pProgress >= edges[stage + 1]) stage++;
+            return stage;
+        }
 
         public static int Years(Kingdom pKingdom, SituationDef pDef)
         {
@@ -172,7 +181,7 @@ namespace DiplomacyOverhaul
         // 进入阶段时抽一个候选；退回时摘掉，再进入时重新抽
         static void Draw(Kingdom pKingdom, SituationDef pDef, float pProgress)
         {
-            int stage = StageOf(pProgress);
+            int stage = StageOf(pDef, pProgress);
             for (int s = 0; s < StageCount; s++)
             {
                 string key = KeyPick(pDef, s);

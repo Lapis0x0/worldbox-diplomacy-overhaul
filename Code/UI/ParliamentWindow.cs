@@ -179,7 +179,7 @@ namespace DiplomacyOverhaul
                 foreach (SituationDef d in Situations.All)
                 {
                     if (!Situations.IsActive(k, d)) continue;
-                    int stage = Situations.StageOf(Situations.Progress(k, d));
+                    int stage = Situations.StageOf(d, Situations.Progress(k, d));
                     lines.Add((d.id, LM.Get(d.id + "_stage" + stage), StageColors[stage]));
                 }
             }

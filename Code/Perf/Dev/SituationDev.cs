@@ -275,7 +275,7 @@ namespace DiplomacyOverhaul.Perf
                     int y = 0;
                     for (; y < MaxYears; y++)
                     {
-                        int stage = Situations.StageOf(progress);
+                        int stage = Situations.StageOf(pDef, progress);
                         float total = powers;
                         for (int s = 0; s < picks.Length; s++)
                         {
@@ -371,7 +371,7 @@ namespace DiplomacyOverhaul.Perf
                 if (!Situations.IsActive(k, d)) continue;
                 ParliamentClan by = Situations.Initiator(k, d, clans);
                 float progress = Situations.Progress(k, d);
-                Dev.Log($"  {d.id} progress={progress:F1} stage={Situations.StageOf(progress)} years={Situations.Years(k, d)} by={by?.clan.name} seats={by?.seats} outsider={by != null && !clans.Exists(c => c.Key == by.Key)} voice={by?.voice?.getName()}");
+                Dev.Log($"  {d.id} progress={progress:F1} stage={Situations.StageOf(d, progress)} years={Situations.Years(k, d)} by={by?.clan.name} seats={by?.seats} outsider={by != null && !clans.Exists(c => c.Key == by.Key)} voice={by?.voice?.getName()}");
                 if (d == Mutiny.Def)
                 {
                     k.data.get(Mutiny.KeyLeader, out long lid, -1L);

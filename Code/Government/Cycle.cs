@@ -49,10 +49,10 @@ namespace DiplomacyOverhaul
         const float CityLost = -2f, CityGained = 1f, CapitalLost = -15f;
 
         const float Start = 60f;          // 新王朝的起点
-        const float PrimeAt = 70f;        // 涨到这里进入鼎盛；衰落中涨回来就是中兴
+        internal const float PrimeAt = 70f;        // 涨到这里进入鼎盛；衰落中涨回来就是中兴
         const float DeclineBelow = 50f;
         const float StillbornBelow = 40f; // 新生期跌到这里就衰落；新生不限年数，没站稳也没垮就一直是新生
-        const float RebellionBelow = 20f;
+        internal const float RebellionBelow = 20f;
         const float RestoreMandate = 15f, RestoreDecay = 40f, RestoreScar = 5f, RestoreFailedMandate = -10f;
         const float ScarPerRebellion = 10f;
         const float DeclineLoyalty = 8f;  // 衰落期天命每低于 50 一点，城市忠诚 -8

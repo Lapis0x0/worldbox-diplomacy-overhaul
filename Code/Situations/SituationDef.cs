@@ -35,6 +35,8 @@ namespace DiplomacyOverhaul
         public string id;
         // 局势和两头结局在界面上的图标
         public string icon, leftIcon, rightIcon;
+        // 进度条上各阶段的起点和终点（0 到 100）；不填就三等分
+        public float[] stageEdges;
         // 合力为 1 时走完全程的年数；按月推进的局势是月数
         public float years = 6f;
         // 按月推进（政变这类几个月见分晓的局势），否则在国家的结算月每年推进一次
