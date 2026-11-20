@@ -12,8 +12,9 @@ namespace DiplomacyOverhaul
         public static readonly SituationDef Def = new SituationDef
         {
             id = "vd_sit_vacancy",
-            // 没有现状可守，从正中开局
+            // 没有现状可守，从正中开局；开局落在第一阶段「无主」，往登基那头走才进入角力、定局
             start = 50f,
+            stageEdges = new[] { 0f, 60f, 80f, 100f },
             icon = "ui/Icons/iconClanList",
             leftIcon = "ui/Icons/vd_gov_republic",
             rightIcon = "ui/Icons/iconKings",

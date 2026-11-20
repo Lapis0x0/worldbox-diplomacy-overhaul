@@ -12,7 +12,7 @@ namespace DiplomacyOverhaul
         public bool turn;
     }
 
-    // 大势：议会之外的因素，单位和各方的推力相同，往右头推为正。参数是局势进行了几年
+    // 大势：议会之外的因素，单位和各方的推力相同，往右头推为正。参数是局势进行了多久：按月推进的是月数，其余是年数
     public class SituationPressure
     {
         public string id;

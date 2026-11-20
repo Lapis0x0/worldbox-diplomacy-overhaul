@@ -389,12 +389,13 @@ namespace DiplomacyOverhaul.Perf
                     Actor l = World.world.units.get(lid), now = Mutiny.Leader(k);
                     Dev.Log($"    leader={l?.getName()} alive={l != null && l.isAlive()} kingdom={l?.kingdom?.data.name} captain={l != null && l.is_army_captain} army={l?.army?.countUnits()} warrior={l != null && l.isWarrior()} cityLeader={l != null && l.isCityLeader()} now={now?.getName()}");
                 }
-                if (by == null) continue;
-                SituationTally t = Situations.Tally(k, d, clans, by);
+                // 王朝衰落的明细是应得天命，total 是天命每年的变化
+                SituationTally t = d == Decline.Def ? Decline.Tally(k, clans) : by != null ? Situations.Tally(k, d, clans, by) : null;
+                if (t == null) continue;
                 foreach (var p in t.powers) Dev.Log($"    {p.clan.clan.name} seats={p.clan.seats} ruling={p.clan.ruling} attitude={p.attitude:F2} gain={p.gain:F2} favor={p.favor} push={p.push:F3}");
                 foreach (var p in t.pressures) Dev.Log($"    pressure {p.pressure.id} {p.value:F2}");
                 foreach (var p in t.picks) Dev.Log($"    pick {p.pick.id} loyalty={p.pick.loyalty} damage={p.pick.damage} push={p.value:F2}");
-                Dev.Log($"    total={t.total:F3} perYear={t.total * 100f / d.years:F1}");
+                Dev.Log(d == Decline.Def ? $"    mandatePerYear={t.total:F2}" : $"    total={t.total:F3} perYear={t.total * 100f / d.years:F1}");
                 for (int e = 0; e < 2; e++)
                 {
                     float[] odds = Situations.Odds(k, d, e == 1, by, t);

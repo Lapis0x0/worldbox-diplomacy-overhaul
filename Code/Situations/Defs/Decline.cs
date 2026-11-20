@@ -124,18 +124,59 @@ namespace DiplomacyOverhaul
         // 衰落期在应得天命之外再加的：各方的向背和抽中的候选。不进治理，不改积弊增速
         public static float Extra(Kingdom pKingdom)
         {
-            if (!Settings.ParliamentEnabled || !Safety.On(Sys.Situation)) return 0f;
-            float sum = 0f;
+            if (!Situations.Available(Def)) return 0f;
+            float sum = Picks(pKingdom, null);
             foreach (Power p in Powers(pKingdom, Parliament.Clans(pKingdom))) sum += p.value;
-            if (Situations.IsActive(pKingdom, Def))
+            return sum;
+        }
+
+        // 抽中的候选对应得天命的影响之和；给了 pTally 时逐条记进去
+        static float Picks(Kingdom pKingdom, SituationTally pTally)
+        {
+            float sum = 0f;
+            if (!Situations.IsActive(pKingdom, Def)) return sum;
+            for (int s = 0; s < Situations.StageCount; s++)
             {
-                for (int s = 0; s < Situations.StageCount; s++)
-                {
-                    SituationPick pick = Situations.Picked(pKingdom, Def, s);
-                    if (pick != null) sum += PickValue(pick, s);
-                }
+                SituationPick pick = Situations.Picked(pKingdom, Def, s);
+                if (pick == null) continue;
+                float v = PickValue(pick, s);
+                pTally?.picks.Add((pick, v));
+                sum += v;
             }
             return sum;
+        }
+
+        // 大势：应得天命的各项组成（基准不列），和王国提示里天命的明细同名
+        static readonly SituationPressure DecayRow = new SituationPressure { id = "vd_mandate_decay" }, ScarRow = new SituationPressure { id = "vd_mandate_scar" },
+            CitiesRow = new SituationPressure { id = "vd_mandate_cities" }, RulerRow = new SituationPressure { id = "vd_mandate_ruler" },
+            VassalsRow = new SituationPressure { id = "vd_mandate_vassals" }, PeopleRow = new SituationPressure { id = "vd_mandate_people" },
+            SmallLordRow = new SituationPressure { id = "vd_mandate_small_lord" };
+
+        // 和普通局势同形的明细（窗口、开发命令用）：大势是应得天命的组成，候选和各方是衰落期另加的应得天命，
+        // total 是天命这一年的变化（Cycle.Change，和每年结算同一个公式），往大叛乱走为负
+        public static SituationTally Tally(Kingdom pKingdom, List<ParliamentClan> pClans)
+        {
+            var t = new SituationTally();
+            Cycle.Governance g = Cycle.Govern(pKingdom);
+            float scar = Cycle.ScarAging(pKingdom);
+            t.pressures.Add((DecayRow, scar - Cycle.Aging(pKingdom)));
+            t.pressures.Add((ScarRow, -scar));
+            t.pressures.Add((CitiesRow, g.Cities));
+            t.pressures.Add((RulerRow, g.Ruler));
+            t.pressures.Add((VassalsRow, g.Vassals));
+            t.pressures.Add((PeopleRow, g.People));
+            t.pressures.Add((SmallLordRow, g.SmallLord));
+            float extra = Picks(pKingdom, t);
+            if (Situations.Available(Def))
+            {
+                foreach (Power p in Powers(pKingdom, pClans))
+                {
+                    t.powers.Add(new SituationPower { clan = p.clan, push = p.value, favor = p.favor });
+                    extra += p.value;
+                }
+            }
+            t.total = Cycle.Change(pKingdom, g, extra);
+            return t;
         }
     }
 }

@@ -139,7 +139,14 @@ namespace DiplomacyOverhaul
                 clans ??= Parliament.Clans(_kingdom);
                 var e = new Entry { def = d, progress = Situations.Progress(_kingdom, d), years = Situations.Elapsed(_kingdom, d) };
                 for (int s = 0; s < Situations.StageCount; s++) e.picks[s] = Situations.Picked(_kingdom, d, s);
-                if (d == Decline.Def) DeclineRows(e, clans);
+                if (d == Decline.Def)
+                {
+                    e.decline = true;
+                    e.mandate = Cycle.Mandate(_kingdom);
+                    e.progress = Decline.Position(e.mandate);
+                    e.favorTo = clans.Find(c => c.ruling);
+                    GenericRows(e, Decline.Tally(_kingdom, clans));
+                }
                 else
                 {
                     e.by = Situations.Initiator(_kingdom, d, clans);
@@ -162,58 +169,20 @@ namespace DiplomacyOverhaul
             return list;
         }
 
+        // 王朝衰落的明细是应得天命（Decline.Tally）：大势不到 0.05 的不列，各方只显示一位小数（先取整，不到 0.05 的归进观望，不写成 −0.0），
+        // 每年的变化是天命，往下走就是往右头（大叛乱）走，按眼下这一段的比例换算成进度
         static void GenericRows(Entry pEntry, SituationTally pTally)
         {
             pEntry.tally = pTally;
-            pEntry.powers = pTally.powers;
+            pEntry.powers = !pEntry.decline ? pTally.powers
+                : pTally.powers.Select(p => new SituationPower { clan = p.clan, push = Mathf.Round(p.push * 10f) / 10f, favor = p.favor }).ToList();
+            float eps = pEntry.decline ? 0.05f : Eps;
             foreach (var (p, v) in pTally.pressures)
-                if (Mathf.Abs(v) > Eps) pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, p.id), push = v, color = TrendBar, nameColor = Ink });
+                if (Mathf.Abs(v) > eps) pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, p.id), push = v, color = TrendBar, nameColor = Ink });
             foreach (var (p, v) in pTally.picks)
                 pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, p.id), push = v, color = PickGold, nameColor = Ink });
-            pEntry.per = pTally.total * 100f / pEntry.def.years;
-            pEntry.toward = pEntry.per;
-        }
-
-        // 王朝衰落：大势是应得天命的组成（基准不显示），各方是对王室的向背；每年天命向应得天命靠拢一成
-        static void DeclineRows(Entry pEntry, List<ParliamentClan> pClans)
-        {
-            pEntry.decline = true;
-            pEntry.mandate = Cycle.Mandate(_kingdom);
-            pEntry.progress = Decline.Position(pEntry.mandate);
-            Cycle.Governance g = Cycle.Govern(_kingdom);
-            float scar = Cycle.ScarAging(_kingdom);
-            void Trend(string pKey, float pValue)
-            {
-                if (Mathf.Abs(pValue) > 0.05f) pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, pKey), push = pValue, color = TrendBar, nameColor = Ink });
-            }
-            Trend("vd_mandate_decay", scar - Cycle.Aging(_kingdom));
-            Trend("vd_mandate_scar", -scar);
-            Trend("vd_mandate_cities", g.Cities);
-            Trend("vd_mandate_ruler", g.Ruler);
-            Trend("vd_mandate_vassals", g.Vassals);
-            Trend("vd_mandate_people", g.People);
-            Trend("vd_mandate_small_lord", g.SmallLord);
-            float extra = 0f;
-            for (int s = 0; s < Situations.StageCount; s++)
-            {
-                if (pEntry.picks[s] == null) continue;
-                float v = Decline.PickValue(pEntry.picks[s], s);
-                extra += v;
-                pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, pEntry.picks[s].id), push = v, color = PickGold, nameColor = Ink });
-            }
-            pEntry.favorTo = pClans.Find(c => c.ruling);
-            if (Settings.ParliamentEnabled)
-            {
-                foreach (Decline.Power p in Decline.Powers(_kingdom, pClans))
-                {
-                    // 只显示一位小数：先取整，不到 0.05 的归进观望，不写成 −0.0
-                    pEntry.powers.Add(new SituationPower { clan = p.clan, push = Mathf.Round(p.value * 10f) / 10f, favor = p.favor });
-                    extra += p.value;
-                }
-            }
-            pEntry.per = Cycle.PullRate * (Cycle.Target(_kingdom, g) + extra - pEntry.mandate);
-            // 天命往下走就是往右头（大叛乱）走，按眼下这一段的比例换算成进度
-            pEntry.toward = -pEntry.per * Decline.Slope(pEntry.mandate);
+            pEntry.per = pEntry.decline ? pTally.total : pTally.total * 100f / pEntry.def.years;
+            pEntry.toward = pEntry.decline ? -pEntry.per * Decline.Slope(pEntry.mandate) : pEntry.per;
         }
 
         static void Build()

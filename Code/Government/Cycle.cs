@@ -270,7 +270,8 @@ namespace DiplomacyOverhaul
 
         public static float Target(Kingdom pKingdom, Governance pGov) => Base + pGov.Total - Aging(pKingdom);
 
-        public const float PullRate = Pull;
+        // 天命这一年的变化：向应得天命（衰落期再加上各方和候选 pExtra，见 Decline）靠拢一成
+        public static float Change(Kingdom pKingdom, Governance pGov, float pExtra) => Pull * (Target(pKingdom, pGov) + pExtra - Mandate(pKingdom));
 
         // 进入某个阶段的人工设定（特质编辑器、神力、旧存档）：天命设到 pMandate，
         // 积弊设到让应得天命正好等于它，好像王朝本来就走到了这一步；沉疴不动
@@ -411,10 +412,9 @@ namespace DiplomacyOverhaul
             Governance gov = Govern(pKingdom);
             float decayRate = Mathf.Clamp(1f - gov.Total / DecayScale, DecayMin, DecayMax);
             SetDecay(pKingdom, Decay(pKingdom) + decayRate);
-            float m = Mandate(pKingdom);
             // 衰落期另加各方对王室的向背和局势抽中的候选（见 Decline），只影响天命，不进治理
             float extra = phase == CyclePhase.Decline ? Decline.Extra(pKingdom) : 0f;
-            m += Pull * (Target(pKingdom, gov) + extra - m);
+            float m = Mandate(pKingdom) + Change(pKingdom, gov, extra);
             SetMandate(pKingdom, m);
 
             switch (phase)
