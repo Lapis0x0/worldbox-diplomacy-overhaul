@@ -323,7 +323,6 @@ namespace DiplomacyOverhaul.Perf
             {
                 case "vd_sit_mutiny_army": return _simArmy * (_simUnpaid ? Mathf.Min(1f, SimDisarray / (1f - SimDisarray)) : 1f);
                 case "vd_sit_mutiny_chaos": return _simUnpaid ? 0f : Mutiny.ChaosPressure;
-                case "vd_sit_regency_weak": return SimWeakness;
                 case "vd_sit_crown_prime": return Coronation.PrimePressure;
                 case "vd_sit_crown_fade": return 0f;
                 default: return p.value(k, pYears);

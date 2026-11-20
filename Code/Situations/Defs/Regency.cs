@@ -9,12 +9,12 @@ namespace DiplomacyOverhaul
     public static class Regency
     {
         // 大势：君主渐稳，在位越久越坐得稳，不封顶
-        const float SteadyPerYear = -0.03f;
+        const float SteadyPerYear = -0.04f;
         // 大势：野心勃勃，宗室摄政有野心（同乱世夺权的标准）时往权柄易手推。
         // 外姓权臣靠的是家族的议席，已经算在推力里；摄政的家族就是王室、不出推力，野心是他觊觎王位的底气
         const float AmbitionPressure = 0.3f;
-        // 处境：外姓权臣专权时宗室反对
-        const float CadetLean = 1f;
+        // 处境：外姓权臣专权时宗室分支站君主，血统在那里；尚武的更看重实力，偏向权臣
+        const float CadetLean = 1f, MartialLean = 0.3f;
         // 权臣（actor id）和他辅佐的君主（actor id），开局前定下
         internal const string KeyRegent = "vd_sit_regency_regent";
         internal const string KeyKing = "vd_sit_regency_king";
@@ -29,10 +29,10 @@ namespace DiplomacyOverhaul
             icon = "ui/Icons/iconClanList",
             leftIcon = "ui/Icons/iconKings",
             rightIcon = "ui/Icons/iconKingdomList",
-            axis = PolicyAxis.Central,
-            // 和政治轴不相干：各家只看处境和对王室的好感
-            load = 0f,
-            lean = (k, pc) => pc.cadet && !RegentIsRoyal(k) ? -CadetLean : 0f,
+            // 保守的家族维护正统君主，激进的认实力不认名分
+            axis = PolicyAxis.Radical,
+            load = 1f,
+            lean = Lean,
             initiator = FindInitiator,
             outsider = true,
             againstCrown = true,
@@ -54,7 +54,6 @@ namespace DiplomacyOverhaul
             },
             pressures =
             {
-                new SituationPressure { id = "vd_sit_regency_weak", value = (k, years) => Weakness(k.king) },
                 new SituationPressure { id = "vd_sit_regency_ambition", value = (k, years) => RegentIsRoyal(k) && Regent(k) is Actor r && Regime.Ambitious(r) ? AmbitionPressure : 0f },
                 new SituationPressure { id = "vd_sit_regency_steady", value = (k, years) => SteadyPerYear * years }
             },
@@ -80,6 +79,13 @@ namespace DiplomacyOverhaul
                 }
             }
         };
+
+        static float Lean(Kingdom pKingdom, ParliamentClan pClan)
+        {
+            float lean = Parliament.Personality(pClan.voice) == "militarist" ? MartialLean : 0f;
+            if (pClan.cadet && !RegentIsRoyal(pKingdom)) lean -= CadetLean;
+            return lean;
+        }
 
         // 庸弱程度：(29 − 管理 − 智力) ÷ 29，限制在 0 到 1；没有君主时是 0
         internal static float Weakness(Actor pRuler)
