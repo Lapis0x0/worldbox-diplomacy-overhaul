@@ -77,15 +77,4 @@ namespace DiplomacyOverhaul
             catch (Exception e) { Safety.Fail(Sys.Government, "城主任职标记", e); }
         }
     }
-
-    [HarmonyPatch(typeof(Kingdom), nameof(Kingdom.setKing))]
-    static class Patch_LineageKing
-    {
-        static void Postfix(Actor pActor)
-        {
-            if (!Safety.On(Sys.Government)) return;
-            try { Lineage.MarkOffice(pActor); }
-            catch (Exception e) { Safety.Fail(Sys.Government, "国王任职标记", e); }
-        }
-    }
 }

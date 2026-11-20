@@ -94,6 +94,15 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "regency":
+                {
+                    // 直接开王权旁落（不掷骰子、不看是不是新君），列出权臣的人选
+                    Kingdom k = Dev.FindKingdom(a[2]);
+                    Actor regent = Regency.PickRegent(k, Parliament.Clans(k));
+                    Dev.Log($"@sit regency {k.data.name} king={k.king?.getName()} ability={(k.king != null ? k.king.stewardship + k.king.intelligence : 0)} weakness={Regency.Weakness(k.king):F2} regent={regent?.getName()} renown={regent?.renown} clan={regent?.clan?.name} open={Regency.TryOpen(k, true)} royal={Regency.RegentIsRoyal(k)}");
+                    Show(k);
+                    break;
+                }
                 case "arrears":
                 {
                     // 把禁军的积欠设成几年的饷（可以是小数），涣散程度跟着重算
@@ -194,6 +203,20 @@ namespace DiplomacyOverhaul.Perf
                     if (pDef == Vacancy.Def) k.king = null;
                     clans = Parliament.Clans(k);
                     if (clans.Count < 2) continue;
+                    // 王权旁落：只算君主国，按开局时挑权臣，假定新君管理 + 智力是 22
+                    if (pDef == Regency.Def)
+                    {
+                        if (Government.IsRepublic(k)) continue;
+                        Actor regent = Regency.PickRegent(k, clans);
+                        if (regent == null || !regent.hasClan()) continue;
+                        k.data.set(Regency.KeyRegent, regent.data.id);
+                        k.data.set(Regency.KeyKing, king != null ? king.data.id : -1L);
+                        k.data.set(Regency.KeyRoyal, regent.clan.id == k.data.royal_clan_id);
+                        ParliamentClan rby = clans.Find(c => c.clan == regent.clan) ?? Parliament.Outsider(k, regent.clan, clans);
+                        if (rby == null) continue;
+                        float[] lo = Norm(new[] { 1f - SimWeakness, Situations.OpposeShare(Situations.Tally(k, pDef, clans, rby)) });
+                        Dev.Log($"  {k.data.name} regent={regent.getName()} royal={Regency.RegentIsRoyal(k)} ambitious={Regime.Ambitious(regent)} odds left(还政/罢黜)={string.Join("/", lo.Select(o => Mathf.RoundToInt(o * 100)))}");
+                    }
                     // 兵变：和开局时一样，没有家族的将领先自立门户（会留在世界里，测完重新读档）
                     Actor strong = pDef == Mutiny.Def && !pEach ? Mutiny.Strongman(k, clans, _simUnpaid) : null;
                     if (pDef == Mutiny.Def && !pEach && strong == null) continue;
@@ -273,6 +296,8 @@ namespace DiplomacyOverhaul.Perf
         }
 
         static float _simArmy;
+        // 王权旁落的推演假定新君管理 + 智力是 22
+        const float SimWeakness = (Cycle.RulerMid - 22f) / Cycle.RulerMid;
         static bool _simUnpaid;
         const float SimDisarray = 0.5f;
 
@@ -280,7 +305,7 @@ namespace DiplomacyOverhaul.Perf
         static float[][] SimOdds(Kingdom k, ParliamentClan by, SituationTally t, float share)
         {
             float d = _simUnpaid ? SimDisarray : 0f, chaos = _simUnpaid ? 0f : Mutiny.ChaosPressure;
-            float[] left = { 1f - d, Mutiny.OpposeShare(t), d };
+            float[] left = { 1f - d, Situations.OpposeShare(t), d };
             float[] right = { share + chaos, Mutiny.CanDepose(k) ? Mutiny.Grievance(t, by) : 0f, d };
             return new[] { Norm(left), Norm(right) };
         }
@@ -298,6 +323,7 @@ namespace DiplomacyOverhaul.Perf
             {
                 case "vd_sit_mutiny_army": return _simArmy * (_simUnpaid ? Mathf.Min(1f, SimDisarray / (1f - SimDisarray)) : 1f);
                 case "vd_sit_mutiny_chaos": return _simUnpaid ? 0f : Mutiny.ChaosPressure;
+                case "vd_sit_regency_weak": return SimWeakness;
                 case "vd_sit_crown_prime": return Coronation.PrimePressure;
                 case "vd_sit_crown_fade": return 0f;
                 default: return p.value(k, pYears);

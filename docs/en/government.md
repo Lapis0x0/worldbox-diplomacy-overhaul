@@ -114,6 +114,17 @@ When the captain seizes the throne, his or her character decides what follows:
 
 When no captain can lead it, or the parliament is off, the captain with the most kills in a collapsing kingdom takes power at once, and unpaid troops do not cause a mutiny crisis.
 
+### Power Behind the Throne
+
+When a monarchy gets a new ruler (other than at its founding), the weaker the new ruler (the lower their stewardship plus intelligence), the more likely a powerful figure takes over the court: one roll is made by how weak the ruler is. An ordinary ruler never faces it; the weakest tenth of new rulers have about a one-in-four chance. The power behind the throne is either the eldest adult of the royal house or the head of the largest clan outside it, whichever has more renown: a royal one rules as regent, an outsider holds the reins as an overmighty lord. The royal house is the one sidelined, the clans take sides by how they feel about it, and the royal branches oppose an outsider. The weaker the ruler, the stronger the regent's hand. An ambitious royal regent is far more likely to reach for the crown, while one without ambition usually hands power back. The longer the ruler reigns, the firmer their footing. The situation advances yearly and often takes over a decade to settle.
+
+| Personal Rule | Power Changes Hands |
+|---|---|
+| Power Returned: the regent steps down with grace. More likely the more capable the ruler | Usurpation: the royal regent deposes the ruler and takes the throne; the royal house stays the same |
+| Dismissal: the ruler dismisses the regent, and an outsider's clan resents the royal house. More likely the stronger the clans against the regent | The Crown Changes Hands: the outsider takes the throne and his or her clan becomes the royal house, founding a new dynasty |
+
+If the ruler being overshadowed dies, or the regent dies or leaves the kingdom, the situation ends.
+
 ## Changing Government by Hand
 
 In the vanilla trait editor, give the kingdom a different government trait. Choosing a republic type makes it a republic; choosing Kingdom or Empire makes it a monarchy. The title shown still follows the number of cities: a monarchy with only 2 cities that is given Empire still shows as Kingdom. Giving a vassal Province or Hereditary Province makes it a province; choosing Duchy or Dominion takes it out of province status.

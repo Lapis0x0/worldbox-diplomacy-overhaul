@@ -44,7 +44,7 @@ namespace DiplomacyOverhaul
             leftOutcomes = new[]
             {
                 new SituationOutcome { id = "vd_sit_mutiny_calm", score = (k, by, t) => 1f - Guard.Disarray(k), apply = Calm },
-                new SituationOutcome { id = "vd_sit_mutiny_crush", score = (k, by, t) => OpposeShare(t), apply = Crush },
+                new SituationOutcome { id = "vd_sit_mutiny_crush", score = (k, by, t) => Situations.OpposeShare(t), apply = Crush },
                 new SituationOutcome { id = "vd_sit_mutiny_scatter", score = (k, by, t) => Guard.Disarray(k), apply = Scatter }
             },
             rightOutcomes = new[]
@@ -169,19 +169,6 @@ namespace DiplomacyOverhaul
             if (pLeader == null || !Regime.IsGeneral(pLeader)) return 0f;
             int total = pKingdom.countTotalWarriors();
             return total > 0 ? Mathf.Clamp01((float)pLeader.army.countUnits() / total) : 0f;
-        }
-
-        // 弹压的分数：反对兵变的各家的推力占全部推力的比例
-        internal static float OpposeShare(SituationTally pTally)
-        {
-            if (pTally == null) return 0f;
-            float against = 0f, all = 0f;
-            foreach (SituationPower p in pTally.powers)
-            {
-                all += Mathf.Abs(p.push);
-                if (p.push < 0f) against -= p.push;
-            }
-            return all > 0f ? against / all : 0f;
         }
 
         // 废立的分数：支持兵变的各家（不算发起方）对王室的恶感，按议席平均；没有人支持时是 0

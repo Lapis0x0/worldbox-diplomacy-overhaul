@@ -34,6 +34,25 @@ namespace DiplomacyOverhaul
         }
     }
 
+    // 新君即位（原版继位、开国，模组的选举、篡位等也走这里）
+    [HarmonyPatch(typeof(Kingdom), nameof(Kingdom.setKing))]
+    static class Hook_SetKing
+    {
+        static void Postfix(Kingdom __instance, Actor pActor, bool pFromLoad)
+        {
+            if (Safety.On(Sys.Government))
+            {
+                try { Lineage.MarkOffice(pActor); }
+                catch (Exception e) { Safety.Fail(Sys.Government, "国王任职标记", e); }
+            }
+            if (!pFromLoad && Safety.On(Sys.Situation))
+            {
+                try { Regency.OnAccession(__instance, pActor); }
+                catch (Exception e) { Safety.Fail(Sys.Situation, "新君登基", e); }
+            }
+        }
+    }
+
     // 城市换国家（被攻占、叛乱、神力转让……）
     [HarmonyPatch(typeof(City), nameof(City.joinAnotherKingdom))]
     static class Hook_CityChanged

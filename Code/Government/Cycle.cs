@@ -38,7 +38,9 @@ namespace DiplomacyOverhaul
         const float DecayScale = 25f;
         const float DecayMin = 0.3f, DecayMax = 2f;
         const float LoyalWeight = 40f, LoyalMid = 0.85f;
-        const float RulerWeight = 0.6f, RulerMid = 29f, RulerCap = 10f, NoRuler = -10f;
+        // RulerMid：管理 + 智力的「平常君主」，王权旁落的庸弱程度也以它为准
+        internal const float RulerMid = 29f;
+        const float RulerWeight = 0.6f, RulerCap = 10f, NoRuler = -10f;
         const float VassalWeight = 0.2f, VassalMid = 50f;
         const float PeopleWeight = 40f, PeopleMid = 0.33f, PeopleCap = 5f;
         const float SmallLord = 5f;       // 宗主势小：自己不到 6 座城的宗主，每少一座城

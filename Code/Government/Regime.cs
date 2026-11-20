@@ -35,7 +35,7 @@ namespace DiplomacyOverhaul
 
         static bool Has(Culture pCulture, string pTrait) => pCulture != null && pCulture.hasTrait(pTrait);
 
-        static bool Ambitious(Actor pActor)
+        internal static bool Ambitious(Actor pActor)
         {
             foreach (string t in AmbitiousTraits)
             {
@@ -293,6 +293,7 @@ namespace DiplomacyOverhaul
                 if (Government.IsRepublic(k)) UpdateTerm(k);
                 if (!Enabled) continue;
                 if (TryMutiny(k)) continue;
+                Regency.TryOpen(k);
                 TryCrown(k);
             }
         }
@@ -375,32 +376,46 @@ namespace DiplomacyOverhaul
         // 已经是将领当政，没有野心的将领不会再起事
         internal static bool WillRise(Kingdom pKingdom, Actor pGeneral) => Ambitious(pGeneral) || !Government.IsMilitary(pKingdom);
 
+        // 他取代现任君主、开创新王朝：大类变成君主制，他的家族成为王室（没有就新建），王朝周期回到新生
+        internal static void FoundDynasty(Kingdom pKingdom, Actor pActor)
+        {
+            if (pKingdom.hasKing()) pKingdom.removeKing();
+            Government.SetForm(pKingdom, GovForm.Monarchy);
+            pKingdom.data.royal_clan_id = -1L;
+            EnsureClan(pActor);
+            MakeRuler(pKingdom, pActor);
+            ClearTerm(pKingdom);
+            Cycle.NewDynasty(pKingdom);
+            AfterChange(pKingdom);
+        }
+
+        // 同一个王室里换人当君主：现任下台，他即位
+        internal static void Supplant(Kingdom pKingdom, Actor pActor)
+        {
+            if (pKingdom.hasKing()) pKingdom.removeKing();
+            MakeRuler(pKingdom, pActor);
+            ClearTerm(pKingdom);
+            AfterChange(pKingdom);
+        }
+
         // 有野心的自立为王、开创新王朝，没有野心的成立军事共和国
         internal static void Usurp(Kingdom pKingdom, Actor pGeneral)
         {
-            bool ambitious = Ambitious(pGeneral);
-            if (pKingdom.hasKing()) pKingdom.removeKing();
-            if (ambitious)
+            if (Ambitious(pGeneral))
             {
-                Government.SetForm(pKingdom, GovForm.Monarchy);
-                pKingdom.data.royal_clan_id = -1L;
-                EnsureClan(pGeneral);
-                MakeRuler(pKingdom, pGeneral);
-                ClearTerm(pKingdom);
-                Cycle.NewDynasty(pKingdom);
+                FoundDynasty(pKingdom, pGeneral);
                 WorldLogs.Add(WorldLogs.Usurped, Location(pKingdom), pGeneral,
                     new[] { pGeneral.getName(), pKingdom.data.name }, new[] { pKingdom, pKingdom });
+                return;
             }
-            else
-            {
-                Government.SetForm(pKingdom, GovForm.Republic, true);
-                ClearTerm(pKingdom);
-                // 没有家族的人发起不了密谋（原版 try_new_plot 的条件）
-                EnsureClan(pGeneral);
-                MakeRuler(pKingdom, pGeneral);
-                WorldLogs.Add(WorldLogs.Junta, Location(pKingdom), pGeneral,
-                    new[] { pKingdom.data.name, pGeneral.getName() }, new[] { pKingdom, pKingdom });
-            }
+            if (pKingdom.hasKing()) pKingdom.removeKing();
+            Government.SetForm(pKingdom, GovForm.Republic, true);
+            ClearTerm(pKingdom);
+            // 没有家族的人发起不了密谋（原版 try_new_plot 的条件）
+            EnsureClan(pGeneral);
+            MakeRuler(pKingdom, pGeneral);
+            WorldLogs.Add(WorldLogs.Junta, Location(pKingdom), pGeneral,
+                new[] { pKingdom.data.name, pGeneral.getName() }, new[] { pKingdom, pKingdom });
             AfterChange(pKingdom);
         }
 

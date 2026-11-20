@@ -37,6 +37,12 @@ namespace DiplomacyOverhaul
         public const string MutinyScattered = "vd_log_mutiny_scattered"; // $ruler$ 的兵马在 $kingdom$ 一哄而散
         public const string MutinyDeposed = "vd_log_mutiny_deposed";     // $ruler$ 举兵废黜了 $kingdom$ 的 $king$
         public const string MutinyLooted = "vd_log_mutiny_looted";       // $ruler$ 举兵洗劫了 $kingdom$ 的都城
+        public const string RegencyRegent = "vd_log_regency_regent";       // $kingdom$ 新君庸弱，宗室 $ruler$ 摄政
+        public const string RegencyMinister = "vd_log_regency_minister";   // $kingdom$ 新君庸弱，$ruler$ 大权独揽
+        public const string RegencyReturned = "vd_log_regency_returned";   // $ruler$ 还政于 $kingdom$ 的君主
+        public const string RegencyDismissed = "vd_log_regency_dismissed"; // $kingdom$ 的君主罢黜了 $ruler$
+        public const string RegencyUsurped = "vd_log_regency_usurped";     // $ruler$ 废黜 $king$，自立为 $kingdom$ 之主
+        public const string RegencyCrowned = "vd_log_regency_crowned";     // $ruler$ 取代 $king$，在 $kingdom$ 开创新王朝
         public const string CrownBegan = "vd_log_crown_began";           // $ruler$ 权势日盛，$kingdom$ 帝制之议渐起
         public const string CrownFailed = "vd_log_crown_failed";         // $kingdom$ 保住了共和，$ruler$ 称帝未成
         public const string VacancyBegan = "vd_log_vacancy_began";       // $kingdom$ 王室绝嗣，$ruler$ 觊觎王位
@@ -82,6 +88,12 @@ namespace DiplomacyOverhaul
             Register(MutinyScattered, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(MutinyDeposed, "ui/Icons/iconKings", Toolbox.color_log_warning, "$ruler$", "$kingdom$", "$king$");
             Register(MutinyLooted, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
+            Register(RegencyRegent, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(RegencyMinister, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(RegencyReturned, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(RegencyDismissed, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
+            Register(RegencyUsurped, "ui/Icons/iconKings", Toolbox.color_log_warning, "$ruler$", "$kingdom$", "$king$");
+            Register(RegencyCrowned, "ui/Icons/vd_cycle_renewal", Toolbox.color_log_warning, "$ruler$", "$kingdom$", "$king$");
             Register(CrownBegan, Situations.IconPath, Toolbox.color_log_warning, "$ruler$", "$kingdom$");
             Register(CrownFailed, Situations.IconPath, Toolbox.color_log_neutral, "$ruler$", "$kingdom$");
             Register(VacancyBegan, Situations.IconPath, Toolbox.color_log_warning, "$kingdom$", "$ruler$");

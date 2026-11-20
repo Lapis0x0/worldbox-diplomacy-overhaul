@@ -42,7 +42,7 @@ Open them with the settings button at the far left of the tab. Each system has o
 | Domestic | Parliament and policies | Clans vote on the kingdom's policies by seats; when off, policies have no effect and tribute follows the vanilla tribute traits |
 | | Dynastic cycle | Large kingdoms go through Renewal, Prime, Decline, and Collapse |
 | | Government follows power | The government changes with strength and vassal status; governments chosen by hand are kept |
-| | Historic upheavals | Extinct royal lines, republics crowning emperors, mutinies |
+| | Historic upheavals | Extinct royal lines, republics crowning emperors, mutinies, overmighty regents |
 | Military | Military overhaul | The Guard, national command, orders and box selection, sieges, armament, and pay; when off, armies behave as in vanilla and the army command powers are removed |
 | Display | Government in names | For example, Duchy of Coimbra |
 | | Policy notices | A notice at the top left when a kingdom enacts a policy; when off, it is recorded only in world history |

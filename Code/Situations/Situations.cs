@@ -38,6 +38,7 @@ namespace DiplomacyOverhaul
             All.Clear();
             All.Add(Decline.Def);
             All.Add(Mutiny.Def);
+            All.Add(Regency.Def);
             All.Add(Coronation.Def);
             All.Add(Vacancy.Def);
             Core.Upsert(AssetManager.loyalty_library, new LoyaltyAsset
@@ -227,6 +228,19 @@ namespace DiplomacyOverhaul
             }
             for (int i = 0; i < odds.Length; i++) odds[i] /= sum;
             return odds;
+        }
+
+        // 结局分数常用的一项：反对发起方的各家推力占全部推力的比例
+        public static float OpposeShare(SituationTally pTally)
+        {
+            if (pTally == null) return 0f;
+            float against = 0f, all = 0f;
+            foreach (SituationPower p in pTally.powers)
+            {
+                all += Mathf.Abs(p.push);
+                if (p.push < 0f) against -= p.push;
+            }
+            return all > 0f ? against / all : 0f;
         }
 
         static int Choose(float[] pOdds)
