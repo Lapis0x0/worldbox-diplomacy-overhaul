@@ -6,5 +6,8 @@
   "GUID": "lapis0x0_performance_overhaul",
   "targetGameBuild": 719,
   "UsePublicizedAssembly": true,
-  "iconPath": "preview.png"
+  "iconPath": "preview.png",
+  "OptionalDependencies": [
+    "lapis0x0_diplomacy_overhaul"
+  ]
 }

@@ -15,7 +15,7 @@
 同一份优化也单独发布成「性能大修」（GUID `lapis0x0_performance_overhaul`），不装外交大修也能用：
 
 - `Code/Perf/` 顶层的文件两边共用，只能依赖 `PerfHost`（总开关、日志、模组名）和 `SafeBy`。外交大修的 `PerfHost` 在 `Code/Core/PerfHost.cs`；独立模组的外壳在 `packages/performance-overhaul/`，自带 `PerfHost`、`SafeBy`、设置和语言文件。开发工具 `Code/Perf/Dev/` 只在外交大修里
-- 独立模组在所有模组加载完后（`Init`）检查外交大修有没有加载，加载了就不打补丁，由外交大修那份运行
+- 独立模组的 `mod.json` 把外交大修列为可选依赖，两个都装时 NML 先加载外交大修；独立模组在 `OnModLoad` 里检查到它（UID 是 GUID 转大写）就不挂补丁，由外交大修那份运行。补丁必须在 `OnModLoad` 里挂：等到 `Init` 再挂，arm64 原生版会卡死
 - 外壳放在 `packages/` 下，是因为本地开发时整个仓库就是外交大修的模组目录，NML 会编译目录里所有 `.cs`，但跳过名为 `packages` 的目录
 - `tools/package-perf.sh` 打发布包，把外壳和 `Code/Perf/*.cs` 拼进 `bin/dist/PerformanceOverhaul-v<版本>.zip`；`dotnet build packages/performance-overhaul/PerformanceOverhaul.csproj` 做编译检查
 - 性能大修单独发版（tag `perf-v<版本>`，`tools/release-perf.sh`、`tools/workshop.sh perf`），只在 `Code/Perf/*.cs` 或外壳改过时才发；流程见 release skill 的「性能大修」一节

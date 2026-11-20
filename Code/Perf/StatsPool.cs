@@ -84,7 +84,7 @@ namespace DiplomacyOverhaul.Perf
                 }
                 else yield return ins;
             }
-            if (replaced != 1) UnityEngine.Debug.LogError($"[外交大修] BaseStats.set 里找到 {replaced} 处 new BaseStatsContainer，预期 1 处");
+            if (replaced != 1) UnityEngine.Debug.LogError($"[{PerfHost.Name}] BaseStats.set 里找到 {replaced} 处 new BaseStatsContainer，预期 1 处");
         }
     }
 }
