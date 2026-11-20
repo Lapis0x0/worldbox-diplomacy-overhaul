@@ -1,0 +1,39 @@
+# 推送 perf-v* tag 时：打性能大修的发布包，从它的 CHANGELOG.md 取这个版本的说明，建 GitHub Release
+name: Release Performance Overhaul
+
+on:
+  push:
+    tags: ["perf-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: tag 与 mod.json 版本一致
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("packages/performance-overhaul/mod.json", encoding="utf-8"))["version"])')
+          [ "${GITHUB_REF_NAME}" = "perf-v${version}" ] || { echo "tag ${GITHUB_REF_NAME} 与 mod.json 版本 ${version} 不一致"; exit 1; }
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+
+      - name: 打包
+        run: tools/package-perf.sh dist
+
+      - name: 更新说明
+        run: |
+          tools/release-notes.sh "$VERSION" packages/performance-overhaul/CHANGELOG.md > notes.md
+          [ -s notes.md ] || { echo "CHANGELOG.md 里没有 ${VERSION} 的说明"; exit 1; }
+          item=$(tr -d '[:space:]' < packages/performance-overhaul/workshop_id 2>/dev/null || true)
+          if [ -n "$item" ]; then
+            printf '\n---\n\n**安装 Install**：创意工坊订阅 / Subscribe on the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=%s ；或下载下面的压缩包，解压到 worldbox/Mods/ / or extract the zip below into worldbox/Mods/。已装外交大修的不用装 / Not needed with Diplomacy Overhaul, which includes it.\n' "$item" >> notes.md
+          fi
+
+      - name: 建 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # 不抢「最新版本」的位置，那个留给外交大修
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "性能大修 Performance Overhaul ${VERSION}" --notes-file notes.md --latest=false

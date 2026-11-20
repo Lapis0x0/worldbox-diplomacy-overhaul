@@ -37,6 +37,14 @@ build=$(dotnet build -nologo -v q 2>&1 || true)
 echo "$build" | grep -q "Build succeeded" || { echo "$build" | grep -E " error " >&2; fail "编译没通过"; }
 echo "✓ 编译"
 
+# 性能大修单独发版（tools/release-perf.sh），这里只提醒：上次发它以来共用的优化代码改过，它也该发一版
+last_perf=$(git tag -l 'perf-v*' --sort=-v:refname | head -1)
+if [ -z "$last_perf" ]; then
+  echo "! 性能大修还没发过版"
+elif ! git diff --quiet "$last_perf" HEAD -- ':(glob)Code/Perf/*.cs' packages/performance-overhaul; then
+  echo "! 自 $last_perf 以来性能大修的代码有改动，外交大修发完后用 tools/release-perf.sh 给它也发一版"
+fi
+
 zip=$(tools/package.sh)
 echo "✓ 发布包 $zip"
 unzip -l "$zip" | tail -1

@@ -18,7 +18,7 @@
 - 独立模组在所有模组加载完后（`Init`）检查外交大修有没有加载，加载了就不打补丁，由外交大修那份运行
 - 外壳放在 `packages/` 下，是因为本地开发时整个仓库就是外交大修的模组目录，NML 会编译目录里所有 `.cs`，但跳过名为 `packages` 的目录
 - `tools/package-perf.sh` 打发布包，把外壳和 `Code/Perf/*.cs` 拼进 `bin/dist/PerformanceOverhaul-v<版本>.zip`；`dotnet build packages/performance-overhaul/PerformanceOverhaul.csproj` 做编译检查
-- 优化改了，外交大修和独立模组一起发版
+- 性能大修单独发版（tag `perf-v<版本>`，`tools/release-perf.sh`、`tools/workshop.sh perf`），只在 `Code/Perf/*.cs` 或外壳改过时才发；流程见 release skill 的「性能大修」一节
 
 ## 各项优化
 
