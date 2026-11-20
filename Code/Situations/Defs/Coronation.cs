@@ -8,9 +8,9 @@ namespace DiplomacyOverhaul
         // 处境：执政家族想成为王室；其余按激进-保守，激进的维护共和、保守的拥护帝制（载荷 -1）
         const float BecomeRoyal = 1f;
         // 大势：国运强盛时帝制之议有底气，走出鼎盛后往回拉
-        const float PrimePressure = 0.08f, FadePressure = -0.2f;
+        internal const float PrimePressure = 0.12f; const float FadePressure = -0.2f;
         // 大势：议而不决，拖得越久越难成，不封顶
-        const float DoubtPerYear = 0.05f;
+        const float DoubtPerYear = 0.035f;
 
         public static readonly SituationDef Def = new SituationDef
         {

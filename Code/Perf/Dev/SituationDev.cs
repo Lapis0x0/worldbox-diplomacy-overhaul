@@ -130,7 +130,7 @@ namespace DiplomacyOverhaul.Perf
         }
 
         // 每个国家按眼下的议会开局推演 pRuns 次：各方推力取开局时的值不变，大势按开局的情形，候选随机抽。
-        // 王位空悬按无王时的议会算；夺权假定一直在崩溃期（没有家族的将领会当场建族），称帝假定一直在鼎盛期
+        // 王位空悬按无王时的议会算；夺权假定一直在崩溃期（没有家族的将领会当场建族），称帝只算够格的大国、假定一直在鼎盛期
         static void Sim(SituationDef pDef, int pRuns, bool pEach)
         {
             const int MaxYears = 60;
@@ -139,6 +139,8 @@ namespace DiplomacyOverhaul.Perf
             foreach (Kingdom k in World.world.kingdoms.ToList())
             {
                 if (!k.isAlive() || !k.isCiv() || k.countCities() < 2) continue;
+                // 称帝只发生在大国（连同附庸 6 座城以上、不是附庸）
+                if (pDef == Coronation.Def && !Cycle.IsEmpire(k)) continue;
                 Actor king = k.king;
                 var cases = new List<(string by, float powers, float army)>();
                 List<ParliamentClan> clans;
@@ -213,7 +215,7 @@ namespace DiplomacyOverhaul.Perf
                 case "vd_sit_coup_army": return _simArmy;
                 case "vd_sit_coup_chaos": return 0.2f;
                 case "vd_sit_coup_calm": return 0f;
-                case "vd_sit_crown_prime": return 0.08f;
+                case "vd_sit_crown_prime": return Coronation.PrimePressure;
                 case "vd_sit_crown_fade": return 0f;
                 default: return p.value(k, pYears);
             }
