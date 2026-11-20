@@ -30,6 +30,7 @@ namespace DiplomacyOverhaul.Perf
     //   probe <类型.方法> ...     detail 测量时额外计时这些方法（同名重载都算），不带参数则清空
     //   shot <名字>              截图到 bin/dev/shots/<名字>.png
     //   fav <items|units> <数量>  随机设一些收藏（走玩家切换收藏的同一个方法）
+    //   hudspam <每秒条数> <秒>  往左上角事件提示里塞消息，结束时打印同时存活的条目数；不阻塞，可以接着 measure
     //   uitree <窗口 id|res:资源路径> [深度]   打印窗口或预制件的节点层级：名字、是否激活、组件、位置和尺寸、文字
     //   uihit <窗口 id> <节点路径>   在节点中心做一次界面点击检测，列出挡在那里的东西
     //   uiclick <窗口 id> <节点路径> 对节点发一次点击，打印点完之后开着的窗口
@@ -171,6 +172,7 @@ namespace DiplomacyOverhaul.Perf
                 _resumed++;
             }
             Measure.Tick();
+            HudDev.Tick();
             _poll += Time.unscaledDeltaTime;
             if (_poll >= 0.5f)
             {
@@ -306,6 +308,7 @@ namespace DiplomacyOverhaul.Perf
                     Measure.Begin(a[1], F(a[2]), a.Skip(3).Contains("detail"), a.Skip(3).Contains("mono"));
                     _blocker = () => !Measure.Running;
                     break;
+                case "hudspam": HudDev.Start(F(a[1]), F(a[2])); break;
                 case "shot":
                     string shots = Path.Combine(_dir, "shots");
                     Directory.CreateDirectory(shots);

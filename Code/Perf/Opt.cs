@@ -34,6 +34,9 @@ namespace DiplomacyOverhaul.Perf
         // 区块建筑名单只重新登记有变动的区块里的建筑，不再每次遍历全部建筑（顺序与原版相同）
         public static bool sim_zones_buildings = true;
 
+        // 左上角事件提示正在滑出的条目最多留 3 条，不再随消息频率积压
+        public static bool history_hud_cap = true;
+
         public static IEnumerable<FieldInfo> All()
         {
             foreach (FieldInfo field in typeof(Opt).GetFields(BindingFlags.Public | BindingFlags.Static))
