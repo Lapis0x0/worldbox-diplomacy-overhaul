@@ -167,9 +167,9 @@ namespace DiplomacyOverhaul
             pEntry.tally = pTally;
             pEntry.powers = pTally.powers;
             foreach (var (p, v) in pTally.pressures)
-                if (Mathf.Abs(v) > Eps) pEntry.trends.Add(new Row { name = LM.Get(p.id), push = v, color = TrendBar, nameColor = Ink });
+                if (Mathf.Abs(v) > Eps) pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, p.id), push = v, color = TrendBar, nameColor = Ink });
             foreach (var (p, v) in pTally.picks)
-                pEntry.trends.Add(new Row { name = LM.Get(p.id), push = v, color = PickGold, nameColor = Ink });
+                pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, p.id), push = v, color = PickGold, nameColor = Ink });
             pEntry.per = pTally.total * 100f / pEntry.def.years;
             pEntry.toward = pEntry.per;
         }
@@ -184,7 +184,7 @@ namespace DiplomacyOverhaul
             float scar = Cycle.ScarAging(_kingdom);
             void Trend(string pKey, float pValue)
             {
-                if (Mathf.Abs(pValue) > 0.05f) pEntry.trends.Add(new Row { name = LM.Get(pKey), push = pValue, color = TrendBar, nameColor = Ink });
+                if (Mathf.Abs(pValue) > 0.05f) pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, pKey), push = pValue, color = TrendBar, nameColor = Ink });
             }
             Trend("vd_mandate_decay", scar - Cycle.Aging(_kingdom));
             Trend("vd_mandate_scar", -scar);
@@ -199,7 +199,7 @@ namespace DiplomacyOverhaul
                 if (pEntry.picks[s] == null) continue;
                 float v = Decline.PickValue(pEntry.picks[s], s);
                 extra += v;
-                pEntry.trends.Add(new Row { name = LM.Get(pEntry.picks[s].id), push = v, color = PickGold, nameColor = Ink });
+                pEntry.trends.Add(new Row { name = Situations.Text(_kingdom, pEntry.picks[s].id), push = v, color = PickGold, nameColor = Ink });
             }
             pEntry.favorTo = pClans.Find(c => c.ruling);
             if (Settings.ParliamentEnabled)
@@ -252,13 +252,13 @@ namespace DiplomacyOverhaul
             frame.gameObject.AddComponent<Outline>().effectColor = Edge;
             Icon(frame, pEntry.def.icon ?? Situations.IconPath, 2f, 2f, 18f);
             float x = 32f, w = LW - x - 6f;
-            Text(card, Fit(LM.Get(pEntry.def.id), 8, w - 34f), x, 3f, w, 11f, 8, Ink, TextAnchor.MiddleLeft);
+            Text(card, Fit(Situations.Text(_kingdom, pEntry.def.id), 8, w - 34f), x, 3f, w, 11f, 8, Ink, TextAnchor.MiddleLeft);
             (string trend, Color color) = Short(pEntry);
             Text(card, trend, x, 3f, w, 11f, 7, color, TextAnchor.MiddleRight);
             Bar(card, pEntry, x, 17f, w, 5f, 1.5f);
             int end = EndOf(pEntry);
-            Text(card, LM.Get(pEntry.def.id + "_left"), x, 25f, w, 10f, 6, Dim(Light(EndLeft), end == 1), TextAnchor.MiddleLeft);
-            Text(card, LM.Get(pEntry.def.id + "_right"), x, 25f, w, 10f, 6, Dim(Light(EndRight), end == -1), TextAnchor.MiddleRight);
+            Text(card, Situations.Text(_kingdom, pEntry.def.id + "_left"), x, 25f, w, 10f, 6, Dim(Light(EndLeft), end == 1), TextAnchor.MiddleLeft);
+            Text(card, Situations.Text(_kingdom, pEntry.def.id + "_right"), x, 25f, w, 10f, 6, Dim(Light(EndRight), end == -1), TextAnchor.MiddleRight);
             if (pSelected) Frame(card, -2f);
         }
 
@@ -279,12 +279,12 @@ namespace DiplomacyOverhaul
         static void Detail(Entry pEntry)
         {
             SituationDef d = pEntry.def;
-            Header(_body, RX, Top, RW, LM.Get(d.id), d.icon ?? Situations.IconPath);
+            Header(_body, RX, Top, RW, Situations.Text(_kingdom, d.id), d.icon ?? Situations.IconPath);
 
             RectTransform head = Sliced(_body, Slot, RX, HeadY, RW, 20f);
             string age = pEntry.ended != null ? Ago(pEntry.ended.year) : LM.Get(pEntry.def.monthly ? "vd_sit_month" : "vd_sit_year").Replace("$n$", (pEntry.years + 1).ToString());
             Text(head, age, 8f, 0f, RW - 16f, 20f, 7, Muted, TextAnchor.MiddleRight);
-            string desc = LM.Get(d.desc?.Invoke(_kingdom) ?? d.id + "_desc").Replace("$clan$", pEntry.byName).Replace("$kingdom$", _kingdom.data.name);
+            string desc = Situations.Text(_kingdom, d.desc?.Invoke(_kingdom) ?? d.id + "_desc").Replace("$clan$", pEntry.byName).Replace("$kingdom$", _kingdom.data.name);
             Text(head, Fit(desc, 7, RW - 30f - Measure(age, 7)), 8f, 0f, RW - 16f, 20f, 7, Ink, TextAnchor.MiddleLeft);
 
             float inner = RW - 12f;
@@ -294,7 +294,7 @@ namespace DiplomacyOverhaul
             {
                 bool now = k == stage && end == 0;
                 float mid = RX + 6f + inner * (from[k] + from[k + 1]) / 200f;
-                Text(_body, LM.Get(d.id + "_stage" + k), mid - 40f, StageY - 1f, 80f, 12f, now ? 8 : 6, now ? Light(StageColor(k)) : Muted, TextAnchor.MiddleCenter);
+                Text(_body, Situations.Text(_kingdom, d.id + "_stage" + k), mid - 40f, StageY - 1f, 80f, 12f, now ? 8 : 6, now ? Light(StageColor(k)) : Muted, TextAnchor.MiddleCenter);
             }
             RectTransform bar = Sliced(_body, Slot, RX, BarY, RW, BarH);
             Bar(bar, pEntry, 6f, 5f, inner, BarH - 10f, 3f);
@@ -357,8 +357,8 @@ namespace DiplomacyOverhaul
             string effect = Effect(pPick);
             if (pOn) Text(_body, effect, pX, pY, pW, PickRow, 6, EffectColor(pPick), TextAnchor.MiddleRight);
             float nameW = pOn ? pW - 8f - Measure(effect, 6) - 4f : pW - 8f;
-            Text(_body, Fit(LM.Get(pPick.id), 6, nameW), pX + 7f, pY, nameW, PickRow, 6, pOn ? Ink : Muted, TextAnchor.MiddleLeft);
-            Hover(Box(_body, pX, pY, pW, PickRow, "pick_hover"), LM.Get(pPick.id), new List<(string, string, string)> { (effect, "", Tag(EffectColor(pPick))) });
+            Text(_body, Fit(Situations.Text(_kingdom, pPick.id), 6, nameW), pX + 7f, pY, nameW, PickRow, 6, pOn ? Ink : Muted, TextAnchor.MiddleLeft);
+            Hover(Box(_body, pX, pY, pW, PickRow, "pick_hover"), Situations.Text(_kingdom, pPick.id), new List<(string, string, string)> { (effect, "", Tag(EffectColor(pPick))) });
         }
 
         // 落幕后的结局：走到的那一头和抽中的结局（一头只有一种结局时是这一头的说明）
@@ -374,13 +374,13 @@ namespace DiplomacyOverhaul
                 Icon(slot, icon, x, 3.5f, 11f);
                 x += 15f;
             }
-            string name = LM.Get(d.id + (right ? "_right" : "_left"));
+            string name = Situations.Text(_kingdom, d.id + (right ? "_right" : "_left"));
             Text(slot, name, x, 0f, 100f, 18f, 7, Light(right ? EndRight : EndLeft), TextAnchor.MiddleLeft);
             x += Measure(name, 7) + 8f;
             SituationOutcome o = Situations.EndedOutcome(d, pEntry.ended);
             string what = o != null
-                ? LM.Get(o.id) + " · " + LM.Get(o.id + "_desc")
-                : LM.Get(d.id + (right ? "_right_desc" : "_left_desc")).Replace("$clan$", pEntry.byName);
+                ? Situations.Text(_kingdom, o.id) + " · " + Situations.Text(_kingdom, o.id + "_desc")
+                : Situations.Text(_kingdom, d.id + (right ? "_right_desc" : "_left_desc")).Replace("$clan$", pEntry.byName);
             Text(slot, Fit(what, 7, RW - x - 8f), x, 0f, RW - x - 8f, 18f, 7, Ink, TextAnchor.MiddleLeft);
         }
 
@@ -419,7 +419,7 @@ namespace DiplomacyOverhaul
                 rimg.sprite = RibbonSprite();
                 rimg.type = Image.Type.Sliced;
                 rimg.raycastTarget = false;
-                Text(box, LM.Get(d.id + (right ? "_side_right" : "_side_left")), 0f, 3f, colW, 16f, 8, right ? Toward : Away, TextAnchor.MiddleCenter);
+                Text(box, Situations.Text(_kingdom, d.id + (right ? "_side_right" : "_side_left")), 0f, 3f, colW, 16f, 8, right ? Toward : Away, TextAnchor.MiddleCenter);
                 var rows = new List<Row>();
                 List<Row> mineTrends = trends.Where(r => right ? r.push * dir > Eps : r.push * dir < -Eps).OrderByDescending(r => Mathf.Abs(r.push)).ToList();
                 List<Row> minePowers = powers.Where(r => right ? r.push * dir > Eps : r.push * dir < -Eps || (r.rank == 0 && Mathf.Abs(r.push) <= Eps))
@@ -563,10 +563,10 @@ namespace DiplomacyOverhaul
             float[] from = Situations.Edges(d);
             int stage = Situations.StageOf(d, pEntry.progress);
             if (pPer > 0f && stage < Situations.StageCount - 1)
-                return LM.Get(d.monthly ? "vd_sit_eta_stage_month" : "vd_sit_eta_stage").Replace("$n$", Years(from[stage + 1] - pEntry.progress, pPer)).Replace("$stage$", LM.Get(d.id + "_stage" + (stage + 1)));
+                return LM.Get(d.monthly ? "vd_sit_eta_stage_month" : "vd_sit_eta_stage").Replace("$n$", Years(from[stage + 1] - pEntry.progress, pPer)).Replace("$stage$", Situations.Text(_kingdom, d.id + "_stage" + (stage + 1)));
             bool right = pPer > 0f;
             return LM.Get(d.monthly ? "vd_sit_eta_end_month" : "vd_sit_eta_end").Replace("$n$", Years(right ? 100f - pEntry.progress : pEntry.progress, pPer))
-                .Replace("$end$", LM.Get(d.id + (right ? "_right" : "_left")));
+                .Replace("$end$", Situations.Text(_kingdom, d.id + (right ? "_right" : "_left")));
         }
 
         static string Years(float pDistance, float pPer) => Mathf.Max(1, Mathf.CeilToInt(pDistance / Mathf.Abs(pPer))).ToString();

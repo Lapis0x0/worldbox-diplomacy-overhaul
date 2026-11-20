@@ -30,7 +30,8 @@ namespace DiplomacyOverhaul
             onRight = Enthrone,
             pressures =
             {
-                new SituationPressure { id = "vd_sit_vacancy_regency", value = (k, years) => -RegencyPerYear * (years + 1) }
+                new SituationPressure { id = "vd_sit_vacancy_regency", value = (k, years) => -RegencyPerYear * (years + 1) },
+                new SituationPressure { id = Situations.OverlordId, value = (k, years) => Situations.OverlordForForm(k) }
             },
             stages = new[]
             {

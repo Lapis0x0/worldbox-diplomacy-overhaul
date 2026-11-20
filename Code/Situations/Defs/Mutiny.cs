@@ -57,7 +57,8 @@ namespace DiplomacyOverhaul
             {
                 new SituationPressure { id = "vd_sit_mutiny_army", value = (k, months) => ArmyWeight * ArmyShare(Leader(k), k) * Motive(k) },
                 new SituationPressure { id = "vd_sit_mutiny_chaos", value = (k, months) => Chaos(k) },
-                new SituationPressure { id = "vd_sit_mutiny_drag", value = (k, months) => DragPerMonth * months }
+                new SituationPressure { id = "vd_sit_mutiny_drag", value = (k, months) => DragPerMonth * months },
+                new SituationPressure { id = Situations.OverlordId, value = (k, months) => Situations.OverlordForCrown(k) }
             },
             stages = new[]
             {

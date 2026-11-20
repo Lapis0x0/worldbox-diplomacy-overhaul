@@ -55,7 +55,8 @@ namespace DiplomacyOverhaul
             pressures =
             {
                 new SituationPressure { id = "vd_sit_regency_ambition", value = (k, years) => RegentIsRoyal(k) && Regent(k) is Actor r && Regime.Ambitious(r) ? AmbitionPressure : 0f },
-                new SituationPressure { id = "vd_sit_regency_steady", value = (k, years) => SteadyPerYear * years }
+                new SituationPressure { id = "vd_sit_regency_steady", value = (k, years) => SteadyPerYear * years },
+                new SituationPressure { id = Situations.OverlordId, value = (k, years) => Situations.OverlordForCrown(k) }
             },
             stages = new[]
             {

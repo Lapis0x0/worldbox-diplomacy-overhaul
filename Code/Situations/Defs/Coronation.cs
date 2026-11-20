@@ -22,7 +22,8 @@ namespace DiplomacyOverhaul
             load = -1f,
             lean = (k, pc) => pc.ruling ? BecomeRoyal : 0f,
             initiator = (k, clans) => clans.Find(c => c.ruling),
-            moot = (k, by) => !Regime.Enabled || !Government.IsRepublic(k),
+            // 改成君主国、沦为附庸都作废：附庸不能称帝
+            moot = (k, by) => !Regime.Enabled || !Government.IsRepublic(k) || Vassals.IsVassal(k),
             // 执政家族在改选中落选，称帝之议就散了；执政刚死、还没选出继任时不算
             fail = (k, by) => k.hasKing() && k.king.isAlive() && !by.ruling,
             onLeft = Fail,

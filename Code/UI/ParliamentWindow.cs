@@ -180,7 +180,7 @@ namespace DiplomacyOverhaul
                 {
                     if (!Situations.IsActive(k, d)) continue;
                     int stage = Situations.StageOf(d, Situations.Progress(k, d));
-                    lines.Add((d.id, LM.Get(d.id + "_stage" + stage), StageColors[stage]));
+                    lines.Add((Situations.Key(k, d.id), Situations.Text(k, d.id + "_stage" + stage), StageColors[stage]));
                 }
             }
             TipName = "vd_situation";

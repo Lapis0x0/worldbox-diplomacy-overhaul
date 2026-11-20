@@ -593,7 +593,7 @@ namespace DiplomacyOverhaul
             Cycle.Governance g = Cycle.Govern(k);
             pTooltip.addLineText("vd_mandate_value", Mathf.RoundToInt(Cycle.Mandate(k)).ToString());
             Line(pTooltip, "vd_mandate_cities", g.Cities);
-            Line(pTooltip, "vd_mandate_ruler", g.Ruler);
+            Line(pTooltip, Situations.Key(k, "vd_mandate_ruler"), g.Ruler);
             if (Vassals.HasVassals(k)) Line(pTooltip, "vd_mandate_vassals", g.Vassals);
             Line(pTooltip, "vd_mandate_people", g.People);
             if (g.SmallLord != 0f) Line(pTooltip, "vd_mandate_small_lord", g.SmallLord);

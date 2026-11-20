@@ -67,6 +67,8 @@ The third tab on the left of the kingdom window.
 
 When "Historic upheavals" is on in the settings (the default), the events below can happen, and each is recorded in the world log. Parliament can also change the government, which needs three quarters of the seats; see [Parliament and Policies](parliament.md#domestic).
 
+In a vassal's empty throne, mutiny crisis, or power behind the throne, the overlord weighs in too, the more so the more integrated the vassal is. In a mutiny or a regency, the overlord usually backs the vassal's ruler, but welcomes the trouble if it is on bad terms with the vassal. When a vassal's throne is empty, the overlord wants the vassal to share its own form of government.
+
 ### Inheriting the Throne
 
 When a king dies and nobody in the kingdom's own royal house can inherit, a king of the same royal house who rules a vassal can return to take the throne, for example a prince who was earlier granted land. His vassal is merged into the overlord.
@@ -104,7 +106,7 @@ Each end has three possible outcomes. When the crisis reaches an end, one is dra
 | Crisis Defused | Mutiny Breaks Out |
 |---|---|
 | Stand Down: the matter is dropped. More likely the steadier the troops | Seize the Throne: the captain takes power. More likely the more troops he or she holds, and more so in Collapse |
-| Crushed: the captain is executed and his or her clan resents the royal house. More likely the stronger the clans against the mutiny | Deposition: the ruler is deposed and killed, and a successor raised. More likely the more the backing clans resent the royal house |
+| Crushed: the captain is executed and his or her clan resents the royal house. More likely the stronger the clans against the mutiny | Deposition: the ruler is deposed and killed, and a successor raised; in a republic, the consul is killed and a new one elected. More likely the more the backing clans resent the royal house |
 | Desertion: the captain's troops disband and go home. More likely the longer the arrears | Plunder: the capital is looted to pay the arrears. More likely the longer the arrears |
 
 When the captain seizes the throne, his or her character decides what follows:

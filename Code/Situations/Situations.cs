@@ -69,6 +69,16 @@ namespace DiplomacyOverhaul
             return progress;
         }
 
+        // 局势文案的 key：共和国优先用语言文件里的「key_republic」（如共和国的衰落叫国运衰微），没有就用原 key
+        public static string Key(Kingdom pKingdom, string pKey)
+        {
+            if (pKingdom == null || !Government.IsRepublic(pKingdom)) return pKey;
+            string alt = pKey + "_republic";
+            return LocalizedTextManager.stringExists(alt) ? alt : pKey;
+        }
+
+        public static string Text(Kingdom pKingdom, string pKey) => NeoModLoader.General.LM.Get(Key(pKingdom, pKey));
+
         // 进度条上各阶段的起点和终点
         public static float[] Edges(SituationDef pDef) => pDef.stageEdges ?? ThirdEdges;
 
@@ -113,7 +123,8 @@ namespace DiplomacyOverhaul
         // ---------- 推力 ----------
 
         // 态度 = 政见得失 + 好感权重 × 对发起方的好感 ÷ 100 − 惯性，集团合并后限制在 ±1；发起方和它的集团是 1。
-        // 冲着朝廷来的局势把对发起方的好感换成减去对掌权家族的好感，掌权家族自己态度为 0
+        // 冲着朝廷来的局势把对发起方的好感换成减去对掌权家族的好感，掌权家族自己态度为 0，
+        // 合并集团时它的分也按 0 算：被架空的一方不表态，也不会用自己的政见把盟友带向发起方
         // 进度每年变化 = (各方推力 + 大势 + 抽中的候选) × 100 ÷ 基准时长
         public static SituationTally Tally(Kingdom pKingdom, SituationDef pDef, List<ParliamentClan> pClans, ParliamentClan pBy)
         {
@@ -129,7 +140,7 @@ namespace DiplomacyOverhaul
                 if (pc.Key == pBy.Key) continue;
                 gains[i] = Parliament.StanceGain(pKingdom, pc, pDef, 0, 1);
                 favors[i] = Relations.Value(pc, to);
-                scores[i] = gains[i] + sign * pDef.favor * favors[i] / 100f;
+                scores[i] = pDef.againstCrown && pc.ruling ? 0f : gains[i] + sign * pDef.favor * favors[i] / 100f;
             }
             List<Bloc> blocs = Blocs.Of(pKingdom, pClans);
             float[] merged = Blocs.Merged(pClans, blocs, scores, pBy);

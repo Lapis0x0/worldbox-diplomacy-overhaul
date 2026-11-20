@@ -104,6 +104,16 @@ namespace DiplomacyOverhaul.Perf
                     Show(k);
                     break;
                 }
+                case "vassal":
+                {
+                    // 测附庸的局势：把这个国家收为宗主的附庸，可以指定整合度
+                    Kingdom k = Dev.FindKingdom(a[2]), lord = Dev.FindKingdom(a[3]);
+                    float integration = a.Length > 4 ? float.Parse(a[4]) : Integration.Tribute;
+                    string err = Vassals.GetOverlord(k) == lord ? null : Vassals.MakeVassal(lord, k, integration);
+                    if (err == null) Integration.Set(k, integration);
+                    Dev.Log($"@sit vassal {k.data.name} lord={Vassals.GetOverlord(k)?.data.name} integration={Integration.Get(k):F0} opinion={World.world.diplomacy.getOpinion(lord, k).total} err={err}");
+                    break;
+                }
                 case "regency":
                 {
                     // 直接开王权旁落（不掷骰子、不看是不是新君），列出权臣的人选
