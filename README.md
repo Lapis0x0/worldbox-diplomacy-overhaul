@@ -29,7 +29,7 @@ Every kingdom has a parliament. Families win seats from the cities they hold, vo
 
 A kingdom can be a Kingdom or an Empire, or a Republic, Merchant Republic or Military Republic. A new nation's government follows the leanings of its culture, and an existing one does not stay fixed.
 
-Republics elect their leader at regular intervals. Changes of dynasty play out as **situations**: a throne left empty when the royal line dies out, a consul of a republic at its prime reaching for a crown, a general pressing a collapsing court. The families struggle in parliament for years as the situation moves toward one outcome, and the situations window shows who is pushing and who is holding it back.
+Republics elect their leader at regular intervals. Changes of dynasty play out as **situations**: a throne left empty when the royal line dies out, a regent ruling in the name of a weak new monarch, a republic at its prime debating a crown, a general pressing the court in chaotic times or over unpaid pay. The families struggle in parliament for years as the situation moves toward one outcome, and the situations window shows who is pushing and who is holding it back.
 
 You can follow the policy votes in parliament, see candidates, the line of succession and family lands in the Elections & Offices window, and set a family's political stance directly in the clan editor.
 
@@ -53,7 +53,7 @@ Military power now rests on finances. City governors send taxes to the national 
 
 Buildings matter now: markets make cities richer, temples keep them loyal, and barracks let them field more troops. With money to spare, the kingdom funds **public works** in its cities, and parliament decides whether spare funds lean toward public works or the Guard's arms.
 
-War costs money. Unpaid armies fight worse, and troops that go unpaid for too long may be disbanded. The kingdom's treasury ledger shows where the money comes from and where it goes.
+War costs money. Unpaid armies fight worse; the longer the pay is owed, the more the troops lose heart and desert, and the Guard may even mutiny. The kingdom's treasury ledger shows where the money comes from and where it goes.
 
 <img src="docs/images/treasury.png" alt="Treasury page" width="720">
 

@@ -2,6 +2,30 @@
 
 每个版本的中文、英文说明。GitHub Release 和创意工坊的更新说明都从这里取。
 
+## 0.14.0
+
+### 中文
+
+1. 引入局势系统
+2. 新增单独媾和，参战国可与敌方主国单独议和并退出战争；优化大叛乱的战争日志 UI 呈现
+3. 共和国的自治派改名为联邦派
+4. 优化禁军欠饷机制，欠饷改为逐年累积，拖欠越久军队越涣散，衰落期朝廷的财政纪律随之松弛
+5. 优化历史统治者的头衔展示逻辑
+6. 优化同化政策的速度曲线
+7. 优化军械和议会年度结算的性能表现
+8. 修复城市自立为国时因新君主不具备建国条件而导致模拟卡死的问题
+
+### English
+
+1. Introduced the Situations system
+2. Added separate peace: belligerents can make peace with the enemy's main kingdom on their own and leave the war; improved the UI presentation of the Great Rebellion's war log
+3. Renamed the republic's Autonomists to Federalists
+4. Improved Guard back pay: arrears now accumulate year by year, the longer the pay is owed the more the troops fall into disarray, and fiscal discipline slackens during decline
+5. Improved how past rulers' titles are displayed
+6. Improved the speed curve of assimilation policies
+7. Improved the performance of the yearly armament and parliament settlements
+8. Fixed the simulation freezing when a city broke away as a kingdom and its new ruler did not meet the requirements to found one
+
 ## 0.13.1
 
 ### 中文
